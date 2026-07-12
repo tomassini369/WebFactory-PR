@@ -1,0 +1,578 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>WebFactory PR | Paginas profesionales con pagos</title>
+    <meta
+      name="description"
+      content="Producto demo para vender paginas web profesionales por nicho con opciones de Stripe y ATH Movil de negocio."
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="#builder" aria-label="WebFactory PR">
+        <img class="brand-logo" src="./assets/webfactory-pr-logo.png" alt="" />
+      </a>
+      <nav class="nav" aria-label="Principal">
+        <a href="#paquetes">Paquetes</a>
+        <a href="#metodos-pago">Pagos</a>
+        <a href="#demos">Demos</a>
+        <a href="#flujo">Proceso</a>
+        <a href="#configurador">Pedido</a>
+      </nav>
+    </header>
+
+    <main>
+      <section class="builder-shell" id="builder">
+        <div class="builder-copy">
+          <p class="eyebrow">Producto economico para negocios locales</p>
+          <h1>Crea paginas web accesibles por nicho <strong>desde $20.99</strong></h1>
+          <p class="lede">
+            El cliente escoge su nicho, paga la creacion, envia sus datos y recibe una
+            pagina profesional lista para publicar. Stripe y ATH Movil de negocio se dejan enlazados
+            a las cuentas que el cliente manejara aparte.
+          </p>
+          <div class="hero-actions">
+            <a class="primary-action" href="#demos">Ver ejemplos</a>
+            <a class="secondary-action" href="#configurador">Comenzar pedido</a>
+          </div>
+        </div>
+        <div class="hero-visual-stack">
+          <figure class="hero-media" aria-label="Vista de un panel para crear paginas web">
+            <img src="./assets/builder-dashboard.png" alt="Panel de creacion de paginas web en una laptop" />
+          </figure>
+          <figure class="payment-strip" aria-label="Metodos de pago disponibles">
+            <img src="./assets/payment-methods-strip.png" alt="Metodos de pago con Stripe y ATH Business" />
+          </figure>
+        </div>
+      </section>
+
+      <section class="pricing-band" id="paquetes" aria-labelledby="pricing-title">
+        <div class="section-heading">
+          <h2 id="pricing-title">Paquetes de Oferta</h2>
+        </div>
+        <div class="pricing-grid">
+          <article class="price-card">
+            <span class="plan-label">Inicio</span>
+            <h3>$20.99</h3>
+            <p>Una seccion, contacto, estilo y fuentes basicas, sin galeria ni pagos.</p>
+          </article>
+          <article class="price-card featured">
+            <span class="plan-label">Profesional</span>
+            <h3>$49.99</h3>
+            <p>Pagina completa con estilos, fuentes, colores y hasta 3 imagenes.</p>
+          </article>
+          <article class="price-card">
+            <span class="plan-label">Pagos</span>
+            <h3>$69.99</h3>
+            <p>Todo lo profesional mas botones o enlaces de Stripe y ATH Movil de negocio.</p>
+          </article>
+        </div>
+        <div class="section-actions">
+          <a class="secondary-action" href="#demos">Ver ejemplos</a>
+          <a class="primary-action" href="#configurador">Comenzar pedido</a>
+        </div>
+      </section>
+
+      <section class="payment-info-section" id="metodos-pago" aria-labelledby="payment-info-title">
+        <div class="section-heading">
+          <p class="eyebrow">Requisitos de pago</p>
+          <h2 id="payment-info-title">Como activar Stripe y ATH Movil de negocio</h2>
+        </div>
+
+        <div class="payment-info-grid">
+          <article class="payment-info-card">
+            <div class="payment-card-top">
+              <span class="payment-brand stripe-brand">Stripe</span>
+              <strong>2.9% + 30c</strong>
+            </div>
+            <p>
+              Stripe permite crear enlaces de pago, botones o checkout para tarjetas y otros metodos.
+              En el plan estandar no cobra setup ni mensualidad; cobra por transaccion exitosa.
+            </p>
+            <ul>
+              <li>Crear cuenta en Stripe y verificar el negocio.</li>
+              <li>Completar informacion del negocio, producto y representante.</li>
+              <li>Agregar informacion publica: nombre, web, soporte, direccion y descriptor.</li>
+              <li>Conectar cuenta bancaria para recibir depositos.</li>
+            </ul>
+            <div class="payment-note">
+              Las tarifas pueden variar por tarjetas internacionales, conversion de moneda, disputas o productos adicionales.
+            </div>
+            <div class="payment-link-row">
+              <a class="primary-action" href="https://stripe.com/pricing" target="_blank" rel="noopener">Ver Stripe</a>
+              <button class="secondary-action copy-link-action" type="button" data-copy-link="https://stripe.com/pricing">Copiar enlace</button>
+            </div>
+          </article>
+
+          <article class="payment-info-card ath-card">
+            <div class="payment-card-top">
+              <span class="payment-brand ath-brand">ATH Business</span>
+              <strong>2.25%</strong>
+            </div>
+            <p>
+              ATH Business permite recibir pagos de usuarios de ATH Movil en Puerto Rico con QR,
+              pATH, enlaces de pago o boton de pago para tienda online.
+            </p>
+            <ul>
+              <li>Descargar la app ATH Business y verificar el email.</li>
+              <li>Entrar tipo de negocio, nombre, estructura, identificacion y direccion postal.</li>
+              <li>Crear el pATH del negocio para aparecer en "Paga a un negocio".</li>
+              <li>Registrar una tarjeta ATH de cuenta comercial de una institucion participante.</li>
+            </ul>
+            <div class="payment-note">
+              Indica $0 cuota mensual. Cobra 2.25% por pago recibido, minimo $0.06; el cliente no paga por enviar el pago.
+            </div>
+            <div class="payment-link-row">
+              <a class="primary-action" href="https://ath.business/" target="_blank" rel="noopener">Ver ATH Business</a>
+              <button class="secondary-action copy-link-action" type="button" data-copy-link="https://ath.business/">Copiar enlace</button>
+            </div>
+          </article>
+        </div>
+
+        <div class="payment-links-panel">
+          <strong>Enlaces utiles para el cliente</strong>
+          <div class="payment-source-links">
+            <a href="https://dashboard.stripe.com/register" target="_blank" rel="noopener">Crear cuenta Stripe</a>
+            <a href="https://docs.stripe.com/payment-links" target="_blank" rel="noopener">Stripe Payment Links</a>
+            <a href="https://ath.business/botondepago" target="_blank" rel="noopener">Boton de Pago ATH Business</a>
+            <a href="https://ath.business/preguntas" target="_blank" rel="noopener">Preguntas ATH Business</a>
+          </div>
+        </div>
+      </section>
+
+      <section class="demo-section" id="demos" aria-labelledby="demo-title">
+        <div class="section-heading">
+          <p class="eyebrow">Ejemplos</p>
+          <h2 id="demo-title">Mira demos visuales antes de ordenar</h2>
+        </div>
+        <div class="demo-grid">
+          <article class="demo-card" data-demo-card data-demo-key="restaurante" tabindex="0" aria-label="Demo Restaurante Sabor Boricua">
+            <span class="plan-label">Restaurante</span>
+            <h3>Sabor Boricua</h3>
+            <p>Menu, contacto, imagenes y botones de pago conectados a cuentas del cliente.</p>
+            <a class="secondary-action demo-action" href="#configurador" data-open-demo>Ver Pagina Demo</a>
+          </article>
+          <article class="demo-card featured" data-demo-card data-demo-key="auto" tabindex="0" aria-label="Demo Auto Service Extreme Auto">
+            <span class="plan-label">Auto Service</span>
+            <h3>Extreme Auto</h3>
+            <p>Estilo llamativo con header, servicios, beneficios, mapa, WhatsApp y ATH Movil de negocio.</p>
+            <a class="secondary-action demo-action" href="#configurador" data-open-demo>Ver Pagina Demo</a>
+          </article>
+          <article class="demo-card" data-demo-card data-demo-key="servicios" tabindex="0" aria-label="Demo Servicios Consultoria Brillante">
+            <span class="plan-label">Servicios</span>
+            <h3>Consultoria Brillante</h3>
+            <p>Pagina profesional enfocada en confianza, servicios, casos, contacto y cotizacion.</p>
+            <a class="secondary-action demo-action" href="#configurador" data-open-demo>Ver Pagina Demo</a>
+          </article>
+          <article class="demo-card" data-demo-card data-demo-key="tienda" tabindex="0" aria-label="Demo Tienda local Boutique Luna">
+            <span class="plan-label">Tienda local</span>
+            <h3>Boutique Luna</h3>
+            <p>Catalogo visual sin carrito online, con contacto directo y botones de pago si aplica.</p>
+            <a class="secondary-action demo-action" href="#configurador" data-open-demo>Ver Pagina Demo</a>
+          </article>
+        </div>
+        <div class="section-actions">
+          <a class="primary-action" href="#configurador">Crear mi pagina</a>
+        </div>
+      </section>
+
+      <section class="workspace" id="configurador" aria-labelledby="config-title">
+        <div class="section-heading">
+          <p class="eyebrow">Configurador</p>
+          <h2 id="config-title">Simulador de pedido</h2>
+        </div>
+
+        <div class="app-grid">
+          <form class="config-panel" id="siteForm" name="site-order" method="post" action="/success.html" data-netlify="true" enctype="multipart/form-data">
+            <input type="hidden" name="form-name" value="site-order" />
+            <input type="hidden" id="orderId" name="orderId" />
+            <input type="hidden" id="orderCreatedAt" name="orderCreatedAt" />
+            <input type="hidden" id="orderSummary" name="orderSummary" />
+            <input type="hidden" id="orderJson" name="orderJson" />
+
+            <label class="field">
+              <span>Nombre del cliente</span>
+              <input id="clientName" name="clientName" type="text" placeholder="Tu nombre" required />
+            </label>
+
+            <label class="field">
+              <span>Email del cliente</span>
+              <input id="clientEmail" name="clientEmail" type="email" placeholder="cliente@email.com" required />
+            </label>
+
+            <label class="field">
+              <span>Telefono / WhatsApp</span>
+              <input id="clientPhone" name="clientPhone" type="tel" placeholder="(787) 555-0000" />
+            </label>
+
+            <label class="field">
+              <span>Nombre del negocio</span>
+              <input id="businessName" name="businessName" type="text" value="Sabor Boricua" />
+            </label>
+
+            <fieldset class="field-group business-details">
+              <legend>Datos públicos del negocio</legend>
+              <label class="field compact-field">
+                <span>Teléfono público</span>
+                <input id="businessPhone" name="businessPhone" type="tel" placeholder="(787) 555-0000" />
+              </label>
+              <label class="field compact-field">
+                <span>Email público</span>
+                <input id="businessEmail" name="businessEmail" type="email" placeholder="info@negocio.com" />
+              </label>
+              <label class="field compact-field">
+                <span>Dirección</span>
+                <input id="businessAddress" name="businessAddress" type="text" placeholder="Ciudad, Puerto Rico" />
+              </label>
+              <label class="field compact-field">
+                <span>Horarios</span>
+                <input id="businessHours" name="businessHours" type="text" placeholder="Lunes - Viernes: 8am - 5pm" />
+              </label>
+              <label class="field compact-field">
+                <span>Enlace de mapa</span>
+                <input id="mapLink" name="mapLink" type="url" placeholder="https://maps.google.com/..." />
+              </label>
+              <label class="field compact-field">
+                <span>WhatsApp público</span>
+                <input id="whatsappNumber" name="whatsappNumber" type="tel" placeholder="17875550000" />
+              </label>
+            </fieldset>
+
+            <label class="field">
+              <span>Nicho</span>
+              <select id="niche" name="niche"></select>
+            </label>
+
+            <label class="field">
+              <span>Paquete</span>
+              <select id="package" name="package"></select>
+            </label>
+            <div class="package-rules" id="packageRules" aria-live="polite"></div>
+
+            <label class="field" id="visualStyleField">
+              <span>Estilo visual</span>
+              <select id="visualStyle" name="visualStyle"></select>
+            </label>
+
+            <label class="field" id="fontChoiceField">
+              <span>Fuente de texto</span>
+              <select id="fontChoice" name="fontChoice"></select>
+            </label>
+
+            <fieldset class="field-group" id="layoutOptions">
+              <legend>Header y footer</legend>
+              <label class="field compact-field">
+                <span>Estilo de header</span>
+                <select id="headerStyle" name="headerStyle"></select>
+              </label>
+              <label class="field compact-field">
+                <span>Plantilla de entrega</span>
+                <select id="deliveryTemplate" name="deliveryTemplate"></select>
+              </label>
+              <label class="field compact-field">
+                <span>Boton del header</span>
+                <select id="headerCta" name="headerCta">
+                  <option value="phone">Llamar ahora</option>
+                  <option value="whatsapp">WhatsApp</option>
+                  <option value="contact">Contacto</option>
+                  <option value="payments">Pagar / comprar</option>
+                </select>
+              </label>
+              <label class="field compact-field">
+                <span>Estilo de footer</span>
+                <select id="footerStyle" name="footerStyle"></select>
+              </label>
+              <label class="field compact-field">
+                <span>Frase del footer</span>
+                <input id="footerTagline" name="footerTagline" type="text" placeholder="Calidad, confianza y compromiso" />
+              </label>
+              <label class="field compact-field" id="headerImageField">
+                <span>Imagen del header / logo</span>
+                <input id="headerImage" name="headerImage" type="file" accept="image/*" />
+              </label>
+              <label class="field compact-field" id="footerImageField">
+                <span>Imagen del footer</span>
+                <input id="footerImage" name="footerImage" type="file" accept="image/*" />
+              </label>
+              <label class="field compact-field">
+                <span>Facebook</span>
+                <input id="facebookLink" name="facebookLink" type="url" placeholder="https://facebook.com/..." />
+              </label>
+              <label class="field compact-field">
+                <span>Instagram</span>
+                <input id="instagramLink" name="instagramLink" type="url" placeholder="https://instagram.com/..." />
+              </label>
+            </fieldset>
+
+            <div class="color-row" id="colorOptions" aria-label="Colores del sitio">
+              <label class="field">
+                <span>Color principal</span>
+                <input id="primaryColor" name="primaryColor" type="color" value="#ffffff" />
+              </label>
+              <label class="field">
+                <span>Color acento</span>
+                <input id="accentColor" name="accentColor" type="color" value="#000000" />
+              </label>
+            </div>
+
+            <fieldset class="field-group" id="paymentOptions">
+              <legend>Pagos que manejara el cliente en sus cuentas</legend>
+              <label class="payment-none"><input id="noPayments" name="noPaymentLinks" value="none" type="checkbox" /> No incluir enlaces de pago</label>
+              <label><input id="stripe" name="paymentMethods" value="stripe" type="checkbox" checked /> Stripe</label>
+              <label><input id="ath" name="paymentMethods" value="ath" type="checkbox" checked /> ATH Movil de negocio</label>
+            </fieldset>
+
+            <label class="field" id="stripeLinkField">
+              <span>Enlace Stripe del cliente</span>
+              <input id="stripeLink" name="stripeLink" type="url" placeholder="https://buy.stripe.com/..." />
+            </label>
+
+            <label class="field" id="athDetailsField">
+              <span>ATH Movil de negocio / instrucciones del cliente</span>
+              <input id="athDetails" name="athDetails" type="text" placeholder="ATH Movil de negocio, enlace o instrucciones" />
+            </label>
+
+            <label class="field" id="heroImageField">
+              <span>Logo o foto principal</span>
+              <input id="heroImage" name="heroImage" type="file" accept="image/*" />
+            </label>
+
+            <label class="field" id="galleryImagesField">
+              <span id="galleryImagesLabel">Imagenes de contenido</span>
+              <input id="galleryImages" name="galleryImages" type="file" accept="image/*" multiple />
+            </label>
+
+            <fieldset class="field-group" id="extrasOptions">
+              <legend>Extras</legend>
+              <label><input id="maintenance" name="maintenance" type="checkbox" /> Soporte mensual opcional</label>
+              <p class="field-help">
+                Incluye cambios pequenos despues de publicar, actualizacion de textos o fotos,
+                revision de enlaces y asistencia basica para mantener la pagina al dia.
+              </p>
+            </fieldset>
+
+            <label class="field">
+              <span>Mensaje del cliente</span>
+              <textarea id="notes" name="notes" rows="4">Necesito una pagina moderna con menu, contacto y botones de pago si aplica.</textarea>
+            </label>
+
+            <div class="button-row">
+              <button class="secondary-action" type="button" id="screenshotButton">Ver Pagina Demo</button>
+              <button class="primary-action submit-action" type="submit" id="submitOrderButton">Comprar Ahora</button>
+            </div>
+          </form>
+
+          <aside class="preview-panel" aria-live="polite">
+            <div class="preview-toolbar">
+              <span class="status-dot"></span>
+              <span id="previewStatus">Demo listo</span>
+            </div>
+            <div class="site-preview" id="sitePreview">
+              <div class="preview-hero" id="previewHero">
+                <span class="logo-chip" id="logoChip">WF</span>
+                <p id="previewNiche">Restaurante</p>
+                <h3 id="previewTitle">Sabor Boricua</h3>
+                <span id="previewTagline">Menu, contacto y pagos opcionales en una pagina rapida.</span>
+              </div>
+              <div class="preview-section image-strip-section">
+                <h4>Imagenes del cliente</h4>
+                <div class="image-strip" id="imageStrip">
+                  <span class="empty-image">Sin imagenes cargadas</span>
+                </div>
+              </div>
+              <div class="preview-section">
+                <h4>Secciones</h4>
+                <ul id="sectionList"></ul>
+              </div>
+              <div class="preview-section">
+                <h4>Pagos</h4>
+                <div class="payment-badges" id="paymentBadges"></div>
+              </div>
+              <div class="preview-section">
+                <h4>Estilo</h4>
+                <div class="style-summary" id="styleSummary"></div>
+              </div>
+            </div>
+          </aside>
+
+          <aside class="proposal-panel">
+            <div class="metric">
+              <span>Precio sugerido</span>
+              <strong id="price">$69.99</strong>
+            </div>
+            <div class="metric">
+              <span>Entrega estimada</span>
+              <strong id="timeline">3 dias</strong>
+            </div>
+            <div class="metric">
+              <span>Soporte opcional</span>
+              <strong id="monthly">$0</strong>
+            </div>
+            <div class="proposal-box">
+              <h3>Resumen</h3>
+              <p id="proposalText"></p>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <section class="flow-section" id="flujo" aria-labelledby="flow-title">
+        <div class="section-heading">
+          <p class="eyebrow">Despues del simulador</p>
+          <h2 id="flow-title">Confirmas el pedido y recibes tu pagina publicada</h2>
+        </div>
+        <ol class="flow-list">
+          <li><strong>Envias tu pedido:</strong> eliges paquete, nicho, estilo, fuente, colores, datos e imagenes.</li>
+          <li><strong>Confirmamos la solicitud:</strong> revisamos que la informacion este completa antes de crear la pagina.</li>
+          <li><strong>Creamos tu pagina:</strong> usamos las selecciones del simulador como referencia visual.</li>
+          <li><strong>Publicamos la version final:</strong> la pagina queda lista para compartir con tus clientes.</li>
+          <li><strong>Recibes el enlace:</strong> te enviamos tu pagina publicada e instrucciones basicas de uso.</li>
+        </ol>
+      </section>
+
+      <section class="operations" id="ordenes" aria-labelledby="ops-title">
+        <div class="section-heading">
+          <p class="eyebrow">Entrega</p>
+          <h2 id="ops-title">Que recibes al final</h2>
+        </div>
+        <div class="ops-grid">
+          <div class="ops-item"><span>01</span><strong>Pagina publicada</strong><p>Tu web queda en linea con la informacion que enviaste.</p></div>
+          <div class="ops-item"><span>02</span><strong>Enlace final</strong><p>Recibes el link listo para compartir en redes, WhatsApp o tarjetas.</p></div>
+          <div class="ops-item"><span>03</span><strong>Botones de pago</strong><p>Solo se agregan si escogiste Stripe o ATH Movil de negocio.</p></div>
+          <div class="ops-item"><span>04</span><strong>Soporte opcional</strong><p>Puedes pedir mantenimiento mensual para cambios pequenos.</p></div>
+        </div>
+      </section>
+
+      <section class="plan-section" id="plan" aria-labelledby="plan-title">
+        <div class="section-heading">
+          <p class="eyebrow">Importante</p>
+          <h2 id="plan-title">Lo que incluye el servicio</h2>
+        </div>
+        <div class="plan-grid">
+          <article>
+            <h3>Pagina informativa</h3>
+            <p>Una web profesional para mostrar tu negocio, servicios, fotos y contacto.</p>
+          </article>
+          <article>
+            <h3>Sin orden online</h3>
+            <p>No incluye carrito, reservas ni sistema de pedidos dentro de la pagina.</p>
+          </article>
+          <article>
+            <h3>Personalizacion</h3>
+            <p>Se adapta a tu nicho, colores, fuente, imagenes, header y footer.</p>
+          </article>
+          <article>
+            <h3>Pagos si aplica</h3>
+            <p>Stripe y ATH Movil de negocio se agregan solo como botones o enlaces.</p>
+          </article>
+        </div>
+      </section>
+    </main>
+
+    <div class="screenshot-modal" id="screenshotModal" role="dialog" aria-modal="true" aria-labelledby="screenshotTitle" hidden>
+      <div class="screenshot-dialog">
+        <div class="screenshot-header">
+          <div>
+            <p class="eyebrow">Demo del cliente</p>
+            <h2 id="screenshotTitle">Ver Pagina Demo</h2>
+          </div>
+          <button class="close-button" type="button" id="screenshotClose" aria-label="Cerrar demo">&times;</button>
+        </div>
+
+        <div class="browser-frame" id="screenshotFrame">
+          <div class="browser-top">
+            <span></span>
+            <span></span>
+            <span></span>
+            <div id="screenshotUrl">demo.webfactory.local/sabor-boricua</div>
+          </div>
+          <article class="screenshot-page" id="screenshotPage">
+            <header class="shot-nav">
+              <img class="shot-header-image" id="shotHeaderImage" alt="" hidden />
+              <strong id="shotBrand">Sabor Boricua</strong>
+              <nav aria-label="Demo">
+                <span>Inicio</span>
+                <span>Servicios</span>
+                <span>Contacto</span>
+              </nav>
+              <span class="shot-header-cta" id="shotHeaderCta">Llamar ahora</span>
+            </header>
+            <section class="shot-hero" id="shotHero">
+              <div>
+                <span class="shot-kicker" id="shotNiche">Restaurante</span>
+                <h3 id="shotHeadline">Menu, contacto y pagos opcionales en una pagina rapida.</h3>
+                <p id="shotDescription">Una pagina preparada segun las selecciones del cliente.</p>
+                <div class="shot-actions">
+                  <span id="shotPrimaryCta">Contactar</span>
+                  <span id="shotSecondaryCta">Ver servicios</span>
+                </div>
+              </div>
+            </section>
+            <section class="shot-benefits" id="shotBenefits"></section>
+            <section class="shot-section">
+              <div class="shot-section-heading">
+                <span id="shotPackage">Paquete Pagos</span>
+                <h4 id="shotSectionsTitle">Secciones incluidas</h4>
+              </div>
+              <div class="shot-card-grid" id="shotSections"></div>
+            </section>
+            <section class="shot-section" id="shotWhyBlock">
+              <div class="shot-why">
+                <div>
+                  <span class="shot-kicker">Nosotros</span>
+                  <h4 id="shotWhyTitle">Por que escoger este negocio</h4>
+                  <p id="shotWhyText">Un bloque preparado para presentar confianza, experiencia y valor de marca.</p>
+                </div>
+                <div class="shot-why-list" id="shotWhyList"></div>
+              </div>
+            </section>
+            <section class="shot-section" id="shotGalleryBlock">
+              <div class="shot-section-heading">
+                <span>Contenido visual</span>
+                <h4>Imagenes del cliente</h4>
+              </div>
+              <div class="shot-gallery" id="shotGallery"></div>
+            </section>
+            <section class="shot-section" id="shotContactBlock">
+              <div class="shot-section-heading">
+                <span>Contacto</span>
+                <h4>Datos del negocio</h4>
+              </div>
+              <div class="shot-contact-layout">
+                <div class="shot-contact-grid" id="shotContact"></div>
+                <div class="shot-map-box" id="shotMapBox">Mapa del negocio</div>
+              </div>
+            </section>
+            <section class="shot-section" id="shotPaymentsBlock">
+              <div class="shot-section-heading">
+                <span>Conversion</span>
+                <h4>Botones de pago</h4>
+              </div>
+              <div class="shot-payment-row" id="shotPayments"></div>
+            </section>
+            <footer class="shot-footer">
+              <div>
+                <img class="shot-footer-image" id="shotFooterImage" alt="" hidden />
+                <strong id="shotFooterBrand">Sabor Boricua</strong>
+                <span id="shotFooterTagline">Pagina generada por WebFactory PR</span>
+              </div>
+              <div class="shot-footer-meta" id="shotFooterMeta"></div>
+            </footer>
+            <span class="shot-whatsapp" id="shotWhatsapp" hidden>WA</span>
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <img class="footer-logo" src="./assets/webfactory-pr-logo.png" alt="WebFactory PR" />
+      <a href="mailto:WebFactoryPR@Gmail.com">WebFactoryPR@Gmail.com</a>
+      <span>&copy; 2026 Web Factory PR. Todos los derechos reservados</span>
+    </footer>
+
+    <script src="./app.js"></script>
+  </body>
+</html>
