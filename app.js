@@ -367,6 +367,500 @@ const screenshotClose = document.querySelector("#screenshotClose");
 let screenshotReturnFocus = null;
 let screenshotScrollPosition = { x: 0, y: 0 };
 
+const languageButtons = document.querySelectorAll("[data-language]");
+const languageStorageKey = "webfactory-language";
+const originalTextNodes = new WeakMap();
+const originalAttributeValues = new WeakMap();
+const originalInputValues = new WeakMap();
+
+const translations = {
+  en: {
+    "Principal": "Main",
+    "Paquetes": "Packages",
+    "Pagos": "Payments",
+    "Demos": "Demos",
+    "Proceso": "Process",
+    "Pedido": "Order",
+    "Producto economico para negocios locales": "Affordable product for local businesses",
+    "Crea paginas web accesibles por nicho": "Create affordable niche websites",
+    "desde $20.99": "starting at $20.99",
+    "El cliente escoge su nicho, paga la creacion, envia sus datos y recibe una pagina profesional lista para publicar. Stripe y ATH Movil de negocio se dejan enlazados a las cuentas que el cliente manejara aparte.": "The client chooses a niche, pays for the website creation, sends their details, and receives a professional page ready to publish. Stripe and ATH Movil Business are linked to accounts the client manages separately.",
+    "Ver ejemplos": "View examples",
+    "Comenzar pedido": "Start order",
+    "Vista de un panel para crear paginas web": "View of a website builder dashboard",
+    "Panel de creacion de paginas web en una laptop": "Website creation dashboard on a laptop",
+    "Metodos de pago disponibles": "Available payment methods",
+    "Metodos de pago con Stripe y ATH Business": "Payment methods with Stripe and ATH Business",
+    "Paquetes de Oferta": "Offer Packages",
+    "Inicio": "Starter",
+    "Profesional": "Professional",
+    "Pagos": "Payments",
+    "Una seccion, contacto, estilo y fuentes basicas, sin galeria ni pagos.": "One section, contact, basic style and fonts, with no gallery or payments.",
+    "Pagina completa con estilos, fuentes, colores y hasta 3 imagenes.": "Complete page with styles, fonts, colors, and up to 3 images.",
+    "Todo lo profesional mas botones o enlaces de Stripe y ATH Movil de negocio.": "Everything in Professional plus Stripe and ATH Movil Business buttons or links.",
+    "Requisitos de pago": "Payment requirements",
+    "Como activar Stripe y ATH Movil de negocio": "How to activate Stripe and ATH Movil Business",
+    "Stripe permite crear enlaces de pago, botones o checkout para tarjetas y otros metodos. En el plan estandar no cobra setup ni mensualidad; cobra por transaccion exitosa.": "Stripe lets businesses create payment links, buttons, or checkout for cards and other methods. The standard plan has no setup or monthly fee; it charges per successful transaction.",
+    "Crear cuenta en Stripe y verificar el negocio.": "Create a Stripe account and verify the business.",
+    "Completar informacion del negocio, producto y representante.": "Complete the business, product, and representative information.",
+    "Agregar informacion publica: nombre, web, soporte, direccion y descriptor.": "Add public information: name, website, support, address, and descriptor.",
+    "Conectar cuenta bancaria para recibir depositos.": "Connect a bank account to receive payouts.",
+    "Las tarifas pueden variar por tarjetas internacionales, conversion de moneda, disputas o productos adicionales.": "Fees may vary for international cards, currency conversion, disputes, or additional products.",
+    "Ver Stripe": "View Stripe",
+    "Copiar enlace": "Copy link",
+    "ATH Business permite recibir pagos de usuarios de ATH Movil en Puerto Rico con QR, pATH, enlaces de pago o boton de pago para tienda online.": "ATH Business lets businesses receive payments from ATH Movil users in Puerto Rico using QR, pATH, payment links, or an online payment button.",
+    "Descargar la app ATH Business y verificar el email.": "Download the ATH Business app and verify the email.",
+    "Entrar tipo de negocio, nombre, estructura, identificacion y direccion postal.": "Enter business type, name, structure, identification, and postal address.",
+    "Crear el pATH del negocio para aparecer en \"Paga a un negocio\".": "Create the business pATH to appear under \"Pay a business\".",
+    "Registrar una tarjeta ATH de cuenta comercial de una institucion participante.": "Register an ATH card from a business account at a participating institution.",
+    "Indica $0 cuota mensual. Cobra 2.25% por pago recibido, minimo $0.06; el cliente no paga por enviar el pago.": "It lists a $0 monthly fee. It charges 2.25% per payment received, minimum $0.06; the customer does not pay to send the payment.",
+    "Ver ATH Business": "View ATH Business",
+    "Enlaces utiles para el cliente": "Useful links for the client",
+    "Crear cuenta Stripe": "Create Stripe account",
+    "Boton de Pago ATH Business": "ATH Business Payment Button",
+    "Preguntas ATH Business": "ATH Business FAQ",
+    "Ejemplos": "Examples",
+    "Mira demos visuales antes de ordenar": "View visual demos before ordering",
+    "Restaurante": "Restaurant",
+    "Menu, contacto, imagenes y botones de pago conectados a cuentas del cliente.": "Menu, contact, images, and payment buttons connected to the client's accounts.",
+    "Auto Service": "Auto Service",
+    "Estilo llamativo con header, servicios, beneficios, mapa, WhatsApp y ATH Movil de negocio.": "Bold style with header, services, benefits, map, WhatsApp, and ATH Movil Business.",
+    "Servicios": "Services",
+    "Consultoria Brillante": "Bright Consulting",
+    "Pagina profesional enfocada en confianza, servicios, casos, contacto y cotizacion.": "Professional page focused on trust, services, cases, contact, and quotes.",
+    "Tienda local": "Local Store",
+    "Boutique Luna": "Luna Boutique",
+    "Catalogo visual sin carrito online, con contacto directo y botones de pago si aplica.": "Visual catalog without online cart, with direct contact and payment buttons if applicable.",
+    "Ver Pagina Demo": "View Demo Page",
+    "Crear mi pagina": "Create my page",
+    "Configurador": "Configurator",
+    "Simulador de pedido": "Order simulator",
+    "Nombre del cliente": "Client name",
+    "Tu nombre": "Your name",
+    "Email del cliente": "Client email",
+    "Telefono / WhatsApp": "Phone / WhatsApp",
+    "Nombre del negocio": "Business name",
+    "Datos pÃºblicos del negocio": "Public business details",
+    "Datos publicos del negocio": "Public business details",
+    "TelÃ©fono pÃºblico": "Public phone",
+    "Telefono publico": "Public phone",
+    "Email pÃºblico": "Public email",
+    "Email publico": "Public email",
+    "DirecciÃ³n": "Address",
+    "Direccion": "Address",
+    "Ciudad, Puerto Rico": "City, Puerto Rico",
+    "Horarios": "Business hours",
+    "Lunes - Viernes: 8am - 5pm": "Monday - Friday: 8am - 5pm",
+    "Enlace de mapa": "Map link",
+    "WhatsApp pÃºblico": "Public WhatsApp",
+    "WhatsApp publico": "Public WhatsApp",
+    "Nicho": "Niche",
+    "Paquete": "Package",
+    "Estilo visual": "Visual style",
+    "Fuente de texto": "Text font",
+    "Header y footer": "Header and footer",
+    "Estilo de header": "Header style",
+    "Plantilla de entrega": "Delivery template",
+    "Boton del header": "Header button",
+    "Llamar ahora": "Call now",
+    "WhatsApp": "WhatsApp",
+    "Contacto": "Contact",
+    "Pagar / comprar": "Pay / buy",
+    "Estilo de footer": "Footer style",
+    "Frase del footer": "Footer phrase",
+    "Calidad, confianza y compromiso": "Quality, trust, and commitment",
+    "Imagen del header / logo": "Header image / logo",
+    "Imagen del footer": "Footer image",
+    "Colores del sitio": "Site colors",
+    "Color principal": "Primary color",
+    "Color acento": "Accent color",
+    "Pagos que manejara el cliente en sus cuentas": "Payments the client will manage in their own accounts",
+    "No incluir enlaces de pago": "Do not include payment links",
+    "ATH Movil de negocio": "ATH Movil Business",
+    "Enlace Stripe del cliente": "Client Stripe link",
+    "ATH Movil de negocio / instrucciones del cliente": "ATH Movil Business / client instructions",
+    "ATH Movil de negocio, enlace o instrucciones": "ATH Movil Business, link, or instructions",
+    "Logo o foto principal": "Logo or main photo",
+    "Imagenes de contenido": "Content images",
+    "Extras": "Extras",
+    "Soporte mensual opcional": "Optional monthly support",
+    "Incluye cambios pequenos despues de publicar, actualizacion de textos o fotos, revision de enlaces y asistencia basica para mantener la pagina al dia.": "Includes small changes after publishing, text or photo updates, link checks, and basic help to keep the page up to date.",
+    "Mensaje del cliente": "Client message",
+    "Necesito una pagina moderna con menu, contacto y botones de pago si aplica.": "I need a modern page with menu, contact, and payment buttons if applicable.",
+    "Comprar Ahora": "Buy Now",
+    "Demo listo": "Demo ready",
+    "Imagenes del cliente": "Client images",
+    "Sin imagenes cargadas": "No images uploaded",
+    "Secciones": "Sections",
+    "Estilo": "Style",
+    "Precio sugerido": "Suggested price",
+    "Entrega estimada": "Estimated delivery",
+    "Soporte opcional": "Optional support",
+    "Resumen": "Summary",
+    "Despues del simulador": "After the simulator",
+    "Confirmas el pedido y recibes tu pagina publicada": "Confirm the order and receive your published page",
+    "Envias tu pedido:": "Submit your order:",
+    "eliges paquete, nicho, estilo, fuente, colores, datos e imagenes.": "choose package, niche, style, font, colors, details, and images.",
+    "Confirmamos la solicitud:": "We confirm the request:",
+    "revisamos que la informacion este completa antes de crear la pagina.": "we review that the information is complete before creating the page.",
+    "Creamos tu pagina:": "We create your page:",
+    "usamos las selecciones del simulador como referencia visual.": "we use the simulator selections as the visual reference.",
+    "Publicamos la version final:": "We publish the final version:",
+    "la pagina queda lista para compartir con tus clientes.": "the page is ready to share with your customers.",
+    "Recibes el enlace:": "You receive the link:",
+    "te enviamos tu pagina publicada e instrucciones basicas de uso.": "we send your published page and basic usage instructions.",
+    "Entrega": "Delivery",
+    "Que recibes al final": "What you receive at the end",
+    "Pagina publicada": "Published page",
+    "Tu web queda en linea con la informacion que enviaste.": "Your website goes online with the information you sent.",
+    "Enlace final": "Final link",
+    "Recibes el link listo para compartir en redes, WhatsApp o tarjetas.": "You receive the link ready to share on social media, WhatsApp, or cards.",
+    "Botones de pago": "Payment buttons",
+    "Solo se agregan si escogiste Stripe o ATH Movil de negocio.": "Only added if you chose Stripe or ATH Movil Business.",
+    "Puedes pedir mantenimiento mensual para cambios pequenos.": "You can request monthly maintenance for small changes.",
+    "Importante": "Important",
+    "Lo que incluye el servicio": "What the service includes",
+    "Pagina informativa": "Informational page",
+    "Una web profesional para mostrar tu negocio, servicios, fotos y contacto.": "A professional website to show your business, services, photos, and contact.",
+    "Sin orden online": "No online ordering",
+    "No incluye carrito, reservas ni sistema de pedidos dentro de la pagina.": "Does not include cart, reservations, or an ordering system inside the page.",
+    "Personalizacion": "Customization",
+    "Se adapta a tu nicho, colores, fuente, imagenes, header y footer.": "Adapts to your niche, colors, font, images, header, and footer.",
+    "Pagos si aplica": "Payments if applicable",
+    "Stripe y ATH Movil de negocio se agregan solo como botones o enlaces.": "Stripe and ATH Movil Business are added only as buttons or links.",
+    "Demo del cliente": "Client demo",
+    "Cerrar demo": "Close demo",
+    "Inicio": "Starter",
+    "Nosotros": "About",
+    "Por que escoger este negocio": "Why choose this business",
+    "Un bloque preparado para presentar confianza, experiencia y valor de marca.": "A block prepared to present trust, experience, and brand value.",
+    "Contenido visual": "Visual content",
+    "Datos del negocio": "Business details",
+    "Mapa del negocio": "Business map",
+    "Conversion": "Conversion",
+    "Pagina generada por WebFactory PR": "Page generated by WebFactory PR",
+    "© 2026 Web Factory PR. Todos los derechos reservados": "© 2026 Web Factory PR. All rights reserved",
+    "Barberia": "Barbershop",
+    "Servicios profesionales": "Professional services",
+    "Iglesia o comunidad": "Church or community",
+    "Eventos": "Events",
+    "Menu, contacto y pagos opcionales en una pagina rapida.": "Menu, contact, and optional payments on a fast page.",
+    "Servicios, estilos y contacto para clientes recurrentes.": "Services, styles, and contact for returning clients.",
+    "Cotizaciones, confianza y seguimiento para conseguir clientes.": "Quotes, trust, and follow-up to win clients.",
+    "Eventos, donaciones y comunicacion en una web clara.": "Events, donations, and communication in a clear website.",
+    "Catalogo simple, contacto directo y pagos opcionales.": "Simple catalog, direct contact, and optional payments.",
+    "Informacion del evento, contacto y pagos opcionales.": "Event information, contact, and optional payments.",
+    "Servicio automotriz profesional en el que puedes confiar.": "Professional auto service you can trust.",
+    "Menu": "Menu",
+    "Especiales": "Specials",
+    "Ubicacion": "Location",
+    "Barberos": "Barbers",
+    "Galeria": "Gallery",
+    "Cotizacion": "Quote",
+    "Testimonios": "Testimonials",
+    "Bienvenida": "Welcome",
+    "Donaciones": "Donations",
+    "Ministerios": "Ministries",
+    "Productos": "Products",
+    "Colecciones": "Collections",
+    "Catalogo destacado": "Featured catalog",
+    "Pagos opcionales": "Optional payments",
+    "Evento": "Event",
+    "Agenda": "Schedule",
+    "Entradas": "Tickets",
+    "Lugar": "Place",
+    "Preguntas": "Questions",
+    "Diagnostico computarizado": "Computer diagnostics",
+    "Cambio de aceite": "Oil change",
+    "Frenos": "Brakes",
+    "Suspension": "Suspension",
+    "Mantenimiento preventivo": "Preventive maintenance",
+    "Reparacion general": "General repair",
+    "Blanco y negro": "Black and white",
+    "Elegante premium": "Premium elegant",
+    "Vibrante comercial": "Commercial vibrant",
+    "Minimal simple": "Simple minimal",
+    "Editorial con fotos": "Editorial with photos",
+    "Moderna limpia": "Modern clean",
+    "Ejecutiva suave": "Soft executive",
+    "Limpia universal": "Universal clean",
+    "Compacta legible": "Readable compact",
+    "Clasica serif": "Classic serif",
+    "Redondeada amigable": "Friendly rounded",
+    "Juvenil clara": "Clear youthful",
+    "Editorial elegante": "Elegant editorial",
+    "Academica confiable": "Reliable academic",
+    "Artesanal clasica": "Classic handmade",
+    "Lujo editorial": "Editorial luxury",
+    "Formal tradicional": "Traditional formal",
+    "Impacto comercial": "Commercial impact",
+    "Condensada urbana": "Urban condensed",
+    "Elegante sans": "Elegant sans",
+    "Tecnica simple": "Simple technical",
+    "Codigo moderno": "Modern code",
+    "Generica por nicho": "Generic by niche",
+    "Simple limpio": "Clean simple",
+    "Sticky profesional": "Professional sticky",
+    "Marca + contacto": "Brand + contact",
+    "Todo lo profesional": "Everything professional",
+    "todo lo profesional": "everything professional",
+    "hasta 6 imagenes de contenido": "up to 6 content images",
+    "Stripe y ATH Movil de negocio": "Stripe and ATH Movil Business",
+    "enlaces de pago del cliente": "client payment links",
+    "simulador de entrega Premium +": "Premium + delivery simulator",
+    "pagina completa por nicho": "complete niche page",
+    "todos los estilos y fuentes": "all styles and fonts",
+    "colores personalizados": "custom colors",
+    "hasta 3 imagenes de contenido": "up to 3 content images",
+    "sin enlaces de pago": "no payment links",
+    "1 seccion principal": "1 main section",
+    "estilos y fuentes basicas": "basic styles and fonts",
+    "logo o foto principal": "logo or main photo",
+    "Pagos no incluidos": "Payments not included",
+    "Sin enlaces de pago": "No payment links",
+    "Sin pagos seleccionados": "No payments selected",
+    "Stripe listo": "Stripe ready",
+    "Stripe pendiente": "Stripe pending",
+    "ATH Movil de negocio listo": "ATH Movil Business ready",
+    "ATH Movil de negocio pendiente": "ATH Movil Business pending",
+    "Abriendo pago...": "Opening payment...",
+    "Permite abrir Stripe": "Allow Stripe popup",
+    "Enviando...": "Sending...",
+    "Copiado": "Copied",
+    "Copia manual": "Manual copy",
+    "Enlace copiado": "Link copied",
+    "Idioma": "Language",
+    "Inicio incluye:": "Starter includes:",
+    "Profesional incluye:": "Professional includes:",
+    "Pagos incluye:": "Payments includes:",
+    "Componentes: pagina principal y contacto": "Components: main page and contact",
+    "Componentes: servicios, beneficios, contacto, mapa y WhatsApp": "Components: services, benefits, contact, map, and WhatsApp",
+    "Imagen de header cargada": "Header image uploaded",
+    "Imagen de header pendiente": "Header image pending",
+    "footer cargado": "footer uploaded",
+    "footer pendiente": "footer pending",
+    "Imagenes de header/footer no incluidas": "Header/footer images not included",
+    "Galeria no incluida en este paquete": "Gallery not included in this package",
+    "Galeria no incluida": "Gallery not included",
+    "Imagen cargada por el cliente": "Image uploaded by the client",
+    "Entrega: Generica por nicho": "Delivery: Generic by niche",
+    "Entrega: Premium +": "Delivery: Premium +",
+    "Header: Simple limpio": "Header: Clean simple",
+    "Header: Sticky profesional": "Header: Professional sticky",
+    "Header: Premium +": "Header: Premium +",
+    "Footer: Simple": "Footer: Simple",
+    "Footer: Marca + contacto": "Footer: Brand + contact",
+    "Footer: Premium +": "Footer: Premium +",
+    "Foto principal cargada": "Main photo uploaded",
+    "Foto principal pendiente": "Main photo pending",
+    "Imagen de footer cargada": "Footer image uploaded",
+    "Imagen de footer removida": "Footer image removed",
+    "Imagen de header removida": "Header image removed",
+    "Foto principal removida": "Main photo removed",
+    "Galeria vacia": "Empty gallery",
+    "Pagar ahora": "Pay now",
+    "Contactar": "Contact",
+    "Ver mapa": "View map",
+    "Ver servicios": "View services",
+    "Servicios principales": "Main services",
+    "Secciones incluidas": "Included sections",
+    "Servicio presentado como tarjeta de venta, con descripcion clara, enfoque de confianza y llamada directa.": "Service presented as a sales card, with a clear description, trust focus, and direct call to action.",
+    "Contenido preparado segun el nicho y los datos enviados por el cliente.": "Content prepared according to the niche and the details sent by the client.",
+    "Espacio para presentar experiencia, confianza, calidad de servicio y razones para contactar al negocio.": "Space to present experience, trust, service quality, and reasons to contact the business.",
+    "Experiencia y profesionalismo": "Experience and professionalism",
+    "Honestidad y transparencia": "Honesty and transparency",
+    "Calidad garantizada": "Guaranteed quality",
+    "Atencion personalizada": "Personalized attention",
+    "Texto editable segun la informacion que envie el cliente.": "Editable text based on the information sent by the client.",
+    "Boton o enlace conectado a la cuenta que el cliente administra.": "Button or link connected to the account the client manages.",
+    "Telefono": "Phone",
+    "Telefono publico pendiente": "Public phone pending",
+    "WhatsApp pendiente": "WhatsApp pending",
+    "Email publico pendiente": "Public email pending",
+    "Direccion pendiente": "Address pending",
+    "Horario": "Hours",
+    "Horario pendiente": "Hours pending",
+    "Mapa": "Map",
+    "Mapa conectado": "Map connected",
+    "Enlace de mapa pendiente": "Map link pending",
+    "Mapa conectado con la ubicacion del cliente": "Map connected to the client's location",
+    "Espacio para mapa de Google": "Space for Google Map",
+    "Telefono pendiente": "Phone pending",
+    "Tu vehiculo en las mejores manos": "Your vehicle in the best hands",
+    "soporte mensual opcional": "optional monthly support"
+  },
+};
+
+function normalizeI18nText(value) {
+  return String(value || "").replace(/\s+/g, " ").trim();
+}
+
+function storedLanguage() {
+  try {
+    return localStorage.getItem(languageStorageKey) === "en" ? "en" : "es";
+  } catch {
+    return "es";
+  }
+}
+
+let currentLanguage = storedLanguage();
+
+function textForLanguage(text, language) {
+  const normalized = normalizeI18nText(text);
+  if (!normalized || language === "es") {
+    return "";
+  }
+  return translations[language]?.[normalized] || "";
+}
+
+function preserveWhitespace(original, replacement) {
+  const leading = original.match(/^\s*/)?.[0] || "";
+  const trailing = original.match(/\s*$/)?.[0] || "";
+  return `${leading}${replacement}${trailing}`;
+}
+
+function translateTextNode(node, language) {
+  const originalValue = originalTextNodes.get(node) || node.nodeValue;
+  const normalized = normalizeI18nText(originalValue);
+  if (!normalized) {
+    return;
+  }
+  if (!originalTextNodes.has(node)) {
+    originalTextNodes.set(node, node.nodeValue);
+  }
+  if (language === "es") {
+    node.nodeValue = originalTextNodes.get(node);
+    return;
+  }
+  const translated = textForLanguage(originalTextNodes.get(node), language);
+  if (translated) {
+    node.nodeValue = preserveWhitespace(originalTextNodes.get(node), translated);
+  }
+}
+
+function originalAttribute(element, attribute) {
+  let values = originalAttributeValues.get(element);
+  if (!values) {
+    values = {};
+    originalAttributeValues.set(element, values);
+  }
+  if (!(attribute in values)) {
+    values[attribute] = element.getAttribute(attribute);
+  }
+  return values[attribute] || "";
+}
+
+function translateAttribute(element, attribute, language) {
+  if (!element.hasAttribute(attribute)) {
+    return;
+  }
+  const original = originalAttribute(element, attribute);
+  if (language === "es") {
+    element.setAttribute(attribute, original);
+    return;
+  }
+  const translated = textForLanguage(original, language);
+  if (translated) {
+    element.setAttribute(attribute, translated);
+  }
+}
+
+function translateDefaultValues(language) {
+  document.querySelectorAll("textarea").forEach((element) => {
+    if (!originalInputValues.has(element)) {
+      originalInputValues.set(element, element.value);
+    }
+    const original = originalInputValues.get(element);
+    const translated = textForLanguage(original, "en");
+    const current = normalizeI18nText(element.value);
+    const isDefaultValue = current === normalizeI18nText(original) || current === normalizeI18nText(translated);
+    if (!isDefaultValue) {
+      return;
+    }
+    element.value = language === "en" && translated ? translated : original;
+  });
+}
+
+function applyPublicBusinessLanguage(language) {
+  const copy = language === "en"
+    ? {
+        legend: "Public business details",
+        phone: "Public phone",
+        email: "Public email",
+        address: "Address",
+        hours: "Business hours",
+        map: "Map link",
+        whatsapp: "Public WhatsApp",
+        addressPlaceholder: "City, Puerto Rico",
+        hoursPlaceholder: "Monday - Friday: 8am - 5pm",
+      }
+    : {
+        legend: "Datos públicos del negocio",
+        phone: "Teléfono público",
+        email: "Email público",
+        address: "Dirección",
+        hours: "Horarios",
+        map: "Enlace de mapa",
+        whatsapp: "WhatsApp público",
+        addressPlaceholder: "Ciudad, Puerto Rico",
+        hoursPlaceholder: "Lunes - Viernes: 8am - 5pm",
+      };
+
+  const details = document.querySelector(".business-details");
+  if (!details) return;
+
+  details.querySelector("legend").textContent = copy.legend;
+  document.querySelector("#businessPhone").closest("label").querySelector("span").textContent = copy.phone;
+  document.querySelector("#businessEmail").closest("label").querySelector("span").textContent = copy.email;
+  document.querySelector("#businessAddress").closest("label").querySelector("span").textContent = copy.address;
+  document.querySelector("#businessHours").closest("label").querySelector("span").textContent = copy.hours;
+  document.querySelector("#mapLink").closest("label").querySelector("span").textContent = copy.map;
+  document.querySelector("#whatsappNumber").closest("label").querySelector("span").textContent = copy.whatsapp;
+  document.querySelector("#businessAddress").placeholder = copy.addressPlaceholder;
+  document.querySelector("#businessHours").placeholder = copy.hoursPlaceholder;
+}
+
+function translatePage(language = currentLanguage) {
+  currentLanguage = language === "en" ? "en" : "es";
+  document.documentElement.lang = currentLanguage;
+  languageButtons.forEach((button) => {
+    const isActive = button.dataset.language === currentLanguage;
+    button.setAttribute("aria-pressed", String(isActive));
+  });
+
+  try {
+    localStorage.setItem(languageStorageKey, currentLanguage);
+  } catch {
+    // Local storage can be unavailable in some browser privacy modes.
+  }
+
+  const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, {
+    acceptNode(node) {
+      const parent = node.parentElement;
+      if (!parent || ["SCRIPT", "STYLE"].includes(parent.tagName)) {
+        return NodeFilter.FILTER_REJECT;
+      }
+      return normalizeI18nText(node.nodeValue) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+    },
+  });
+
+  const nodes = [];
+  while (walker.nextNode()) {
+    nodes.push(walker.currentNode);
+  }
+  nodes.forEach((node) => translateTextNode(node, currentLanguage));
+
+  document.querySelectorAll("[placeholder], [aria-label], [alt], [title]").forEach((element) => {
+    ["placeholder", "aria-label", "alt", "title"].forEach((attribute) => translateAttribute(element, attribute, currentLanguage));
+  });
+  translateDefaultValues(currentLanguage);
+  applyPublicBusinessLanguage(currentLanguage);
+}
+
+function handleLanguageChange(event) {
+  translatePage(event.currentTarget.dataset.language);
+}
+
 const demoPresets = {
   restaurante: {
     niche: "restaurante",
@@ -904,6 +1398,10 @@ function updatePreview() {
   const extras = [
     maintenance ? "soporte mensual opcional" : null,
   ].filter(Boolean);
+  const translateInline = (text) => currentLanguage === "en"
+    ? textForLanguage(text, "en") || text
+    : text;
+  const lowerInline = (text) => translateInline(text).toLowerCase();
 
   const paymentText = payments.length
     ? payments.map((payment) => paymentLabels[payment]).join(", ")
@@ -928,7 +1426,29 @@ function updatePreview() {
     : " Datos publicos pendientes para completar contacto, mapa y WhatsApp.";
   const layoutClause = ` Plantilla de entrega ${layout.deliveryTemplateLabel.toLowerCase()}, header ${layout.headerStyleLabel.toLowerCase()} con boton "${layout.headerCtaLabel}" y footer ${layout.footerStyleLabel.toLowerCase()}.`;
   const extrasClause = extras.length ? ` Incluye ${extras.join(", ")}.` : "";
-  const summary = `${businessName} recibira una pagina ${pack.label.toLowerCase()} para ${niche.label.toLowerCase()} con estilo ${style.label.toLowerCase()}, fuente ${font.label.toLowerCase()}, colores ${primaryColor} y ${accentColor}, ${imageText}, y ${paymentText}. ${paymentClause} Incluye ${includedText}, beneficios y contacto completo.${extrasClause}${layoutClause}${contactClause} Precio sugerido: ${money(price)}. Entrega estimada: ${timelineDays}.`;
+  const englishPaymentText = payments.length
+    ? payments.map((payment) => translateInline(paymentLabels[payment])).join(", ")
+    : !currentRule().allowPaymentLinks
+      ? "no payment links because this package does not include them"
+      : noPaymentsInput.checked
+      ? "no payment links by client preference"
+      : "no linked payments";
+  const englishLayoutImageClause = currentRule().allowLayoutImages
+    ? `, ${headerImageUrl ? "header image uploaded" : "header image pending"}, ${footerImageUrl ? "footer image uploaded" : "footer image pending"}`
+    : "";
+  const englishImageText = `${heroImageUrl ? "main photo uploaded" : "main photo pending"}${englishLayoutImageClause} and ${galleryImageUrls.length} content images`;
+  const englishPaymentClause = currentRule().allowPaymentLinks
+    ? "Payments are linked to client-owned accounts through links or buttons the client manages separately."
+    : "This package does not include payment links; the client can upgrade to the Payments package if needed.";
+  const englishIncludedText = displaySections.slice(0, 3).map(translateInline).join(", ");
+  const englishContactClause = contactText
+    ? ` Public details: ${contactText}.`
+    : " Public details pending to complete contact, map, and WhatsApp.";
+  const englishLayoutClause = ` Delivery template ${lowerInline(layout.deliveryTemplateLabel)}, header ${lowerInline(layout.headerStyleLabel)} with "${translateInline(layout.headerCtaLabel)}" button, and footer ${lowerInline(layout.footerStyleLabel)}.`;
+  const englishExtrasClause = extras.length ? ` Includes ${extras.map(translateInline).join(", ")}.` : "";
+  const spanishSummary = `${businessName} recibira una pagina ${pack.label.toLowerCase()} para ${niche.label.toLowerCase()} con estilo ${style.label.toLowerCase()}, fuente ${font.label.toLowerCase()}, colores ${primaryColor} y ${accentColor}, ${imageText}, y ${paymentText}. ${paymentClause} Incluye ${includedText}, beneficios y contacto completo.${extrasClause}${layoutClause}${contactClause} Precio sugerido: ${money(price)}. Entrega estimada: ${timelineDays}.`;
+  const englishSummary = `${businessName} will receive a ${lowerInline(pack.label)} page for ${lowerInline(niche.label)} with ${lowerInline(style.label)} style, ${lowerInline(font.label)} font, colors ${primaryColor} and ${accentColor}, ${englishImageText}, and ${englishPaymentText}. ${englishPaymentClause} Includes ${englishIncludedText}, benefits, and complete contact.${englishExtrasClause}${englishLayoutClause}${englishContactClause} Suggested price: ${money(price)}. Estimated delivery: ${timelineDays}.`;
+  const summary = currentLanguage === "en" ? englishSummary : spanishSummary;
   document.querySelector("#proposalText").textContent = summary;
   syncOrderHiddenFields(summary);
 
@@ -953,6 +1473,10 @@ function updatePreview() {
     layout,
     styleKey: styleSelect.value,
   });
+
+  if (currentLanguage === "en") {
+    translatePage(currentLanguage);
+  }
 
   return summary;
 }
@@ -1401,6 +1925,7 @@ function selectDemoCard(card) {
 
 fillSelects();
 updatePreview();
+translatePage(currentLanguage);
 
 document.querySelectorAll("[data-demo-card]").forEach((card) => {
   card.addEventListener("click", (event) => {
@@ -1445,4 +1970,15 @@ document.addEventListener("keydown", (event) => {
 document.querySelectorAll("[data-copy-link]").forEach((button) => {
   button.addEventListener("click", () => copyExternalLink(button));
 });
+languageButtons.forEach((button) => {
+  button.addEventListener("click", handleLanguageChange);
+});
+
+if ("serviceWorker" in navigator && window.location.protocol !== "file:") {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./service-worker.js").catch(() => {
+      // The page still works if the browser blocks service workers.
+    });
+  });
+}
 

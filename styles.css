@@ -93,6 +93,35 @@ a {
   color: var(--ink);
 }
 
+.language-switch {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid rgba(10, 124, 255, 0.16);
+  border-radius: 999px;
+  display: inline-flex;
+  flex: 0 0 auto;
+  gap: 4px;
+  padding: 4px;
+}
+
+.language-switch button {
+  background: transparent;
+  border: 0;
+  border-radius: 999px;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-weight: 900;
+  min-height: 32px;
+  padding: 6px 10px;
+}
+
+.language-switch button[aria-pressed="true"] {
+  background: linear-gradient(135deg, var(--brand-blue), var(--brand-blue-2));
+  color: #fff;
+  box-shadow: 0 8px 18px rgba(10, 124, 255, 0.22);
+}
+
 main {
   overflow: hidden;
 }
@@ -2947,6 +2976,10 @@ button {
     padding-bottom: 4px;
     scrollbar-width: thin;
     width: 100%;
+  }
+
+  .language-switch {
+    align-self: flex-start;
   }
 
   .nav a {
