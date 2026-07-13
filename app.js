@@ -364,6 +364,8 @@ const colorInputs = ["primaryColor", "accentColor"].map((id) => document.querySe
 const maintenanceInput = document.querySelector("#maintenance");
 const screenshotModal = document.querySelector("#screenshotModal");
 const screenshotClose = document.querySelector("#screenshotClose");
+let screenshotReturnFocus = null;
+let screenshotScrollPosition = { x: 0, y: 0 };
 
 const demoPresets = {
   restaurante: {
@@ -1142,16 +1144,26 @@ function updateScreenshotPreview(state) {
 }
 
 function openScreenshotPreview() {
+  screenshotReturnFocus = document.activeElement instanceof HTMLElement
+    ? document.activeElement
+    : screenshotButton;
+  screenshotScrollPosition = {
+    x: window.scrollX,
+    y: window.scrollY,
+  };
   updatePreview();
   screenshotModal.hidden = false;
   document.body.style.overflow = "hidden";
-  screenshotClose.focus();
+  screenshotClose.focus({ preventScroll: true });
 }
 
 function closeScreenshotPreview() {
   screenshotModal.hidden = true;
   document.body.style.overflow = "";
-  screenshotButton.focus();
+  window.scrollTo(screenshotScrollPosition.x, screenshotScrollPosition.y);
+  if (screenshotReturnFocus) {
+    screenshotReturnFocus.focus({ preventScroll: true });
+  }
 }
 
 function setSelectIfAvailable(select, value) {
