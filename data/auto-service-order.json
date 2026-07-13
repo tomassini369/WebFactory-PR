@@ -1,0 +1,66 @@
+{
+  "slug": "chino-auto-style",
+  "businessName": "Chino Auto Service & More",
+  "niche": "Auto Service",
+  "tagline": "Servicio automotriz profesional en el que puedes confiar.",
+  "description": "Pagina demo para un taller con servicios visibles, beneficios de confianza, contacto completo, mapa y WhatsApp.",
+  "phone": "(787) 555-0140",
+  "email": "servicio@chinoauto.example",
+  "address": "Bayamon, Puerto Rico",
+  "hours": "Lunes - Viernes: 8am - 5pm | Sabado: 8am - 1pm",
+  "mapLink": "https://maps.google.com/",
+  "whatsapp": "17875550140",
+  "visualStyle": "Premium +",
+  "fontLabel": "Impacto comercial",
+  "fontFamily": "Impact, Haettenschweiler, Arial Narrow, sans-serif",
+  "primaryColor": "#8dff00",
+  "accentColor": "#050505",
+  "heroImage": "../../assets/builder-dashboard.png",
+  "headerImage": "../../assets/builder-dashboard.png",
+  "footerImage": "../../assets/builder-dashboard.png",
+  "galleryImages": [
+    "../../assets/builder-dashboard.png"
+  ],
+  "sections": [
+    "Diagnostico computarizado",
+    "Cambio de aceite",
+    "Frenos",
+    "Suspension",
+    "Mantenimiento preventivo",
+    "Reparacion general"
+  ],
+  "benefits": [
+    "Trabajo garantizado",
+    "Mecanicos certificados",
+    "Equipo moderno",
+    "Satisfaccion garantizada"
+  ],
+  "payments": [
+    "ATH Movil de negocio"
+  ],
+  "layout": {
+    "deliveryTemplate": "autoServiceReplica",
+    "deliveryTemplateLabel": "Premium +",
+    "headerStyle": "autoService",
+    "headerCta": "phone",
+    "headerCtaLabel": "Llamar ahora",
+    "footerStyle": "autoService",
+    "footerTagline": "Tu vehiculo en las mejores manos",
+    "facebookLink": "https://facebook.com/",
+    "instagramLink": "https://instagram.com/"
+  },
+  "items": [
+    {
+      "name": "Diagnostico computarizado",
+      "price": "Desde $45"
+    },
+    {
+      "name": "Cambio de aceite",
+      "price": "Desde $20.99"
+    },
+    {
+      "name": "Revision de frenos",
+      "price": "Cotizacion"
+    }
+  ]
+}

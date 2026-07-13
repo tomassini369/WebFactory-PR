@@ -1,0 +1,52 @@
+{
+  "slug": "boutique-luna",
+  "businessName": "Boutique Luna",
+  "niche": "Tienda local",
+  "tagline": "Catalogo visual, contacto directo y pagos opcionales.",
+  "description": "Pagina demo para una tienda local con productos destacados, colecciones, contacto por WhatsApp y botones de pago si el cliente los solicita.",
+  "phone": "(787) 555-0188",
+  "email": "ventas@boutiqueluna.example",
+  "address": "Ponce, Puerto Rico",
+  "hours": "Martes - Domingo: 10am - 6pm",
+  "mapLink": "https://maps.google.com/",
+  "whatsapp": "17875550188",
+  "visualStyle": "Vibrante comercial",
+  "fontLabel": "Redondeada friendly",
+  "fontFamily": "Trebuchet MS, Segoe UI, Arial, sans-serif",
+  "primaryColor": "#b8174c",
+  "accentColor": "#f0b429",
+  "heroImage": "../../assets/builder-dashboard.png",
+  "galleryImages": [
+    "../../assets/builder-dashboard.png"
+  ],
+  "sections": [
+    "Productos",
+    "Colecciones",
+    "Catalogo destacado",
+    "Pagos opcionales",
+    "Contacto"
+  ],
+  "benefits": [
+    "Catalogo visible",
+    "Contacto directo",
+    "Pagos opcionales",
+    "Marca local"
+  ],
+  "payments": [
+    "Stripe"
+  ],
+  "items": [
+    {
+      "name": "Nueva coleccion",
+      "price": "Disponible"
+    },
+    {
+      "name": "Accesorios",
+      "price": "Desde $12"
+    },
+    {
+      "name": "Tarjetas de regalo",
+      "price": "Disponible"
+    }
+  ]
+}

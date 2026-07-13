@@ -1,0 +1,53 @@
+{
+  "slug": "sabor-boricua",
+  "businessName": "Sabor Boricua",
+  "niche": "Restaurante",
+  "tagline": "Comida criolla, menu claro y pagos opcionales.",
+  "description": "Un restaurante local con menu claro, contacto por WhatsApp y opciones de pago para clientes de Puerto Rico.",
+  "phone": "(787) 555-0198",
+  "email": "hola@saborboricua.example",
+  "address": "San Juan, Puerto Rico",
+  "hours": "Lunes - Sabado: 11am - 8pm",
+  "mapLink": "https://maps.google.com/",
+  "whatsapp": "17875550198",
+  "visualStyle": "Moderno claro",
+  "fontLabel": "Moderna limpia",
+  "fontFamily": "Inter, Segoe UI, Arial, sans-serif",
+  "primaryColor": "#1d7c5a",
+  "accentColor": "#d96b4c",
+  "heroImage": "../../assets/builder-dashboard.png",
+  "galleryImages": [
+    "../../assets/builder-dashboard.png"
+  ],
+  "sections": [
+    "Menu del dia",
+    "Servicios",
+    "Catering",
+    "Ubicacion",
+    "Contacto"
+  ],
+  "benefits": [
+    "Menu claro",
+    "Contacto rapido",
+    "Pagos opcionales",
+    "Marca profesional"
+  ],
+  "payments": [
+    "Stripe",
+    "ATH Movil de negocio"
+  ],
+  "items": [
+    {
+      "name": "Mofongo especial",
+      "price": "$14"
+    },
+    {
+      "name": "Pernil con arroz",
+      "price": "$12"
+    },
+    {
+      "name": "Combo familiar",
+      "price": "$36"
+    }
+  ]
+}

@@ -1,0 +1,50 @@
+{
+  "slug": "consultoria-brillante",
+  "businessName": "Consultoria Brillante",
+  "niche": "Servicios profesionales",
+  "tagline": "Servicios claros, confianza y contacto directo.",
+  "description": "Pagina demo para un negocio de servicios con propuesta clara, beneficios, casos, contacto completo y llamada por WhatsApp.",
+  "phone": "(787) 555-0122",
+  "email": "hola@consultoriabrillante.example",
+  "address": "Caguas, Puerto Rico",
+  "hours": "Lunes - Viernes: 9am - 5pm",
+  "mapLink": "https://maps.google.com/",
+  "whatsapp": "17875550122",
+  "visualStyle": "Elegante profesional",
+  "fontLabel": "Editorial premium",
+  "fontFamily": "Georgia, Times New Roman, serif",
+  "primaryColor": "#223a5e",
+  "accentColor": "#c99745",
+  "heroImage": "../../assets/builder-dashboard.png",
+  "galleryImages": [
+    "../../assets/builder-dashboard.png"
+  ],
+  "sections": [
+    "Servicios",
+    "Casos",
+    "Cotizacion",
+    "Testimonios",
+    "Contacto"
+  ],
+  "benefits": [
+    "Cotizaciones claras",
+    "Confianza visual",
+    "Casos destacados",
+    "Contacto directo"
+  ],
+  "payments": [],
+  "items": [
+    {
+      "name": "Consulta inicial",
+      "price": "Disponible"
+    },
+    {
+      "name": "Plan de accion",
+      "price": "Cotizacion"
+    },
+    {
+      "name": "Seguimiento mensual",
+      "price": "Opcional"
+    }
+  ]
+}

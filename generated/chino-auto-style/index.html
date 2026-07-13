@@ -1,0 +1,680 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Chino Auto Service &amp; More | Auto Service</title>
+    <meta name="description" content="Pagina demo para un taller con servicios visibles, beneficios de confianza, contacto completo, mapa y WhatsApp." />
+    <style>
+      :root {
+        --primary: #8dff00;
+        --accent: #050505;
+        --bg: #f8f5ef;
+        --ink: #151f1b;
+        --muted: #5f6d67;
+        --line: #dce2dc;
+        --surface: #fff;
+        --font: Impact, Haettenschweiler, Arial Narrow, sans-serif;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font-family: var(--font);
+        line-height: 1.5;
+      }
+
+      body.style-automotriz {
+        --bg: #030303;
+        --ink: #ffffff;
+        --muted: #d8d8d8;
+        --line: rgba(141, 255, 0, 0.34);
+        --surface: #0a0a0a;
+        background:
+          radial-gradient(circle at 74% 10%, rgba(141, 255, 0, 0.16), transparent 26%),
+          linear-gradient(180deg, #030303, #080808 46%, #020202);
+      }
+
+      body.template-auto-service {
+        background:
+          radial-gradient(circle at 80% 16%, rgba(141, 255, 0, 0.12), transparent 24%),
+          linear-gradient(180deg, #020202, #070707 48%, #020202);
+      }
+
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+
+      header {
+        align-items: center;
+        border-bottom: 1px solid var(--line);
+        display: flex;
+        gap: 18px;
+        justify-content: space-between;
+        padding: 18px clamp(18px, 5vw, 72px);
+        position: sticky;
+        top: 0;
+        z-index: 5;
+      }
+
+      body.style-automotriz header {
+        background: rgba(5, 5, 5, 0.92);
+      }
+
+      header.header-simple {
+        position: static;
+      }
+
+      header.header-autoService {
+        background:
+          linear-gradient(90deg, rgba(0, 0, 0, 0.96), rgba(0, 0, 0, 0.74)),
+          radial-gradient(circle at 8% 50%, rgba(141, 255, 0, 0.18), transparent 28%);
+        border-bottom-color: rgba(141, 255, 0, 0.38);
+        min-height: 94px;
+      }
+
+      .brand {
+        font-weight: 900;
+      }
+
+      .header-logo-figure {
+        margin: 0;
+      }
+
+      .header-logo-figure img {
+        aspect-ratio: 16 / 9;
+        border-radius: 8px;
+        display: block;
+        height: 58px;
+        object-fit: contain;
+        width: 120px;
+      }
+
+      header.header-autoService .brand {
+        color: #fff;
+        font-family: Impact, Haettenschweiler, "Arial Narrow", sans-serif;
+        font-size: clamp(1.25rem, 3vw, 2rem);
+        text-transform: uppercase;
+      }
+
+      nav {
+        display: flex;
+        gap: 14px;
+      }
+
+      nav a {
+        color: var(--muted);
+        font-weight: 700;
+      }
+
+      header.header-autoService nav a {
+        color: #fff;
+        font-size: 0.82rem;
+        font-weight: 900;
+        text-transform: uppercase;
+      }
+
+      header.header-autoService nav a:first-child,
+      header.header-autoService nav a:hover {
+        color: var(--primary);
+      }
+
+      .header-cta {
+        background: var(--primary);
+        border-radius: 8px;
+        color: #111;
+        display: inline-flex;
+        font-weight: 900;
+        justify-content: center;
+        min-height: 42px;
+        padding: 10px 14px;
+        text-transform: uppercase;
+      }
+
+      header.header-simple .header-cta {
+        display: none;
+      }
+
+      .hero {
+        display: grid;
+        gap: 34px;
+        grid-template-columns: minmax(0, 1fr) minmax(280px, 0.8fr);
+        min-height: 72vh;
+        padding: clamp(44px, 8vw, 96px) clamp(18px, 5vw, 72px);
+      }
+
+      body.template-auto-service .hero {
+        align-items: center;
+        background:
+          linear-gradient(90deg, rgba(0, 0, 0, 0.94), rgba(0, 0, 0, 0.5)),
+          radial-gradient(circle at 78% 72%, rgba(141, 255, 0, 0.2), transparent 22%),
+          linear-gradient(135deg, #060606, #1a1a1a 58%, #050505);
+        grid-template-columns: minmax(0, 1fr) minmax(260px, 0.46fr);
+        min-height: 720px;
+      }
+
+      .hero h1 {
+        font-size: clamp(2.4rem, 6vw, 5rem);
+        line-height: 1.02;
+        margin: 0 0 18px;
+      }
+
+      body.template-auto-service .hero h1 {
+        color: var(--primary);
+        font-family: Impact, Haettenschweiler, "Arial Narrow", sans-serif;
+        font-size: clamp(3rem, 8vw, 7rem);
+        font-style: italic;
+        max-width: 900px;
+        text-shadow: 0 3px 10px rgba(0, 0, 0, 0.9);
+        text-transform: uppercase;
+      }
+
+      .hero p {
+        color: var(--muted);
+        font-size: 1.15rem;
+        max-width: 650px;
+      }
+
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-top: 28px;
+      }
+
+      .button {
+        border-radius: 8px;
+        display: inline-flex;
+        font-weight: 900;
+        justify-content: center;
+        min-height: 46px;
+        padding: 11px 16px;
+      }
+
+      .button.primary {
+        background: var(--primary);
+        color: #fff;
+      }
+
+      body.style-automotriz .button.primary {
+        color: #111;
+      }
+
+      .button.secondary {
+        border: 1px solid var(--line);
+      }
+
+      .order-panel {
+        align-self: center;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 22px;
+        box-shadow: 0 16px 50px rgba(21, 31, 27, 0.1);
+      }
+
+      body.style-automotriz .order-panel {
+        box-shadow: 0 16px 50px rgba(141, 255, 0, 0.12);
+      }
+
+      .hero-visual {
+        border-radius: 8px;
+        margin: 0 0 18px;
+        overflow: hidden;
+      }
+
+      .hero-visual img {
+        aspect-ratio: 4 / 3;
+        display: block;
+        height: 100%;
+        object-fit: cover;
+        width: 100%;
+      }
+
+      .order-panel h2,
+      .section h2 {
+        margin-top: 0;
+      }
+
+      .menu-list,
+      .section-list,
+      .payment-list {
+        display: grid;
+        gap: 10px;
+        list-style: none;
+        margin: 0;
+        padding: 0;
+      }
+
+      .menu-list li,
+      .section-list li,
+      .payment-list li {
+        align-items: center;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        display: flex;
+        justify-content: space-between;
+        padding: 12px;
+      }
+
+      .menu-list strong {
+        color: var(--primary);
+      }
+
+      .section {
+        padding: clamp(36px, 6vw, 72px) clamp(18px, 5vw, 72px);
+      }
+
+      .benefit-strip {
+        border-block: 1px solid var(--line);
+        display: grid;
+        gap: 14px;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        padding: 18px clamp(18px, 5vw, 72px);
+      }
+
+      body.template-auto-service .benefit-strip {
+        background: var(--primary);
+        border: 0;
+        color: #111;
+        margin: -34px auto 0;
+        max-width: min(1180px, calc(100% - 56px));
+        position: relative;
+        z-index: 2;
+      }
+
+      body.template-auto-service .benefit span {
+        background: #111;
+        color: var(--primary);
+      }
+
+      .benefit {
+        align-items: center;
+        display: flex;
+        gap: 10px;
+        font-weight: 900;
+        text-transform: uppercase;
+      }
+
+      .benefit span {
+        align-items: center;
+        background: var(--primary);
+        border-radius: 8px;
+        color: #111;
+        display: inline-flex;
+        height: 34px;
+        justify-content: center;
+        width: 34px;
+      }
+
+      .section-grid {
+        display: grid;
+        gap: 18px;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .gallery-grid {
+        display: grid;
+        gap: 14px;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .why-layout {
+        align-items: center;
+        display: grid;
+        gap: 30px;
+        grid-template-columns: minmax(0, 0.85fr) minmax(280px, 1fr);
+      }
+
+      .why-layout h2 {
+        color: var(--primary);
+        font-family: Impact, Haettenschweiler, "Arial Narrow", sans-serif;
+        font-style: italic;
+        text-transform: uppercase;
+      }
+
+      .why-list {
+        display: grid;
+        gap: 14px;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .gallery-grid img {
+        aspect-ratio: 4 / 3;
+        border-radius: 8px;
+        display: block;
+        object-fit: cover;
+        width: 100%;
+      }
+
+      .info-card {
+        background: #fff;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 20px;
+      }
+
+      body.style-automotriz .info-card,
+      body.style-automotriz .menu-list li,
+      body.style-automotriz .payment-list li {
+        background: rgba(10, 10, 10, 0.94);
+      }
+
+      .contact-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-top: 18px;
+      }
+
+      .contact-layout {
+        display: grid;
+        gap: 18px;
+        grid-template-columns: minmax(0, 0.9fr) minmax(280px, 1.1fr);
+      }
+
+      .contact-layout .section-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .map-box {
+        align-items: center;
+        background:
+          linear-gradient(135deg, rgba(141, 255, 0, 0.16), transparent),
+          #111;
+        border: 1px solid rgba(141, 255, 0, 0.3);
+        border-radius: 8px;
+        color: #fff;
+        display: flex;
+        font-weight: 900;
+        justify-content: center;
+        min-height: 310px;
+        padding: 20px;
+        text-align: center;
+      }
+
+      .whatsapp-float {
+        align-items: center;
+        background: #25d366;
+        border: 3px solid rgba(255, 255, 255, 0.34);
+        border-radius: 50%;
+        bottom: 18px;
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
+        color: #fff;
+        display: inline-flex;
+        font-weight: 900;
+        height: 58px;
+        justify-content: center;
+        position: fixed;
+        right: 18px;
+        width: 58px;
+        z-index: 4;
+      }
+
+      footer {
+        border-top: 1px solid var(--line);
+        color: var(--muted);
+        padding: 0;
+      }
+
+      .footer-main {
+        align-items: center;
+        display: flex;
+        justify-content: space-between;
+        gap: 18px;
+        padding: 28px clamp(18px, 5vw, 72px);
+      }
+
+      .footer-brand {
+        display: grid;
+        gap: 6px;
+      }
+
+      .footer-brand strong {
+        color: var(--ink);
+        text-transform: uppercase;
+      }
+
+      .footer-social {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      .footer-social a {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        font-weight: 800;
+        padding: 8px 10px;
+      }
+
+      .footer-bottom {
+        border-top: 1px solid var(--line);
+        display: flex;
+        justify-content: space-between;
+        gap: 14px;
+        padding: 16px clamp(18px, 5vw, 72px);
+      }
+
+      footer.footer-autoService {
+        background:
+          linear-gradient(90deg, rgba(0, 0, 0, 0.92), rgba(0, 0, 0, 0.62), rgba(0, 0, 0, 0.92)),
+          radial-gradient(circle at center, rgba(141, 255, 0, 0.16), transparent 34%);
+        border-top-color: rgba(141, 255, 0, 0.38);
+        color: #fff;
+      }
+
+      footer.has-footer-image {
+        background:
+          linear-gradient(90deg, rgba(0, 0, 0, 0.9), rgba(0, 0, 0, 0.58), rgba(0, 0, 0, 0.9)),
+          var(--footer-bg-image) center / cover no-repeat;
+      }
+
+      .footer-logo-figure {
+        margin: 0 0 10px;
+      }
+
+      .footer-logo-figure img {
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        border-radius: 8px;
+        display: block;
+        height: 82px;
+        object-fit: contain;
+        width: 170px;
+      }
+
+      footer.footer-autoService .footer-main {
+        min-height: 230px;
+      }
+
+      footer.footer-autoService .footer-brand strong {
+        color: var(--primary);
+        font-family: Impact, Haettenschweiler, "Arial Narrow", sans-serif;
+        font-size: clamp(1.8rem, 4vw, 3.5rem);
+      }
+
+      footer.footer-autoService .footer-brand span {
+        color: #fff;
+        font-size: 1.05rem;
+        font-weight: 900;
+        text-transform: uppercase;
+      }
+
+      footer.footer-autoService .footer-social a {
+        border-color: rgba(141, 255, 0, 0.32);
+        color: #fff;
+      }
+
+      @media (max-width: 800px) {
+        header,
+        .hero,
+        .section-grid,
+        .benefit-strip,
+        .why-layout,
+        .why-list,
+        .contact-layout {
+          grid-template-columns: 1fr;
+        }
+
+        header {
+          align-items: flex-start;
+          flex-direction: column;
+          gap: 10px;
+        }
+
+        nav {
+          flex-wrap: wrap;
+        }
+
+        .header-cta {
+          width: 100%;
+        }
+
+        .footer-main,
+        .footer-bottom {
+          align-items: flex-start;
+          flex-direction: column;
+        }
+      }
+
+      @media (max-width: 620px) {
+        body.template-auto-service .benefit-strip {
+          margin-top: 0;
+          max-width: 100%;
+        }
+      }
+    </style>
+  </head>
+  <body class=" template-auto-service">
+    <header class="header-autoService">
+      <figure class="header-logo-figure"><img src="../../assets/builder-dashboard.png" alt="Chino Auto Service &amp; More imagen del header" /></figure>
+      <a class="brand" href="#inicio">Chino Auto Service &amp; More</a>
+      <nav aria-label="Principal">
+        <a href="#inicio">Inicio</a>
+            <a href="#servicios">Servicios</a>
+            <a href="#nosotros">Nosotros</a>
+            <a href="#contacto">Contacto</a>
+      </nav>
+      <a class="header-cta" href="tel:7875550140">Llamar ahora</a>
+    </header>
+
+    <main id="inicio">
+      <section class="hero">
+        <div>
+          <p>Auto Service</p>
+          <h1>Servicio automotriz profesional en el que puedes confiar.</h1>
+          <p>Pagina demo para un taller con servicios visibles, beneficios de confianza, contacto completo, mapa y WhatsApp.</p>
+          <div class="actions">
+            <a class="button primary" href="tel:7875550140">Llamar ahora</a>
+            <a class="button secondary" href="https://maps.google.com/">Ver mapa</a>
+          </div>
+        </div>
+        <aside class="order-panel" id="menu">
+          <figure class="hero-visual"><img src="../../assets/builder-dashboard.png" alt="Chino Auto Service &amp; More imagen principal" /></figure>
+          <h2>Favoritos</h2>
+          <ul class="menu-list">
+            <li><span>Diagnostico computarizado</span><strong>Desde $45</strong></li>
+            <li><span>Cambio de aceite</span><strong>Desde $20.99</strong></li>
+            <li><span>Revision de frenos</span><strong>Cotizacion</strong></li>
+          </ul>
+        </aside>
+      </section>
+
+      <section class="benefit-strip" aria-label="Beneficios">
+        <article class="benefit"><span>01</span><strong>Trabajo garantizado</strong></article>
+            <article class="benefit"><span>02</span><strong>Mecanicos certificados</strong></article>
+            <article class="benefit"><span>03</span><strong>Equipo moderno</strong></article>
+            <article class="benefit"><span>04</span><strong>Satisfaccion garantizada</strong></article>
+      </section>
+
+      <section class="section" id="servicios">
+        <h2>Lo que encuentras aqui</h2>
+        <p>Estilo visual seleccionado: Premium +. Fuente seleccionada: Impacto comercial.</p>
+        <div class="section-grid">
+          <article class="info-card"><strong>Diagnostico computarizado</strong><p>Contenido listo para adaptar al negocio.</p></article>
+            <article class="info-card"><strong>Cambio de aceite</strong><p>Contenido listo para adaptar al negocio.</p></article>
+            <article class="info-card"><strong>Frenos</strong><p>Contenido listo para adaptar al negocio.</p></article>
+            <article class="info-card"><strong>Suspension</strong><p>Contenido listo para adaptar al negocio.</p></article>
+            <article class="info-card"><strong>Mantenimiento preventivo</strong><p>Contenido listo para adaptar al negocio.</p></article>
+            <article class="info-card"><strong>Reparacion general</strong><p>Contenido listo para adaptar al negocio.</p></article>
+        </div>
+      </section>
+
+      <section class="section" id="nosotros">
+        <div class="why-layout">
+          <div>
+            <p>Auto Service</p>
+            <h2>Por que escoger Chino Auto Service &amp; More</h2>
+            <p>Pagina demo para un taller con servicios visibles, beneficios de confianza, contacto completo, mapa y WhatsApp.</p>
+          </div>
+          <div class="why-list">
+            <article class="info-card"><strong>Experiencia y profesionalismo</strong><p>Texto editable segun la informacion que envie el cliente.</p></article>
+            <article class="info-card"><strong>Honestidad y transparencia</strong><p>Texto editable segun la informacion que envie el cliente.</p></article>
+            <article class="info-card"><strong>Calidad garantizada</strong><p>Texto editable segun la informacion que envie el cliente.</p></article>
+            <article class="info-card"><strong>Atencion personalizada</strong><p>Texto editable segun la informacion que envie el cliente.</p></article>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="galeria">
+        <h2>Galeria</h2>
+        <div class="gallery-grid">
+          <img src="../../assets/builder-dashboard.png" alt="Imagen 1 de Chino Auto Service &amp; More" />
+        </div>
+      </section>
+
+      <section class="section" id="pagos">
+        <h2>Botones de pago</h2>
+        <ul class="payment-list">
+          <li><span>ATH Movil de negocio</span><strong>Disponible</strong></li>
+        </ul>
+      </section>
+
+      <section class="section" id="contacto">
+        <h2>Contacto</h2>
+        <div class="contact-layout">
+          <div class="section-grid">
+            <article class="info-card"><strong>Telefono</strong><p>(787) 555-0140</p></article>
+            <article class="info-card"><strong>WhatsApp</strong><p>17875550140</p></article>
+            <article class="info-card"><strong>Email</strong><p>servicio@chinoauto.example</p></article>
+            <article class="info-card"><strong>Direccion</strong><p>Bayamon, Puerto Rico</p></article>
+            <article class="info-card"><strong>Horario</strong><p>Lunes - Viernes: 8am - 5pm | Sabado: 8am - 1pm</p></article>
+            <article class="info-card"><strong>Mapa</strong><p>Mapa conectado</p></article>
+          </div>
+          <a class="map-box" href="https://maps.google.com/" target="_blank" rel="noopener">Mapa del negocio</a>
+        </div>
+        <div class="contact-actions">
+          <a class="button primary" href="tel:7875550140">Llamar</a>
+          <a class="button secondary" href="https://wa.me/17875550140">WhatsApp</a>
+          <a class="button secondary" href="mailto:servicio@chinoauto.example">Email</a>
+          <a class="button secondary" href="https://maps.google.com/">Mapa</a>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer-autoService has-footer-image" style="--footer-bg-image: url('../../assets/builder-dashboard.png')">
+      <div class="footer-main">
+        <div class="footer-brand">
+          <figure class="footer-logo-figure"><img src="../../assets/builder-dashboard.png" alt="Chino Auto Service &amp; More imagen del footer" /></figure>
+          <strong>Chino Auto Service &amp; More</strong>
+          <span>Tu vehiculo en las mejores manos</span>
+        </div>
+        <div class="footer-social" aria-label="Redes sociales">
+          <a href="https://facebook.com/" target="_blank" rel="noopener">Facebook</a>
+            <a href="https://instagram.com/" target="_blank" rel="noopener">Instagram</a>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span>Pagina generada por WebFactory PR.</span>
+        <span>Chino Auto Service &amp; More</span>
+      </div>
+    </footer>
+    <a class="whatsapp-float" href="https://wa.me/17875550140" aria-label="Abrir WhatsApp">WA</a>
+  </body>
+</html>

@@ -75,6 +75,12 @@ const packages = {
   },
 };
 
+const packageCheckoutLinks = {
+  basica: "https://buy.stripe.com/eVq7sEeX7gWI8NKbWU4wM00",
+  pagos: "https://buy.stripe.com/14A5kw7uFfSEaVS2mk4wM01",
+  app: "https://buy.stripe.com/fZu6oA02dfSE7JG9OM4wM02",
+};
+
 const packageRules = {
   basica: {
     included: [
@@ -559,6 +565,7 @@ function getOrderData(summary = "") {
       key: packageSelect.value,
       label: pack.label,
       price: pack.price,
+      checkoutLink: selectedCheckoutLink(),
       maxGalleryImages: rule.maxGalleryImages,
       allowPaymentLinks: rule.allowPaymentLinks,
     },
@@ -590,6 +597,7 @@ function syncOrderHiddenFields(summary = "") {
   document.querySelector("#orderCreatedAt").value = data.createdAt;
   document.querySelector("#orderSummary").value = summary;
   document.querySelector("#orderJson").value = JSON.stringify(data, null, 2);
+  document.querySelector("#checkoutLink").value = data.package.checkoutLink || "";
   return data;
 }
 
@@ -1350,9 +1358,26 @@ function copyExternalLink(button) {
     .catch(markManual);
 }
 
-function handleOrderSubmit() {
+function selectedCheckoutLink() {
+  return packageCheckoutLinks[packageSelect.value] || "";
+}
+
+function handleOrderSubmit(event) {
   const summary = updatePreview();
   syncOrderHiddenFields(summary);
+  const checkoutLink = selectedCheckoutLink();
+  if (checkoutLink) {
+    const checkoutWindow = window.open(checkoutLink, "_blank");
+    if (checkoutWindow) {
+      checkoutWindow.opener = null;
+      submitOrderButton.textContent = "Abriendo pago...";
+    } else {
+      event.preventDefault();
+      submitOrderButton.textContent = "Permite abrir Stripe";
+      pulseStatus("Permite ventanas emergentes para abrir Stripe");
+    }
+    return;
+  }
   submitOrderButton.textContent = "Enviando...";
 }
 
