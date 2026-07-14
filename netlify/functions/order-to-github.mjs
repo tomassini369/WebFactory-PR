@@ -45,6 +45,8 @@ function buildIssueBody(data) {
     line("Paquete", packageInfo.label || data.package),
     line("Precio", packageInfo.price ? `$${packageInfo.price}` : ""),
     line("Checkout del paquete", packageInfo.checkoutLink || data.checkoutLink),
+    line("Estado del pago", data.paymentStatus),
+    line("Stripe Session ID", data.stripeSessionId),
     line("Notas", business.notes || data.notes),
     "",
     "## Diseno",

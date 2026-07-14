@@ -18,15 +18,76 @@
   <body>
     <main class="success-page">
       <section class="success-card">
-        <p class="eyebrow">Pedido recibido</p>
-        <h1>Gracias. Ya tenemos tu solicitud.</h1>
-        <p>
-          Revisaremos tus selecciones, imagenes e instrucciones para preparar tu pagina publicada.
-          Si elegiste pagos, recuerda que Stripe o ATH Movil de negocio se operan desde
-          las cuentas del negocio.
+        <p class="eyebrow" id="successEyebrow">Verificando pago</p>
+        <h1 id="successTitle">Estamos confirmando tu pago.</h1>
+        <p id="successMessage">
+          Mantén abierta la pestaña del configurador. Cuando Stripe confirme el pago,
+          enviaremos el pedido automaticamente con las imagenes cargadas.
         </p>
         <a class="primary-action" href="./index.html">Volver al configurador</a>
       </section>
     </main>
+    <script>
+      const paidCheckoutStorageKey = "webfactory-paid-checkout";
+      const params = new URLSearchParams(window.location.search);
+      const sessionId = params.get("session_id");
+      const eyebrow = document.querySelector("#successEyebrow");
+      const title = document.querySelector("#successTitle");
+      const message = document.querySelector("#successMessage");
+
+      function setStatus(nextEyebrow, nextTitle, nextMessage) {
+        eyebrow.textContent = nextEyebrow;
+        title.textContent = nextTitle;
+        message.textContent = nextMessage;
+      }
+
+      async function verifyPayment() {
+        if (!sessionId) {
+          setStatus(
+            "Pago no verificado",
+            "No encontramos una sesion de Stripe.",
+            "Vuelve al configurador y completa el pago desde el boton Comprar Ahora."
+          );
+          return;
+        }
+
+        try {
+          const response = await fetch(`/.netlify/functions/verify-checkout-session?session_id=${encodeURIComponent(sessionId)}`);
+          const result = await response.json();
+
+          if (!response.ok || !result.ok || !result.paid) {
+            setStatus(
+              "Pago pendiente",
+              "Stripe todavia no confirma el pago.",
+              result.message || "Si completaste el pago, espera unos segundos y recarga esta pagina."
+            );
+            return;
+          }
+
+          const payload = {
+            paid: true,
+            orderId: result.orderId,
+            sessionId: result.sessionId,
+            paymentStatus: result.paymentStatus,
+            verifiedAt: new Date().toISOString(),
+          };
+
+          localStorage.setItem(paidCheckoutStorageKey, JSON.stringify(payload));
+          setStatus(
+            "Pago confirmado",
+            "Tu pago fue confirmado.",
+            "Si dejaste abierto el configurador, el pedido se enviara automaticamente. Puedes cerrar esta pestaña cuando el configurador muestre la confirmacion."
+          );
+        } catch (error) {
+          setStatus(
+            "Error de verificacion",
+            "No pudimos comprobar el pago ahora mismo.",
+            "Revisa que las funciones de Netlify y la clave secreta de Stripe esten configuradas."
+          );
+        }
+      }
+
+      verifyPayment();
+    </script>
   </body>
 </html>

@@ -366,9 +366,13 @@ const screenshotModal = document.querySelector("#screenshotModal");
 const screenshotClose = document.querySelector("#screenshotClose");
 let screenshotReturnFocus = null;
 let screenshotScrollPosition = { x: 0, y: 0 };
+let submittingVerifiedOrder = false;
 
 const languageButtons = document.querySelectorAll("[data-language]");
 const languageStorageKey = "webfactory-language";
+const paidCheckoutStorageKey = "webfactory-paid-checkout";
+const pendingCheckoutStorageKey = "webfactory-pending-checkout";
+const submittedOrderStorageKey = "webfactory-submitted-order";
 const originalTextNodes = new WeakMap();
 const originalAttributeValues = new WeakMap();
 const originalInputValues = new WeakMap();
@@ -626,6 +630,15 @@ const translations = {
     "Abriendo pago...": "Opening payment...",
     "Permite abrir Stripe": "Allow Stripe popup",
     "Enviando...": "Sending...",
+    "Preparando pago seguro...": "Preparing secure payment...",
+    "Finaliza el pago en Stripe": "Complete payment in Stripe",
+    "Pago verificado. Enviando pedido...": "Payment verified. Sending order...",
+    "Enviando pedido...": "Sending order...",
+    "Pedido ya enviado": "Order already sent",
+    "Configura Stripe en Netlify": "Configure Stripe in Netlify",
+    "Para comprobar pagos usa la pagina publicada en Netlify.": "To verify payments, use the published Netlify page.",
+    "Permite ventanas emergentes para abrir Stripe": "Allow pop-ups to open Stripe",
+    "No se pudo preparar Stripe": "Stripe could not be prepared",
     "Copiado": "Copied",
     "Copia manual": "Manual copy",
     "Enlace copiado": "Link copied",
@@ -1898,23 +1911,160 @@ function selectedCheckoutLink() {
   return packageCheckoutLinks[packageSelect.value] || "";
 }
 
-function handleOrderSubmit(event) {
-  const summary = updatePreview();
-  syncOrderHiddenFields(summary);
-  const checkoutLink = selectedCheckoutLink();
-  if (checkoutLink) {
-    const checkoutWindow = window.open(checkoutLink, "_blank");
-    if (checkoutWindow) {
-      checkoutWindow.opener = null;
-      submitOrderButton.textContent = "Abriendo pago...";
-    } else {
-      event.preventDefault();
-      submitOrderButton.textContent = "Permite abrir Stripe";
-      pulseStatus("Permite ventanas emergentes para abrir Stripe");
-    }
+function uiText(text) {
+  return currentLanguage === "en" ? textForLanguage(text, "en") || text : text;
+}
+
+function setSubmitButtonText(text) {
+  submitOrderButton.textContent = uiText(text);
+}
+
+function readStoredJson(key) {
+  try {
+    return JSON.parse(localStorage.getItem(key) || "null");
+  } catch {
+    return null;
+  }
+}
+
+function rememberPendingCheckout(orderData, sessionId = "") {
+  try {
+    localStorage.setItem(
+      pendingCheckoutStorageKey,
+      JSON.stringify({
+        orderId: orderData.orderId,
+        packageId: packageSelect.value,
+        sessionId,
+        createdAt: new Date().toISOString(),
+      })
+    );
+  } catch {
+    // The checkout still works if storage is unavailable, but automatic return cannot.
+  }
+}
+
+function markSubmittedOrder(orderId) {
+  try {
+    localStorage.setItem(submittedOrderStorageKey, orderId);
+  } catch {
+    // Ignore storage failures; the current form submit will still continue.
+  }
+}
+
+function submittedOrderId() {
+  try {
+    return localStorage.getItem(submittedOrderStorageKey) || "";
+  } catch {
+    return "";
+  }
+}
+
+async function createCheckoutSession(orderData) {
+  const response = await fetch("/.netlify/functions/create-checkout-session", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      packageId: packageSelect.value,
+      orderData,
+    }),
+  });
+  const result = await response.json().catch(() => ({}));
+
+  if (!response.ok || !result.ok || !result.checkoutUrl) {
+    throw new Error(result.message || "No se pudo preparar Stripe");
+  }
+
+  return result;
+}
+
+async function beginVerifiedCheckout(orderData) {
+  if (window.location.protocol === "file:") {
+    throw new Error("Para comprobar pagos usa la pagina publicada en Netlify.");
+  }
+
+  const checkoutWindow = window.open("about:blank", "_blank");
+  if (!checkoutWindow) {
+    throw new Error("Permite ventanas emergentes para abrir Stripe");
+  }
+
+  checkoutWindow.opener = null;
+  setSubmitButtonText("Preparando pago seguro...");
+  checkoutWindow.document.title = "Stripe | WebFactory PR";
+  checkoutWindow.document.body.innerHTML = "<p style=\"font-family:system-ui;padding:24px\">Preparando pago seguro...</p>";
+
+  try {
+    const checkout = await createCheckoutSession(orderData);
+    rememberPendingCheckout(orderData, checkout.sessionId);
+    document.querySelector("#stripeSessionId").value = checkout.sessionId || "";
+    document.querySelector("#paymentStatus").value = "pending";
+    checkoutWindow.location.href = checkout.checkoutUrl;
+    setSubmitButtonText("Finaliza el pago en Stripe");
+    pulseStatus("Finaliza el pago en Stripe");
+  } catch (error) {
+    checkoutWindow.close();
+    throw error;
+  }
+}
+
+function submitVerifiedOrder(paymentData) {
+  const orderId = paymentData.orderId || document.querySelector("#orderId").value;
+  if (!orderId || submittedOrderId() === orderId) {
+    setSubmitButtonText("Pedido ya enviado");
+    pulseStatus("Pedido ya enviado");
     return;
   }
-  submitOrderButton.textContent = "Enviando...";
+
+  document.querySelector("#stripeSessionId").value = paymentData.sessionId || "";
+  document.querySelector("#paymentStatus").value = paymentData.paymentStatus || "paid";
+  form.dataset.paymentVerified = "true";
+  submittingVerifiedOrder = true;
+  markSubmittedOrder(orderId);
+  setSubmitButtonText("Pago verificado. Enviando pedido...");
+  pulseStatus("Pago verificado. Enviando pedido...");
+  form.submit();
+}
+
+function handleVerifiedCheckoutMessage(paymentData) {
+  if (!paymentData || !paymentData.paid) return;
+
+  const currentOrderId = document.querySelector("#orderId").value;
+  if (paymentData.orderId && currentOrderId && paymentData.orderId !== currentOrderId) {
+    return;
+  }
+
+  submitVerifiedOrder(paymentData);
+}
+
+function handleOrderSubmit(event) {
+  if (submittingVerifiedOrder || form.dataset.paymentVerified === "true") {
+    setSubmitButtonText("Enviando pedido...");
+    return;
+  }
+
+  event.preventDefault();
+
+  const currentOrderId = document.querySelector("#orderId").value;
+  if (currentOrderId && submittedOrderId() === currentOrderId) {
+    setSubmitButtonText("Pedido ya enviado");
+    pulseStatus("Pedido ya enviado");
+    return;
+  }
+
+  if (!form.checkValidity()) {
+    form.reportValidity();
+    return;
+  }
+
+  const summary = updatePreview();
+  const orderData = syncOrderHiddenFields(summary);
+
+  beginVerifiedCheckout(orderData).catch((error) => {
+    const message = error.message || "No se pudo preparar Stripe";
+    setSubmitButtonText(message.includes("Netlify") ? "Configura Stripe en Netlify" : "No se pudo preparar Stripe");
+    pulseStatus(message);
+  });
 }
 
 function selectDemoCard(card) {
@@ -1945,6 +2095,11 @@ document.querySelectorAll("[data-demo-card]").forEach((card) => {
 
 form.addEventListener("input", updatePreview);
 form.addEventListener("submit", handleOrderSubmit);
+window.addEventListener("storage", (event) => {
+  if (event.key === paidCheckoutStorageKey && event.newValue) {
+    handleVerifiedCheckoutMessage(readStoredJson(paidCheckoutStorageKey));
+  }
+});
 nicheSelect.addEventListener("change", handleNicheChange);
 packageSelect.addEventListener("change", handlePackageChange);
 styleSelect.addEventListener("change", applyStyleDefaults);

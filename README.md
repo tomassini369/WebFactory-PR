@@ -119,6 +119,30 @@ Cuando lo publiques en Netlify:
 3. Los archivos subidos por el cliente quedan en el envio original de Netlify Forms.
 4. El formulario tambien envia `orderJson`, que resume todas las selecciones del cliente.
 
+## Pago verificado antes de enviar pedido
+
+El boton `Comprar Ahora` esta preparado para no enviar el formulario hasta que Stripe confirme el pago.
+
+Flujo:
+
+1. El cliente completa el configurador.
+2. La pagina crea una sesion segura de Stripe con una Netlify Function.
+3. Stripe abre el checkout en otra pestana para conservar las imagenes cargadas en el formulario.
+4. Al pagar, Stripe vuelve a `success.html` con el `session_id`.
+5. `success.html` consulta una Netlify Function que verifica `payment_status`.
+6. Si el pago esta confirmado como `paid`, la pestana original envia el formulario `site-order`.
+
+Para activarlo necesitas configurar estas variables de entorno en Netlify:
+
+- `STRIPE_SECRET_KEY`: clave secreta de Stripe. Debe empezar con `sk_test_` para pruebas o `sk_live_` para produccion.
+- `STRIPE_PRICE_INICIO`: Price ID del paquete Inicio.
+- `STRIPE_PRICE_PROFESIONAL`: Price ID del paquete Profesional.
+- `STRIPE_PRICE_PAGOS`: Price ID del paquete Pagos.
+
+Usa Price IDs de Stripe, no enlaces `buy.stripe.com`. Los Price IDs suelen empezar con `price_`.
+
+Despues de crear o cambiar variables en Netlify, haz un deploy nuevo para que las funciones puedan leerlas.
+
 ## Convertir pedidos en GitHub Issues
 
 Inclui una funcion en `netlify/functions/order-to-github.mjs`.

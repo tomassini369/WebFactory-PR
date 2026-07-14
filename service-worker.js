@@ -1,4 +1,4 @@
-const CACHE_NAME = "webfactory-pr-v1";
+const CACHE_NAME = "webfactory-pr-v2";
 
 const STATIC_ASSETS = [
   "./",
