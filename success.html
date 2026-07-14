@@ -21,7 +21,7 @@
         <p class="eyebrow" id="successEyebrow">Verificando pago</p>
         <h1 id="successTitle">Estamos confirmando tu pago.</h1>
         <p id="successMessage">
-          Mantén abierta la pestaña del configurador. Cuando Stripe confirme el pago,
+          Manten abierta la pestana del configurador. Cuando Stripe confirme el pago,
           enviaremos el pedido automaticamente con las imagenes cargadas.
         </p>
         <a class="primary-action" href="./index.html">Volver al configurador</a>
@@ -31,6 +31,7 @@
       const paidCheckoutStorageKey = "webfactory-paid-checkout";
       const params = new URLSearchParams(window.location.search);
       const sessionId = params.get("session_id");
+      const orderSubmitted = params.get("order") === "submitted";
       const eyebrow = document.querySelector("#successEyebrow");
       const title = document.querySelector("#successTitle");
       const message = document.querySelector("#successMessage");
@@ -42,6 +43,15 @@
       }
 
       async function verifyPayment() {
+        if (orderSubmitted) {
+          setStatus(
+            "Pedido recibido",
+            "Tu pedido fue enviado correctamente.",
+            "Ya tenemos tu informacion y el pago verificado. Prepararemos tu pagina y te enviaremos el enlace publicado."
+          );
+          return;
+        }
+
         if (!sessionId) {
           setStatus(
             "Pago no verificado",
@@ -76,7 +86,7 @@
           setStatus(
             "Pago confirmado",
             "Tu pago fue confirmado.",
-            "Si dejaste abierto el configurador, el pedido se enviara automaticamente. Puedes cerrar esta pestaña cuando el configurador muestre la confirmacion."
+            "Si dejaste abierto el configurador, el pedido se enviara automaticamente. Puedes cerrar esta pestana cuando el configurador muestre la confirmacion."
           );
         } catch (error) {
           setStatus(
