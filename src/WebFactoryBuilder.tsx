@@ -276,7 +276,7 @@ function Preview({state,device}:{state:BuilderState;device:Device}) {
 }
 
 function BusinessStep({state,setState}:{state:BuilderState;setState:Dispatch<SetStateAction<BuilderState>>}) {
-  const setBusiness = (key:keyof BuilderState['business'], value:string) =>
+  const setBusiness = <K extends keyof BuilderState['business']>(key:K, value:BuilderState['business'][K]) =>
     setState((current)=>({...current,business:{...current.business,[key]:value}}))
 
   const uploadLogo = async (file?:File) => {
@@ -316,7 +316,7 @@ function BusinessStep({state,setState}:{state:BuilderState;setState:Dispatch<Set
 }
 
 function DesignStep({state,setState}:{state:BuilderState;setState:Dispatch<SetStateAction<BuilderState>>}) {
-  const setDesign = (key:keyof BuilderState['design'], value:string) =>
+  const setDesign = <K extends keyof BuilderState['design']>(key:K, value:BuilderState['design'][K]) =>
     setState((current)=>({...current,design:{...current.design,[key]:value}}))
 
   return (
