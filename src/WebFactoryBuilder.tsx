@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type CSSProperties } from 'react'
+import { useEffect, useMemo, useState, type CSSProperties, type Dispatch, type SetStateAction } from 'react'
 import './builder.css'
 
 type Language = 'es' | 'en'
@@ -275,7 +275,7 @@ function Preview({state,device}:{state:BuilderState;device:Device}) {
   )
 }
 
-function BusinessStep({state,setState}:{state:BuilderState;setState:React.Dispatch<React.SetStateAction<BuilderState>>}) {
+function BusinessStep({state,setState}:{state:BuilderState;setState:Dispatch<SetStateAction<BuilderState>>}) {
   const setBusiness = (key:keyof BuilderState['business'], value:string) =>
     setState((current)=>({...current,business:{...current.business,[key]:value}}))
 
@@ -315,7 +315,7 @@ function BusinessStep({state,setState}:{state:BuilderState;setState:React.Dispat
   )
 }
 
-function DesignStep({state,setState}:{state:BuilderState;setState:React.Dispatch<React.SetStateAction<BuilderState>>}) {
+function DesignStep({state,setState}:{state:BuilderState;setState:Dispatch<SetStateAction<BuilderState>>}) {
   const setDesign = (key:keyof BuilderState['design'], value:string) =>
     setState((current)=>({...current,design:{...current.design,[key]:value}}))
 
@@ -351,7 +351,7 @@ function DesignStep({state,setState}:{state:BuilderState;setState:React.Dispatch
   )
 }
 
-function FeaturesStep({state,setState}:{state:BuilderState;setState:React.Dispatch<React.SetStateAction<BuilderState>>}) {
+function FeaturesStep({state,setState}:{state:BuilderState;setState:Dispatch<SetStateAction<BuilderState>>}) {
   return (
     <div className="wf-step-content">
       <div className="wf-step-intro"><small>PASO 3</small><h3>Activa lo que tu negocio necesita.</h3><p>El precio permanece igual: {PRICE}.</p></div>
@@ -370,7 +370,7 @@ function FeaturesStep({state,setState}:{state:BuilderState;setState:React.Dispat
   )
 }
 
-function CatalogStep({state,setState}:{state:BuilderState;setState:React.Dispatch<React.SetStateAction<BuilderState>>}) {
+function CatalogStep({state,setState}:{state:BuilderState;setState:Dispatch<SetStateAction<BuilderState>>}) {
   const addItem = (type:ItemType) => {
     const item:CatalogItem = {
       id:createId(type),
@@ -434,7 +434,7 @@ function CatalogStep({state,setState}:{state:BuilderState;setState:React.Dispatc
   )
 }
 
-function TeamStep({state,setState}:{state:BuilderState;setState:React.Dispatch<React.SetStateAction<BuilderState>>}) {
+function TeamStep({state,setState}:{state:BuilderState;setState:Dispatch<SetStateAction<BuilderState>>}) {
   const services = state.catalog.filter((item)=>item.type==='service' && item.requiresAppointment)
   const addMember = () => setState((current)=>({...current,team:[...current.team,{id:createId('employee'),name:'Nuevo empleado',role:'Profesional',serviceIds:[]}]}))
   const update = (id:string,patch:Partial<TeamMember>) => setState((current)=>({...current,team:current.team.map((member)=>member.id===id?{...member,...patch}:member)}))
@@ -470,7 +470,7 @@ function TeamStep({state,setState}:{state:BuilderState;setState:React.Dispatch<R
   )
 }
 
-function HoursStep({state,setState}:{state:BuilderState;setState:React.Dispatch<React.SetStateAction<BuilderState>>}) {
+function HoursStep({state,setState}:{state:BuilderState;setState:Dispatch<SetStateAction<BuilderState>>}) {
   const update = (day:string,patch:Partial<DayHours>) =>
     setState((current)=>({...current,hours:{...current.hours,[day]:{...current.hours[day],...patch}}}))
 
