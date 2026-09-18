@@ -1,6 +1,6 @@
 # WebFactory PR V2 — Technical Architecture
 
-This document follows the WebFactory PR master specification. The existing logo, navy/blue/white identity, single $299.99 product, Service + Employee + Time booking model, Stripe + ATH Móvil payments, and post-payment Production Package are fixed product requirements unless explicitly changed by the owner.
+This document follows the WebFactory PR master specification. The existing logo, navy/blue/white identity, single $300 product, Service + Employee + Time booking model, Stripe + ATH Móvil payments, and post-payment Production Package are fixed product requirements unless explicitly changed by the owner.
 
 ## Frontend
 - React 19 + TypeScript.
