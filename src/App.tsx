@@ -5,7 +5,7 @@ import WebFactoryBuilder from './WebFactoryBuilder'
 
 type Language = 'es' | 'en'
 
-const PRICE = '$299.99'
+const PRICE = '$300'
 const LOGO = '/webfactory-pr-logo.png'
 
 const content = {
@@ -75,7 +75,7 @@ const features = [
 ]
 
 const faqEs = [
-  ['¿El precio cambia si activo más funciones?','No. WebFactory tiene un solo producto y el precio permanece en $299.99.'],
+  ['¿El precio cambia si activo más funciones?','No. WebFactory tiene un solo producto y el precio permanece en $300.'],
   ['¿WebFactory recibe el dinero de mis ventas?','No. Stripe y ATH Móvil se conectan a las cuentas del negocio.'],
   ['¿Puedo vender productos y también recibir citas?','Sí. El mismo website puede manejar productos, servicios, carrito y reservaciones.'],
   ['¿Cómo se evita el double booking?','La arquitectura revalida base de datos, empleado, horarios, holds y Google Calendar antes de confirmar.'],
@@ -84,7 +84,7 @@ const faqEs = [
 ]
 
 const faqEn = [
-  ['Does the price change if I enable more features?','No. WebFactory has one product and the price remains $299.99.'],
+  ['Does the price change if I enable more features?','No. WebFactory has one product and the price remains $300.'],
   ['Does WebFactory receive money from my sales?','No. Stripe and ATH Móvil connect to the business accounts.'],
   ['Can I sell products and also accept appointments?','Yes. The same website can handle products, services, cart and bookings.'],
   ['How is double booking prevented?','The architecture rechecks the database, employee, schedules, holds and Google Calendar before confirmation.'],
@@ -164,9 +164,9 @@ function App(){
 
       <section className="section white builder" id="builder"><div className="shell"><div className="builder-head"><Heading data={t.builder}/><div className="builder-price"><strong>{PRICE}</strong><span>{t.hero.once}</span></div></div><WebFactoryBuilder lang={lang}/></div></section>
 
-      <section className="section soft"><div className="shell split reverse"><div className="payments"><article className="stripe"><b>stripe</b><strong>$299.99</strong><small>Secure checkout</small></article><article className="ath"><b>ATH Móvil</b><strong>$299.99</strong><small>Business payment</small></article><span>✓ Backend verified payment</span></div><Heading data={t.payments}/></div></section>
+      <section className="section soft"><div className="shell split reverse"><div className="payments"><article className="stripe"><b>stripe</b><strong>$300</strong><small>Secure checkout</small></article><article className="ath"><b>ATH Móvil</b><strong>$300</strong><small>Business payment</small></article><span>✓ Backend verified payment</span></div><Heading data={t.payments}/></div></section>
 
-      <section className="section white" id="como-funciona"><div className="shell"><Heading data={t.how}/><div className="steps">{(lang==='es'?[['Personaliza','Configura negocio, diseño, funciones, catálogo, equipo y horarios.'],['Compra','Revisa el preview y completa el pago único de $299.99.'],['Creamos','Con pago verificado el proyecto entra al flujo de producción.'],['Revisa','Recibes un preview y una ronda de revisión.'],['Publicamos','Completamos el deployment inicial y queda listo.']]:[['Customize','Configure business, design, features, catalog, team and schedules.'],['Purchase','Review the preview and complete the one-time $299.99 payment.'],['We build','Verified payment moves the project into production.'],['Review','Receive a preview and one revision round.'],['Publish','Initial deployment is completed and ready.']]).map(([a,b],i)=><article key={a}><em>0{i+1}</em><h3>{a}</h3><p>{b}</p></article>)}</div></div></section>
+      <section className="section white" id="como-funciona"><div className="shell"><Heading data={t.how}/><div className="steps">{(lang==='es'?[['Personaliza','Configura negocio, diseño, funciones, catálogo, equipo y horarios.'],['Compra','Revisa el preview y completa el pago único de $300.'],['Creamos','Con pago verificado el proyecto entra al flujo de producción.'],['Revisa','Recibes un preview y una ronda de revisión.'],['Publicamos','Completamos el deployment inicial y queda listo.']]:[['Customize','Configure business, design, features, catalog, team and schedules.'],['Purchase','Review the preview and complete the one-time $300 payment.'],['We build','Verified payment moves the project into production.'],['Review','Receive a preview and one revision round.'],['Publish','Initial deployment is completed and ready.']]).map(([a,b],i)=><article key={a}><em>0{i+1}</em><h3>{a}</h3><p>{b}</p></article>)}</div></div></section>
 
       <section className="section soft"><div className="shell"><Heading data={t.trust}/><div className="trust">{['Responsive','Secure Payments','Employee Booking','Google Calendar','Direct Payments','Preview Before Publishing'].map((x,i)=><div key={x}><span>{['↔','✓','◉','▦','$','◫'][i]}</span><b>{x}</b></div>)}</div></div></section>
 
