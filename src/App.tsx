@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react'
+import DemoSite from './DemoSite'
+import { demoConfigs } from './demoData'
 
 type Language = 'es' | 'en'
 
@@ -62,12 +64,6 @@ const content = {
   }
 }
 
-const demos = [
-  ['Restaurant','Brisa Cocina'],['Automotive','Velocity Auto'],['Barber','Northline Barber'],
-  ['Beauty','Aura Studio'],['Wellness','Balance Room'],['Retail','Luna Market'],
-  ['Professional Services','Summit Advisory'],['Real Estate','Isla Living'],['Other','Your Business']
-]
-
 const features = [
   ['Responsive','Desktop, tablet and mobile layouts designed as one experience.'],
   ['Commerce','Products, services, item views, cart and checkout architecture.'],
@@ -120,6 +116,9 @@ function App(){
   useEffect(()=>{document.documentElement.lang=lang},[lang])
 
   const anchors=['#demos','#incluye','#builder','#como-funciona','#faq']
+  const demoMatch = window.location.pathname.match(/^\/demos\/([^/]+)\/?$/)
+
+  if (demoMatch) return <DemoSite slug={demoMatch[1]} />
 
   return <>
     <header className="header">
@@ -148,7 +147,7 @@ function App(){
 
       <section className="value" id="incluye"><div className="shell value-grid"><Heading data={t.value}/><aside><small>WEBFACTORY PREMIUM COMMERCE WEBSITE</small><strong>{PRICE}</strong><span>{t.hero.once}</span></aside></div></section>
 
-      <section className="section white" id="demos"><div className="shell"><Heading data={t.demos}/><div className="demo-grid">{demos.map(([cat,name],i)=><article className="demo" key={cat}><div className={'demo-art d'+i}><div className="demo-window"><span>{name}</span><strong>{cat}</strong><i/><i/><i/></div><div className="demo-mobile"><b>{name.slice(0,2)}</b><i/><i/></div></div><small>{cat}</small><h3>{name}</h3><a href="#builder">{lang==='es'?'Ver demo':'View demo'} ↗</a></article>)}</div></div></section>
+      <section className="section white" id="demos"><div className="shell"><Heading data={t.demos}/><div className="demo-grid">{demoConfigs.map((demo,i)=><article className="demo" key={demo.slug}><div className={'demo-art d'+i} style={{backgroundImage:`linear-gradient(180deg,rgba(11,21,41,.05),rgba(11,21,41,.4)),url(${demo.heroImage})`,backgroundSize:'cover',backgroundPosition:'center'}}><div className="demo-window"><span>{demo.name}</span><strong>{demo.category}</strong><i/><i/><i/></div><div className="demo-mobile"><b>{demo.shortName.slice(0,2)}</b><i/><i/></div></div><small>{demo.category}</small><h3>{demo.name}</h3><a href={`/demos/${demo.slug}`}>{lang==='es'?'Ver demo en vivo':'View live demo'} ↗</a></article>)}</div></div></section>
 
       <section className="section soft"><div className="shell"><Heading data={t.includes}/><div className="feature-grid">{features.map(([a,b],i)=><article key={a}><em>0{i+1}</em><h3>{a}</h3><p>{b}</p></article>)}</div></div></section>
 
