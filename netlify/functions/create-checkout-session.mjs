@@ -1,123 +1,222 @@
-const OFFICIAL_PRICE_ENV = "STRIPE_PRICE_WEBFACTORY_PREMIUM";
+import {
+  cleanText,
+  getOrder,
+  patchOrder,
+  publicBaseUrl,
+  saveOrder,
+  validEmail,
+} from "../lib/order-store.mjs";
+
 const PRODUCT_KEY = "webfactory-premium";
 const PRODUCT_LABEL = "WebFactory Premium Commerce Website";
-const OFFICIAL_PRICE_USD = "300";
+const OFFICIAL_PRICE_USD = 300;
 
-function jsonResponse(statusCode, body) {
+function env(name) {
+  return globalThis.Netlify?.env?.get(name) || "";
+}
+
+function orderIdFromDraft(draftId) {
+  return `WF-${draftId.replace(/[^a-zA-Z0-9]/g, "").slice(0, 14).toUpperCase()}`;
+}
+
+function assetRef(value, draftId) {
+  const key = cleanText(value, 700);
+  if (!key) return "";
+  return key.startsWith(`drafts/${draftId}/`) ? key : "";
+}
+
+function sanitizeOrder(payload) {
+  const draftId = cleanText(payload.draftId, 80);
+  if (!/^[a-zA-Z0-9-]{20,80}$/.test(draftId)) throw new Error("Invalid draft ID.");
+
+  const raw = payload.orderData || {};
+  const b = raw.business || {};
+  const d = raw.design || {};
+  const client = raw.client || {};
+  const catalog = Array.isArray(raw.catalog) ? raw.catalog.slice(0, 100) : [];
+  const team = Array.isArray(raw.team) ? raw.team.slice(0, 100) : [];
+  const hours = raw.hours && typeof raw.hours === "object" ? raw.hours : {};
+  const features = raw.features && typeof raw.features === "object" ? raw.features : {};
+
+  const customerEmail = cleanText(client.email || b.email, 320);
+  const customerName = cleanText(client.name || b.contactName, 180);
+  const businessName = cleanText(b.name, 180);
+
+  if (!businessName) throw new Error("Business name is required.");
+  if (!customerName) throw new Error("Customer name is required.");
+  if (!validEmail(customerEmail)) throw new Error("A valid customer email is required.");
+
+  const sanitizedCatalog = catalog.map((item, index) => ({
+    id: cleanText(item.id || `item-${index + 1}`, 120),
+    type: item.type === "service" ? "service" : "product",
+    name: cleanText(item.name, 220),
+    price: Math.max(0, Number(item.price || 0)),
+    description: cleanText(item.description, 6000),
+    requiresAppointment: Boolean(item.requiresAppointment),
+    duration: Math.max(0, Math.min(1440, Number(item.duration || 0))),
+    imageAssetKey: assetRef(item.imageAssetKey, draftId),
+    imageName: cleanText(item.imageName, 200),
+    imageType: cleanText(item.imageType, 120),
+  }));
+
+  const sanitizedTeam = team.map((member, index) => ({
+    id: cleanText(member.id || `employee-${index + 1}`, 120),
+    name: cleanText(member.name, 180),
+    role: cleanText(member.role, 180),
+    serviceIds: Array.isArray(member.serviceIds)
+      ? member.serviceIds.slice(0, 100).map((id) => cleanText(id, 120))
+      : [],
+  }));
+
+  const sanitizedFeatures = Object.fromEntries(
+    Object.entries(features)
+      .slice(0, 60)
+      .map(([key, value]) => [cleanText(key, 80), Boolean(value)]),
+  );
+
+  const sanitizedHours = Object.fromEntries(
+    Object.entries(hours)
+      .slice(0, 14)
+      .map(([day, value]) => [
+        cleanText(day, 40),
+        {
+          enabled: Boolean(value?.enabled),
+          open: cleanText(value?.open, 10),
+          close: cleanText(value?.close, 10),
+        },
+      ]),
+  );
+
+  const orderId = orderIdFromDraft(draftId);
+
   return {
-    statusCode,
-    headers: {
-      "Content-Type": "application/json",
-      "Cache-Control": "no-store",
+    orderId,
+    draftId,
+    product: {
+      key: PRODUCT_KEY,
+      name: PRODUCT_LABEL,
+      amountUsd: OFFICIAL_PRICE_USD,
+      currency: "usd",
+      pricing: "one_time",
     },
-    body: JSON.stringify(body),
+    client: {
+      name: customerName,
+      email: customerEmail,
+      phone: cleanText(client.phone || b.phone, 80),
+    },
+    business: {
+      name: businessName,
+      contactName: customerName,
+      category: cleanText(b.category, 180),
+      description: cleanText(b.description, 6000),
+      phone: cleanText(b.phone, 80),
+      whatsapp: cleanText(b.whatsapp, 80),
+      email: cleanText(b.email || customerEmail, 320),
+      mapsUrl: cleanText(b.mapsUrl, 1500),
+      instagram: cleanText(b.instagram, 300),
+      logoAssetKey: assetRef(b.logoAssetKey, draftId),
+      logoAssetName: cleanText(b.logoAssetName, 200),
+      logoAssetType: cleanText(b.logoAssetType, 120),
+    },
+    design: {
+      style: ["Modern","Luxury","Minimal","Bold"].includes(d.style) ? d.style : "Modern",
+      primary: cleanText(d.primary, 30),
+      secondary: cleanText(d.secondary, 30),
+    },
+    features: sanitizedFeatures,
+    catalog: sanitizedCatalog,
+    team: sanitizedTeam,
+    hours: sanitizedHours,
   };
 }
 
-function clean(value) {
-  return String(value || "").trim();
-}
+async function createStripeSession(order) {
+  const stripeSecretKey = env("STRIPE_SECRET_KEY");
+  const priceId = env("STRIPE_PRICE_WEBFACTORY_PREMIUM");
+  if (!stripeSecretKey || !priceId) throw new Error("Stripe is not configured.");
 
-function resolveBaseUrl(event) {
-  const configuredUrl = clean(process.env.URL || process.env.DEPLOY_PRIME_URL);
-  if (configuredUrl) return configuredUrl.replace(/\/$/, "");
-
-  const origin = clean(event.headers?.origin);
-  if (origin) return origin.replace(/\/$/, "");
-
-  const host = clean(event.headers?.host);
-  return host ? `https://${host}` : "";
-}
-
-async function createStripeCheckoutSession({ event, orderData }) {
-  const stripeSecretKey = clean(process.env.STRIPE_SECRET_KEY);
-  const priceId = clean(process.env[OFFICIAL_PRICE_ENV]);
-  const baseUrl = resolveBaseUrl(event);
-
-  if (!stripeSecretKey) {
-    throw new Error("Falta STRIPE_SECRET_KEY en las variables de entorno de Netlify.");
-  }
-
-  if (!priceId) {
-    throw new Error(`Falta ${OFFICIAL_PRICE_ENV} en las variables de entorno de Netlify.`);
-  }
-
-  if (!baseUrl) {
-    throw new Error("No se pudo determinar la URL publicada del sitio.");
-  }
-
-  const client = orderData.client || {};
-  const business = orderData.business || {};
-  const orderId = clean(orderData.orderId);
-  const clientEmail = clean(client.email);
-
-  if (!orderId) {
-    throw new Error("Falta el numero de orden.");
-  }
-
+  const baseUrl = publicBaseUrl();
   const params = new URLSearchParams();
   params.set("mode", "payment");
   params.set("success_url", `${baseUrl}/success.html?session_id={CHECKOUT_SESSION_ID}`);
   params.set("cancel_url", `${baseUrl}/#builder`);
   params.set("line_items[0][price]", priceId);
   params.set("line_items[0][quantity]", "1");
-  params.set("client_reference_id", orderId);
-  params.set("metadata[order_id]", orderId);
+  params.set("client_reference_id", order.orderId);
+  params.set("customer_email", order.client.email);
+  params.set("metadata[order_id]", order.orderId);
   params.set("metadata[product_key]", PRODUCT_KEY);
   params.set("metadata[package_id]", PRODUCT_KEY);
   params.set("metadata[package_label]", PRODUCT_LABEL);
-  params.set("metadata[official_price_usd]", OFFICIAL_PRICE_USD);
+  params.set("metadata[official_price_usd]", String(OFFICIAL_PRICE_USD));
   params.set("metadata[webfactory_version]", "v2");
-  params.set("metadata[business_name]", clean(business.name).slice(0, 450));
-  params.set("metadata[client_email]", clientEmail.slice(0, 450));
+  params.set("metadata[business_name]", order.business.name.slice(0, 450));
+  params.set("metadata[client_email]", order.client.email.slice(0, 450));
 
-  if (clientEmail) {
-    params.set("customer_email", clientEmail);
-  }
-
-  const idempotencyKey = `webfactory-${orderId}-${PRODUCT_KEY}-${priceId}`;
   const response = await fetch("https://api.stripe.com/v1/checkout/sessions", {
     method: "POST",
     headers: {
       Authorization: `Bearer ${stripeSecretKey}`,
       "Content-Type": "application/x-www-form-urlencoded",
-      "Idempotency-Key": idempotencyKey,
+      "Idempotency-Key": `webfactory-${order.orderId}-${priceId}`,
     },
     body: params,
   });
 
   const session = await response.json();
-
-  if (!response.ok) {
-    throw new Error(session?.error?.message || "Stripe no pudo crear el checkout.");
-  }
-
+  if (!response.ok) throw new Error(session?.error?.message || "Stripe could not create checkout.");
   return session;
 }
 
-export async function handler(event) {
-  if (event.httpMethod !== "POST") {
-    return jsonResponse(405, { ok: false, message: "Metodo no permitido." });
+export default async (req) => {
+  if (req.method !== "POST") return Response.json({ ok:false,message:"Method not allowed." }, { status:405 });
+
+  if (globalThis.Netlify?.context?.deploy?.context !== "production") {
+    return Response.json(
+      { ok:false,message:"Live checkout is available only on the production site." },
+      { status:409 },
+    );
   }
 
   try {
-    const payload = JSON.parse(event.body || "{}");
-    const orderData = payload.orderData || {};
-    const session = await createStripeCheckoutSession({ event, orderData });
+    const payload = await req.json();
+    const order = sanitizeOrder(payload);
+    const existing = await getOrder(order.orderId);
 
-    return jsonResponse(200, {
-      ok: true,
-      checkoutUrl: session.url,
-      sessionId: session.id,
-      orderId: orderData.orderId,
-      productKey: PRODUCT_KEY,
-      productName: PRODUCT_LABEL,
-      officialPriceUsd: OFFICIAL_PRICE_USD,
+    if (existing?.status === "PAID" || existing?.status === "EMAIL_SENT" || existing?.status === "IN_PRODUCTION") {
+      return Response.json({ ok:false,message:"This order has already been paid.",orderId:order.orderId }, { status:409 });
+    }
+
+    const now = new Date().toISOString();
+    await saveOrder({
+      ...(existing || {}),
+      ...order,
+      status: "AWAITING_PAYMENT",
+      createdAt: existing?.createdAt || now,
+      updatedAt: now,
+      productionPackageSent: Boolean(existing?.productionPackageSent),
+      customerConfirmationSent: Boolean(existing?.customerConfirmationSent),
     });
+
+    const session = await createStripeSession(order);
+    await patchOrder(order.orderId, {
+      status: "PAYMENT_PROCESSING",
+      stripeSessionId: session.id,
+      checkoutCreatedAt: now,
+    });
+
+    return Response.json({
+      ok:true,
+      checkoutUrl:session.url,
+      sessionId:session.id,
+      orderId:order.orderId,
+      productName:PRODUCT_LABEL,
+      officialPriceUsd:OFFICIAL_PRICE_USD,
+    }, { headers:{ "Cache-Control":"no-store" } });
   } catch (error) {
-    return jsonResponse(500, {
-      ok: false,
-      message: error.message || "No se pudo preparar el pago.",
-    });
+    return Response.json(
+      { ok:false,message:error?.message || "Could not prepare checkout." },
+      { status:500,headers:{ "Cache-Control":"no-store" } },
+    );
   }
-}
+};

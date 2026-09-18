@@ -94,3 +94,9 @@
 .wf-preview-page>footer a{color:rgba(255,255,255,.72);font-size:.5rem;font-weight:800}
 .wf-preview-shell.mobile .wf-preview-location{grid-template-columns:1fr}
 .wf-preview-shell.mobile .wf-preview-location iframe,.wf-preview-shell.mobile .wf-preview-map-link{min-height:175px}
+
+.wf-upload-error{display:block;color:#b44343;font-size:.65rem;line-height:1.4}
+.wf-checkout-warning{padding:11px 12px;border:1px solid #f0d8a8;border-radius:10px;background:#fff9ec;color:#795d24;font-size:.67rem;line-height:1.45}
+.wf-checkout-warning.error{border-color:#efc6c6;background:#fff4f4;color:#9d3f3f}
+.wf-checkout-placeholder button:not(:disabled){background:var(--blue);color:#fff;cursor:pointer;box-shadow:0 8px 20px rgba(60,134,246,.2)}
+.wf-checkout-placeholder button:not(:disabled):hover{transform:translateY(-1px)}

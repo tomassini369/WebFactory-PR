@@ -18,6 +18,10 @@ Netlify environment variables:
 
 - `STRIPE_SECRET_KEY` — Stripe secret key, stored only in Netlify.
 - `STRIPE_PRICE_WEBFACTORY_PREMIUM` — official Stripe Price ID for the $300 one-time WebFactory Premium product.
+- `STRIPE_WEBHOOK_SECRET` — signing secret for the production Stripe webhook.
+- `WEBFACTORY_ORDER_EMAIL` — administrative order recipient.
+- `WEBFACTORY_GMAIL_USER` — Gmail account used for transactional delivery.
+- `WEBFACTORY_GMAIL_APP_PASSWORD` — Gmail App Password stored as a Netlify secret.
 
 The checkout function never trusts a frontend price. It always reads the official Stripe Price ID from the Netlify environment.
 
@@ -25,7 +29,7 @@ The checkout function never trusts a frontend price. It always reads the officia
 
 The server creates Stripe Checkout Sessions. Payment confirmation must come from Stripe verification/webhooks, never from a success-page redirect alone.
 
-The V2 Builder currently keeps the final checkout button disabled until the complete order persistence, Production Package and post-payment workflow are connected.
+The V2 Builder checks backend readiness before enabling the final checkout. The button remains disabled until Stripe, the verified webhook and Gmail SMTP delivery are all configured.
 
 ## Current V2 stack
 
@@ -44,3 +48,15 @@ The V2 Builder currently keeps the final checkout button disabled until the comp
 Official site: https://webfactorypr.netlify.app
 
 Production branch: `main`
+
+
+## Paid-order automation
+
+1. Customer completes the Builder.
+2. Uploaded images are persisted before payment.
+3. Server stores an authoritative order and creates Stripe Checkout for exactly $300.
+4. Stripe signed webhook confirms payment.
+5. WebFactory generates the Production Package.
+6. Administrative package is sent to the configured WebFactory order email.
+7. Customer receives a separate payment/project confirmation.
+8. Order moves to IN_PRODUCTION.

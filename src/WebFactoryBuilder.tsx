@@ -13,6 +13,9 @@ type CatalogItem = {
   price: number
   description: string
   image?: string
+  imageAssetKey?: string
+  imageName?: string
+  imageType?: string
   requiresAppointment: boolean
   duration: number
 }
@@ -33,6 +36,7 @@ type DayHours = {
 type BuilderState = {
   business: {
     name: string
+    contactName: string
     category: string
     description: string
     phone: string
@@ -41,6 +45,9 @@ type BuilderState = {
     mapsUrl: string
     instagram: string
     logo?: string
+    logoAssetKey?: string
+    logoAssetName?: string
+    logoAssetType?: string
   }
   design: {
     style: BuilderStyle
@@ -56,10 +63,12 @@ type BuilderState = {
 const PRICE = '$300'
 const CATALOG_LIMIT = 100
 const STORAGE_KEY = 'webfactory-v2-builder-draft'
+const DRAFT_ID_KEY = 'webfactory-v2-draft-id'
 
 const initialState: BuilderState = {
   business: {
     name: 'Northline Studio',
+    contactName: '',
     category: 'Barber',
     description: 'Cortes modernos, grooming y reservaciones fáciles desde cualquier dispositivo.',
     phone: '(787) 555-0101',
@@ -189,6 +198,30 @@ const googleMapsEmbedUrl = (value: string) => {
     return null
   }
   return null
+}
+
+const getDraftId = () => {
+  const existing = localStorage.getItem(DRAFT_ID_KEY)
+  if (existing) return existing
+  const next = crypto.randomUUID()
+  localStorage.setItem(DRAFT_ID_KEY,next)
+  return next
+}
+
+const uploadOrderAsset = async (file:File,itemId:string) => {
+  const form = new FormData()
+  form.append('draftId',getDraftId())
+  form.append('itemId',itemId)
+  form.append('file',file)
+  const response = await fetch('/.netlify/functions/upload-order-asset',{
+    method:'POST',
+    body:form,
+  })
+  const result = await response.json()
+  if (!response.ok || !result.ok) {
+    throw new Error(result.message || 'No se pudo guardar el archivo.')
+  }
+  return result as {assetKey:string;fileName:string;contentType:string;size:number}
 }
 
 const readFile = (file: File) =>
@@ -379,19 +412,42 @@ function Preview({state,device}:{state:BuilderState;device:Device}) {
 }
 
 function BusinessStep({state,setState}:{state:BuilderState;setState:Dispatch<SetStateAction<BuilderState>>}) {
+  const [uploadingLogo,setUploadingLogo] = useState(false)
+  const [uploadError,setUploadError] = useState('')
   const setBusiness = <K extends keyof BuilderState['business']>(key:K, value:BuilderState['business'][K]) =>
     setState((current)=>({...current,business:{...current.business,[key]:value}}))
 
   const uploadLogo = async (file?:File) => {
     if (!file) return
-    const data = await readFile(file)
-    setBusiness('logo',data)
+    setUploadingLogo(true)
+    setUploadError('')
+    try {
+      const [preview,asset] = await Promise.all([
+        readFile(file),
+        uploadOrderAsset(file,'business-logo'),
+      ])
+      setState((current)=>({
+        ...current,
+        business:{
+          ...current.business,
+          logo:preview,
+          logoAssetKey:asset.assetKey,
+          logoAssetName:asset.fileName,
+          logoAssetType:asset.contentType,
+        },
+      }))
+    } catch (error) {
+      setUploadError(error instanceof Error ? error.message : 'No se pudo guardar el logo.')
+    } finally {
+      setUploadingLogo(false)
+    }
   }
 
   return (
     <div className="wf-step-content">
-      <div className="wf-step-intro"><small>PASO 1</small><h3>Cuéntanos sobre tu negocio.</h3><p>Estos datos alimentan el preview inmediatamente.</p></div>
+      <div className="wf-step-intro"><small>PASO 1</small><h3>Cuéntanos sobre tu negocio.</h3><p>Estos datos alimentan el preview y el pedido de producción.</p></div>
       <Field label="Nombre del negocio" value={state.business.name} onChange={(v)=>setBusiness('name',v)} />
+      <Field label="Nombre del cliente / contacto" value={state.business.contactName} onChange={(v)=>setBusiness('contactName',v)} placeholder="Persona responsable del pedido" />
       <label className="wf-field">
         <span>Categoría</span>
         <select value={state.business.category} onChange={(event)=>setBusiness('category',event.target.value)}>
@@ -405,7 +461,7 @@ function BusinessStep({state,setState}:{state:BuilderState;setState:Dispatch<Set
       <div className="wf-field-grid">
         <Field label="Teléfono" value={state.business.phone} onChange={(v)=>setBusiness('phone',v)} />
         <Field label="WhatsApp" value={state.business.whatsapp} onChange={(v)=>setBusiness('whatsapp',v)} />
-        <Field label="Email" type="email" value={state.business.email} onChange={(v)=>setBusiness('email',v)} />
+        <Field label="Email del cliente" type="email" value={state.business.email} onChange={(v)=>setBusiness('email',v)} />
         <Field label="Instagram" value={state.business.instagram} onChange={(v)=>setBusiness('instagram',v)} />
       </div>
       <label className="wf-field wf-maps-field">
@@ -425,10 +481,11 @@ function BusinessStep({state,setState}:{state:BuilderState;setState:Dispatch<Set
         </small>
       </label>
       <label className="wf-upload">
-        <input type="file" accept="image/*" onChange={(event)=>uploadLogo(event.target.files?.[0])} />
-        <span>{state.business.logo?'✓ Logo cargado':'Subir logo del cliente'}</span>
-        <small>PNG, JPG o WEBP · la imagen permanece durante esta sesión hasta implementar Storage</small>
+        <input type="file" accept="image/png,image/jpeg,image/webp,image/heic,image/heif" disabled={uploadingLogo} onChange={(event)=>uploadLogo(event.target.files?.[0])} />
+        <span>{uploadingLogo?'Guardando logo…':state.business.logoAssetKey?'✓ Logo guardado para el pedido':'Subir logo del cliente'}</span>
+        <small>El archivo se guarda de forma temporal para incluirlo en el Production Package después del pago.</small>
       </label>
+      {uploadError && <small className="wf-upload-error">{uploadError}</small>}
     </div>
   )
 }
@@ -519,9 +576,29 @@ function CatalogStep({state,setState}:{state:BuilderState;setState:Dispatch<SetS
     if (editingId===id) setEditingId(null)
   }
 
+  const [uploadingId,setUploadingId] = useState<string | null>(null)
+  const [uploadError,setUploadError] = useState('')
+
   const uploadImage = async (id:string,file?:File) => {
     if (!file) return
-    update(id,{image:await readFile(file)})
+    setUploadingId(id)
+    setUploadError('')
+    try {
+      const [preview,asset] = await Promise.all([
+        readFile(file),
+        uploadOrderAsset(file,id),
+      ])
+      update(id,{
+        image:preview,
+        imageAssetKey:asset.assetKey,
+        imageName:asset.fileName,
+        imageType:asset.contentType,
+      })
+    } catch (error) {
+      setUploadError(error instanceof Error ? error.message : 'No se pudo guardar la imagen.')
+    } finally {
+      setUploadingId(null)
+    }
   }
 
   return (
@@ -547,6 +624,7 @@ function CatalogStep({state,setState}:{state:BuilderState;setState:Dispatch<SetS
         ))}
         {state.catalog.length===0 && <div className="wf-empty-editor">Añade tu primer producto o servicio.</div>}
       </div>
+      {uploadError && <small className="wf-upload-error">{uploadError}</small>}
 
       {editingItem && (
         <div className="wf-builder-modal-backdrop" onMouseDown={()=>setEditingId(null)}>
@@ -557,8 +635,8 @@ function CatalogStep({state,setState}:{state:BuilderState;setState:Dispatch<SetS
             </header>
             <div className="wf-item-editor modal">
               <label className="wf-item-image">
-                <input type="file" accept="image/*" onChange={(e)=>uploadImage(editingItem.id,e.target.files?.[0])} />
-                {editingItem.image?<img src={editingItem.image} alt="" />:<span>+ Imagen</span>}
+                <input type="file" accept="image/png,image/jpeg,image/webp,image/heic,image/heif" disabled={uploadingId===editingItem.id} onChange={(e)=>uploadImage(editingItem.id,e.target.files?.[0])} />
+                {editingItem.image?<img src={editingItem.image} alt="" />:<span>{uploadingId===editingItem.id?'Guardando…':'+ Imagen'}</span>}
               </label>
               <div>
                 <Field label="Nombre" value={editingItem.name} onChange={(v)=>update(editingItem.id,{name:v})} />
@@ -638,11 +716,73 @@ function HoursStep({state,setState}:{state:BuilderState;setState:Dispatch<SetSta
 }
 
 function FinalStep({state,setStep}:{state:BuilderState;setStep:(step:number)=>void}) {
+  const [readiness,setReadiness] = useState<{ready:boolean;checks?:Record<string,boolean>} | null>(null)
+  const [checkoutError,setCheckoutError] = useState('')
+  const [checkingOut,setCheckingOut] = useState(false)
   const appointmentServices = state.catalog.filter((item)=>item.requiresAppointment)
   const enabledFeatures = Object.values(state.features).filter(Boolean).length
+  const missingUpload = Boolean(state.business.logo && !state.business.logoAssetKey) ||
+    state.catalog.some((item)=>Boolean(item.image && !item.imageAssetKey))
+  const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(state.business.email.trim())
+  const customerReady = Boolean(state.business.name.trim() && state.business.contactName.trim() && emailValid)
+  const canCheckout = Boolean(readiness?.ready && customerReady && !missingUpload && !checkingOut)
+
+  useEffect(()=>{
+    let active=true
+    fetch('/.netlify/functions/checkout-readiness',{cache:'no-store'})
+      .then((response)=>response.json())
+      .then((result)=>{ if(active) setReadiness(result) })
+      .catch(()=>{ if(active) setReadiness({ready:false}) })
+    return ()=>{active=false}
+  },[])
+
+  const startCheckout = async () => {
+    if (!canCheckout) return
+    setCheckingOut(true)
+    setCheckoutError('')
+    try {
+      const {logo,...business} = state.business
+      const catalog = state.catalog.map(({image,...item})=>item)
+      const response = await fetch('/.netlify/functions/create-checkout-session',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          draftId:getDraftId(),
+          orderData:{
+            client:{
+              name:state.business.contactName,
+              email:state.business.email,
+              phone:state.business.phone,
+            },
+            business,
+            design:state.design,
+            features:state.features,
+            catalog,
+            team:state.team,
+            hours:state.hours,
+          },
+        }),
+      })
+      const result = await response.json()
+      if(!response.ok || !result.ok || !result.checkoutUrl){
+        throw new Error(result.message || 'No se pudo iniciar Stripe Checkout.')
+      }
+      window.location.assign(result.checkoutUrl)
+    } catch (error) {
+      setCheckoutError(error instanceof Error ? error.message : 'No se pudo iniciar el checkout.')
+      setCheckingOut(false)
+    }
+  }
+
+  const readinessText = !readiness
+    ? 'Verificando configuración segura de pagos…'
+    : readiness.ready
+      ? 'Stripe está conectado. Al confirmarse el pago, WebFactory genera el Production Package y envía la orden administrativa automáticamente.'
+      : 'La automatización administrativa todavía necesita completar su configuración segura antes de aceptar pagos.'
+
   return (
     <div className="wf-step-content">
-      <div className="wf-step-intro"><small>PASO 7</small><h3>Tu configuración está lista para revisar.</h3><p>Este preview aún no está publicado y no crea una orden hasta que exista checkout verificado.</p></div>
+      <div className="wf-step-intro"><small>PASO 7</small><h3>Tu configuración está lista para revisar.</h3><p>El pedido se bloquea para producción solamente después de que Stripe confirma el pago.</p></div>
       <div className="wf-review-grid">
         <article><span>Negocio</span><strong>{state.business.name}</strong><small>{state.business.category}</small><button onClick={()=>setStep(0)}>Editar</button></article>
         <article><span>Diseño</span><strong>{state.design.style}</strong><div><i style={{background:state.design.primary}}/><i style={{background:state.design.secondary}}/></div><button onClick={()=>setStep(1)}>Editar</button></article>
@@ -651,10 +791,13 @@ function FinalStep({state,setStep}:{state:BuilderState;setStep:(step:number)=>vo
         <article><span>Equipo</span><strong>{state.team.length} empleados</strong><small>Service + Employee</small><button onClick={()=>setStep(4)}>Editar</button></article>
         <article><span>Horarios</span><strong>{Object.values(state.hours).filter((day)=>day.enabled).length} días abiertos</strong><small>Disponibilidad general</small><button onClick={()=>setStep(5)}>Editar</button></article>
       </div>
+      {!customerReady && <div className="wf-checkout-warning">Completa el nombre del cliente, nombre del negocio y un email válido antes de pagar.</div>}
+      {missingUpload && <div className="wf-checkout-warning">Hay imágenes todavía sin guardar. Vuelve a cargarlas antes del checkout para incluirlas en el pedido.</div>}
       <div className="wf-checkout-placeholder">
-        <div><small>SIGUIENTE ETAPA</small><strong>Checkout seguro — {PRICE}</strong><span>La conexión real a Stripe/ATH Móvil se implementa en la fase de pagos. El Builder ya entrega la configuración necesaria.</span></div>
-        <button disabled>Continuar al checkout</button>
+        <div><small>SIGUIENTE ETAPA</small><strong>Checkout seguro — {PRICE}</strong><span>{readinessText}</span></div>
+        <button disabled={!canCheckout} onClick={startCheckout}>{checkingOut?'Preparando orden…':'Continuar al checkout'}</button>
       </div>
+      {checkoutError && <div className="wf-checkout-warning error">{checkoutError}</div>}
     </div>
   )
 }
@@ -714,6 +857,7 @@ export default function WebFactoryBuilder({lang}:{lang:Language}) {
     if (!window.confirm(lang==='es'?'¿Reiniciar la configuración del Builder?':'Reset Builder configuration?')) return
     setState(initialState)
     localStorage.removeItem(STORAGE_KEY)
+    localStorage.removeItem(DRAFT_ID_KEY)
     setStep(0)
   }
 
