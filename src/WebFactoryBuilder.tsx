@@ -588,7 +588,7 @@ export default function WebFactoryBuilder({lang}:{lang:Language}) {
       const persistentState = {
         ...state,
         business: {...state.business,logo:undefined},
-        catalog: state.catalog.map(({image,...item})=>item),
+        catalog: state.catalog.map((item)=>({...item,image:undefined})),
       }
       localStorage.setItem(STORAGE_KEY,JSON.stringify(persistentState))
       setSaved(true)
