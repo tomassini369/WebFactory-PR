@@ -68,7 +68,10 @@ function DemoSite({ slug }: { slug: string }) {
   const [selectedEmployee, setSelectedEmployee] = useState('')
   const [selectedDate, setSelectedDate] = useState('')
   const [selectedTime, setSelectedTime] = useState('')
-  const [bookingConfirmed, setBookingConfirmed] = useState(false)
+  const [bookingStage, setBookingStage] = useState<'selection' | 'checkout' | 'verified' | 'confirmed'>('selection')
+  const [bookingPaymentMethod, setBookingPaymentMethod] = useState<'stripe' | 'ath'>('stripe')
+  const [bookingCustomerName, setBookingCustomerName] = useState('Demo Customer')
+  const [bookingCustomerEmail, setBookingCustomerEmail] = useState('demo@example.com')
   const [checkoutComplete, setCheckoutComplete] = useState(false)
 
   const subtotal = useMemo(
@@ -128,7 +131,10 @@ function DemoSite({ slug }: { slug: string }) {
     setSelectedEmployee('')
     setSelectedDate('')
     setSelectedTime('')
-    setBookingConfirmed(false)
+    setBookingStage('selection')
+    setBookingPaymentMethod('stripe')
+    setBookingCustomerName('Demo Customer')
+    setBookingCustomerEmail('demo@example.com')
   }
 
   const employeesForBooking = bookingItem?.employees?.length
@@ -136,6 +142,24 @@ function DemoSite({ slug }: { slug: string }) {
         bookingItem.employees?.some((name) => employee.name.startsWith(name)),
       )
     : config.employees
+
+  const bookingCharge = bookingItem ? (bookingItem.deposit ?? bookingItem.price) : 0
+  const bookingRequiresPayment = bookingCharge > 0
+  const bookingPaymentLabel = bookingItem?.deposit
+    ? `Deposit · ${money(bookingCharge)}`
+    : bookingRequiresPayment
+      ? `Full payment · ${money(bookingCharge)}`
+      : 'No payment required'
+
+  const continueDemoBooking = () => {
+    if (!selectedDate || !selectedTime || (employeesForBooking.length > 0 && !selectedEmployee)) return
+    setBookingStage(bookingRequiresPayment ? 'checkout' : 'verified')
+  }
+
+  const verifyDemoPayment = () => {
+    if (!bookingCustomerName.trim() || !bookingCustomerEmail.trim()) return
+    setBookingStage('verified')
+  }
 
   return (
     <div className="demo-site" style={styles}>
@@ -397,12 +421,26 @@ function DemoSite({ slug }: { slug: string }) {
         <div className="demo-modal-backdrop" role="presentation" onMouseDown={() => setBookingItem(null)}>
           <article className="demo-booking-modal" role="dialog" aria-modal="true" onMouseDown={(event) => event.stopPropagation()}>
             <button className="demo-modal-close" onClick={() => setBookingItem(null)}>×</button>
-            {!bookingConfirmed ? (
+
+            <div className="demo-booking-progress" aria-label="Demo booking progress">
+              {[
+                ['selection','Select'],
+                ['checkout','Checkout'],
+                ['verified','Verify'],
+                ['confirmed','Confirmed'],
+              ].map(([stage,label],index) => {
+                const order = ['selection','checkout','verified','confirmed']
+                const current = order.indexOf(bookingStage)
+                return <span key={stage} className={index <= current ? 'active' : ''}><b>{index + 1}</b>{label}</span>
+              })}
+            </div>
+
+            {bookingStage === 'selection' && (
               <>
                 <header>
                   <small>DEMO BOOKING</small>
                   <h2>{bookingItem.name}</h2>
-                  <p>{bookingItem.duration ? `${bookingItem.duration} min` : 'Appointment'}{bookingItem.deposit ? ` · ${money(bookingItem.deposit)} deposit` : ''}</p>
+                  <p>{bookingItem.duration ? `${bookingItem.duration} min` : 'Appointment'} · {bookingPaymentLabel}</p>
                 </header>
 
                 {employeesForBooking.length > 0 && (
@@ -441,7 +479,7 @@ function DemoSite({ slug }: { slug: string }) {
 
                 {selectedTime && (
                   <div className="demo-hold">
-                    <span>Temporary booking hold</span>
+                    <span>Temporary booking hold · demo only</span>
                     <strong>10:00</strong>
                   </div>
                 )}
@@ -449,25 +487,92 @@ function DemoSite({ slug }: { slug: string }) {
                 <button
                   className="demo-solid demo-confirm-booking"
                   disabled={!selectedDate || !selectedTime || (employeesForBooking.length > 0 && !selectedEmployee)}
-                  onClick={() => setBookingConfirmed(true)}
+                  onClick={continueDemoBooking}
                 >
-                  Confirm demo booking
+                  {bookingRequiresPayment ? 'Continue to demo checkout' : 'Continue · no payment required'}
                 </button>
-                <small className="demo-safe-note">This is an interactive demonstration. No real calendar event, charge or appointment is created.</small>
+                <small className="demo-safe-note">Demo mode only · this hold does not block any real calendar slot.</small>
               </>
-            ) : (
+            )}
+
+            {bookingStage === 'checkout' && (
+              <div className="demo-booking-checkout">
+                <header>
+                  <small>DEMO CHECKOUT</small>
+                  <h2>Complete the booking flow.</h2>
+                  <p>No real payment information is requested or transmitted.</p>
+                </header>
+
+                <div className="demo-booking-order">
+                  <span><b>Service</b><strong>{bookingItem.name}</strong></span>
+                  <span><b>Professional</b><strong>{selectedEmployee === 'any' ? 'Any available professional' : selectedEmployee}</strong></span>
+                  <span><b>Date & time</b><strong>{selectedDate} · {selectedTime}</strong></span>
+                  <span><b>{bookingItem.deposit ? 'Deposit due' : 'Amount due'}</b><strong>{money(bookingCharge)}</strong></span>
+                </div>
+
+                <div className="demo-customer-grid">
+                  <label><span>Name</span><input value={bookingCustomerName} onChange={(event)=>setBookingCustomerName(event.target.value)} /></label>
+                  <label><span>Email</span><input type="email" value={bookingCustomerEmail} onChange={(event)=>setBookingCustomerEmail(event.target.value)} /></label>
+                </div>
+
+                <section className="demo-payment-step">
+                  <strong>Choose simulated payment method</strong>
+                  <div className="demo-payment-options booking">
+                    <button className={bookingPaymentMethod === 'stripe' ? 'selected' : ''} onClick={() => setBookingPaymentMethod('stripe')}>Stripe</button>
+                    <button className={bookingPaymentMethod === 'ath' ? 'selected' : ''} onClick={() => setBookingPaymentMethod('ath')}>ATH Móvil</button>
+                  </div>
+                </section>
+
+                <div className="demo-hold">
+                  <span>Temporary booking hold · demo only</span>
+                  <strong>10:00</strong>
+                </div>
+
+                <div className="demo-booking-actions">
+                  <button className="demo-outline" onClick={() => setBookingStage('selection')}>← Back</button>
+                  <button className="demo-solid" disabled={!bookingCustomerName.trim() || !bookingCustomerEmail.trim()} onClick={verifyDemoPayment}>Simulate approved payment →</button>
+                </div>
+                <small className="demo-safe-note">No card, ATH transaction, charge, booking record or calendar event is created.</small>
+              </div>
+            )}
+
+            {bookingStage === 'verified' && (
+              <div className="demo-booking-verified">
+                <span>✓</span>
+                <small>{bookingRequiresPayment ? 'DEMO PAYMENT VERIFIED' : 'NO PAYMENT REQUIRED'}</small>
+                <h2>Ready to confirm the booking.</h2>
+                <p>The demo now simulates the final backend checks that a real WebFactory site would perform.</p>
+                <div>
+                  <b>✓ Service + employee + time revalidated</b>
+                  <b>✓ Temporary hold still active</b>
+                  {bookingRequiresPayment ? <b>✓ {bookingPaymentMethod === 'stripe' ? 'Stripe' : 'ATH Móvil'} payment verified (demo)</b> : <b>✓ Payment step skipped</b>}
+                  <b>✓ Calendar conflict check passed (demo)</b>
+                </div>
+                <button className="demo-solid" onClick={() => setBookingStage('confirmed')}>Confirm demo booking →</button>
+                <small className="demo-safe-note">These checks are visual simulation only. No external service is contacted.</small>
+              </div>
+            )}
+
+            {bookingStage === 'confirmed' && (
               <div className="demo-booking-confirmed">
                 <span>✓</span>
                 <small>DEMO CONFIRMED</small>
                 <h2>Booking experience complete.</h2>
                 <p>{bookingItem.name} · {selectedDate} · {selectedTime}</p>
                 <b>{selectedEmployee && selectedEmployee !== 'any' ? selectedEmployee : 'Any available professional'}</b>
+                <div className="demo-confirmation-receipt">
+                  <span>Booking status <b>CONFIRMED · DEMO</b></span>
+                  <span>Payment <b>{bookingRequiresPayment ? 'VERIFIED · DEMO' : 'NOT REQUIRED'}</b></span>
+                  <span>Calendar <b>EVENT READY · DEMO</b></span>
+                </div>
                 <button className="demo-outline" onClick={() => setBookingItem(null)}>Done</button>
+                <small className="demo-safe-note">No real appointment, payment, email or calendar event was created.</small>
               </div>
             )}
           </article>
         </div>
       )}
+
     </div>
   )
 }
