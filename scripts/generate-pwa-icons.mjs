@@ -7,7 +7,7 @@ const background = { r: 255, g: 255, b: 255, alpha: 1 }
 
 await mkdir(outputDir, { recursive: true })
 
-async function makeIcon(size, filename, safeScale = 0.84) {
+async function makeIcon(size, filename, safeScale = 0.72) {
   const innerWidth = Math.round(size * safeScale)
   const innerHeight = Math.round(size * safeScale)
 
@@ -33,10 +33,12 @@ async function makeIcon(size, filename, safeScale = 0.84) {
 }
 
 await Promise.all([
-  makeIcon(180, 'apple-touch-icon.png', 0.86),
-  makeIcon(192, 'icon-192.png', 0.86),
-  makeIcon(512, 'icon-512.png', 0.86),
-  makeIcon(512, 'icon-maskable-512.png', 0.68),
+  // Match the approved Home Screen reference: white tile + centered official logo
+  // with generous whitespace. iOS applies the rounded-square mask itself.
+  makeIcon(180, 'apple-touch-icon.png', 0.72),
+  makeIcon(192, 'icon-192.png', 0.72),
+  makeIcon(512, 'icon-512.png', 0.72),
+  makeIcon(512, 'icon-maskable-512.png', 0.58),
 ])
 
 console.log('Generated WebFactoryPR PWA icons from the official logo.')
