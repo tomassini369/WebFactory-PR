@@ -53,7 +53,7 @@ type BuilderState = {
   hours: Record<string, DayHours>
 }
 
-const PRICE = '$299.99'
+const PRICE = '$300'
 const CATALOG_LIMIT = 100
 const STORAGE_KEY = 'webfactory-v2-builder-draft'
 
