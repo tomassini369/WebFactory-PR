@@ -33,6 +33,33 @@ type DayHours = {
   close: string
 }
 
+type PaymentConfiguration = {
+  methods: {
+    stripe: boolean
+    ath: boolean
+    inPerson: boolean
+  }
+  stripe: {
+    connection: 'connect'
+    accountStatus: 'new' | 'existing'
+    checkoutExperience: 'hosted'
+    settlementCurrency: 'usd'
+    dynamicPaymentMethods: true
+  }
+  ath: {
+    accountStatus: 'needs_account' | 'active'
+    publicPath: string
+  }
+  inPerson: {
+    instructions: string
+  }
+  productPayment: 'online' | 'in_person'
+  bookingPayment: 'full' | 'deposit' | 'in_person'
+  bookingDepositPercent: number
+  sendCustomerReceipt: boolean
+  allowTips: boolean
+}
+
 type BuilderState = {
   business: {
     name: string
@@ -58,6 +85,7 @@ type BuilderState = {
   catalog: CatalogItem[]
   team: TeamMember[]
   hours: Record<string, DayHours>
+  payments: PaymentConfiguration
 }
 
 const PRICE = '$300'
@@ -93,6 +121,7 @@ const initialState: BuilderState = {
     maps: true,
     stripe: true,
     ath: true,
+    inPersonPayments: true,
     bookings: true,
     calendar: true,
   },
@@ -133,6 +162,23 @@ const initialState: BuilderState = {
     Sábado: { enabled: true, open: '10:00', close: '15:00' },
     Domingo: { enabled: false, open: '10:00', close: '15:00' },
   },
+  payments: {
+    methods: { stripe: true, ath: true, inPerson: true },
+    stripe: {
+      connection: 'connect',
+      accountStatus: 'new',
+      checkoutExperience: 'hosted',
+      settlementCurrency: 'usd',
+      dynamicPaymentMethods: true,
+    },
+    ath: { accountStatus: 'needs_account', publicPath: '' },
+    inPerson: { instructions: 'Paga al recibir el producto o al completar el servicio.' },
+    productPayment: 'online',
+    bookingPayment: 'deposit',
+    bookingDepositPercent: 25,
+    sendCustomerReceipt: true,
+    allowTips: false,
+  },
 }
 
 const categories = ['Restaurant','Automotive','Barber','Beauty','Wellness','Retail','Professional Services','Real Estate','Other']
@@ -147,8 +193,6 @@ const featureLabels: Record<string,string> = {
   social: 'Redes sociales',
   form: 'Formulario',
   maps: 'Google Maps',
-  stripe: 'Stripe',
-  ath: 'ATH Móvil',
   bookings: 'Reservaciones',
   calendar: 'Google Calendar',
 }
@@ -715,6 +759,71 @@ function HoursStep({state,setState}:{state:BuilderState;setState:Dispatch<SetSta
   )
 }
 
+function PaymentsStep({state,setState}:{state:BuilderState;setState:Dispatch<SetStateAction<BuilderState>>}) {
+  const payments = state.payments
+  const setMethod = (method:keyof PaymentConfiguration['methods'], value:boolean) => {
+    setState((current)=>({
+      ...current,
+      features:{
+        ...current.features,
+        ...(method==='stripe'?{stripe:value}:{}),
+        ...(method==='ath'?{ath:value}:{}),
+        ...(method==='inPerson'?{inPersonPayments:value}:{}),
+      },
+      payments:{...current.payments,methods:{...current.payments.methods,[method]:value}},
+    }))
+  }
+  const patchPayments = (patch:Partial<PaymentConfiguration>) =>
+    setState((current)=>({...current,payments:{...current.payments,...patch}}))
+
+  return (
+    <div className="wf-step-content">
+      <div className="wf-step-intro"><small>PASO 7</small><h3>Configura cómo cobrará el negocio.</h3><p>El dinero de las ventas irá directamente a las cuentas del cliente. Nunca solicites contraseñas ni claves secretas aquí.</p></div>
+
+      <div className="wf-payment-methods">
+        <article className={payments.methods.stripe?'selected':''}>
+          <Toggle label="Stripe Connect" checked={payments.methods.stripe} onChange={(value)=>setMethod('stripe',value)} />
+          <p>Tarjetas y métodos elegibles se mostrarán dinámicamente mediante Stripe Checkout.</p>
+          {payments.methods.stripe && <>
+            <label className="wf-field"><span>Cuenta Stripe</span><select value={payments.stripe.accountStatus} onChange={(event)=>patchPayments({stripe:{...payments.stripe,accountStatus:event.target.value as 'new'|'existing'}})}><option value="new">Necesito crear una cuenta</option><option value="existing">Ya tengo una cuenta Stripe</option></select></label>
+            <small className="wf-secure-note">Después del pago recibirás un enlace privado para conectar o crear la cuenta directamente con Stripe.</small>
+          </>}
+        </article>
+
+        <article className={payments.methods.ath?'selected':''}>
+          <Toggle label="ATH Móvil Business" checked={payments.methods.ath} onChange={(value)=>setMethod('ath',value)} />
+          <p>Para clientes en Puerto Rico con una cuenta ATH Móvil Business administrada por el negocio.</p>
+          {payments.methods.ath && <>
+            <label className="wf-field"><span>Estado de la cuenta</span><select value={payments.ath.accountStatus} onChange={(event)=>patchPayments({ath:{...payments.ath,accountStatus:event.target.value as 'needs_account'|'active'}})}><option value="needs_account">Necesito crear/configurarla</option><option value="active">Ya está activa</option></select></label>
+            <Field label="pATH público del negocio (opcional)" value={payments.ath.publicPath} onChange={(value)=>patchPayments({ath:{...payments.ath,publicPath:value}})} placeholder="Ej. /MiNegocio" />
+            <small className="wf-secure-note">No introduzcas usuario, contraseña, llave API ni información bancaria.</small>
+          </>}
+        </article>
+
+        <article className={payments.methods.inPerson?'selected':''}>
+          <Toggle label="Pago presencial" checked={payments.methods.inPerson} onChange={(value)=>setMethod('inPerson',value)} />
+          <p>Permite reservar o realizar una orden y pagar directamente en el establecimiento.</p>
+          {payments.methods.inPerson && <label className="wf-field"><span>Instrucciones para el cliente</span><textarea rows={3} value={payments.inPerson.instructions} onChange={(event)=>patchPayments({inPerson:{instructions:event.target.value}})} /></label>}
+        </article>
+      </div>
+
+      <div className="wf-payment-rules">
+        <label className="wf-field"><span>Pago de productos</span><select value={payments.productPayment} onChange={(event)=>patchPayments({productPayment:event.target.value as 'online'|'in_person'})}><option value="online">Pago online requerido</option><option value="in_person" disabled={!payments.methods.inPerson}>Pagar al recoger / presencial</option></select></label>
+        <label className="wf-field"><span>Pago de reservaciones</span><select value={payments.bookingPayment} onChange={(event)=>patchPayments({bookingPayment:event.target.value as 'full'|'deposit'|'in_person'})}><option value="full">Pago completo para confirmar</option><option value="deposit">Depósito para confirmar</option><option value="in_person" disabled={!payments.methods.inPerson}>Reservar y pagar presencial</option></select></label>
+        {payments.bookingPayment==='deposit' && <label className="wf-field"><span>Depósito requerido</span><select value={payments.bookingDepositPercent} onChange={(event)=>patchPayments({bookingDepositPercent:Number(event.target.value)})}>{[10,20,25,30,50].map((value)=><option key={value} value={value}>{value}%</option>)}</select></label>}
+      </div>
+
+      <div className="wf-payment-extras">
+        <Toggle label="Enviar recibo al comprador" checked={payments.sendCustomerReceipt} onChange={(value)=>patchPayments({sendCustomerReceipt:value})} />
+        <Toggle label="Permitir propinas" checked={payments.allowTips} onChange={(value)=>patchPayments({allowTips:value})} />
+      </div>
+
+      {!payments.methods.stripe && !payments.methods.ath && !payments.methods.inPerson && <div className="wf-checkout-warning">Selecciona al menos un método de pago para el website del negocio.</div>}
+      <div className="wf-hours-note"><strong>Configuración segura</strong><span>Stripe Connect recopilará identidad, banco y datos fiscales en sus propias pantallas. ATH Móvil se completará durante producción. Los secretos nunca se guardan en el Production Package.</span></div>
+    </div>
+  )
+}
+
 function FinalStep({state,setStep}:{state:BuilderState;setStep:(step:number)=>void}) {
   const [readiness,setReadiness] = useState<{ready:boolean;checks?:Record<string,boolean>} | null>(null)
   const [checkoutError,setCheckoutError] = useState('')
@@ -725,7 +834,8 @@ function FinalStep({state,setStep}:{state:BuilderState;setStep:(step:number)=>vo
     state.catalog.some((item)=>Boolean(item.image && !item.imageAssetKey))
   const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(state.business.email.trim())
   const customerReady = Boolean(state.business.name.trim() && state.business.contactName.trim() && emailValid)
-  const canCheckout = Boolean(readiness?.ready && customerReady && !missingUpload && !checkingOut)
+  const paymentReady = Object.values(state.payments.methods).some(Boolean)
+  const canCheckout = Boolean(readiness?.ready && customerReady && paymentReady && !missingUpload && !checkingOut)
 
   useEffect(()=>{
     let active=true
@@ -760,6 +870,7 @@ function FinalStep({state,setStep}:{state:BuilderState;setStep:(step:number)=>vo
             catalog,
             team:state.team,
             hours:state.hours,
+            payments:state.payments,
           },
         }),
       })
@@ -782,7 +893,7 @@ function FinalStep({state,setStep}:{state:BuilderState;setStep:(step:number)=>vo
 
   return (
     <div className="wf-step-content">
-      <div className="wf-step-intro"><small>PASO 7</small><h3>Tu configuración está lista para revisar.</h3><p>El pedido se bloquea para producción solamente después de que Stripe confirma el pago.</p></div>
+      <div className="wf-step-intro"><small>PASO 8</small><h3>Tu configuración está lista para revisar.</h3><p>El pedido se bloquea para producción solamente después de que Stripe confirma el pago.</p></div>
       <div className="wf-review-grid">
         <article><span>Negocio</span><strong>{state.business.name}</strong><small>{state.business.category}</small><button onClick={()=>setStep(0)}>Editar</button></article>
         <article><span>Diseño</span><strong>{state.design.style}</strong><div><i style={{background:state.design.primary}}/><i style={{background:state.design.secondary}}/></div><button onClick={()=>setStep(1)}>Editar</button></article>
@@ -790,8 +901,10 @@ function FinalStep({state,setStep}:{state:BuilderState;setStep:(step:number)=>vo
         <article><span>Catálogo</span><strong>{state.catalog.length} items</strong><small>{appointmentServices.length} con booking</small><button onClick={()=>setStep(3)}>Editar</button></article>
         <article><span>Equipo</span><strong>{state.team.length} empleados</strong><small>Service + Employee</small><button onClick={()=>setStep(4)}>Editar</button></article>
         <article><span>Horarios</span><strong>{Object.values(state.hours).filter((day)=>day.enabled).length} días abiertos</strong><small>Disponibilidad general</small><button onClick={()=>setStep(5)}>Editar</button></article>
+        <article><span>Pagos del website</span><strong>{Object.values(state.payments.methods).filter(Boolean).length} métodos</strong><small>{state.payments.bookingPayment==='deposit'?`${state.payments.bookingDepositPercent}% depósito para citas`:state.payments.bookingPayment}</small><button onClick={()=>setStep(6)}>Editar</button></article>
       </div>
       {!customerReady && <div className="wf-checkout-warning">Completa el nombre del cliente, nombre del negocio y un email válido antes de pagar.</div>}
+      {!paymentReady && <div className="wf-checkout-warning">Selecciona al menos un método de pago para la página del negocio.</div>}
       {missingUpload && <div className="wf-checkout-warning">Hay imágenes todavía sin guardar. Vuelve a cargarlas antes del checkout para incluirlas en el pedido.</div>}
       <div className="wf-checkout-placeholder">
         <div><small>SIGUIENTE ETAPA</small><strong>Checkout seguro — {PRICE}</strong><span>{readinessText}</span></div>
@@ -822,6 +935,14 @@ export default function WebFactoryBuilder({lang}:{lang:Language}) {
         design: {...initialState.design,...parsed.design},
         features: {...initialState.features,...parsed.features},
         hours: {...initialState.hours,...parsed.hours},
+        payments: {
+          ...initialState.payments,
+          ...parsed.payments,
+          methods: {...initialState.payments.methods,...parsed.payments?.methods},
+          stripe: {...initialState.payments.stripe,...parsed.payments?.stripe},
+          ath: {...initialState.payments.ath,...parsed.payments?.ath},
+          inPerson: {...initialState.payments.inPerson,...parsed.payments?.inPerson},
+        },
       }
     } catch {
       return initialState
@@ -848,8 +969,8 @@ export default function WebFactoryBuilder({lang}:{lang:Language}) {
   },[state])
 
   const labels = lang==='es'
-    ? ['Negocio','Diseño','Funciones','Catálogo','Equipo','Horarios','Preview']
-    : ['Business','Design','Features','Catalog','Team','Hours','Preview']
+    ? ['Negocio','Diseño','Funciones','Catálogo','Equipo','Horarios','Pagos','Preview']
+    : ['Business','Design','Features','Catalog','Team','Hours','Payments','Preview']
 
   const completion = useMemo(()=>Math.round(((step+1)/labels.length)*100),[step,labels.length])
 
@@ -868,6 +989,7 @@ export default function WebFactoryBuilder({lang}:{lang:Language}) {
     <CatalogStep key="catalog" state={state} setState={setState}/>,
     <TeamStep key="team" state={state} setState={setState}/>,
     <HoursStep key="hours" state={state} setState={setState}/>,
+    <PaymentsStep key="payments" state={state} setState={setState}/>,
     <FinalStep key="preview" state={state} setStep={setStep}/>,
   ][step]
 

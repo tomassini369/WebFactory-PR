@@ -37,6 +37,8 @@ function sanitizeOrder(payload) {
   const team = Array.isArray(raw.team) ? raw.team.slice(0, 100) : [];
   const hours = raw.hours && typeof raw.hours === "object" ? raw.hours : {};
   const features = raw.features && typeof raw.features === "object" ? raw.features : {};
+  const payments = raw.payments && typeof raw.payments === "object" ? raw.payments : {};
+  const methods = payments.methods && typeof payments.methods === "object" ? payments.methods : {};
 
   const customerEmail = cleanText(client.email || b.email, 320);
   const customerName = cleanText(client.name || b.contactName, 180);
@@ -87,6 +89,44 @@ function sanitizeOrder(payload) {
       ]),
   );
 
+  const sanitizedPayments = {
+    methods: {
+      stripe: Boolean(methods.stripe),
+      ath: Boolean(methods.ath),
+      inPerson: Boolean(methods.inPerson),
+    },
+    stripe: {
+      connection: "connect",
+      accountStatus: payments.stripe?.accountStatus === "existing" ? "existing" : "new",
+      checkoutExperience: "hosted",
+      settlementCurrency: "usd",
+      dynamicPaymentMethods: true,
+    },
+    ath: {
+      accountStatus: payments.ath?.accountStatus === "active" ? "active" : "needs_account",
+      publicPath: cleanText(payments.ath?.publicPath, 120),
+    },
+    inPerson: {
+      instructions: cleanText(payments.inPerson?.instructions, 1000),
+    },
+    productPayment: payments.productPayment === "in_person" && methods.inPerson ? "in_person" : "online",
+    bookingPayment: ["full", "deposit", "in_person"].includes(payments.bookingPayment)
+      ? payments.bookingPayment
+      : "full",
+    bookingDepositPercent: [10,20,25,30,50].includes(Number(payments.bookingDepositPercent))
+      ? Number(payments.bookingDepositPercent)
+      : 25,
+    sendCustomerReceipt: payments.sendCustomerReceipt !== false,
+    allowTips: Boolean(payments.allowTips),
+  };
+
+  if (!Object.values(sanitizedPayments.methods).some(Boolean)) {
+    throw new Error("At least one website payment method is required.");
+  }
+  if (sanitizedPayments.bookingPayment === "in_person" && !sanitizedPayments.methods.inPerson) {
+    sanitizedPayments.bookingPayment = "full";
+  }
+
   const orderId = orderIdFromDraft(draftId);
 
   return {
@@ -127,6 +167,7 @@ function sanitizeOrder(payload) {
     catalog: sanitizedCatalog,
     team: sanitizedTeam,
     hours: sanitizedHours,
+    payments: sanitizedPayments,
   };
 }
 

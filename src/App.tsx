@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import DemoSite from './DemoSite'
 import { demoConfigs } from './demoData'
 import WebFactoryBuilder from './WebFactoryBuilder'
+import PaymentSetupPage from './PaymentSetupPage'
 
 type Language = 'es' | 'en'
 
@@ -118,7 +119,9 @@ function App(){
 
   const anchors=['#demos','#incluye','#builder','#como-funciona','#faq']
   const demoMatch = window.location.pathname.match(/^\/demos\/([^/]+)\/?$/)
+  const paymentSetupRoute = /^\/payment-setup\/?$/.test(window.location.pathname)
 
+  if (paymentSetupRoute) return <PaymentSetupPage />
   if (demoMatch) return <DemoSite slug={demoMatch[1]} />
 
   return <>

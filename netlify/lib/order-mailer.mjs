@@ -2,6 +2,7 @@ import crypto from "node:crypto";
 import nodemailer from "nodemailer";
 import { createSummaryPdf } from "./production-package.mjs";
 import { getOrder, packageStore, patchOrder, publicBaseUrl } from "./order-store.mjs";
+import { createPaymentSetupAccess } from "./payment-setup.mjs";
 
 const ZIP_ATTACHMENT_LIMIT = 12 * 1024 * 1024;
 
@@ -27,6 +28,11 @@ function adminText(order, packageLink, attachedZip) {
   const catalog = Array.isArray(order.catalog) ? order.catalog : [];
   const team = Array.isArray(order.team) ? order.team : [];
   const bookingCount = catalog.filter((item) => item.requiresAppointment).length;
+  const paymentMethods = [
+    order.payments?.methods?.stripe ? "Stripe Connect" : "",
+    order.payments?.methods?.ath ? "ATH Movil Business" : "",
+    order.payments?.methods?.inPerson ? "Pago presencial" : "",
+  ].filter(Boolean);
 
   return [
     "WebFactory — Nuevo proyecto pagado",
@@ -57,6 +63,9 @@ function adminText(order, packageLink, attachedZip) {
     `Catalog items: ${catalog.length}`,
     `Booking-enabled services: ${bookingCount}`,
     `Employees: ${team.length}`,
+    `Client website payment methods: ${paymentMethods.join(", ") || "None"}`,
+    `Product payment rule: ${order.payments?.productPayment || "online"}`,
+    `Booking payment rule: ${order.payments?.bookingPayment || "full"}`,
     "",
     `Production Package: ${attachedZip ? "attached to this email" : packageLink}`,
     `Package version: ${order.packageVersion || 1}`,
@@ -66,7 +75,15 @@ function adminText(order, packageLink, attachedZip) {
   ].join("\n");
 }
 
-function customerText(order) {
+function customerText(order, paymentSetupLink) {
+  const paymentLines = paymentSetupLink ? [
+    "",
+    "CONFIGURACIÓN DE PAGOS DE TU WEBSITE",
+    "Usa este enlace privado para continuar la configuración de los métodos seleccionados:",
+    paymentSetupLink,
+    "El enlace expira en 30 días. Stripe recopilará directamente cualquier dato bancario, fiscal o de identidad.",
+    "WebFactory nunca te pedirá contraseñas, códigos de seguridad ni llaves secretas por email.",
+  ] : [];
   return [
     `Hola ${order.client?.name || ""},`,
     "",
@@ -75,6 +92,7 @@ function customerText(order) {
     `Negocio: ${order.business?.name || ""}`,
     "",
     "Tu proyecto ha entrado a producción. Revisaremos la configuración y los archivos suministrados para preparar el website.",
+    ...paymentLines,
     "",
     "Este correo confirma el pago y la recepción de tu proyecto. No incluye archivos internos ni prompts de producción.",
     "",
@@ -188,11 +206,13 @@ export async function sendOrderEmails(order) {
   }
 
   if (!current.customerConfirmationSent && current.client?.email) {
+    const setupAccess = createPaymentSetupAccess();
+    const paymentSetupLink = `${baseUrl}/payment-setup?orderId=${encodeURIComponent(current.orderId)}&token=${encodeURIComponent(setupAccess.token)}`;
     const customerInfo = await tx.sendMail({
       from: `WebFactory PR <${fromUser}>`,
       to: current.client.email,
       subject: `WebFactory PR — Pago confirmado — ${current.orderId}`,
-      text: customerText(current),
+      text: customerText(current, paymentSetupLink),
       headers: {
         "X-WebFactory-Order-ID": current.orderId,
       },
@@ -202,6 +222,9 @@ export async function sendOrderEmails(order) {
       customerConfirmationSent: true,
       customerConfirmationMessageId: customerInfo.messageId,
       customerConfirmationSentAt: new Date().toISOString(),
+      paymentSetupTokenHash: setupAccess.tokenHash,
+      paymentSetupExpiresAt: setupAccess.expiresAt,
+      paymentSetupLinkSentAt: new Date().toISOString(),
     });
   }
 

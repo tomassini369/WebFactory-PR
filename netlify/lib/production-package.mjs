@@ -8,7 +8,7 @@ import {
   safeFileName,
 } from "./order-store.mjs";
 
-const PACKAGE_VERSION = 1;
+const PACKAGE_VERSION = 2;
 const DOWNLOAD_DAYS = 7;
 
 function asMoney(value) {
@@ -31,6 +31,7 @@ function requirementText(order) {
   const features = order.features || {};
   const team = Array.isArray(order.team) ? order.team : [];
   const hours = order.hours || {};
+  const payments = order.payments || {};
 
   return [
     "WEBFACTORY CLIENT REQUIREMENTS",
@@ -75,9 +76,108 @@ function requirementText(order) {
         `${day}: ${value?.enabled ? `${value.open} - ${value.close}` : "Closed"}`,
     ),
     "",
+    "PAYMENTS FOR THE CLIENT WEBSITE",
+    `Stripe Connect: ${payments.methods?.stripe ? "enabled" : "disabled"}`,
+    `ATH Movil Business: ${payments.methods?.ath ? "enabled" : "disabled"}`,
+    `In-person payment: ${payments.methods?.inPerson ? "enabled" : "disabled"}`,
+    `Product payment rule: ${payments.productPayment || "online"}`,
+    `Booking payment rule: ${payments.bookingPayment || "full"}`,
+    `Booking deposit: ${payments.bookingPayment === "deposit" ? `${payments.bookingDepositPercent || 25}%` : "not applicable"}`,
+    `Customer receipts: ${payments.sendCustomerReceipt === false ? "disabled" : "enabled"}`,
+    `Tips: ${payments.allowTips ? "enabled" : "disabled"}`,
+    "",
     "IMPORTANT",
     "Use only information supplied by the customer. Do not invent addresses, phone numbers, prices, certifications, reviews, services, employees, history, guarantees, claims, or business facts.",
   ].join("\n");
+}
+
+function paymentSettings(order) {
+  const payments = order.payments || {};
+  return {
+    architecture: "BUSINESS-OWNED PAYMENTS",
+    merchantOfRecord: "CLIENT BUSINESS",
+    methods: {
+      stripe: {
+        enabled: Boolean(payments.methods?.stripe),
+        connection: "Stripe Connect",
+        chargePattern: "direct charges",
+        dashboard: "full",
+        feesCollector: "stripe",
+        lossesCollector: "stripe",
+        checkoutExperience: "Stripe-hosted Checkout",
+        dynamicPaymentMethods: true,
+        accountStatusAtOrder: payments.stripe?.accountStatus || "new",
+      },
+      athMovilBusiness: {
+        enabled: Boolean(payments.methods?.ath),
+        accountStatusAtOrder: payments.ath?.accountStatus || "needs_account",
+        publicPath: payments.ath?.publicPath || "",
+      },
+      inPerson: {
+        enabled: Boolean(payments.methods?.inPerson),
+        instructions: payments.inPerson?.instructions || "",
+      },
+    },
+    rules: {
+      productPayment: payments.productPayment || "online",
+      bookingPayment: payments.bookingPayment || "full",
+      bookingDepositPercent: payments.bookingPayment === "deposit"
+        ? Number(payments.bookingDepositPercent || 25)
+        : null,
+      sendCustomerReceipt: payments.sendCustomerReceipt !== false,
+      allowTips: Boolean(payments.allowTips),
+    },
+    security: {
+      frontendPricesAuthoritative: false,
+      webhookVerificationRequired: true,
+      secretsIncludedInPackage: false,
+      note: "Never request or store passwords, bank details, Stripe secret keys, ATH credentials, or verification codes in this package.",
+    },
+  };
+}
+
+function paymentSetupChecklist(order) {
+  const settings = paymentSettings(order);
+  const lines = [
+    "WEBFACTORY PAYMENT SETUP CHECKLIST",
+    "",
+    "The client business owns the customer relationship and receives funds directly.",
+    "Do not place secret credentials in source code, email, or this Production Package.",
+    "",
+  ];
+  if (settings.methods.stripe.enabled) lines.push(
+    "STRIPE CONNECT",
+    "- Customer completes the private Stripe-hosted onboarding link.",
+    "- Confirm merchant card_payments capability is active before accepting live payments.",
+    "- Use direct charges and Stripe-hosted Checkout with dynamic payment methods.",
+    "- Configure and verify a signed webhook for the published client website.",
+    "- Keep all restricted/secret keys server-side only.",
+    "",
+  );
+  if (settings.methods.athMovilBusiness.enabled) lines.push(
+    "ATH MOVIL BUSINESS",
+    "- Confirm the client has an active ATH Movil Business account.",
+    "- Confirm the public pATH/business identifier and approved ecommerce option.",
+    "- Add credentials only to the deployed website's secret store during production.",
+    "- Verify every payment server-side before confirming an order or booking.",
+    "",
+  );
+  if (settings.methods.inPerson.enabled) lines.push(
+    "IN-PERSON PAYMENT",
+    `- Customer-facing instructions: ${settings.methods.inPerson.instructions || "Not supplied"}`,
+    "- Mark these orders/bookings as payment due, never as paid.",
+    "- Staff must record payment completion from the administrative workflow.",
+    "",
+  );
+  lines.push(
+    "PAYMENT RULES",
+    `- Products: ${settings.rules.productPayment}`,
+    `- Bookings: ${settings.rules.bookingPayment}`,
+    `- Deposit: ${settings.rules.bookingDepositPercent ?? "not applicable"}`,
+    `- Receipts: ${settings.rules.sendCustomerReceipt ? "enabled" : "disabled"}`,
+    `- Tips: ${settings.rules.allowTips ? "enabled" : "disabled"}`,
+  );
+  return lines.join("\n");
 }
 
 function buildPrompt(order) {
@@ -275,6 +375,8 @@ export async function ensureProductionPackage(order) {
     "08_BUSINESS/social-links.json",
     JSON.stringify({ instagram: order.business?.instagram || "" }, null, 2),
   );
+  zip.file("09_PAYMENTS/payment-settings.json", JSON.stringify(paymentSettings(order), null, 2));
+  zip.file("09_PAYMENTS/PAYMENT_SETUP_CHECKLIST.txt", paymentSetupChecklist(order));
 
   if (order.business?.logoAssetKey) {
     const ext = safeFileName(order.business.logoAssetName || "client-logo.png").split(".").pop() || "png";

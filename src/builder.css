@@ -100,3 +100,7 @@
 .wf-checkout-warning.error{border-color:#efc6c6;background:#fff4f4;color:#9d3f3f}
 .wf-checkout-placeholder button:not(:disabled){background:var(--blue);color:#fff;cursor:pointer;box-shadow:0 8px 20px rgba(60,134,246,.2)}
 .wf-checkout-placeholder button:not(:disabled):hover{transform:translateY(-1px)}
+
+/* Payment configuration */
+.wf-payment-methods{display:grid;gap:10px}.wf-payment-methods>article{padding:13px;display:grid;gap:10px;border:1px solid var(--line);border-radius:13px;background:#fbfdff}.wf-payment-methods>article.selected{border-color:#a8c9f3;background:#f4f9ff}.wf-payment-methods>article>p{margin:0;color:#6f7d8f;font-size:.65rem;line-height:1.5}.wf-payment-methods .wf-toggle{width:100%}.wf-secure-note{color:#607086;font-size:.6rem;line-height:1.45}.wf-payment-rules{padding:13px;display:grid;grid-template-columns:1fr 1fr;gap:10px;border:1px solid var(--line);border-radius:13px;background:#fff}.wf-payment-rules .wf-field:last-child:nth-child(3){grid-column:1/-1}.wf-payment-extras{display:grid;grid-template-columns:1fr 1fr;gap:8px}.wf-payment-extras .wf-toggle{width:100%}
+@media(max-width:560px){.wf-payment-rules,.wf-payment-extras{grid-template-columns:1fr}.wf-payment-rules .wf-field:last-child:nth-child(3){grid-column:auto}}
