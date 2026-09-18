@@ -60,3 +60,8 @@ Production branch: `main`
 6. Administrative package is sent to the configured WebFactory order email.
 7. Customer receives a separate payment/project confirmation.
 8. Order moves to IN_PRODUCTION.
+
+
+## Production runtime readiness
+
+Checkout readiness is evaluated server-side. A production deploy must have the Stripe secret, official Stripe price, Stripe webhook signing secret, order destination email, Gmail sender account and Gmail App Password available to Netlify Functions before the Builder enables the live $300 checkout.
