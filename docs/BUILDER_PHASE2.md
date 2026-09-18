@@ -38,3 +38,9 @@ This phase does not persist to the production database yet. Browser localStorage
 Checkout is intentionally disabled until the payment architecture is implemented. No frontend state can mark an order paid.
 
 Real booking availability, temporary holds, Google Calendar conflict checks and webhooks remain future approved phases.
+
+
+## Google Maps location
+The Business step now uses a real Google Maps URL instead of a manually typed address.
+
+Accepted examples include google.com/maps links and maps.app.goo.gl share links. The Builder validates that the URL belongs to Google Maps. The Live Preview links directly to the supplied real location. When the URL exposes coordinates or an embeddable query, the preview also renders an embedded Google map. Short share links remain clickable and open the exact Google Maps destination.
