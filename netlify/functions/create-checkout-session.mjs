@@ -1,14 +1,7 @@
-const packagePriceEnv = {
-  basica: "STRIPE_PRICE_INICIO",
-  pagos: "STRIPE_PRICE_PROFESIONAL",
-  app: "STRIPE_PRICE_PAGOS",
-};
-
-const packageLabels = {
-  basica: "Inicio",
-  pagos: "Profesional",
-  app: "Pagos",
-};
+const OFFICIAL_PRICE_ENV = "STRIPE_PRICE_WEBFACTORY_PREMIUM";
+const PRODUCT_KEY = "webfactory-premium";
+const PRODUCT_LABEL = "WebFactory Premium Commerce Website";
+const OFFICIAL_PRICE_USD = "300";
 
 function jsonResponse(statusCode, body) {
   return {
@@ -36,10 +29,9 @@ function resolveBaseUrl(event) {
   return host ? `https://${host}` : "";
 }
 
-async function createStripeCheckoutSession({ event, orderData, packageId }) {
+async function createStripeCheckoutSession({ event, orderData }) {
   const stripeSecretKey = clean(process.env.STRIPE_SECRET_KEY);
-  const priceEnvName = packagePriceEnv[packageId];
-  const priceId = clean(process.env[priceEnvName]);
+  const priceId = clean(process.env[OFFICIAL_PRICE_ENV]);
   const baseUrl = resolveBaseUrl(event);
 
   if (!stripeSecretKey) {
@@ -47,7 +39,7 @@ async function createStripeCheckoutSession({ event, orderData, packageId }) {
   }
 
   if (!priceId) {
-    throw new Error(`Falta ${priceEnvName} en las variables de entorno de Netlify.`);
+    throw new Error(`Falta ${OFFICIAL_PRICE_ENV} en las variables de entorno de Netlify.`);
   }
 
   if (!baseUrl) {
@@ -66,13 +58,16 @@ async function createStripeCheckoutSession({ event, orderData, packageId }) {
   const params = new URLSearchParams();
   params.set("mode", "payment");
   params.set("success_url", `${baseUrl}/success.html?session_id={CHECKOUT_SESSION_ID}`);
-  params.set("cancel_url", `${baseUrl}/index.html#configurador`);
+  params.set("cancel_url", `${baseUrl}/#builder`);
   params.set("line_items[0][price]", priceId);
   params.set("line_items[0][quantity]", "1");
   params.set("client_reference_id", orderId);
   params.set("metadata[order_id]", orderId);
-  params.set("metadata[package_id]", packageId);
-  params.set("metadata[package_label]", packageLabels[packageId] || packageId);
+  params.set("metadata[product_key]", PRODUCT_KEY);
+  params.set("metadata[package_id]", PRODUCT_KEY);
+  params.set("metadata[package_label]", PRODUCT_LABEL);
+  params.set("metadata[official_price_usd]", OFFICIAL_PRICE_USD);
+  params.set("metadata[webfactory_version]", "v2");
   params.set("metadata[business_name]", clean(business.name).slice(0, 450));
   params.set("metadata[client_email]", clientEmail.slice(0, 450));
 
@@ -80,7 +75,7 @@ async function createStripeCheckoutSession({ event, orderData, packageId }) {
     params.set("customer_email", clientEmail);
   }
 
-  const idempotencyKey = `webfactory-${orderId}-${packageId}-${priceId}`;
+  const idempotencyKey = `webfactory-${orderId}-${PRODUCT_KEY}-${priceId}`;
   const response = await fetch("https://api.stripe.com/v1/checkout/sessions", {
     method: "POST",
     headers: {
@@ -107,20 +102,17 @@ export async function handler(event) {
 
   try {
     const payload = JSON.parse(event.body || "{}");
-    const packageId = clean(payload.packageId);
     const orderData = payload.orderData || {};
-
-    if (!packagePriceEnv[packageId]) {
-      return jsonResponse(400, { ok: false, message: "Paquete no valido." });
-    }
-
-    const session = await createStripeCheckoutSession({ event, orderData, packageId });
+    const session = await createStripeCheckoutSession({ event, orderData });
 
     return jsonResponse(200, {
       ok: true,
       checkoutUrl: session.url,
       sessionId: session.id,
       orderId: orderData.orderId,
+      productKey: PRODUCT_KEY,
+      productName: PRODUCT_LABEL,
+      officialPriceUsd: OFFICIAL_PRICE_USD,
     });
   } catch (error) {
     return jsonResponse(500, {
