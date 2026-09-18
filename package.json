@@ -11,7 +11,11 @@
   },
   "dependencies": {
     "react": "19.3.0",
-    "react-dom": "19.3.0"
+    "react-dom": "19.3.0",
+    "@netlify/blobs": "^10.0.0",
+    "jszip": "^3.10.1",
+    "nodemailer": "^7.0.6",
+    "pdf-lib": "^1.17.1"
   },
   "devDependencies": {
     "@types/react": "^19.2.0",
