@@ -46,3 +46,12 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid rgb
   .heading h2{font-size:clamp(2.25rem,12vw,3.6rem)}.hero{padding-top:70px}.hero h1{font-size:clamp(3rem,15vw,4.45rem)}.hero h3{font-size:1.35rem}.actions .btn{width:100%}.langs button{width:32px}.devices{min-height:405px}.desktop-device{width:92%}.tablet-device{width:34%;left:0;bottom:10px;min-height:210px;padding:12px 9px}.phone-device{width:24%;right:0;min-height:190px;padding:12px 9px}.screen-hero{min-height:200px;padding:28px 22px}.screen-cards i{height:55px}.demo-grid,.feature-grid,.trust{grid-template-columns:1fr}.feature-grid article{min-height:210px}.service-stack{min-height:425px}.service-stack article{width:86%}.service-stack article:nth-child(2){width:72%}.employees article:first-child{transform:none}.employees article{grid-template-columns:48px 1fr}.employees article i{grid-column:2;justify-self:start}.builder-ui{border-radius:20px}.builder-body{display:block}.builder-body>aside{padding:10px;flex-direction:row;overflow-x:auto;border-right:0;border-bottom:1px solid var(--line)}.builder-body>aside button{flex:0 0 auto;min-width:110px}.builder-body>section{padding:18px}.live{margin:0 14px 14px}.live>div{min-height:195px;padding:25px}.builder-actions{align-items:stretch;flex-direction:column}.builder-actions .btn{width:100%}.builder-actions>span{line-height:1.6}.payments{min-height:335px}.payments article{width:78%}.steps{grid-template-columns:1fr;border:0;gap:10px}.steps article,.steps article:nth-child(n){min-height:225px;border:1px solid var(--line);border-radius:18px}.faq{gap:38px}.final>.shell{width:calc(100% - 28px);min-height:465px;padding:36px 26px}.footer nav{gap:12px 18px}
 }
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition-duration:.01ms!important;animation-duration:.01ms!important}}
+
+@media (display-mode: standalone){
+  html,body{background:#F3F6FB}
+  body{padding-bottom:env(safe-area-inset-bottom)}
+  .header{top:calc(12px + env(safe-area-inset-top));margin-top:calc(12px + env(safe-area-inset-top))}
+}
+@media (display-mode: standalone) and (max-width:820px){
+  .header{top:calc(8px + env(safe-area-inset-top));margin-top:calc(8px + env(safe-area-inset-top))}
+}
