@@ -54,6 +54,7 @@ type BuilderState = {
 }
 
 const PRICE = '$299.99'
+const CATALOG_LIMIT = 100
 const STORAGE_KEY = 'webfactory-v2-builder-draft'
 
 const initialState: BuilderState = {
@@ -185,7 +186,12 @@ function Field({label,value,onChange,placeholder,type='text'}:{
 }
 
 function Preview({state,device}:{state:BuilderState;device:Device}) {
+  const [catalogOpen,setCatalogOpen] = useState(false)
+  const [selectedItem,setSelectedItem] = useState<CatalogItem | null>(null)
   const appointments = state.catalog.filter((item)=>item.type==='service' && item.requiresAppointment)
+  const visibleCatalog = state.catalog.filter((item)=>
+    item.type==='product' ? state.features.products : state.features.services
+  )
   const style = {
     '--preview-primary': state.design.primary,
     '--preview-secondary': state.design.secondary,
@@ -201,8 +207,7 @@ function Preview({state,device}:{state:BuilderState;device:Device}) {
           </div>
           <nav>
             <span>Inicio</span>
-            {state.features.services && <span>Servicios</span>}
-            {state.features.products && <span>Shop</span>}
+            {(state.features.services || state.features.products) && <button className="wf-preview-catalog-link" onClick={()=>setCatalogOpen(true)}>Catálogo</button>}
             {state.features.bookings && <button>Reservar</button>}
           </nav>
         </header>
@@ -212,31 +217,17 @@ function Preview({state,device}:{state:BuilderState;device:Device}) {
           <h3>{state.business.name || 'Tu negocio'}</h3>
           <p>{state.business.description || 'Describe aquí lo que hace especial a tu negocio.'}</p>
           <div>
-            {state.features.bookings && <button>Reservar ahora</button>}
+            {(state.features.products || state.features.services) && <button onClick={()=>setCatalogOpen(true)}>Ver productos y servicios</button>}
+            {state.features.bookings && <button className="ghost">Reservar ahora</button>}
             {state.features.whatsapp && <button className="ghost">WhatsApp</button>}
           </div>
         </section>
 
-        <section className="wf-preview-catalog">
-          <div className="wf-preview-title">
-            <small>{state.features.products && state.features.services ? 'PRODUCTOS + SERVICIOS' : state.features.services ? 'SERVICIOS' : 'PRODUCTOS'}</small>
-            <strong>Explora lo que ofrecemos.</strong>
-          </div>
-          <div className="wf-preview-items">
-            {state.catalog.length === 0 ? (
-              <div className="wf-preview-empty">Añade productos o servicios desde Catálogo.</div>
-            ) : state.catalog.slice(0,6).map((item) => (
-              <article key={item.id}>
-                {item.image ? <img src={item.image} alt="" /> : <div className="wf-preview-placeholder">{item.type==='service'?'SERVICE':'PRODUCT'}</div>}
-                <div>
-                  <small>{item.type}</small>
-                  <strong>{item.name || 'Sin nombre'}</strong>
-                  <span>${Number(item.price || 0).toFixed(2)}</span>
-                  {item.requiresAppointment && <em>{item.duration} min · Booking</em>}
-                </div>
-              </article>
-            ))}
-          </div>
+        <section className="wf-preview-catalog-gateway">
+          <small>CATÁLOGO</small>
+          <strong>{visibleCatalog.length} productos y servicios disponibles</strong>
+          <p>El catálogo permanece oculto para mantener la página limpia. El cliente lo abre solamente cuando desea explorar.</p>
+          <button onClick={()=>setCatalogOpen(true)}>Abrir catálogo →</button>
         </section>
 
         {state.features.bookings && appointments.length > 0 && (
@@ -270,6 +261,44 @@ function Preview({state,device}:{state:BuilderState;device:Device}) {
           <span>{state.business.phone}</span>
           <span>{state.business.address}</span>
         </footer>
+
+        {catalogOpen && (
+          <div className="wf-preview-modal-backdrop" onMouseDown={()=>setCatalogOpen(false)}>
+            <section className="wf-preview-catalog-window" onMouseDown={(event)=>event.stopPropagation()}>
+              <header>
+                <div><small>CATÁLOGO</small><strong>Productos y servicios</strong></div>
+                <button onClick={()=>setCatalogOpen(false)}>×</button>
+              </header>
+              <div className="wf-preview-modal-items">
+                {visibleCatalog.length===0 ? (
+                  <div className="wf-preview-empty">No hay productos o servicios activos en el preview.</div>
+                ) : visibleCatalog.map((item)=>(
+                  <button key={item.id} className="wf-preview-modal-card" onClick={()=>setSelectedItem(item)}>
+                    {item.image ? <img src={item.image} alt="" /> : <span className="wf-preview-placeholder">{item.type==='service'?'SERVICE':'PRODUCT'}</span>}
+                    <div><small>{item.type}</small><strong>{item.name || 'Sin nombre'}</strong><b>${Number(item.price || 0).toFixed(2)}</b></div>
+                  </button>
+                ))}
+              </div>
+            </section>
+          </div>
+        )}
+
+        {selectedItem && (
+          <div className="wf-preview-modal-backdrop detail" onMouseDown={()=>setSelectedItem(null)}>
+            <section className="wf-preview-item-window" onMouseDown={(event)=>event.stopPropagation()}>
+              <button className="wf-preview-close" onClick={()=>setSelectedItem(null)}>×</button>
+              {selectedItem.image ? <img src={selectedItem.image} alt="" /> : <div className="wf-preview-item-placeholder">{selectedItem.type==='service'?'SERVICE':'PRODUCT'}</div>}
+              <div>
+                <small>{selectedItem.type.toUpperCase()}</small>
+                <h4>{selectedItem.name || 'Sin nombre'}</h4>
+                <strong>${Number(selectedItem.price || 0).toFixed(2)}</strong>
+                <p>{selectedItem.description || 'Descripción del producto o servicio.'}</p>
+                {selectedItem.requiresAppointment && <span>{selectedItem.duration} min · Requiere reservación</span>}
+                <button>{selectedItem.requiresAppointment?'Reservar':'Añadir al carrito'}</button>
+              </div>
+            </section>
+          </div>
+        )}
       </div>
     </div>
   )
@@ -309,7 +338,7 @@ function BusinessStep({state,setState}:{state:BuilderState;setState:Dispatch<Set
       <label className="wf-upload">
         <input type="file" accept="image/*" onChange={(event)=>uploadLogo(event.target.files?.[0])} />
         <span>{state.business.logo?'✓ Logo cargado':'Subir logo del cliente'}</span>
-        <small>PNG, JPG o WEBP · solo preview local en esta fase</small>
+        <small>PNG, JPG o WEBP · la imagen permanece durante esta sesión hasta implementar Storage</small>
       </label>
     </div>
   )
@@ -371,7 +400,11 @@ function FeaturesStep({state,setState}:{state:BuilderState;setState:Dispatch<Set
 }
 
 function CatalogStep({state,setState}:{state:BuilderState;setState:Dispatch<SetStateAction<BuilderState>>}) {
+  const [editingId,setEditingId] = useState<string | null>(null)
+  const editingItem = state.catalog.find((item)=>item.id===editingId) ?? null
+
   const addItem = (type:ItemType) => {
+    if (state.catalog.length>=CATALOG_LIMIT) return
     const item:CatalogItem = {
       id:createId(type),
       type,
@@ -382,17 +415,20 @@ function CatalogStep({state,setState}:{state:BuilderState;setState:Dispatch<SetS
       duration:type==='service'?45:0,
     }
     setState((current)=>({...current,catalog:[...current.catalog,item]}))
+    setEditingId(item.id)
   }
 
   const update = (id:string, patch:Partial<CatalogItem>) =>
     setState((current)=>({...current,catalog:current.catalog.map((item)=>item.id===id?{...item,...patch}:item)}))
 
-  const remove = (id:string) =>
+  const remove = (id:string) => {
     setState((current)=>({
       ...current,
       catalog:current.catalog.filter((item)=>item.id!==id),
       team:current.team.map((member)=>({...member,serviceIds:member.serviceIds.filter((serviceId)=>serviceId!==id)})),
     }))
+    if (editingId===id) setEditingId(null)
+  }
 
   const uploadImage = async (id:string,file?:File) => {
     if (!file) return
@@ -401,35 +437,57 @@ function CatalogStep({state,setState}:{state:BuilderState;setState:Dispatch<SetS
 
   return (
     <div className="wf-step-content">
-      <div className="wf-step-intro"><small>PASO 4</small><h3>Construye tu catálogo.</h3><p>Productos y servicios viven en un mismo sistema. Puedes configurar hasta 10 inicialmente.</p></div>
+      <div className="wf-step-intro"><small>PASO 4</small><h3>Construye tu catálogo.</h3><p>Productos y servicios viven en un mismo sistema. Puedes configurar hasta {CATALOG_LIMIT} en total.</p></div>
       <div className="wf-catalog-actions">
-        <button onClick={()=>addItem('product')} disabled={state.catalog.length>=10}>+ Producto</button>
-        <button onClick={()=>addItem('service')} disabled={state.catalog.length>=10}>+ Servicio</button>
-        <span>{state.catalog.length}/10 configurados</span>
+        <button onClick={()=>addItem('product')} disabled={state.catalog.length>=CATALOG_LIMIT}>+ Producto</button>
+        <button onClick={()=>addItem('service')} disabled={state.catalog.length>=CATALOG_LIMIT}>+ Servicio</button>
+        <span>{state.catalog.length}/{CATALOG_LIMIT} configurados</span>
       </div>
-      <div className="wf-builder-catalog">
+
+      <div className="wf-catalog-library">
         {state.catalog.map((item,index)=>(
-          <article key={item.id}>
-            <header><span>{String(index+1).padStart(2,'0')} · {item.type==='service'?'SERVICIO':'PRODUCTO'}</span><button onClick={()=>remove(item.id)}>Eliminar</button></header>
-            <div className="wf-item-editor">
-              <label className="wf-item-image">
-                <input type="file" accept="image/*" onChange={(e)=>uploadImage(item.id,e.target.files?.[0])} />
-                {item.image?<img src={item.image} alt="" />:<span>+ Imagen</span>}
-              </label>
-              <div>
-                <Field label="Nombre" value={item.name} onChange={(v)=>update(item.id,{name:v})} />
-                <div className="wf-mini-grid">
-                  <label className="wf-field"><span>Precio</span><input type="number" min="0" step=".01" value={item.price} onChange={(e)=>update(item.id,{price:Number(e.target.value)})}/></label>
-                  {item.type==='service' && <label className="wf-field"><span>Duración</span><select value={item.duration} onChange={(e)=>update(item.id,{duration:Number(e.target.value)})}>{[15,30,45,60,75,90,120,180].map((min)=><option key={min} value={min}>{min} min</option>)}</select></label>}
-                </div>
-                <label className="wf-field"><span>Descripción</span><textarea rows={3} value={item.description} onChange={(e)=>update(item.id,{description:e.target.value})}/></label>
-                {item.type==='service' && <Toggle label="Requiere cita" checked={item.requiresAppointment} onChange={(v)=>update(item.id,{requiresAppointment:v})}/>}
-              </div>
+          <button key={item.id} className="wf-catalog-tile" onClick={()=>setEditingId(item.id)}>
+            {item.image ? <img src={item.image} alt="" /> : <span className="wf-catalog-tile-placeholder">{item.type==='service'?'S':'P'}</span>}
+            <div>
+              <small>{String(index+1).padStart(2,'0')} · {item.type==='service'?'SERVICIO':'PRODUCTO'}</small>
+              <strong>{item.name || 'Sin nombre'}</strong>
+              <span>${Number(item.price || 0).toFixed(2)}</span>
             </div>
-          </article>
+            <em>Editar →</em>
+          </button>
         ))}
         {state.catalog.length===0 && <div className="wf-empty-editor">Añade tu primer producto o servicio.</div>}
       </div>
+
+      {editingItem && (
+        <div className="wf-builder-modal-backdrop" onMouseDown={()=>setEditingId(null)}>
+          <section className="wf-builder-item-modal" onMouseDown={(event)=>event.stopPropagation()}>
+            <header>
+              <div><small>{editingItem.type==='service'?'SERVICIO':'PRODUCTO'}</small><h4>{editingItem.name || 'Sin nombre'}</h4></div>
+              <button onClick={()=>setEditingId(null)}>×</button>
+            </header>
+            <div className="wf-item-editor modal">
+              <label className="wf-item-image">
+                <input type="file" accept="image/*" onChange={(e)=>uploadImage(editingItem.id,e.target.files?.[0])} />
+                {editingItem.image?<img src={editingItem.image} alt="" />:<span>+ Imagen</span>}
+              </label>
+              <div>
+                <Field label="Nombre" value={editingItem.name} onChange={(v)=>update(editingItem.id,{name:v})} />
+                <div className="wf-mini-grid">
+                  <label className="wf-field"><span>Precio</span><input type="number" min="0" step=".01" value={editingItem.price} onChange={(e)=>update(editingItem.id,{price:Number(e.target.value)})}/></label>
+                  {editingItem.type==='service' && <label className="wf-field"><span>Duración</span><select value={editingItem.duration} onChange={(e)=>update(editingItem.id,{duration:Number(e.target.value)})}>{[15,30,45,60,75,90,120,180,240].map((min)=><option key={min} value={min}>{min} min</option>)}</select></label>}
+                </div>
+                <label className="wf-field"><span>Descripción</span><textarea rows={4} value={editingItem.description} onChange={(e)=>update(editingItem.id,{description:e.target.value})}/></label>
+                {editingItem.type==='service' && <Toggle label="Requiere cita" checked={editingItem.requiresAppointment} onChange={(v)=>update(editingItem.id,{requiresAppointment:v})}/>}
+                <div className="wf-modal-actions">
+                  <button className="danger" onClick={()=>remove(editingItem.id)}>Eliminar</button>
+                  <button className="done" onClick={()=>setEditingId(null)}>Guardar y cerrar</button>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+      )}
     </div>
   )
 }
@@ -527,7 +585,12 @@ export default function WebFactoryBuilder({lang}:{lang:Language}) {
 
   useEffect(()=>{
     try {
-      localStorage.setItem(STORAGE_KEY,JSON.stringify(state))
+      const persistentState = {
+        ...state,
+        business: {...state.business,logo:undefined},
+        catalog: state.catalog.map((item)=>({...item,image:undefined})),
+      }
+      localStorage.setItem(STORAGE_KEY,JSON.stringify(persistentState))
       setSaved(true)
       const timer=window.setTimeout(()=>setSaved(false),900)
       return ()=>window.clearTimeout(timer)

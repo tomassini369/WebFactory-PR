@@ -19,8 +19,10 @@ Convert the Phase 1 visual Builder shell into a real interactive simulator while
 - Primary and secondary color controls
 - Feature toggles with fixed $299.99 pricing
 - Unified product/service catalog editor
-- Up to 10 initially configured items
+- Up to 100 total products/services in the Builder catalog
 - Product/service image upload for preview
+- Compact catalog library with hidden item editor windows
+- Customer-facing catalog opens in a hidden modal window instead of rendering the full catalog inline
 - Service duration and appointment requirement
 - Employee editor
 - Service-to-employee mapping
@@ -31,7 +33,7 @@ Convert the Phase 1 visual Builder shell into a real interactive simulator while
 - Review screen
 
 ## Important boundaries
-This phase does not persist to the production database yet. Browser localStorage is used only to make the simulator useful before Phase 3.
+This phase does not persist to the production database yet. Browser localStorage is used only to make the simulator useful before Phase 3. To support catalogs up to 100 items safely, uploaded image data is not persisted to localStorage; images remain in the active session until Storage is implemented.
 
 Checkout is intentionally disabled until the payment architecture is implemented. No frontend state can mark an order paid.
 

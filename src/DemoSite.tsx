@@ -64,6 +64,7 @@ function DemoSite({ slug }: { slug: string }) {
   const [bookingItem, setBookingItem] = useState<DemoItem | null>(null)
   const [cart, setCart] = useState<CartLine[]>([])
   const [cartOpen, setCartOpen] = useState(false)
+  const [catalogOpen, setCatalogOpen] = useState(false)
   const [selectedEmployee, setSelectedEmployee] = useState('')
   const [selectedDate, setSelectedDate] = useState('')
   const [selectedTime, setSelectedTime] = useState('')
@@ -76,9 +77,9 @@ function DemoSite({ slug }: { slug: string }) {
   )
 
   useEffect(() => {
-    document.body.classList.toggle('demo-overlay-open', Boolean(selectedItem || bookingItem || cartOpen))
+    document.body.classList.toggle('demo-overlay-open', Boolean(selectedItem || bookingItem || cartOpen || catalogOpen))
     return () => document.body.classList.remove('demo-overlay-open')
-  }, [selectedItem, bookingItem, cartOpen])
+  }, [selectedItem, bookingItem, cartOpen, catalogOpen])
 
   useEffect(() => {
     if (!config) return
@@ -171,7 +172,7 @@ function DemoSite({ slug }: { slug: string }) {
             <span>{config.description}</span>
             <div className="demo-hero-actions">
               {config.bookingEnabled && <button className="demo-solid large" onClick={() => startBooking()}>{config.bookingLabel}</button>}
-              <a className="demo-glass large" href="#services">{config.cartEnabled ? 'Explorar catálogo' : 'Ver servicios'}</a>
+              <button className="demo-glass large" onClick={() => setCatalogOpen(true)}>{config.cartEnabled ? 'Explorar catálogo' : 'Ver servicios'}</button>
             </div>
           </div>
           <aside className="demo-hero-meta">
@@ -197,21 +198,13 @@ function DemoSite({ slug }: { slug: string }) {
               <h2>{config.cartEnabled ? 'Explore, choose and take action.' : 'Choose the service that fits.'}</h2>
             </div>
             <p>
-              Esta demo utiliza el mismo concepto de catálogo unificado de WebFactory para productos,
-              servicios, clases o listings.
+              El catálogo permanece oculto hasta que el cliente decide abrirlo. Esto mantiene la página
+              limpia incluso cuando el negocio tiene decenas de productos o servicios.
             </p>
           </div>
-          <div className="demo-catalog-grid">
-            {config.items.map((item) => (
-              <CatalogCard
-                key={item.id}
-                item={item}
-                accent={config.accent}
-                onView={() => setSelectedItem(item)}
-                onAdd={() => addToCart(item)}
-                onBook={() => startBooking(item)}
-              />
-            ))}
+          <div className="demo-catalog-gateway">
+            <div><small>CATÁLOGO DISPONIBLE</small><strong>{config.items.length} productos / servicios</strong><span>Abre una ventana dedicada para explorar el catálogo sin salir de la página.</span></div>
+            <button className="demo-solid" onClick={() => setCatalogOpen(true)}>Ver productos y servicios →</button>
           </div>
         </section>
 
@@ -310,6 +303,29 @@ function DemoSite({ slug }: { slug: string }) {
         <div><strong>{config.shortName}</strong><span>{config.category} demo by WebFactory PR</span></div>
         <a href="/#demos">Explore more WebFactory demos →</a>
       </footer>
+
+      {catalogOpen && (
+        <div className="demo-modal-backdrop" role="presentation" onMouseDown={() => setCatalogOpen(false)}>
+          <section className="demo-catalog-modal" role="dialog" aria-modal="true" onMouseDown={(event) => event.stopPropagation()}>
+            <header>
+              <div><small>CATÁLOGO</small><h2>Productos y servicios</h2><p>Selecciona cualquier item para ver sus detalles.</p></div>
+              <button className="demo-modal-close catalog-close" onClick={() => setCatalogOpen(false)}>×</button>
+            </header>
+            <div className="demo-catalog-modal-grid">
+              {config.items.map((item) => (
+                <CatalogCard
+                  key={item.id}
+                  item={item}
+                  accent={config.accent}
+                  onView={() => { setCatalogOpen(false); setSelectedItem(item) }}
+                  onAdd={() => { setCatalogOpen(false); addToCart(item) }}
+                  onBook={() => { setCatalogOpen(false); startBooking(item) }}
+                />
+              ))}
+            </div>
+          </section>
+        </div>
+      )}
 
       {selectedItem && (
         <div className="demo-modal-backdrop" role="presentation" onMouseDown={() => setSelectedItem(null)}>
