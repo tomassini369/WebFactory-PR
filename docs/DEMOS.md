@@ -49,3 +49,15 @@ This gives every demo a direct Netlify-hosted URL while keeping one reusable cod
 
 ## Image sourcing
 The current demo photography is sourced through Pexels image URLs. Keep stock imagery separate from fictional brand identity and never use depicted logos as the demo's brand.
+
+
+## Demo booking checkout flow
+Booking-enabled demos simulate the production booking sequence without creating real transactions or appointments:
+
+Service -> Employee -> Date -> Time -> Temporary Hold -> Demo Checkout -> Demo Payment Verification -> Demo Booking Confirmation.
+
+- If a service has a deposit, the demo checkout shows the deposit amount.
+- If no deposit is configured but the service has a price, the demo shows full payment.
+- Free appointment services skip payment and move to simulated final validation.
+- Stripe and ATH Móvil are visual simulation choices only.
+- No real charge, booking record, email, Google Calendar event, or slot reservation is created from demo mode.
