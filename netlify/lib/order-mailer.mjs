@@ -1,6 +1,7 @@
+import crypto from "node:crypto";
 import nodemailer from "nodemailer";
 import { createSummaryPdf } from "./production-package.mjs";
-import { packageStore, patchOrder, publicBaseUrl } from "./order-store.mjs";
+import { getOrder, packageStore, patchOrder, publicBaseUrl } from "./order-store.mjs";
 
 const ZIP_ATTACHMENT_LIMIT = 12 * 1024 * 1024;
 
@@ -104,12 +105,22 @@ export async function sendOrderEmails(order) {
   let current = order;
 
   if (!current.productionPackageSent) {
+    const dispatchToken = crypto.randomUUID();
     current = await patchOrder(order.orderId, {
       adminEmailDispatchStatus: "sending",
       adminEmailSendingAt: new Date().toISOString(),
+      adminEmailDispatchToken: dispatchToken,
     });
 
-    const summaryPdf = await createSummaryPdf(current);
+    const locked = await getOrder(order.orderId);
+    if (locked?.productionPackageSent) {
+      current = locked;
+    } else if (locked?.adminEmailDispatchToken !== dispatchToken) {
+      throw new Error("Another worker is already dispatching the administrative email.");
+    }
+
+    if (!current.productionPackageSent) {
+      const summaryPdf = await createSummaryPdf(current);
     const orderJson = Buffer.from(JSON.stringify(current, null, 2), "utf8");
     const attachments = [
       {
@@ -166,13 +177,14 @@ export async function sendOrderEmails(order) {
       },
     });
 
-    current = await patchOrder(current.orderId, {
-      productionPackageSent: true,
-      adminEmailDispatchStatus: "sent",
-      adminEmailMessageId: adminInfo.messageId,
-      sentAt: new Date().toISOString(),
-      status: "EMAIL_SENT",
-    });
+      current = await patchOrder(current.orderId, {
+        productionPackageSent: true,
+        adminEmailDispatchStatus: "sent",
+        adminEmailMessageId: adminInfo.messageId,
+        sentAt: new Date().toISOString(),
+        status: "EMAIL_SENT",
+      });
+    }
   }
 
   if (!current.customerConfirmationSent && current.client?.email) {
