@@ -36,15 +36,19 @@ This document follows the WebFactory PR master specification. The existing logo,
 - Backend reads free/busy and creates, updates, cancels and reschedules events.
 
 ## Production Package
-- Triggered only when payment_status becomes PAID from a verified provider event.
-- Order moves through PACKAGE_GENERATING to PACKAGE_READY.
-- Package can contain order summary, JSON data, build prompt, revision prompt, branding, images, catalog, team, booking and business files when supplied.
-- Administrative delivery is idempotent using production_package_sent, production_package_sent_at and package_version.
+- Triggered only when Stripe reports a verified paid Checkout Session through the signed webhook.
+- Order moves through PAID -> PACKAGE_GENERATING -> PACKAGE_READY -> EMAIL_SENT -> IN_PRODUCTION.
+- Netlify Blobs persists the pre-checkout order, uploaded assets and generated ZIP package.
+- Package includes order-summary.pdf, order-data.json, AI build prompt, client requirements, revision prompt, branding, images, catalog, team, booking settings and business files when supplied.
+- Packages small enough for Gmail are attached; larger packages use an expiring token-protected download link.
+- Administrative delivery uses persistent sent flags and a dispatch lock to reduce duplicate delivery.
 
 ## Email
-- Transactional email is connected server-side in Phase 11.
-- Administrator receives project summary and production files/private link only after verified payment and package generation.
+- Gmail SMTP is used server-side.
+- Administrator destination is read from WEBFACTORY_ORDER_EMAIL.
 - Customer receives a separate confirmation without internal prompts, credentials or backend information.
+- Live checkout is not enabled unless Stripe, webhook and Gmail SMTP readiness checks all pass.
+- Required email variables: WEBFACTORY_GMAIL_USER and secret WEBFACTORY_GMAIL_APP_PASSWORD.
 
 ## Delivery phases
 1. Homepage + visual system + responsive foundation.
