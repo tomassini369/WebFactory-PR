@@ -38,7 +38,7 @@ type BuilderState = {
     phone: string
     whatsapp: string
     email: string
-    address: string
+    mapsUrl: string
     instagram: string
     logo?: string
   }
@@ -65,7 +65,7 @@ const initialState: BuilderState = {
     phone: '(787) 555-0101',
     whatsapp: '(787) 555-0101',
     email: 'hello@example.com',
-    address: 'San Juan, Puerto Rico',
+    mapsUrl: 'https://www.google.com/maps/search/?api=1&query=San+Juan%2C+Puerto+Rico',
     instagram: '@northlinestudio',
   },
   design: {
@@ -144,6 +144,53 @@ const featureLabels: Record<string,string> = {
   calendar: 'Google Calendar',
 }
 
+const googleMapsHosts = new Set([
+  'google.com',
+  'www.google.com',
+  'maps.google.com',
+  'maps.app.goo.gl',
+  'goo.gl',
+])
+
+const isGoogleMapsUrl = (value: string) => {
+  if (!value.trim()) return false
+  try {
+    const url = new URL(value.trim())
+    return url.protocol === 'https:' && (
+      googleMapsHosts.has(url.hostname) ||
+      url.hostname.endsWith('.google.com')
+    ) && (
+      url.hostname.includes('maps') ||
+      url.pathname.includes('/maps') ||
+      url.searchParams.has('query') ||
+      url.searchParams.has('q')
+    )
+  } catch {
+    return false
+  }
+}
+
+const googleMapsEmbedUrl = (value: string) => {
+  if (!isGoogleMapsUrl(value)) return null
+  try {
+    const url = new URL(value.trim())
+    if (url.pathname.startsWith('/maps/embed')) return url.toString()
+
+    const coordMatch = url.toString().match(/@(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/)
+    if (coordMatch) {
+      return `https://www.google.com/maps?q=${coordMatch[1]},${coordMatch[2]}&output=embed`
+    }
+
+    const query = url.searchParams.get('query') || url.searchParams.get('q')
+    if (query) {
+      return `https://www.google.com/maps?q=${encodeURIComponent(query)}&output=embed`
+    }
+  } catch {
+    return null
+  }
+  return null
+}
+
 const readFile = (file: File) =>
   new Promise<string>((resolve, reject) => {
     const reader = new FileReader()
@@ -189,6 +236,8 @@ function Preview({state,device}:{state:BuilderState;device:Device}) {
   const [catalogOpen,setCatalogOpen] = useState(false)
   const [selectedItem,setSelectedItem] = useState<CatalogItem | null>(null)
   const appointments = state.catalog.filter((item)=>item.type==='service' && item.requiresAppointment)
+  const mapsValid = isGoogleMapsUrl(state.business.mapsUrl)
+  const mapsEmbed = googleMapsEmbedUrl(state.business.mapsUrl)
   const visibleCatalog = state.catalog.filter((item)=>
     item.type==='product' ? state.features.products : state.features.services
   )
@@ -256,10 +305,35 @@ function Preview({state,device}:{state:BuilderState;device:Device}) {
           </section>
         )}
 
+        {state.features.maps && mapsValid && (
+          <section className="wf-preview-location">
+            <div>
+              <small>UBICACIÓN</small>
+              <strong>Encuéntranos en Google Maps.</strong>
+              <a href={state.business.mapsUrl} target="_blank" rel="noreferrer">Ver ubicación real ↗</a>
+            </div>
+            {mapsEmbed ? (
+              <iframe
+                title="Ubicación de Google Maps"
+                src={mapsEmbed}
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+              />
+            ) : (
+              <a className="wf-preview-map-link" href={state.business.mapsUrl} target="_blank" rel="noreferrer">
+                <span>Google Maps</span>
+                <b>Abrir ubicación real ↗</b>
+              </a>
+            )}
+          </section>
+        )}
+
         <footer>
           <strong>{state.business.name || 'Tu negocio'}</strong>
           <span>{state.business.phone}</span>
-          <span>{state.business.address}</span>
+          {state.features.maps && mapsValid && (
+            <a href={state.business.mapsUrl} target="_blank" rel="noreferrer">Google Maps ↗</a>
+          )}
         </footer>
 
         {catalogOpen && (
@@ -334,7 +408,22 @@ function BusinessStep({state,setState}:{state:BuilderState;setState:Dispatch<Set
         <Field label="Email" type="email" value={state.business.email} onChange={(v)=>setBusiness('email',v)} />
         <Field label="Instagram" value={state.business.instagram} onChange={(v)=>setBusiness('instagram',v)} />
       </div>
-      <Field label="Dirección / ubicación" value={state.business.address} onChange={(v)=>setBusiness('address',v)} />
+      <label className="wf-field wf-maps-field">
+        <span>Enlace de Google Maps</span>
+        <input
+          type="url"
+          value={state.business.mapsUrl}
+          placeholder="https://maps.app.goo.gl/..."
+          onChange={(event)=>setBusiness('mapsUrl',event.target.value)}
+        />
+        <small className={state.business.mapsUrl && !isGoogleMapsUrl(state.business.mapsUrl) ? 'invalid' : ''}>
+          {state.business.mapsUrl
+            ? isGoogleMapsUrl(state.business.mapsUrl)
+              ? '✓ Enlace válido · la ubicación real aparecerá en la página'
+              : 'Usa un enlace válido de Google Maps'
+            : 'Abre Google Maps → Compartir → Copiar enlace y pégalo aquí'}
+        </small>
+      </label>
       <label className="wf-upload">
         <input type="file" accept="image/*" onChange={(event)=>uploadLogo(event.target.files?.[0])} />
         <span>{state.business.logo?'✓ Logo cargado':'Subir logo del cliente'}</span>
@@ -574,7 +663,23 @@ export default function WebFactoryBuilder({lang}:{lang:Language}) {
   const [state,setState] = useState<BuilderState>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY)
-      return saved ? {...initialState,...JSON.parse(saved)} : initialState
+      if (!saved) return initialState
+      const parsed = JSON.parse(saved) as Partial<BuilderState> & { business?: Partial<BuilderState['business']> & { address?: string } }
+      const legacyMapsUrl = parsed.business?.address && isGoogleMapsUrl(parsed.business.address)
+        ? parsed.business.address
+        : undefined
+      return {
+        ...initialState,
+        ...parsed,
+        business: {
+          ...initialState.business,
+          ...parsed.business,
+          mapsUrl: parsed.business?.mapsUrl || legacyMapsUrl || initialState.business.mapsUrl,
+        },
+        design: {...initialState.design,...parsed.design},
+        features: {...initialState.features,...parsed.features},
+        hours: {...initialState.hours,...parsed.hours},
+      }
     } catch {
       return initialState
     }
