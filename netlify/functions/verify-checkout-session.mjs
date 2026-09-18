@@ -60,6 +60,9 @@ export async function handler(event) {
     checkoutStatus: session.status,
     orderId: session.client_reference_id || session.metadata?.order_id || "",
     packageId: session.metadata?.package_id || "",
+    productKey: session.metadata?.product_key || session.metadata?.package_id || "",
+    productName: session.metadata?.package_label || "",
+    officialPriceUsd: session.metadata?.official_price_usd || "",
     customerEmail: session.customer_details?.email || session.customer_email || "",
   });
 }
