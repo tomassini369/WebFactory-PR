@@ -143,7 +143,7 @@ function bookingSettings(order) {
   };
 }
 
-async function createSummaryPdf(order) {
+export async function createSummaryPdf(order) {
   const pdf = await PDFDocument.create();
   const regular = await pdf.embedFont(StandardFonts.Helvetica);
   const bold = await pdf.embedFont(StandardFonts.HelveticaBold);
