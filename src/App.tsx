@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import DemoSite from './DemoSite'
 import { demoConfigs } from './demoData'
+import WebFactoryBuilder from './WebFactoryBuilder'
 
 type Language = 'es' | 'en'
 
@@ -161,7 +162,7 @@ function App(){
 
       <section className="section soft"><div className="shell split"><Heading data={t.calendar}/><div className="calendar"><header><strong>September</strong><span>Team calendar</span></header><div className="week">{['M','T','W','T','F','S','S'].map((x,i)=><b key={i}>{x}</b>)}</div><div className="days">{Array.from({length:28},(_,i)=><i className={[3,8,12,17,18,23].includes(i)?'busy':''} key={i}>{i+1}</i>)}</div><footer><span>● Carlos · 10:00 Haircut</span><span>● María · 1:30 Color</span></footer></div></div></section>
 
-      <section className="section white builder" id="builder"><div className="shell"><div className="builder-head"><Heading data={t.builder}/><div className="builder-price"><strong>{PRICE}</strong><span>{t.hero.once}</span></div></div><div className="builder-ui"><header><i/><i/><i/><span>PREVIEW — NOT PUBLISHED</span></header><div className="builder-body"><aside>{['Negocio','Diseño','Funciones','Catálogo','Equipo','Horarios','Preview'].map((x,i)=><button className={i===0?'selected':''} key={x}><b>{i+1}</b>{x}</button>)}</aside><section><label>Nombre del negocio<strong>Northline Studio</strong></label><div className="style-choices"><button className="selected">Modern</button><button>Luxury</button><button>Minimal</button><button>Bold</button></div><div className="swatches"><i/><i/><i/><i/></div><p>Commerce <b>ON</b></p><p>Bookings <b>ON</b></p></section><div className="live"><nav>NORTHLINE</nav><div><small>PREMIUM STUDIO</small><strong>Look sharp. Book fast.</strong><button>Book now</button></div><footer><i/><i/><i/></footer></div></div></div><div className="builder-actions"><a href="#top" className="btn primary">{t.hero.primary} ↗</a><span>NEGOCIO → DISEÑO → FUNCIONES → CATÁLOGO → EQUIPO → HORARIOS → PREVIEW</span></div></div></section>
+      <section className="section white builder" id="builder"><div className="shell"><div className="builder-head"><Heading data={t.builder}/><div className="builder-price"><strong>{PRICE}</strong><span>{t.hero.once}</span></div></div><WebFactoryBuilder lang={lang}/></div></section>
 
       <section className="section soft"><div className="shell split reverse"><div className="payments"><article className="stripe"><b>stripe</b><strong>$299.99</strong><small>Secure checkout</small></article><article className="ath"><b>ATH Móvil</b><strong>$299.99</strong><small>Business payment</small></article><span>✓ Backend verified payment</span></div><Heading data={t.payments}/></div></section>
 
