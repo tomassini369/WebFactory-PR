@@ -1,68 +1,57 @@
-function jsonResponse(statusCode, body) {
-  return {
-    statusCode,
-    headers: {
-      "Content-Type": "application/json",
-      "Cache-Control": "no-store",
-    },
-    body: JSON.stringify(body),
-  };
+import { getOrder } from "../lib/order-store.mjs";
+
+function env(name) {
+  return globalThis.Netlify?.env?.get(name) || "";
 }
 
-function clean(value) {
-  return String(value || "").trim();
-}
-
-export async function handler(event) {
-  if (event.httpMethod !== "GET") {
-    return jsonResponse(405, { ok: false, message: "Metodo no permitido." });
+export default async (req) => {
+  if (req.method !== "GET") {
+    return Response.json({ ok:false,message:"Method not allowed." }, { status:405 });
   }
 
-  const stripeSecretKey = clean(process.env.STRIPE_SECRET_KEY);
-  const sessionId = clean(event.queryStringParameters?.session_id);
+  const url = new URL(req.url);
+  const sessionId = String(url.searchParams.get("session_id") || "").trim();
+  const stripeSecretKey = env("STRIPE_SECRET_KEY");
 
   if (!stripeSecretKey) {
-    return jsonResponse(500, {
-      ok: false,
-      message: "Falta STRIPE_SECRET_KEY en Netlify.",
-    });
+    return Response.json({ ok:false,message:"Stripe is not configured." }, { status:500 });
+  }
+  if (!sessionId.startsWith("cs_")) {
+    return Response.json({ ok:false,message:"Missing Stripe session ID." }, { status:400 });
   }
 
-  if (!sessionId || !sessionId.startsWith("cs_")) {
-    return jsonResponse(400, {
-      ok: false,
-      message: "Falta el identificador de pago de Stripe.",
-    });
-  }
-
-  const response = await fetch(`https://api.stripe.com/v1/checkout/sessions/${encodeURIComponent(sessionId)}`, {
-    headers: {
-      Authorization: `Bearer ${stripeSecretKey}`,
-    },
-  });
-
+  const response = await fetch(
+    `https://api.stripe.com/v1/checkout/sessions/${encodeURIComponent(sessionId)}`,
+    { headers:{ Authorization:`Bearer ${stripeSecretKey}` } },
+  );
   const session = await response.json();
 
   if (!response.ok) {
-    return jsonResponse(response.status, {
-      ok: false,
-      message: session?.error?.message || "No se pudo verificar el pago.",
-    });
+    return Response.json(
+      { ok:false,message:session?.error?.message || "Could not verify payment." },
+      { status:response.status },
+    );
   }
 
   const paid = session.payment_status === "paid";
+  const orderId = session.client_reference_id || session.metadata?.order_id || "";
+  const order = orderId ? await getOrder(orderId) : null;
 
-  return jsonResponse(200, {
-    ok: true,
+  return Response.json({
+    ok:true,
     paid,
-    sessionId: session.id,
-    paymentStatus: session.payment_status,
-    checkoutStatus: session.status,
-    orderId: session.client_reference_id || session.metadata?.order_id || "",
-    packageId: session.metadata?.package_id || "",
-    productKey: session.metadata?.product_key || session.metadata?.package_id || "",
-    productName: session.metadata?.package_label || "",
-    officialPriceUsd: session.metadata?.official_price_usd || "",
-    customerEmail: session.customer_details?.email || session.customer_email || "",
-  });
-}
+    sessionId:session.id,
+    paymentStatus:session.payment_status,
+    checkoutStatus:session.status,
+    orderId,
+    productKey:session.metadata?.product_key || "",
+    productName:session.metadata?.package_label || "",
+    officialPriceUsd:session.metadata?.official_price_usd || "",
+    customerEmail:session.customer_details?.email || session.customer_email || "",
+    orderStatus:order?.status || (paid ? "PAID" : "PAYMENT_PROCESSING"),
+    packageReady:Boolean(order?.package?.ready),
+    adminEmailSent:Boolean(order?.productionPackageSent),
+    customerConfirmationSent:Boolean(order?.customerConfirmationSent),
+    inProduction:order?.status === "IN_PRODUCTION",
+  }, { headers:{ "Cache-Control":"no-store" } });
+};
