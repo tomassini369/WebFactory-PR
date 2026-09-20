@@ -139,6 +139,17 @@ function sanitizeOrder(payload) {
       currency: "usd",
       pricing: "one_time",
     },
+    localization: {
+      enabled: true,
+      languages: ["es", "en"],
+      defaultLanguage: "es",
+      fallbackLanguage: "es",
+      languageSwitcher: true,
+      persistSelection: true,
+      persistence: "localStorage",
+      updateDocumentLanguage: true,
+      runtimeMachineTranslation: false,
+    },
     client: {
       name: customerName,
       email: customerEmail,
