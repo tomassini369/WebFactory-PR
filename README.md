@@ -31,6 +31,8 @@ The server creates Stripe Checkout Sessions. Payment confirmation must come from
 
 The V2 Builder checks backend readiness before enabling the final checkout. The button remains disabled until Stripe, the verified webhook and Gmail SMTP delivery are all configured.
 
+Client storefront data is loaded once per visit and refreshed when a visitor returns to a visible tab after at least one minute. Public tenant responses use revision ETags and short Netlify CDN caching, so administrative changes become available quickly without continuous 20-second polling or unnecessary Function invocations.
+
 ## Current V2 stack
 
 - React + TypeScript + Vite
