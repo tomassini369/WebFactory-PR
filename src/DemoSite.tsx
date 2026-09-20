@@ -1,18 +1,19 @@
 import { useEffect, useMemo, useState, type CSSProperties } from 'react'
 import { demoBySlug, type DemoItem } from './demoData'
+import { demoUi, localizeDemo, type DemoLanguage, type DemoUi } from './demoI18n'
 import './demo.css'
 
 type CartLine = { item: DemoItem; quantity: number }
 
-const money = (value: number) =>
-  new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value)
+const money = (value: number, language: DemoLanguage) =>
+  new Intl.NumberFormat(language === 'es' ? 'es-US' : 'en-US', { style: 'currency', currency: 'USD' }).format(value)
 
-function DemoNotice() {
+function DemoNotice({ ui }: { ui: DemoUi }) {
   return (
     <div className="wf-demo-notice">
       <a href="/#demos">← WebFactory PR</a>
-      <span>DEMO WEBSITE · negocio e información ficticia · no se procesan pagos ni reservaciones reales</span>
-      <a href="/#builder">Crear mi website ↗</a>
+      <span>{ui.demoNotice}</span>
+      <a href="/#builder">{ui.createWebsite}</a>
     </div>
   )
 }
@@ -23,33 +24,38 @@ function CatalogCard({
   onView,
   onAdd,
   onBook,
+  language,
+  ui,
 }: {
   item: DemoItem
   accent: string
   onView: () => void
   onAdd: () => void
   onBook: () => void
+  language: DemoLanguage
+  ui: DemoUi
 }) {
-  const price = item.displayPrice ?? money(item.price)
+  const price = item.displayPrice ?? money(item.price, language)
+  const typeLabel = { product: ui.product, service: ui.serviceType, listing: ui.listing, class: ui.classType }[item.type]
   return (
     <article className="demo-catalog-card">
-      <button className="demo-card-image" onClick={onView} aria-label={`Ver ${item.name}`}>
+      <button className="demo-card-image" onClick={onView} aria-label={`${ui.view} ${item.name}`}>
         <img src={item.image} alt="" loading="lazy" />
         {item.badge && <span style={{ background: accent }}>{item.badge}</span>}
       </button>
       <div className="demo-card-copy">
         <div>
-          <small>{item.type}</small>
+          <small>{typeLabel}</small>
           <h3>{item.name}</h3>
         </div>
         <strong>{price}</strong>
         <p>{item.description}</p>
         <div className="demo-card-actions">
-          <button className="demo-outline" onClick={onView}>Ver detalle</button>
+          <button className="demo-outline" onClick={onView}>{ui.view}</button>
           {item.appointment ? (
-            <button className="demo-solid" onClick={onBook}>Reservar</button>
+            <button className="demo-solid" onClick={onBook}>{ui.reserve}</button>
           ) : item.purchasable !== false ? (
-            <button className="demo-solid" onClick={onAdd}>Añadir</button>
+            <button className="demo-solid" onClick={onAdd}>{ui.add}</button>
           ) : null}
         </div>
       </div>
@@ -58,7 +64,13 @@ function CatalogCard({
 }
 
 function DemoSite({ slug }: { slug: string }) {
-  const config = demoBySlug(slug)
+  const baseConfig = demoBySlug(slug)
+  const [language, setLanguage] = useState<DemoLanguage>(() => {
+    const saved = window.localStorage.getItem('webfactory-demo-language')
+    return saved === 'en' ? 'en' : 'es'
+  })
+  const config = useMemo(() => baseConfig ? localizeDemo(baseConfig, language) : undefined, [baseConfig, language])
+  const ui = demoUi[language]
   const [menuOpen, setMenuOpen] = useState(false)
   const [selectedItem, setSelectedItem] = useState<DemoItem | null>(null)
   const [bookingItem, setBookingItem] = useState<DemoItem | null>(null)
@@ -70,7 +82,7 @@ function DemoSite({ slug }: { slug: string }) {
   const [selectedTime, setSelectedTime] = useState('')
   const [bookingStage, setBookingStage] = useState<'selection' | 'checkout' | 'verified' | 'confirmed'>('selection')
   const [bookingPaymentMethod, setBookingPaymentMethod] = useState<'stripe' | 'ath'>('stripe')
-  const [bookingCustomerName, setBookingCustomerName] = useState('Demo Customer')
+  const [bookingCustomerName, setBookingCustomerName] = useState<string>(ui.defaultCustomer)
   const [bookingCustomerEmail, setBookingCustomerEmail] = useState('demo@example.com')
   const [checkoutComplete, setCheckoutComplete] = useState(false)
 
@@ -85,6 +97,21 @@ function DemoSite({ slug }: { slug: string }) {
   }, [selectedItem, bookingItem, cartOpen, catalogOpen])
 
   useEffect(() => {
+    window.localStorage.setItem('webfactory-demo-language', language)
+    document.documentElement.lang = language
+  }, [language])
+
+  useEffect(() => {
+    if (!config) return
+    setCart((current) => current.map((line) => ({
+      ...line,
+      item: config.items.find((item) => item.id === line.item.id) ?? line.item,
+    })))
+    setSelectedItem((current) => current ? config.items.find((item) => item.id === current.id) ?? current : null)
+    setBookingItem((current) => current ? config.items.find((item) => item.id === current.id) ?? current : null)
+  }, [config])
+
+  useEffect(() => {
     if (!config) return
     document.title = `${config.name} — WebFactory Demo`
   }, [config])
@@ -92,8 +119,8 @@ function DemoSite({ slug }: { slug: string }) {
   if (!config) {
     return (
       <main className="demo-not-found">
-        <h1>Demo no encontrado</h1>
-        <a href="/#demos">Volver a WebFactory PR</a>
+        <h1>{ui.notFound}</h1>
+        <a href="/#demos">{ui.returnWebFactory}</a>
       </main>
     )
   }
@@ -133,7 +160,7 @@ function DemoSite({ slug }: { slug: string }) {
     setSelectedTime('')
     setBookingStage('selection')
     setBookingPaymentMethod('stripe')
-    setBookingCustomerName('Demo Customer')
+    setBookingCustomerName(ui.defaultCustomer)
     setBookingCustomerEmail('demo@example.com')
   }
 
@@ -146,10 +173,10 @@ function DemoSite({ slug }: { slug: string }) {
   const bookingCharge = bookingItem ? (bookingItem.deposit ?? bookingItem.price) : 0
   const bookingRequiresPayment = bookingCharge > 0
   const bookingPaymentLabel = bookingItem?.deposit
-    ? `Deposit · ${money(bookingCharge)}`
+    ? `${ui.deposit} · ${money(bookingCharge, language)}`
     : bookingRequiresPayment
-      ? `Full payment · ${money(bookingCharge)}`
-      : 'No payment required'
+      ? `${ui.fullPayment} · ${money(bookingCharge, language)}`
+      : ui.noPayment
 
   const continueDemoBooking = () => {
     if (!selectedDate || !selectedTime || (employeesForBooking.length > 0 && !selectedEmployee)) return
@@ -163,24 +190,28 @@ function DemoSite({ slug }: { slug: string }) {
 
   return (
     <div className="demo-site" style={styles}>
-      <DemoNotice />
+      <DemoNotice ui={ui} />
 
       <header className="demo-header">
         <a className="demo-brand" href="#demo-top">{config.shortName}</a>
         <button className="demo-menu-button" onClick={() => setMenuOpen((v) => !v)} aria-expanded={menuOpen}>
-          Menu
+          {ui.menu}
         </button>
         <nav className={menuOpen ? 'open' : ''}>
-          <a href="#services" onClick={() => setMenuOpen(false)}>Servicios / Shop</a>
-          {config.employees.length > 0 && <a href="#team" onClick={() => setMenuOpen(false)}>Equipo</a>}
-          <a href="#about" onClick={() => setMenuOpen(false)}>Nosotros</a>
-          <a href="#contact" onClick={() => setMenuOpen(false)}>Contacto</a>
+          <a href="#services" onClick={() => setMenuOpen(false)}>{ui.services}</a>
+          {config.employees.length > 0 && <a href="#team" onClick={() => setMenuOpen(false)}>{ui.team}</a>}
+          <a href="#about" onClick={() => setMenuOpen(false)}>{ui.about}</a>
+          <a href="#contact" onClick={() => setMenuOpen(false)}>{ui.contact}</a>
         </nav>
         <div className="demo-header-actions">
+          <div className="demo-languages" role="group" aria-label={ui.language}>
+            <button className={language === 'es' ? 'active' : ''} onClick={() => setLanguage('es')} aria-pressed={language === 'es'}>ES</button>
+            <button className={language === 'en' ? 'active' : ''} onClick={() => setLanguage('en')} aria-pressed={language === 'en'}>EN</button>
+          </div>
           {config.bookingEnabled && <button className="demo-outline" onClick={() => startBooking()}>{config.bookingLabel}</button>}
           {config.cartEnabled && (
             <button className="demo-cart-button" onClick={() => setCartOpen(true)}>
-              Cart <b>{cart.reduce((sum, line) => sum + line.quantity, 0)}</b>
+              {ui.cart} <b>{cart.reduce((sum, line) => sum + line.quantity, 0)}</b>
             </button>
           )}
         </div>
@@ -196,13 +227,13 @@ function DemoSite({ slug }: { slug: string }) {
             <span>{config.description}</span>
             <div className="demo-hero-actions">
               {config.bookingEnabled && <button className="demo-solid large" onClick={() => startBooking()}>{config.bookingLabel}</button>}
-              <button className="demo-glass large" onClick={() => setCatalogOpen(true)}>{config.cartEnabled ? 'Explorar catálogo' : 'Ver servicios'}</button>
+              <button className="demo-glass large" onClick={() => setCatalogOpen(true)}>{config.cartEnabled ? ui.exploreCatalog : ui.viewServices}</button>
             </div>
           </div>
           <aside className="demo-hero-meta">
-            <div><small>LOCATION</small><strong>{config.location}</strong></div>
-            <div><small>HOURS</small><strong>{config.hours}</strong></div>
-            <div><small>CALL</small><strong>{config.phone}</strong></div>
+            <div><small>{ui.location}</small><strong>{config.location}</strong></div>
+            <div><small>{ui.hours}</small><strong>{config.hours}</strong></div>
+            <div><small>{ui.call}</small><strong>{config.phone}</strong></div>
           </aside>
         </section>
 
@@ -218,17 +249,14 @@ function DemoSite({ slug }: { slug: string }) {
         <section className="demo-section demo-catalog" id="services">
           <div className="demo-section-heading">
             <div>
-              <small>{config.category.toUpperCase()} EXPERIENCE</small>
-              <h2>{config.cartEnabled ? 'Explore, choose and take action.' : 'Choose the service that fits.'}</h2>
+              <small>{config.category.toUpperCase()} · {ui.experience}</small>
+              <h2>{config.cartEnabled ? ui.commerceHeading : ui.servicesHeading}</h2>
             </div>
-            <p>
-              El catálogo permanece oculto hasta que el cliente decide abrirlo. Esto mantiene la página
-              limpia incluso cuando el negocio tiene decenas de productos o servicios.
-            </p>
+            <p>{ui.catalogIntro}</p>
           </div>
           <div className="demo-catalog-gateway">
-            <div><small>CATÁLOGO DISPONIBLE</small><strong>{config.items.length} productos / servicios</strong><span>Abre una ventana dedicada para explorar el catálogo sin salir de la página.</span></div>
-            <button className="demo-solid" onClick={() => setCatalogOpen(true)}>Ver productos y servicios →</button>
+            <div><small>{ui.catalogAvailable}</small><strong>{config.items.length} {ui.productsServices}</strong><span>{ui.catalogHint}</span></div>
+            <button className="demo-solid" onClick={() => setCatalogOpen(true)}>{ui.viewCatalog}</button>
           </div>
         </section>
 
@@ -236,13 +264,10 @@ function DemoSite({ slug }: { slug: string }) {
           <section className="demo-section demo-team-section" id="team">
             <div className="demo-section-heading">
               <div>
-                <small>TEAM</small>
-                <h2>The right person for the right service.</h2>
+                <small>{ui.teamLabel}</small>
+                <h2>{ui.teamHeading}</h2>
               </div>
-              <p>
-                Cada profesional muestra solo los servicios que puede ofrecer. Esta es la lógica
-                Service + Employee que utiliza el sistema de booking.
-              </p>
+              <p>{ui.teamIntro}</p>
             </div>
             <div className="demo-team-grid">
               {config.employees.map((employee) => (
@@ -254,7 +279,7 @@ function DemoSite({ slug }: { slug: string }) {
                   <button onClick={() => {
                     const matching = config.items.find((item) => item.appointment && item.employees?.some((name) => employee.name.startsWith(name)))
                     if (matching) startBooking(matching)
-                  }}>View availability</button>
+                  }}>{ui.viewAvailability}</button>
                 </article>
               ))}
             </div>
@@ -263,7 +288,7 @@ function DemoSite({ slug }: { slug: string }) {
 
         <section className="demo-story" id="about">
           <div className="demo-story-copy">
-            <small>ABOUT THE DEMO</small>
+            <small>{ui.aboutDemo}</small>
             <h2>{config.aboutTitle}</h2>
             <p>{config.aboutText}</p>
             <div className="demo-trust-row">
@@ -286,37 +311,34 @@ function DemoSite({ slug }: { slug: string }) {
 
         <section className="demo-booking-showcase">
           <div>
-            <small>LIVE FEATURE PREVIEW</small>
-            <h2>{config.bookingEnabled ? 'See how booking feels before you buy.' : 'See how commerce feels before you buy.'}</h2>
-            <p>
-              Interactúa con esta página: abre detalles, añade artículos al carrito o simula una
-              reservación. Todo está en modo demo.
-            </p>
+            <small>{ui.livePreview}</small>
+            <h2>{config.bookingEnabled ? ui.bookingPreview : ui.commercePreview}</h2>
+            <p>{ui.interactHint}</p>
           </div>
           <div className="demo-showcase-card">
             <span className="demo-pulse" />
-            <small>WEBFACTORY DEMO MODE</small>
-            <strong>{config.bookingEnabled ? 'Availability ready' : 'Commerce ready'}</strong>
+            <small>{ui.demoMode}</small>
+            <strong>{config.bookingEnabled ? ui.availabilityReady : ui.commerceReady}</strong>
             <div>
               {config.bookingEnabled && <button className="demo-solid" onClick={() => startBooking()}>{config.bookingLabel}</button>}
-              {config.cartEnabled && <button className="demo-outline" onClick={() => setCartOpen(true)}>Open cart</button>}
+              {config.cartEnabled && <button className="demo-outline" onClick={() => setCartOpen(true)}>{ui.openCart}</button>}
             </div>
           </div>
         </section>
 
         <section className="demo-contact" id="contact">
           <div>
-            <small>VISIT / CONTACT</small>
+            <small>{ui.visitContact}</small>
             <h2>{config.name}</h2>
             <p>{config.location}</p>
           </div>
           <div className="demo-contact-grid">
-            <article><small>PHONE</small><strong>{config.phone}</strong></article>
-            <article><small>HOURS</small><strong>{config.hours}</strong></article>
-            <article><small>STATUS</small><strong>Demo business · fictional</strong></article>
+            <article><small>{ui.phone}</small><strong>{config.phone}</strong></article>
+            <article><small>{ui.hours}</small><strong>{config.hours}</strong></article>
+            <article><small>{ui.status}</small><strong>{ui.fictionalBusiness}</strong></article>
           </div>
           <div className="demo-map-faux">
-            <span>MAP PREVIEW</span>
+            <span>{ui.mapPreview}</span>
             <i />
             <b>{config.location}</b>
           </div>
@@ -324,15 +346,15 @@ function DemoSite({ slug }: { slug: string }) {
       </main>
 
       <footer className="demo-footer">
-        <div><strong>{config.shortName}</strong><span>{config.category} demo by WebFactory PR</span></div>
-        <a href="/#demos">Explore more WebFactory demos →</a>
+        <div><strong>{config.shortName}</strong><span>{config.category} · {ui.demoBy}</span></div>
+        <a href="/#demos">{ui.moreDemos}</a>
       </footer>
 
       {catalogOpen && (
         <div className="demo-modal-backdrop" role="presentation" onMouseDown={() => setCatalogOpen(false)}>
           <section className="demo-catalog-modal" role="dialog" aria-modal="true" onMouseDown={(event) => event.stopPropagation()}>
             <header>
-              <div><small>CATÁLOGO</small><h2>Productos y servicios</h2><p>Selecciona cualquier item para ver sus detalles.</p></div>
+              <div><small>{ui.catalog}</small><h2>{ui.catalogTitle}</h2><p>{ui.catalogSelect}</p></div>
               <button className="demo-modal-close catalog-close" onClick={() => setCatalogOpen(false)}>×</button>
             </header>
             <div className="demo-catalog-modal-grid">
@@ -344,6 +366,8 @@ function DemoSite({ slug }: { slug: string }) {
                   onView={() => { setCatalogOpen(false); setSelectedItem(item) }}
                   onAdd={() => { setCatalogOpen(false); addToCart(item) }}
                   onBook={() => { setCatalogOpen(false); startBooking(item) }}
+                  language={language}
+                  ui={ui}
                 />
               ))}
             </div>
@@ -357,21 +381,21 @@ function DemoSite({ slug }: { slug: string }) {
             <button className="demo-modal-close" onClick={() => setSelectedItem(null)}>×</button>
             <div className="demo-detail-image"><img src={selectedItem.image} alt="" /></div>
             <div className="demo-detail-copy">
-              <small>{selectedItem.type.toUpperCase()} DETAIL</small>
+              <small>{({ product: ui.product, service: ui.serviceType, listing: ui.listing, class: ui.classType }[selectedItem.type]).toUpperCase()} · {ui.detail}</small>
               <h2>{selectedItem.name}</h2>
-              <strong>{selectedItem.displayPrice ?? money(selectedItem.price)}</strong>
+              <strong>{selectedItem.displayPrice ?? money(selectedItem.price, language)}</strong>
               <p>{selectedItem.description}</p>
-              {selectedItem.duration && <span>Duration · {selectedItem.duration} min</span>}
-              {selectedItem.deposit ? <span>Deposit · {money(selectedItem.deposit)}</span> : null}
-              {selectedItem.groupCapacity ? <span>Group capacity · {selectedItem.groupCapacity}</span> : null}
-              {selectedItem.employees?.length ? <span>Available with · {selectedItem.employees.join(', ')}</span> : null}
+              {selectedItem.duration && <span>{ui.duration} · {selectedItem.duration} min</span>}
+              {selectedItem.deposit ? <span>{ui.deposit} · {money(selectedItem.deposit, language)}</span> : null}
+              {selectedItem.groupCapacity ? <span>{ui.groupCapacity} · {selectedItem.groupCapacity}</span> : null}
+              {selectedItem.employees?.length ? <span>{ui.availableWith} · {selectedItem.employees.join(', ')}</span> : null}
               <div className="demo-detail-actions">
                 {selectedItem.appointment ? (
-                  <button className="demo-solid" onClick={() => startBooking(selectedItem)}>Reservar</button>
+                  <button className="demo-solid" onClick={() => startBooking(selectedItem)}>{ui.reserve}</button>
                 ) : selectedItem.purchasable !== false ? (
-                  <button className="demo-solid" onClick={() => addToCart(selectedItem)}>Add to cart</button>
+                  <button className="demo-solid" onClick={() => addToCart(selectedItem)}>{ui.addToCart}</button>
                 ) : null}
-                <button className="demo-outline" onClick={() => setSelectedItem(null)}>Close</button>
+                <button className="demo-outline" onClick={() => setSelectedItem(null)}>{ui.close}</button>
               </div>
             </div>
           </article>
@@ -382,24 +406,24 @@ function DemoSite({ slug }: { slug: string }) {
         <div className="demo-modal-backdrop cart-backdrop" role="presentation" onMouseDown={() => setCartOpen(false)}>
           <aside className="demo-cart-drawer" role="dialog" aria-modal="true" onMouseDown={(event) => event.stopPropagation()}>
             <header>
-              <div><small>DEMO CART</small><h2>Your selections</h2></div>
+              <div><small>{ui.demoCart}</small><h2>{ui.selections}</h2></div>
               <button onClick={() => setCartOpen(false)}>×</button>
             </header>
             <div className="demo-cart-lines">
               {cart.length === 0 ? (
-                <div className="demo-empty-cart"><strong>Your cart is empty.</strong><span>Add a product or service to see the full cart experience.</span></div>
+                <div className="demo-empty-cart"><strong>{ui.emptyCart}</strong><span>{ui.emptyCartHint}</span></div>
               ) : cart.map((line) => (
                 <article key={line.item.id}>
                   <img src={line.item.image} alt="" />
-                  <div><strong>{line.item.name}</strong><span>{money(line.item.price)} · Qty {line.quantity}</span></div>
-                  <button onClick={() => removeFromCart(line.item.id)}>Remove</button>
+                  <div><strong>{line.item.name}</strong><span>{money(line.item.price, language)} · {ui.qty} {line.quantity}</span></div>
+                  <button onClick={() => removeFromCart(line.item.id)}>{ui.remove}</button>
                 </article>
               ))}
             </div>
             <div className="demo-cart-summary">
-              <span>Subtotal <b>{money(subtotal)}</b></span>
-              <span>Taxes <b>Calculated at checkout</b></span>
-              <strong>Total preview <b>{money(subtotal)}</b></strong>
+              <span>{ui.subtotal} <b>{money(subtotal, language)}</b></span>
+              <span>{ui.taxes} <b>{ui.calculatedCheckout}</b></span>
+              <strong>{ui.totalPreview} <b>{money(subtotal, language)}</b></strong>
             </div>
             <div className="demo-payment-options">
               <button>Stripe</button><button>ATH Móvil</button>
@@ -409,10 +433,10 @@ function DemoSite({ slug }: { slug: string }) {
               disabled={cart.length === 0}
               onClick={() => setCheckoutComplete(true)}
             >
-              Demo checkout
+              {ui.demoCheckout}
             </button>
-            {checkoutComplete && <p className="demo-success">✓ Checkout simulated. No payment was processed.</p>}
-            <small className="demo-safe-note">Demo mode only · authoritative pricing and payment verification occur on the backend in production.</small>
+            {checkoutComplete && <p className="demo-success">{ui.checkoutSuccess}</p>}
+            <small className="demo-safe-note">{ui.backendPricing}</small>
           </aside>
         </div>
       )}
@@ -422,12 +446,12 @@ function DemoSite({ slug }: { slug: string }) {
           <article className="demo-booking-modal" role="dialog" aria-modal="true" onMouseDown={(event) => event.stopPropagation()}>
             <button className="demo-modal-close" onClick={() => setBookingItem(null)}>×</button>
 
-            <div className="demo-booking-progress" aria-label="Demo booking progress">
+            <div className="demo-booking-progress" aria-label={ui.bookingProgress}>
               {[
-                ['selection','Select'],
-                ['checkout','Checkout'],
-                ['verified','Verify'],
-                ['confirmed','Confirmed'],
+                ['selection',ui.select],
+                ['checkout',ui.checkout],
+                ['verified',ui.verify],
+                ['confirmed',ui.confirmed],
               ].map(([stage,label],index) => {
                 const order = ['selection','checkout','verified','confirmed']
                 const current = order.indexOf(bookingStage)
@@ -438,16 +462,16 @@ function DemoSite({ slug }: { slug: string }) {
             {bookingStage === 'selection' && (
               <>
                 <header>
-                  <small>DEMO BOOKING</small>
+                  <small>{ui.demoBooking}</small>
                   <h2>{bookingItem.name}</h2>
-                  <p>{bookingItem.duration ? `${bookingItem.duration} min` : 'Appointment'} · {bookingPaymentLabel}</p>
+                  <p>{bookingItem.duration ? `${bookingItem.duration} min` : ui.appointment} · {bookingPaymentLabel}</p>
                 </header>
 
                 {employeesForBooking.length > 0 && (
                   <section>
-                    <strong>1 · Choose professional</strong>
+                    <strong>1 · {ui.chooseProfessional}</strong>
                     <div className="demo-choice-grid">
-                      <button className={selectedEmployee === 'any' ? 'selected' : ''} onClick={() => setSelectedEmployee('any')}>Any available</button>
+                      <button className={selectedEmployee === 'any' ? 'selected' : ''} onClick={() => setSelectedEmployee('any')}>{ui.anyAvailable}</button>
                       {employeesForBooking.map((employee) => (
                         <button key={employee.id} className={selectedEmployee === employee.name ? 'selected' : ''} onClick={() => setSelectedEmployee(employee.name)}>
                           {employee.name}<small>{employee.role}</small>
@@ -458,20 +482,20 @@ function DemoSite({ slug }: { slug: string }) {
                 )}
 
                 <section>
-                  <strong>{employeesForBooking.length > 0 ? '2' : '1'} · Choose date</strong>
+                  <strong>{employeesForBooking.length > 0 ? '2' : '1'} · {ui.chooseDate}</strong>
                   <div className="demo-date-row">
-                    {['Fri 18','Sat 19','Mon 21','Tue 22'].map((date) => (
-                      <button key={date} className={selectedDate === date ? 'selected' : ''} onClick={() => setSelectedDate(date)}>{date}</button>
+                    {ui.dates.map((date, index) => (
+                      <button key={date} className={selectedDate === String(index) ? 'selected' : ''} onClick={() => setSelectedDate(String(index))}>{date}</button>
                     ))}
                   </div>
                 </section>
 
                 <section>
-                  <strong>{employeesForBooking.length > 0 ? '3' : '2'} · Choose time</strong>
+                  <strong>{employeesForBooking.length > 0 ? '3' : '2'} · {ui.chooseTime}</strong>
                   <div className="demo-time-grid">
                     {['9:00 AM','10:30 AM','1:00 PM','3:30 PM','5:00 PM'].map((time, index) => (
                       <button key={time} disabled={index === 1} className={selectedTime === time ? 'selected' : ''} onClick={() => setSelectedTime(time)}>
-                        {time}{index === 1 && <small>Busy</small>}
+                        {time}{index === 1 && <small>{ui.busy}</small>}
                       </button>
                     ))}
                   </div>
@@ -479,7 +503,7 @@ function DemoSite({ slug }: { slug: string }) {
 
                 {selectedTime && (
                   <div className="demo-hold">
-                    <span>Temporary booking hold · demo only</span>
+                    <span>{ui.bookingHold}</span>
                     <strong>10:00</strong>
                   </div>
                 )}
@@ -489,34 +513,34 @@ function DemoSite({ slug }: { slug: string }) {
                   disabled={!selectedDate || !selectedTime || (employeesForBooking.length > 0 && !selectedEmployee)}
                   onClick={continueDemoBooking}
                 >
-                  {bookingRequiresPayment ? 'Continue to demo checkout' : 'Continue · no payment required'}
+                  {bookingRequiresPayment ? ui.continueCheckout : ui.continueNoPayment}
                 </button>
-                <small className="demo-safe-note">Demo mode only · this hold does not block any real calendar slot.</small>
+                <small className="demo-safe-note">{ui.holdSafe}</small>
               </>
             )}
 
             {bookingStage === 'checkout' && (
               <div className="demo-booking-checkout">
                 <header>
-                  <small>DEMO CHECKOUT</small>
-                  <h2>Complete the booking flow.</h2>
-                  <p>No real payment information is requested or transmitted.</p>
+                  <small>{ui.demoCheckoutLabel}</small>
+                  <h2>{ui.completeFlow}</h2>
+                  <p>{ui.noPaymentInfo}</p>
                 </header>
 
                 <div className="demo-booking-order">
-                  <span><b>Service</b><strong>{bookingItem.name}</strong></span>
-                  <span><b>Professional</b><strong>{selectedEmployee === 'any' ? 'Any available professional' : selectedEmployee}</strong></span>
-                  <span><b>Date & time</b><strong>{selectedDate} · {selectedTime}</strong></span>
-                  <span><b>{bookingItem.deposit ? 'Deposit due' : 'Amount due'}</b><strong>{money(bookingCharge)}</strong></span>
+                  <span><b>{ui.service}</b><strong>{bookingItem.name}</strong></span>
+                  <span><b>{ui.professional}</b><strong>{selectedEmployee === 'any' ? ui.anyAvailable : selectedEmployee}</strong></span>
+                  <span><b>{ui.dateTime}</b><strong>{ui.dates[Number(selectedDate)]} · {selectedTime}</strong></span>
+                  <span><b>{bookingItem.deposit ? ui.depositDue : ui.amountDue}</b><strong>{money(bookingCharge, language)}</strong></span>
                 </div>
 
                 <div className="demo-customer-grid">
-                  <label><span>Name</span><input value={bookingCustomerName} onChange={(event)=>setBookingCustomerName(event.target.value)} /></label>
-                  <label><span>Email</span><input type="email" value={bookingCustomerEmail} onChange={(event)=>setBookingCustomerEmail(event.target.value)} /></label>
+                  <label><span>{ui.name}</span><input value={bookingCustomerName} onChange={(event)=>setBookingCustomerName(event.target.value)} /></label>
+                  <label><span>{ui.email}</span><input type="email" value={bookingCustomerEmail} onChange={(event)=>setBookingCustomerEmail(event.target.value)} /></label>
                 </div>
 
                 <section className="demo-payment-step">
-                  <strong>Choose simulated payment method</strong>
+                  <strong>{ui.choosePayment}</strong>
                   <div className="demo-payment-options booking">
                     <button className={bookingPaymentMethod === 'stripe' ? 'selected' : ''} onClick={() => setBookingPaymentMethod('stripe')}>Stripe</button>
                     <button className={bookingPaymentMethod === 'ath' ? 'selected' : ''} onClick={() => setBookingPaymentMethod('ath')}>ATH Móvil</button>
@@ -524,49 +548,49 @@ function DemoSite({ slug }: { slug: string }) {
                 </section>
 
                 <div className="demo-hold">
-                  <span>Temporary booking hold · demo only</span>
+                  <span>{ui.bookingHold}</span>
                   <strong>10:00</strong>
                 </div>
 
                 <div className="demo-booking-actions">
-                  <button className="demo-outline" onClick={() => setBookingStage('selection')}>← Back</button>
-                  <button className="demo-solid" disabled={!bookingCustomerName.trim() || !bookingCustomerEmail.trim()} onClick={verifyDemoPayment}>Simulate approved payment →</button>
+                  <button className="demo-outline" onClick={() => setBookingStage('selection')}>{ui.back}</button>
+                  <button className="demo-solid" disabled={!bookingCustomerName.trim() || !bookingCustomerEmail.trim()} onClick={verifyDemoPayment}>{ui.simulatePayment}</button>
                 </div>
-                <small className="demo-safe-note">No card, ATH transaction, charge, booking record or calendar event is created.</small>
+                <small className="demo-safe-note">{ui.noExternalRecord}</small>
               </div>
             )}
 
             {bookingStage === 'verified' && (
               <div className="demo-booking-verified">
                 <span>✓</span>
-                <small>{bookingRequiresPayment ? 'DEMO PAYMENT VERIFIED' : 'NO PAYMENT REQUIRED'}</small>
-                <h2>Ready to confirm the booking.</h2>
-                <p>The demo now simulates the final backend checks that a real WebFactory site would perform.</p>
+                <small>{bookingRequiresPayment ? ui.paymentVerified : ui.noPaymentRequired}</small>
+                <h2>{ui.readyConfirm}</h2>
+                <p>{ui.verifiedIntro}</p>
                 <div>
-                  <b>✓ Service + employee + time revalidated</b>
-                  <b>✓ Temporary hold still active</b>
-                  {bookingRequiresPayment ? <b>✓ {bookingPaymentMethod === 'stripe' ? 'Stripe' : 'ATH Móvil'} payment verified (demo)</b> : <b>✓ Payment step skipped</b>}
-                  <b>✓ Calendar conflict check passed (demo)</b>
+                  <b>{ui.revalidated}</b>
+                  <b>{ui.holdActive}</b>
+                  {bookingRequiresPayment ? <b>✓ {bookingPaymentMethod === 'stripe' ? 'Stripe' : 'ATH Móvil'} {ui.paymentVerifiedLine}</b> : <b>{ui.paymentSkipped}</b>}
+                  <b>{ui.calendarPassed}</b>
                 </div>
-                <button className="demo-solid" onClick={() => setBookingStage('confirmed')}>Confirm demo booking →</button>
-                <small className="demo-safe-note">These checks are visual simulation only. No external service is contacted.</small>
+                <button className="demo-solid" onClick={() => setBookingStage('confirmed')}>{ui.confirmBooking}</button>
+                <small className="demo-safe-note">{ui.checksVisual}</small>
               </div>
             )}
 
             {bookingStage === 'confirmed' && (
               <div className="demo-booking-confirmed">
                 <span>✓</span>
-                <small>DEMO CONFIRMED</small>
-                <h2>Booking experience complete.</h2>
-                <p>{bookingItem.name} · {selectedDate} · {selectedTime}</p>
-                <b>{selectedEmployee && selectedEmployee !== 'any' ? selectedEmployee : 'Any available professional'}</b>
+                <small>{ui.demoConfirmed}</small>
+                <h2>{ui.bookingComplete}</h2>
+                <p>{bookingItem.name} · {ui.dates[Number(selectedDate)]} · {selectedTime}</p>
+                <b>{selectedEmployee && selectedEmployee !== 'any' ? selectedEmployee : ui.anyAvailable}</b>
                 <div className="demo-confirmation-receipt">
-                  <span>Booking status <b>CONFIRMED · DEMO</b></span>
-                  <span>Payment <b>{bookingRequiresPayment ? 'VERIFIED · DEMO' : 'NOT REQUIRED'}</b></span>
-                  <span>Calendar <b>EVENT READY · DEMO</b></span>
+                  <span>{ui.bookingStatus} <b>{ui.confirmedDemo}</b></span>
+                  <span>{ui.payment} <b>{bookingRequiresPayment ? ui.verifiedDemo : ui.notRequired}</b></span>
+                  <span>{ui.calendar} <b>{ui.eventReady}</b></span>
                 </div>
-                <button className="demo-outline" onClick={() => setBookingItem(null)}>Done</button>
-                <small className="demo-safe-note">No real appointment, payment, email or calendar event was created.</small>
+                <button className="demo-outline" onClick={() => setBookingItem(null)}>{ui.done}</button>
+                <small className="demo-safe-note">{ui.nothingCreated}</small>
               </div>
             )}
           </article>
