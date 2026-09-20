@@ -985,6 +985,19 @@ function FinalStep({state,setStep}:{state:BuilderState;setStep:(step:number)=>vo
       {!customerReady && <div className="wf-checkout-warning">Completa el nombre del cliente, nombre del negocio y un email válido antes de pagar.</div>}
       {!paymentReady && <div className="wf-checkout-warning">Selecciona al menos un método de pago para la página del negocio.</div>}
       {missingUpload && <div className="wf-checkout-warning">Hay imágenes todavía sin guardar. Vuelve a cargarlas antes del checkout para incluirlas en el pedido.</div>}
+      <section className="wf-after-payment" aria-labelledby="wf-after-payment-title">
+        <header>
+          <small>DESPUÉS DEL PAGO</small>
+          <h4 id="wf-after-payment-title">Tu portal y las integraciones están incluidos.</h4>
+          <p>La vinculación privada comienza únicamente cuando Stripe confirma el pago de WebFactory.</p>
+        </header>
+        <div>
+          <article><em>01</em><strong>Confirmación segura</strong><span>Recibirás la confirmación de pago, el número de orden y los enlaces privados de activación.</span></article>
+          <article><em>02</em><strong>Conecta tus cuentas</strong><span>Desde tu acceso privado podrás conectar Stripe y autorizar Google Calendar en sus pantallas oficiales.</span></article>
+          <article><em>03</em><strong>Administra tu página</strong><span>Al publicarse, podrás cambiar productos, servicios, precios, empleados, horarios y reglas sin solicitar otro deployment.</span></article>
+        </div>
+        <p className="wf-after-payment-security">WebFactory nunca te pedirá contraseñas, códigos de seguridad, datos bancarios ni llaves secretas.</p>
+      </section>
       <div className="wf-checkout-placeholder">
         <div><small>SIGUIENTE ETAPA</small><strong>Checkout seguro — {PRICE}</strong><span>{readinessText}</span></div>
         <button disabled={!canCheckout} onClick={startCheckout}>{checkingOut?'Preparando orden…':'Continuar al checkout'}</button>
