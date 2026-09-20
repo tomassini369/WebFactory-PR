@@ -129,10 +129,12 @@ function App(){
   const paymentSetupRoute = /^\/payment-setup\/?$/.test(window.location.pathname)
   const clientAdminRoute = /^\/client-admin\/?$/.test(window.location.pathname)
   const webFactoryAdminRoute = /^\/webfactory-admin\/?$/.test(window.location.pathname)
+  const identityInviteRoute = /^#invite_token=/.test(window.location.hash)
+  const identityRecoveryRoute = /^#recovery_token=/.test(window.location.hash)
   const clientSiteMatch = window.location.pathname.match(/^\/sites\/([^/]+)\/?$/)
 
-  if (webFactoryAdminRoute) return <WebFactoryAdminPage />
-  if (clientAdminRoute) return <ClientAdminPage />
+  if (webFactoryAdminRoute || identityInviteRoute) return <WebFactoryAdminPage />
+  if (clientAdminRoute || identityRecoveryRoute) return <ClientAdminPage />
   if (clientSiteMatch) return <ClientStorefront slug={decodeURIComponent(clientSiteMatch[1])} />
   if (paymentSetupRoute) return <PaymentSetupPage />
   if (demoMatch) return <DemoSite slug={demoMatch[1]} />
