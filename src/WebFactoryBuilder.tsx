@@ -540,6 +540,27 @@ function BusinessStep({state,setState}:{state:BuilderState;setState:Dispatch<Set
 function DesignStep({state,setState,lang}:{state:BuilderState;setState:Dispatch<SetStateAction<BuilderState>>;lang:Language}) {
   const setDesign = <K extends keyof BuilderState['design']>(key:K, value:BuilderState['design'][K]) =>
     setState((current)=>({...current,design:{...current.design,[key]:value}}))
+  const selectedTemplate = demoConfigs.find((demo)=>demo.slug===state.design.templateSlug)
+
+  const selectTemplate = (slug:string) => {
+    const demo = demoConfigs.find((entry)=>entry.slug===slug)
+    setState((current)=>({
+      ...current,
+      design:{
+        ...current.design,
+        templateSlug:slug,
+        ...(demo ? {primary:demo.dark,secondary:demo.accent} : {}),
+      },
+    }))
+  }
+
+  const restoreTemplateColors = () => {
+    if (!selectedTemplate) return
+    setState((current)=>({
+      ...current,
+      design:{...current.design,primary:selectedTemplate.dark,secondary:selectedTemplate.accent},
+    }))
+  }
 
   return (
     <div className="wf-step-content">
@@ -552,7 +573,7 @@ function DesignStep({state,setState,lang}:{state:BuilderState;setState:Dispatch<
       </div>
       <div className="wf-template-grid">
         <article className={`wf-template-custom ${state.design.templateSlug===''?'selected':''}`}>
-          <button type="button" onClick={()=>setDesign('templateSlug','')} aria-pressed={state.design.templateSlug===''}>
+          <button type="button" onClick={()=>selectTemplate('')} aria-pressed={state.design.templateSlug===''}>
             <span className="wf-template-custom-art">
               <i/><i/><i/>
               {state.design.templateSlug==='' && <b>✓ {lang==='es'?'Seleccionado':'Selected'}</b>}
@@ -564,12 +585,13 @@ function DesignStep({state,setState,lang}:{state:BuilderState;setState:Dispatch<
         </article>
         {demoConfigs.map((demo)=>(
           <article key={demo.slug} className={state.design.templateSlug===demo.slug?'selected':''}>
-            <button type="button" onClick={()=>setDesign('templateSlug',demo.slug)} aria-pressed={state.design.templateSlug===demo.slug}>
+          <button type="button" onClick={()=>selectTemplate(demo.slug)} aria-pressed={state.design.templateSlug===demo.slug}>
               <span style={{backgroundImage:`linear-gradient(180deg,transparent,rgba(5,10,16,.78)),url(${demo.heroImage})`}}>
                 {state.design.templateSlug===demo.slug && <b>✓ {lang==='es'?'Seleccionado':'Selected'}</b>}
               </span>
-              <small>{demo.category}</small>
-              <strong>{demo.name}</strong>
+              <small>{lang==='es'?'DISEÑO BASE':'BASE DESIGN'}</small>
+              <strong>{demo.category}</strong>
+              <em>{demo.name}</em>
             </button>
             <a href={`/demos/${demo.slug}`} target="_blank" rel="noreferrer">{lang==='es'?'Ver demo completo':'View full demo'} ↗</a>
           </article>
@@ -587,7 +609,7 @@ function DesignStep({state,setState,lang}:{state:BuilderState;setState:Dispatch<
               ? 'The chosen demo is customized for your business while preserving its structure and compatible features.'
               : 'Your style, colors, content, and features will be used without requiring a copy of a demo.')}</span>
       </div>
-      <div className="wf-step-intro compact"><small>{lang==='es'?'PERSONALIZACIÓN':'CUSTOMIZATION'}</small><h3>{lang==='es'?'Ajusta estilo y colores.':'Adjust style and colors.'}</h3><p>{lang==='es'?'Estos cambios aplican tu identidad sobre el diseño base seleccionado.':'These changes apply your identity to the selected base design.'}</p></div>
+      <div className="wf-step-intro compact"><small>{lang==='es'?'PERSONALIZACIÓN':'CUSTOMIZATION'}</small><h3>{lang==='es'?'Ajusta estilo y colores.':'Adjust style and colors.'}</h3><p>{lang==='es'?'Estos cambios aplican tu identidad sobre el diseño base seleccionado. Todos los colores permanecen editables.':'These changes apply your identity to the selected base design. Every color remains editable.'}</p></div>
       <div className="wf-style-grid">
         {styles.map((style)=>(
           <button key={style} className={state.design.style===style?'selected':''} onClick={()=>setDesign('style',style)}>
@@ -596,9 +618,18 @@ function DesignStep({state,setState,lang}:{state:BuilderState;setState:Dispatch<
           </button>
         ))}
       </div>
+      <div className="wf-color-preferences">
+        <div>
+          <strong>{lang==='es'?'Preferencias de colores':'Color preferences'}</strong>
+          <span>{selectedTemplate
+            ? (lang==='es'?`Colores originales de ${selectedTemplate.category} cargados. Puedes alterarlos libremente.`:`Original ${selectedTemplate.category} colors loaded. You can change them freely.`)
+            : (lang==='es'?'Selecciona cualquier combinación para tu diseño personalizado.':'Choose any color combination for your custom design.')}</span>
+        </div>
+        {selectedTemplate && <button type="button" onClick={restoreTemplateColors}>{lang==='es'?'Restaurar colores del demo':'Restore demo colors'}</button>}
+      </div>
       <div className="wf-color-grid">
-        <label><span>Color primario</span><div><input type="color" value={state.design.primary} onChange={(e)=>setDesign('primary',e.target.value)} /><input value={state.design.primary} onChange={(e)=>setDesign('primary',e.target.value)} /></div></label>
-        <label><span>Color secundario</span><div><input type="color" value={state.design.secondary} onChange={(e)=>setDesign('secondary',e.target.value)} /><input value={state.design.secondary} onChange={(e)=>setDesign('secondary',e.target.value)} /></div></label>
+        <label><span>{lang==='es'?'Color principal · editable':'Primary color · editable'}</span><div><input type="color" value={state.design.primary} onChange={(e)=>setDesign('primary',e.target.value)} /><input value={state.design.primary} onChange={(e)=>setDesign('primary',e.target.value)} /></div></label>
+        <label><span>{lang==='es'?'Color secundario · editable':'Secondary color · editable'}</span><div><input type="color" value={state.design.secondary} onChange={(e)=>setDesign('secondary',e.target.value)} /><input value={state.design.secondary} onChange={(e)=>setDesign('secondary',e.target.value)} /></div></label>
       </div>
       <div className="wf-palette-row">
         {[
@@ -944,7 +975,7 @@ function FinalStep({state,setStep}:{state:BuilderState;setStep:(step:number)=>vo
       <div className="wf-step-intro"><small>PASO 8</small><h3>Tu configuración está lista para revisar.</h3><p>El pedido se bloquea para producción solamente después de que Stripe confirma el pago.</p></div>
       <div className="wf-review-grid">
         <article><span>Negocio</span><strong>{state.business.name}</strong><small>{state.business.category}</small><button onClick={()=>setStep(0)}>Editar</button></article>
-        <article><span>Diseño</span><strong>{selectedTemplate?.name || 'Personalizado por WebFactory'}</strong><small>{state.design.style}</small><div><i style={{background:state.design.primary}}/><i style={{background:state.design.secondary}}/></div><button onClick={()=>setStep(1)}>Editar</button></article>
+        <article><span>Diseño</span><strong>{selectedTemplate ? `${selectedTemplate.category} — ${selectedTemplate.name}` : 'Personalizado por WebFactory'}</strong><small>{state.design.style}</small><div><i style={{background:state.design.primary}}/><i style={{background:state.design.secondary}}/></div><button onClick={()=>setStep(1)}>Editar</button></article>
         <article><span>Funciones</span><strong>{enabledFeatures} activas</strong><small>Precio fijo {PRICE}</small><button onClick={()=>setStep(2)}>Editar</button></article>
         <article><span>Catálogo</span><strong>{state.catalog.length} items</strong><small>{appointmentServices.length} con booking</small><button onClick={()=>setStep(3)}>Editar</button></article>
         <article><span>Equipo</span><strong>{state.team.length} empleados</strong><small>Service + Employee</small><button onClick={()=>setStep(4)}>Editar</button></article>

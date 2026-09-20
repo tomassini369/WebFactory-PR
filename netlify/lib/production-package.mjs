@@ -8,7 +8,7 @@ import {
   safeFileName,
 } from "./order-store.mjs";
 
-const PACKAGE_VERSION = 4;
+const PACKAGE_VERSION = 5;
 const DOWNLOAD_DAYS = 7;
 
 function localizationSettings(order) {
@@ -52,7 +52,11 @@ function designTemplateSettings(order) {
   return {
     mode: usesDemo ? "demo_base" : "custom",
     templateSlug: usesDemo ? design.templateSlug : "",
+    templateCategory: usesDemo ? design.templateCategory || "" : "",
     templateName: usesDemo ? design.templateName : "Custom WebFactory design",
+    templateLabel: usesDemo
+      ? [design.templateCategory, design.templateName].filter(Boolean).join(" — ")
+      : "Custom WebFactory design",
     templateRoute: usesDemo ? design.templateRoute || `/demos/${design.templateSlug}` : "",
     preserveDemoStructure: usesDemo,
     customizationScope: usesDemo
@@ -104,7 +108,7 @@ function requirementText(order) {
     "",
     "DESIGN",
     `Design mode: ${template.mode}`,
-    `Base demo: ${template.templateName}`,
+    `Base demo: ${template.templateLabel}`,
     `Base demo route: ${template.templateRoute || "not applicable"}`,
     `Preserve demo structure: ${template.preserveDemoStructure ? "required" : "not applicable"}`,
     `Style: ${design.style || ""}`,
@@ -254,7 +258,7 @@ function buildPrompt(order) {
     "- Do not invent an address, phone number, price, certification, review, service, employee, history, guarantee, statistic, or business claim.",
     "- Preserve the selected branding, colors, visual style, catalog, employees, schedules, booking settings, payment selections, and supplied files.",
     template.preserveDemoStructure
-      ? `- REQUIRED DESIGN BASE: Reproduce the structure, responsive layout, navigation, component arrangement, visual hierarchy, catalog experience, cart, booking flow, and compatible interactions of the WebFactory demo \"${template.templateName}\" (${template.templateRoute}). Replace only the fictional branding, colors, content, images, catalog, employees, schedules, payments, and business configuration with the customer's supplied information.`
+      ? `- REQUIRED DESIGN BASE: Reproduce the structure, responsive layout, navigation, component arrangement, visual hierarchy, catalog experience, cart, booking flow, and compatible interactions of the WebFactory demo \"${template.templateLabel}\" (${template.templateRoute}). Replace only the fictional branding, colors, content, images, catalog, employees, schedules, payments, and business configuration with the customer's supplied information.`
       : "- DESIGN MODE: Create a custom WebFactory design from the customer's selected style, colors, content, and enabled features. Do not force a demo template.",
     template.preserveDemoStructure
       ? "- Do not substitute a different template, generic layout, or unrelated design for the selected demo base."
@@ -288,7 +292,7 @@ function revisionPrompt(order) {
     "",
     "Preserve all approved branding, functionality, customer content, catalog data, employee mappings, schedules, booking behavior, payment behavior, and supplied files.",
     template.preserveDemoStructure
-      ? `Preserve the selected \"${template.templateName}\" demo structure and compatible interactions; do not replace it with another template or generic layout.`
+      ? `Preserve the selected \"${template.templateLabel}\" demo structure and compatible interactions; do not replace it with another template or generic layout.`
       : "Preserve the approved custom WebFactory layout and do not introduce an unrequested demo template.",
     "Preserve complete Spanish/English coverage, the ES/EN selector, Spanish fallback behavior, localStorage preference, and document language synchronization.",
     "Apply only the revisions explicitly requested by the customer.",
@@ -300,7 +304,7 @@ function brandColors(order) {
   const template = designTemplateSettings(order);
   return [
     `Design mode: ${template.mode}`,
-    `Base demo: ${template.templateName}`,
+    `Base demo: ${template.templateLabel}`,
     `Primary: ${order.design?.primary || ""}`,
     `Secondary: ${order.design?.secondary || ""}`,
     `Style: ${order.design?.style || ""}`,
@@ -346,7 +350,7 @@ export async function createSummaryPdf(order) {
     [`Category: ${order.business?.category || ""}`, false],
     [`Phone: ${order.business?.phone || ""}`, false],
     [`Google Maps: ${order.business?.mapsUrl || ""}`, false],
-    [`Design: ${template.templateName} / ${order.design?.style || ""} / ${order.design?.primary || ""} / ${order.design?.secondary || ""}`, false],
+    [`Design: ${template.templateLabel} / ${order.design?.style || ""} / ${order.design?.primary || ""} / ${order.design?.secondary || ""}`, false],
     ["Languages: Español + English (Spanish default)", false],
     [`Catalog items: ${Array.isArray(order.catalog) ? order.catalog.length : 0}`, false],
     [`Employees: ${Array.isArray(order.team) ? order.team.length : 0}`, false],
@@ -492,7 +496,7 @@ export async function ensureProductionPackage(order) {
       ? [
           "WEBFACTORY SELECTED DEMO BASE",
           "",
-          `Selected demo: ${template.templateName}`,
+          `Selected demo: ${template.templateLabel}`,
           `Demo route: ${template.templateRoute}`,
           "Preserve the selected demo's structure, responsive layout, navigation, visual hierarchy, component arrangement, catalog experience, cart, booking flow, and compatible interactions.",
           "Replace its fictional business branding, colors, text, images, catalog, employees, schedules, payments, bookings, and contact information with the customer's supplied information.",

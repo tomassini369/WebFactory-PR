@@ -11,15 +11,15 @@ const PRODUCT_KEY = "webfactory-premium";
 const PRODUCT_LABEL = "WebFactory Premium Commerce Website";
 const OFFICIAL_PRICE_USD = 300;
 const DEMO_TEMPLATES = {
-  "brisa-cocina": "Brisa Cocina",
-  "velocity-auto": "Velocity Auto Care",
-  "northline-barber": "Northline Barber Studio",
-  "aura-beauty": "Aura Beauty Lab",
-  "balance-wellness": "Balance Wellness Room",
-  "luna-market": "Luna Market Boutique",
-  "summit-advisory": "Summit Advisory Group",
-  "isla-living": "Isla Living Realty",
-  "atelier-nueve": "Atelier Nueve",
+  "brisa-cocina": { category: "Restaurant", name: "Brisa Cocina" },
+  "velocity-auto": { category: "Automotive", name: "Velocity Auto Care" },
+  "northline-barber": { category: "Barber", name: "Northline Barber Studio" },
+  "aura-beauty": { category: "Beauty", name: "Aura Beauty Lab" },
+  "balance-wellness": { category: "Wellness", name: "Balance Wellness Room" },
+  "luna-market": { category: "Retail", name: "Luna Market Boutique" },
+  "summit-advisory": { category: "Professional Services", name: "Summit Advisory Group" },
+  "isla-living": { category: "Real Estate", name: "Isla Living Realty" },
+  "atelier-nueve": { category: "Other", name: "Atelier Nueve" },
 };
 
 function env(name) {
@@ -55,7 +55,7 @@ function sanitizeOrder(payload) {
   const customerName = cleanText(client.name || b.contactName, 180);
   const businessName = cleanText(b.name, 180);
   const requestedTemplateSlug = cleanText(d.templateSlug, 80);
-  const templateName = DEMO_TEMPLATES[requestedTemplateSlug] || "";
+  const template = DEMO_TEMPLATES[requestedTemplateSlug] || null;
 
   if (!businessName) throw new Error("Business name is required.");
   if (!customerName) throw new Error("Customer name is required.");
@@ -183,11 +183,12 @@ function sanitizeOrder(payload) {
       logoAssetType: cleanText(b.logoAssetType, 120),
     },
     design: {
-      mode: templateName ? "demo_base" : "custom",
-      templateSlug: templateName ? requestedTemplateSlug : "",
-      templateName,
-      templateRoute: templateName ? `/demos/${requestedTemplateSlug}` : "",
-      preserveDemoStructure: Boolean(templateName),
+      mode: template ? "demo_base" : "custom",
+      templateSlug: template ? requestedTemplateSlug : "",
+      templateCategory: template?.category || "",
+      templateName: template?.name || "",
+      templateRoute: template ? `/demos/${requestedTemplateSlug}` : "",
+      preserveDemoStructure: Boolean(template),
       style: ["Modern","Luxury","Minimal","Bold"].includes(d.style) ? d.style : "Modern",
       primary: cleanText(d.primary, 30),
       secondary: cleanText(d.secondary, 30),
