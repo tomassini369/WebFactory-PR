@@ -24,6 +24,12 @@
     X-Robots-Tag = "noindex, nofollow, noarchive"
 
 [[headers]]
+  for = "/webfactory-admin*"
+  [headers.values]
+    Cache-Control = "no-store"
+    X-Robots-Tag = "noindex, nofollow, noarchive"
+
+[[headers]]
   for = "/sites/*"
   [headers.values]
     Cache-Control = "no-cache, no-store, must-revalidate"

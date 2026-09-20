@@ -38,6 +38,7 @@ export default async (req) => {
     await clientAssetStore().set(key, await file.arrayBuffer(), { metadata: {
       contentType: file.type,
       originalName: safeFileName(file.name, "image"),
+      size: file.size,
       uploadedAt: new Date().toISOString(),
     } });
     return Response.json({ ok: true, assetKey: key, imageUrl: `/.netlify/functions/client-asset?siteId=${encodeURIComponent(siteId)}&key=${encodeURIComponent(key)}` });

@@ -5,6 +5,7 @@ import WebFactoryBuilder from './WebFactoryBuilder'
 import PaymentSetupPage from './PaymentSetupPage'
 import ClientAdminPage from './ClientAdminPage'
 import ClientStorefront from './ClientStorefront'
+import WebFactoryAdminPage from './WebFactoryAdminPage'
 
 type Language = 'es' | 'en'
 
@@ -127,8 +128,10 @@ function App(){
   const demoMatch = window.location.pathname.match(/^\/demos\/([^/]+)\/?$/)
   const paymentSetupRoute = /^\/payment-setup\/?$/.test(window.location.pathname)
   const clientAdminRoute = /^\/client-admin\/?$/.test(window.location.pathname)
+  const webFactoryAdminRoute = /^\/webfactory-admin\/?$/.test(window.location.pathname)
   const clientSiteMatch = window.location.pathname.match(/^\/sites\/([^/]+)\/?$/)
 
+  if (webFactoryAdminRoute) return <WebFactoryAdminPage />
   if (clientAdminRoute) return <ClientAdminPage />
   if (clientSiteMatch) return <ClientStorefront slug={decodeURIComponent(clientSiteMatch[1])} />
   if (paymentSetupRoute) return <PaymentSetupPage />

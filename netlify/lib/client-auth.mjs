@@ -22,6 +22,29 @@ export async function requireClientUser() {
   return user;
 }
 
+function env(name) {
+  return globalThis.Netlify?.env?.get(name) || "";
+}
+
+export async function requirePlatformAdmin() {
+  const user = await requireClientUser();
+  const roles = new Set([
+    ...(Array.isArray(user.roles) ? user.roles : []),
+    ...(Array.isArray(user.app_metadata?.roles) ? user.app_metadata.roles : []),
+    user.role,
+  ].filter(Boolean));
+  const ownerEmail = normalizeEmail(env("WEBFACTORY_ADMIN_EMAIL") || env("WEBFACTORY_ORDER_EMAIL"));
+  const authorized = roles.has("admin") || roles.has("webfactory_owner") || (
+    ownerEmail && normalizeEmail(user.email) === ownerEmail
+  );
+  if (!authorized) {
+    const error = new Error("This account is not authorized for the WebFactory Control Center.");
+    error.status = 403;
+    throw error;
+  }
+  return user;
+}
+
 export async function authorizedSites() {
   const user = await requireClientUser();
   const sites = await sitesForEmail(user.email);

@@ -28,7 +28,12 @@ export default async (req) => {
 
     const key = `drafts/${draftId}/${itemId}-${crypto.randomUUID()}-${safeFileName(file.name,"image")}`;
     const bytes = await file.arrayBuffer();
-    await assetStore().set(key, bytes);
+    await assetStore().set(key, bytes, { metadata: {
+      contentType: file.type,
+      originalName: safeFileName(file.name, "image"),
+      size: file.size,
+      uploadedAt: new Date().toISOString(),
+    } });
 
     return Response.json({
       ok:true,
