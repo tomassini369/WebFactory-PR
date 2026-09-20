@@ -3,6 +3,8 @@ import DemoSite from './DemoSite'
 import { demoConfigs } from './demoData'
 import WebFactoryBuilder from './WebFactoryBuilder'
 import PaymentSetupPage from './PaymentSetupPage'
+import ClientAdminPage from './ClientAdminPage'
+import ClientStorefront from './ClientStorefront'
 
 type Language = 'es' | 'en'
 
@@ -124,7 +126,11 @@ function App(){
   const anchors=['#demos','#incluye','#builder','#como-funciona','#faq']
   const demoMatch = window.location.pathname.match(/^\/demos\/([^/]+)\/?$/)
   const paymentSetupRoute = /^\/payment-setup\/?$/.test(window.location.pathname)
+  const clientAdminRoute = /^\/client-admin\/?$/.test(window.location.pathname)
+  const clientSiteMatch = window.location.pathname.match(/^\/sites\/([^/]+)\/?$/)
 
+  if (clientAdminRoute) return <ClientAdminPage />
+  if (clientSiteMatch) return <ClientStorefront slug={decodeURIComponent(clientSiteMatch[1])} />
   if (paymentSetupRoute) return <PaymentSetupPage />
   if (demoMatch) return <DemoSite slug={demoMatch[1]} />
 

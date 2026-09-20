@@ -3,6 +3,7 @@ import {
   publicPaymentConfiguration,
 } from "../lib/payment-setup.mjs";
 import { patchOrder } from "../lib/order-store.mjs";
+import { ensureClientSiteForOrder, patchClientSite } from "../lib/client-store.mjs";
 
 function env(name) {
   return globalThis.Netlify?.env?.get(name) || "";
@@ -21,12 +22,25 @@ async function refreshStripeStatus(order) {
   const account = await response.json();
   const capabilityStatus = account.configuration?.merchant?.capabilities?.card_payments?.status || "pending";
   const onboardingStatus = capabilityStatus === "active" ? "complete" : "pending";
-  if (capabilityStatus === order.stripeConnectCapabilityStatus && onboardingStatus === order.stripeConnectOnboardingStatus) return order;
-  return patchOrder(order.orderId, {
-    stripeConnectCapabilityStatus:capabilityStatus,
-    stripeConnectOnboardingStatus:onboardingStatus,
-    stripeConnectStatusCheckedAt:new Date().toISOString(),
-  });
+  let updated = order;
+  if (capabilityStatus !== order.stripeConnectCapabilityStatus || onboardingStatus !== order.stripeConnectOnboardingStatus) {
+    updated = await patchOrder(order.orderId, {
+      stripeConnectCapabilityStatus:capabilityStatus,
+      stripeConnectOnboardingStatus:onboardingStatus,
+      stripeConnectStatusCheckedAt:new Date().toISOString(),
+    });
+  }
+  const site = await ensureClientSiteForOrder(updated);
+  if (site.paymentRules?.stripeConnectedAccountId !== updated.stripeConnectedAccountId || site.paymentRules?.stripeCapabilityStatus !== capabilityStatus) {
+    await patchClientSite(site.siteId, {
+      paymentRules: {
+        ...(site.paymentRules || {}),
+        stripeConnectedAccountId: updated.stripeConnectedAccountId,
+        stripeCapabilityStatus: capabilityStatus,
+      },
+    });
+  }
+  return updated;
 }
 
 export default async (req) => {

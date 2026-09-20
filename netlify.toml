@@ -15,6 +15,18 @@
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"
     Permissions-Policy = "camera=(), microphone=(), geolocation=()"
+    Content-Security-Policy = "default-src 'self'; script-src 'self' https://*.stripe.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://images.pexels.com; connect-src 'self' https://*.stripe.com; frame-src https://*.stripe.com https://www.google.com; font-src 'self' data:; base-uri 'self'; form-action 'self' https://*.stripe.com; frame-ancestors 'none'; object-src 'none'; upgrade-insecure-requests"
+
+[[headers]]
+  for = "/client-admin*"
+  [headers.values]
+    Cache-Control = "no-store"
+    X-Robots-Tag = "noindex, nofollow, noarchive"
+
+[[headers]]
+  for = "/sites/*"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
 
 [[headers]]
   for = "/"

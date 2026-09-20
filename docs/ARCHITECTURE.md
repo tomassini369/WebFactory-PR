@@ -18,6 +18,12 @@ This document follows the WebFactory PR master specification. The existing logo,
 - Supabase Storage for customer logos, images, uploaded project files and generated Production Packages.
 - Signed temporary URLs for private package downloads.
 
+### Current client runtime
+
+The deployed first-party client runtime uses site-scoped Netlify Blobs with strong consistency for tenant configuration, member indexes, commerce records, booking holds, idempotency records, OAuth state and uploaded images. The storage API is isolated behind Netlify Functions so a later PostgreSQL migration does not change the public portal or storefront contracts.
+
+Each tenant is keyed by `siteId`; membership indexes are keyed by a one-way normalized email hash. Public storefront responses are explicitly filtered and never return connected-account IDs, OAuth tokens, member lists or internal order data.
+
 ## Payments
 - Stripe Checkout is created server-side using database prices.
 - Stripe webhooks are authoritative for Stripe payment confirmation.
@@ -34,6 +40,27 @@ This document follows the WebFactory PR master specification. The existing logo,
 - OAuth tokens are stored encrypted at rest.
 - Calendar mapping is primarily per employee, with support for one business Google account containing multiple calendars.
 - Backend reads free/busy and creates, updates, cancels and reschedules events.
+- OAuth refresh/access tokens are encrypted with AES-256-GCM before storage. The encryption key exists only as a Netlify secret.
+
+## Client administration
+
+- Netlify Identity provides authentication through `@netlify/identity`.
+- Portal accounts are provisioned only from a valid paid-order activation token; no public signup UI exists.
+- Server-side membership checks protect every tenant mutation.
+- The client can update business content, catalog, inventory, services, employees, schedules, payment rules and calendar mapping without a deploy.
+- Stripe identity, bank, tax and mandatory security remediation remain on Stripe-hosted screens.
+- Google consent and security reauthorization remain on Google-hosted screens.
+
+## Client commerce
+
+- Public checkout submits catalog IDs and quantities only.
+- The server reloads canonical prices and inventory from the tenant record.
+- Stripe-hosted Checkout Sessions are created as direct charges on the connected account.
+- Dynamic payment methods are enabled by omitting `payment_method_types`.
+- Client-sale webhooks use a separate signing secret and idempotency store from the WebFactory $300 order webhook.
+- The success URL never marks a transaction paid.
+- Paid bookings generate Google Calendar events and separate customer/business emails.
+- An hourly retry function resumes email/calendar delivery and removes expired booking holds.
 
 ## Production Package
 - Triggered only when Stripe reports a verified paid Checkout Session through the signed webhook.

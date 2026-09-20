@@ -31,12 +31,16 @@ The server creates Stripe Checkout Sessions. Payment confirmation must come from
 
 The V2 Builder checks backend readiness before enabling the final checkout. The button remains disabled until Stripe, the verified webhook and Gmail SMTP delivery are all configured.
 
+Client storefront data is loaded once per visit and refreshed when a visitor returns to a visible tab after at least one minute. Public tenant responses use revision ETags and short Netlify CDN caching, so administrative changes become available quickly without continuous 20-second polling or unnecessary Function invocations.
+
 ## Current V2 stack
 
 - React + TypeScript + Vite
 - Netlify + Netlify Functions
 - Stripe
 - Planned PostgreSQL/Supabase + Storage
+- Netlify Identity for invitation-only client portal access
+- Netlify Blobs for tenant configuration, commerce records and client assets
 - Service + Employee + Time booking model
 - Google Calendar per employee/calendar
 - Up to 100 products/services per website
@@ -60,6 +64,28 @@ Production branch: `main`
 6. Administrative package is sent to the configured WebFactory order email.
 7. Customer receives a separate payment/project confirmation.
 8. Order moves to IN_PRODUCTION.
+
+## Client website runtime
+
+Paid projects now receive a separate multi-tenant runtime. This does not alter the $300 WebFactory purchase checkout.
+
+- `/client-admin` is the authenticated client portal.
+- `/sites/:slug` is the dynamic bilingual client website runtime.
+- Catalog prices are loaded and validated server-side; browsers never provide authoritative prices.
+- Stripe Connect uses direct charges on the client's connected account after the v2 `card_payments` capability is active.
+- The connected-account webhook is authoritative for client sales and bookings.
+- Booking availability uses Service + Employee + Time, temporary holds, stored bookings and Google Calendar free/busy.
+- Products, services, inventory, employees, hours, payment rules and calendar mappings update without a deploy.
+- The catalog limit remains 100 products/services per client website.
+
+Additional production secrets/configuration:
+
+- `STRIPE_CONNECT_WEBHOOK_SECRET` — signing secret for connected-account Checkout events.
+- `GOOGLE_OAUTH_CLIENT_ID` and `GOOGLE_OAUTH_CLIENT_SECRET` — Google Calendar OAuth application.
+- `WEBFACTORY_TOKEN_ENCRYPTION_KEY` — secret used to encrypt Google OAuth tokens at rest.
+- Optional `GOOGLE_OAUTH_REDIRECT_URI` — defaults to the production callback URL.
+
+`/.netlify/functions/client-runtime-readiness` reports only boolean readiness and never exposes secret values.
 
 
 ## Production runtime readiness

@@ -3,6 +3,7 @@ import nodemailer from "nodemailer";
 import { createSummaryPdf } from "./production-package.mjs";
 import { getOrder, packageStore, patchOrder, publicBaseUrl } from "./order-store.mjs";
 import { createPaymentSetupAccess } from "./payment-setup.mjs";
+import { ensureClientSiteForOrder } from "./client-store.mjs";
 
 const ZIP_ATTACHMENT_LIMIT = 12 * 1024 * 1024;
 
@@ -76,7 +77,7 @@ function adminText(order, packageLink, attachedZip) {
   ].join("\n");
 }
 
-function customerText(order, paymentSetupLink) {
+function customerText(order, paymentSetupLink, portalActivationLink) {
   const paymentLines = paymentSetupLink ? [
     "",
     "CONFIGURACIÓN DE PAGOS DE TU WEBSITE",
@@ -95,6 +96,14 @@ function customerText(order, paymentSetupLink) {
     "Tu proyecto ha entrado a producción. Revisaremos la configuración y los archivos suministrados para preparar el website.",
     "Tu website incluirá Español e Inglés, con Español como idioma predeterminado.",
     ...paymentLines,
+    "",
+    "PORTAL ADMINISTRATIVO PRIVADO",
+    "Desde tu portal podrás actualizar productos, servicios, precios, fotos, inventario, empleados, horarios y reglas de reservación sin solicitar un nuevo deployment.",
+    "También podrás consultar órdenes y citas, tramitar reembolsos autorizados, conectar Google Calendar y mantener la configuración de Stripe de tu negocio.",
+    "Activa tu acceso privado aquí:",
+    portalActivationLink,
+    "Después de activarlo recibirás un correo seguro para establecer tu propia contraseña. WebFactory nunca enviará ni conocerá tu contraseña.",
+    "Algunas verificaciones de identidad, banco, impuestos o seguridad continuarán abriéndose directamente en Stripe o Google cuando esos proveedores lo exijan.",
     "",
     "Este correo confirma el pago y la recepción de tu proyecto. No incluye archivos internos ni prompts de producción.",
     "",
@@ -209,12 +218,22 @@ export async function sendOrderEmails(order) {
 
   if (!current.customerConfirmationSent && current.client?.email) {
     const setupAccess = createPaymentSetupAccess();
-    const paymentSetupLink = `${baseUrl}/payment-setup?orderId=${encodeURIComponent(current.orderId)}&token=${encodeURIComponent(setupAccess.token)}`;
+    const site = await ensureClientSiteForOrder(current);
+    current = await patchOrder(current.orderId, {
+      clientSiteId: site.siteId,
+      clientSiteSlug: site.slug,
+      paymentSetupTokenHash: setupAccess.tokenHash,
+      paymentSetupExpiresAt: setupAccess.expiresAt,
+      paymentSetupLinkSentAt: new Date().toISOString(),
+    });
+    const privateQuery = `orderId=${encodeURIComponent(current.orderId)}&token=${encodeURIComponent(setupAccess.token)}`;
+    const paymentSetupLink = `${baseUrl}/payment-setup?${privateQuery}`;
+    const portalActivationLink = `${baseUrl}/client-admin?${privateQuery}`;
     const customerInfo = await tx.sendMail({
       from: `WebFactory PR <${fromUser}>`,
       to: current.client.email,
       subject: `WebFactory PR — Pago confirmado — ${current.orderId}`,
-      text: customerText(current, paymentSetupLink),
+      text: customerText(current, paymentSetupLink, portalActivationLink),
       headers: {
         "X-WebFactory-Order-ID": current.orderId,
       },
@@ -224,9 +243,6 @@ export async function sendOrderEmails(order) {
       customerConfirmationSent: true,
       customerConfirmationMessageId: customerInfo.messageId,
       customerConfirmationSentAt: new Date().toISOString(),
-      paymentSetupTokenHash: setupAccess.tokenHash,
-      paymentSetupExpiresAt: setupAccess.expiresAt,
-      paymentSetupLinkSentAt: new Date().toISOString(),
     });
   }
 
