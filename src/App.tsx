@@ -115,7 +115,9 @@ function App(){
   const [menu,setMenu]=useState(false)
   const t=content[lang]
   const faqs=lang==='es'?faqEs:faqEn
-  useEffect(()=>{document.documentElement.lang=lang},[lang])
+  useEffect(()=>{
+    if (!/^\/demos\//.test(window.location.pathname)) document.documentElement.lang=lang
+  },[lang])
 
   const anchors=['#demos','#incluye','#builder','#como-funciona','#faq']
   const demoMatch = window.location.pathname.match(/^\/demos\/([^/]+)\/?$/)
