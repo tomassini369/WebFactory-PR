@@ -10,6 +10,11 @@ function env(name) {
   return globalThis.Netlify?.env?.get(name) || "";
 }
 
+function paidAmount(order) {
+  const value = Number(order.product?.amountUsd || 300);
+  return `$${value.toFixed(2)} USD`;
+}
+
 function transporter() {
   const user = env("WEBFACTORY_GMAIL_USER");
   const pass = env("WEBFACTORY_GMAIL_APP_PASSWORD");
@@ -40,7 +45,7 @@ function adminText(order, packageLink, attachedZip) {
     `Order ID: ${order.orderId}`,
     `Payment status: PAID`,
     `Stripe Session: ${order.stripeSessionId || ""}`,
-    `Amount: $300 USD`,
+    `Amount: ${paidAmount(order)}`,
     "",
     "CUSTOMER",
     `Name: ${order.client?.name || ""}`,
@@ -87,7 +92,7 @@ function customerText(order, paymentSetupLink) {
   return [
     `Hola ${order.client?.name || ""},`,
     "",
-    "Tu pago de $300 para WebFactory Premium Commerce Website fue confirmado.",
+    `Tu pago de ${paidAmount(order)} para WebFactory Premium Commerce Website fue confirmado.`,
     `Número de orden: ${order.orderId}`,
     `Negocio: ${order.business?.name || ""}`,
     "",

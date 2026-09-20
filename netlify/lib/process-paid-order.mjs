@@ -10,12 +10,19 @@ export async function processPaidOrder(orderId, stripeSession = null) {
   if (!order) throw new Error(`Order ${orderId} was not found.`);
 
   if (stripeSession) {
-    const expectedAmount = 30000;
+    const expectedPriceUsd = Number(order.product?.amountUsd || 0);
+    const expectedAmount = Math.round(expectedPriceUsd * 100);
+    if (!Number.isFinite(expectedPriceUsd) || expectedPriceUsd <= 0) {
+      throw new Error("Stored order price is invalid.");
+    }
     if (stripeSession.payment_status !== "paid") {
       throw new Error("Stripe session is not paid.");
     }
     if (Number(stripeSession.amount_total || 0) !== expectedAmount) {
-      throw new Error("Stripe amount does not match the official $300 price.");
+      throw new Error("Stripe amount does not match the server-authoritative order price.");
+    }
+    if (Number(stripeSession.metadata?.official_price_usd || 0) !== expectedPriceUsd) {
+      throw new Error("Stripe price metadata does not match the stored order price.");
     }
     if (String(stripeSession.currency || "").toLowerCase() !== "usd") {
       throw new Error("Unexpected Stripe currency.");
