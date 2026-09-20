@@ -8,8 +8,43 @@ import {
   safeFileName,
 } from "./order-store.mjs";
 
-const PACKAGE_VERSION = 2;
+const PACKAGE_VERSION = 3;
 const DOWNLOAD_DAYS = 7;
+
+function localizationSettings(order) {
+  const localization = order.localization || {};
+  return {
+    enabled: true,
+    languages: ["es", "en"],
+    languageLabels: {
+      es: "Español",
+      en: "English",
+    },
+    defaultLanguage: "es",
+    fallbackLanguage: "es",
+    languageSwitcher: true,
+    persistSelection: true,
+    persistence: "localStorage",
+    updateDocumentLanguage: true,
+    runtimeMachineTranslation: false,
+    contentCoverage: [
+      "navigation",
+      "marketing content",
+      "catalog",
+      "cart",
+      "forms and validation",
+      "employees",
+      "bookings",
+      "payment instructions",
+      "success and error states",
+      "accessibility labels",
+      "SEO titles and descriptions",
+    ],
+    implementationNote:
+      "Use reviewed ES/EN content dictionaries or equivalent structured localized fields. Preserve business names, proper nouns, prices, identifiers, URLs, and customer-supplied facts exactly. Use Spanish as the fallback when an English value is unavailable.",
+    source: localization.enabled === false ? "server-enforced" : "WebFactory standard",
+  };
+}
 
 function asMoney(value) {
   const amount = Number(value || 0);
@@ -32,6 +67,7 @@ function requirementText(order) {
   const team = Array.isArray(order.team) ? order.team : [];
   const hours = order.hours || {};
   const payments = order.payments || {};
+  const localization = localizationSettings(order);
 
   return [
     "WEBFACTORY CLIENT REQUIREMENTS",
@@ -54,6 +90,14 @@ function requirementText(order) {
     `Style: ${design.style || ""}`,
     `Primary color: ${design.primary || ""}`,
     `Secondary color: ${design.secondary || ""}`,
+    "",
+    "LANGUAGES",
+    `Required languages: ${localization.languages.join(" + ")}`,
+    `Default language: ${localization.defaultLanguage}`,
+    `Fallback language: ${localization.fallbackLanguage}`,
+    `Visible language selector: ${localization.languageSwitcher ? "required" : "disabled"}`,
+    `Persist visitor selection: ${localization.persistSelection ? localization.persistence : "disabled"}`,
+    "All customer-facing content and interactive states must be available in both languages.",
     "",
     "FEATURES",
     ...Object.entries(features).map(([key, value]) => `${key}: ${value ? "enabled" : "disabled"}`),
@@ -188,6 +232,13 @@ function buildPrompt(order) {
     "- Use ONLY customer-supplied information contained in the Production Package.",
     "- Do not invent an address, phone number, price, certification, review, service, employee, history, guarantee, statistic, or business claim.",
     "- Preserve the selected branding, colors, visual style, catalog, employees, schedules, booking settings, payment selections, and supplied files.",
+    "- Every customer website MUST be fully bilingual in Spanish and English. Spanish is the default and fallback language.",
+    "- Include a visible, keyboard-accessible ES/EN selector that follows the established WebFactory language-switching pattern.",
+    "- Persist the visitor's language choice in localStorage and update the document <html lang> value immediately.",
+    "- Localize navigation, marketing copy, catalog descriptions, cart, forms, validation, employee and booking flows, payment instructions, success/error states, accessibility labels, and SEO metadata.",
+    "- Use maintained ES/EN dictionaries or equivalent structured localized fields; do not use runtime machine translation or expose untranslated interface strings.",
+    "- Translate customer-supplied descriptions faithfully without inventing facts. Preserve business names, proper nouns, prices, identifiers, URLs, and customer-supplied facts exactly.",
+    "- When an English translation is unavailable or ambiguous, show the supplied Spanish source instead of inventing content.",
     "- Build responsive desktop, tablet, and mobile experiences.",
     "- Products and services must use a hidden catalog window/modal so large catalogs do not overwhelm the main landing page.",
     "- Booking architecture must use Service + Employee + Time.",
@@ -208,6 +259,7 @@ function revisionPrompt(order) {
     `WEBFACTORY REVISION PROMPT — ${order.orderId}`,
     "",
     "Preserve all approved branding, functionality, customer content, catalog data, employee mappings, schedules, booking behavior, payment behavior, and supplied files.",
+    "Preserve complete Spanish/English coverage, the ES/EN selector, Spanish fallback behavior, localStorage preference, and document language synchronization.",
     "Apply only the revisions explicitly requested by the customer.",
     "Do not invent missing business facts.",
   ].join("\n");
@@ -260,6 +312,7 @@ export async function createSummaryPdf(order) {
     [`Phone: ${order.business?.phone || ""}`, false],
     [`Google Maps: ${order.business?.mapsUrl || ""}`, false],
     [`Design: ${order.design?.style || ""} / ${order.design?.primary || ""} / ${order.design?.secondary || ""}`, false],
+    ["Languages: Español + English (Spanish default)", false],
     [`Catalog items: ${Array.isArray(order.catalog) ? order.catalog.length : 0}`, false],
     [`Employees: ${Array.isArray(order.team) ? order.team.length : 0}`, false],
     [`Paid at: ${order.paidAt || ""}`, false],
@@ -331,6 +384,7 @@ export async function ensureProductionPackage(order) {
   const revision = revisionPrompt(order);
   const summaryPdf = await createSummaryPdf(order);
   const { products, services } = splitCatalog(order);
+  const localization = localizationSettings(order);
 
   zip.file("01_ORDER_SUMMARY/order-summary.pdf", summaryPdf);
   zip.file("01_ORDER_SUMMARY/order-data.json", JSON.stringify(order, null, 2));
@@ -377,6 +431,24 @@ export async function ensureProductionPackage(order) {
   );
   zip.file("09_PAYMENTS/payment-settings.json", JSON.stringify(paymentSettings(order), null, 2));
   zip.file("09_PAYMENTS/PAYMENT_SETUP_CHECKLIST.txt", paymentSetupChecklist(order));
+  zip.file("10_LOCALIZATION/language-settings.json", JSON.stringify(localization, null, 2));
+  zip.file(
+    "10_LOCALIZATION/LOCALIZATION_REQUIREMENTS.txt",
+    [
+      "WEBFACTORY BILINGUAL WEBSITE REQUIREMENTS",
+      "",
+      "Every customer-facing page and interactive state must support Español and English.",
+      "Spanish is the default and fallback language.",
+      "Provide a visible and keyboard-accessible ES/EN selector.",
+      "Persist the visitor's selection in localStorage and synchronize the document html lang attribute.",
+      "Use reviewed translation dictionaries or equivalent structured localized content.",
+      "Do not use runtime machine translation.",
+      "Preserve business names, proper nouns, prices, identifiers, URLs, and supplied facts exactly.",
+      "If an English translation is unavailable or ambiguous, use the supplied Spanish source instead of inventing content.",
+      "",
+      `Required coverage: ${localization.contentCoverage.join(", ")}.`,
+    ].join("\n"),
+  );
 
   if (order.business?.logoAssetKey) {
     const ext = safeFileName(order.business.logoAssetName || "client-logo.png").split(".").pop() || "png";
