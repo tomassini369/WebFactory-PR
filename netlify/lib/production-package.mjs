@@ -197,7 +197,7 @@ function buildPrompt(order) {
     "ORDER",
     `Order ID: ${order.orderId}`,
     `Product: WebFactory Premium Commerce Website`,
-    `Price paid: ${asMoney(order.product?.amountUsd || 300)} USD one-time`,
+    `Price paid: $300 USD one-time`,
     "",
     requirementText(order),
   ].join("\n");
@@ -252,7 +252,7 @@ export async function createSummaryPdf(order) {
     [`Order ID: ${order.orderId}`, false],
     ["Status: PAID", false],
     ["Product: WebFactory Premium Commerce Website", false],
-    [`Amount: ${asMoney(order.product?.amountUsd || 300)} USD`, false],
+    ["Amount: $300 USD", false],
     [`Customer: ${order.client?.name || ""}`, false],
     [`Customer email: ${order.client?.email || ""}`, false],
     [`Business: ${order.business?.name || ""}`, false],

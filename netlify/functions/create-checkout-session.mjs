@@ -9,18 +9,10 @@ import {
 
 const PRODUCT_KEY = "webfactory-premium";
 const PRODUCT_LABEL = "WebFactory Premium Commerce Website";
-const DEFAULT_PRICE_USD = 300;
+const OFFICIAL_PRICE_USD = 300;
 
 function env(name) {
   return globalThis.Netlify?.env?.get(name) || "";
-}
-
-function configuredPriceUsd() {
-  const value = Number(env("WEBFACTORY_PRICE_USD") || DEFAULT_PRICE_USD);
-  if (!Number.isFinite(value) || value < 0.5 || value > 1000000) {
-    throw new Error("Invalid server-side WebFactory price configuration.");
-  }
-  return Math.round(value * 100) / 100;
 }
 
 function orderIdFromDraft(draftId) {
@@ -33,7 +25,7 @@ function assetRef(value, draftId) {
   return key.startsWith(`drafts/${draftId}/`) ? key : "";
 }
 
-function sanitizeOrder(payload, priceUsd) {
+function sanitizeOrder(payload) {
   const draftId = cleanText(payload.draftId, 80);
   if (!/^[a-zA-Z0-9-]{20,80}$/.test(draftId)) throw new Error("Invalid draft ID.");
 
@@ -143,7 +135,7 @@ function sanitizeOrder(payload, priceUsd) {
     product: {
       key: PRODUCT_KEY,
       name: PRODUCT_LABEL,
-      amountUsd: priceUsd,
+      amountUsd: OFFICIAL_PRICE_USD,
       currency: "usd",
       pricing: "one_time",
     },
@@ -197,7 +189,7 @@ async function createStripeSession(order) {
   params.set("metadata[product_key]", PRODUCT_KEY);
   params.set("metadata[package_id]", PRODUCT_KEY);
   params.set("metadata[package_label]", PRODUCT_LABEL);
-  params.set("metadata[official_price_usd]", String(order.product.amountUsd));
+  params.set("metadata[official_price_usd]", String(OFFICIAL_PRICE_USD));
   params.set("metadata[webfactory_version]", "v2");
   params.set("metadata[business_name]", order.business.name.slice(0, 450));
   params.set("metadata[client_email]", order.client.email.slice(0, 450));
@@ -229,8 +221,7 @@ export default async (req) => {
 
   try {
     const payload = await req.json();
-    const priceUsd = configuredPriceUsd();
-    const order = sanitizeOrder(payload, priceUsd);
+    const order = sanitizeOrder(payload);
     const existing = await getOrder(order.orderId);
 
     if (existing?.status === "PAID" || existing?.status === "EMAIL_SENT" || existing?.status === "IN_PRODUCTION") {
@@ -261,7 +252,7 @@ export default async (req) => {
       sessionId:session.id,
       orderId:order.orderId,
       productName:PRODUCT_LABEL,
-      officialPriceUsd:order.product.amountUsd,
+      officialPriceUsd:OFFICIAL_PRICE_USD,
     }, { headers:{ "Cache-Control":"no-store" } });
   } catch (error) {
     return Response.json(
