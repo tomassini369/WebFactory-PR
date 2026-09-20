@@ -8,7 +8,7 @@ import {
   safeFileName,
 } from "./order-store.mjs";
 
-const PACKAGE_VERSION = 3;
+const PACKAGE_VERSION = 4;
 const DOWNLOAD_DAYS = 7;
 
 function localizationSettings(order) {
@@ -46,6 +46,21 @@ function localizationSettings(order) {
   };
 }
 
+function designTemplateSettings(order) {
+  const design = order.design || {};
+  const usesDemo = design.mode === "demo_base" && Boolean(design.templateSlug && design.templateName);
+  return {
+    mode: usesDemo ? "demo_base" : "custom",
+    templateSlug: usesDemo ? design.templateSlug : "",
+    templateName: usesDemo ? design.templateName : "Custom WebFactory design",
+    templateRoute: usesDemo ? design.templateRoute || `/demos/${design.templateSlug}` : "",
+    preserveDemoStructure: usesDemo,
+    customizationScope: usesDemo
+      ? ["business branding", "logo", "colors", "customer content", "images", "catalog", "employees", "hours", "payments", "bookings", "contact information"]
+      : ["business branding", "logo", "colors", "customer content", "images", "catalog", "employees", "hours", "payments", "bookings", "contact information", "custom layout"],
+  };
+}
+
 function asMoney(value) {
   const amount = Number(value || 0);
   return `$${amount.toFixed(2)}`;
@@ -68,6 +83,7 @@ function requirementText(order) {
   const hours = order.hours || {};
   const payments = order.payments || {};
   const localization = localizationSettings(order);
+  const template = designTemplateSettings(order);
 
   return [
     "WEBFACTORY CLIENT REQUIREMENTS",
@@ -87,6 +103,10 @@ function requirementText(order) {
     `Instagram: ${business.instagram || ""}`,
     "",
     "DESIGN",
+    `Design mode: ${template.mode}`,
+    `Base demo: ${template.templateName}`,
+    `Base demo route: ${template.templateRoute || "not applicable"}`,
+    `Preserve demo structure: ${template.preserveDemoStructure ? "required" : "not applicable"}`,
     `Style: ${design.style || ""}`,
     `Primary color: ${design.primary || ""}`,
     `Secondary color: ${design.secondary || ""}`,
@@ -225,6 +245,7 @@ function paymentSetupChecklist(order) {
 }
 
 function buildPrompt(order) {
+  const template = designTemplateSettings(order);
   return [
     "Create the complete production-ready WebFactory website according to the attached customer specification and files.",
     "",
@@ -232,6 +253,12 @@ function buildPrompt(order) {
     "- Use ONLY customer-supplied information contained in the Production Package.",
     "- Do not invent an address, phone number, price, certification, review, service, employee, history, guarantee, statistic, or business claim.",
     "- Preserve the selected branding, colors, visual style, catalog, employees, schedules, booking settings, payment selections, and supplied files.",
+    template.preserveDemoStructure
+      ? `- REQUIRED DESIGN BASE: Reproduce the structure, responsive layout, navigation, component arrangement, visual hierarchy, catalog experience, cart, booking flow, and compatible interactions of the WebFactory demo \"${template.templateName}\" (${template.templateRoute}). Replace only the fictional branding, colors, content, images, catalog, employees, schedules, payments, and business configuration with the customer's supplied information.`
+      : "- DESIGN MODE: Create a custom WebFactory design from the customer's selected style, colors, content, and enabled features. Do not force a demo template.",
+    template.preserveDemoStructure
+      ? "- Do not substitute a different template, generic layout, or unrelated design for the selected demo base."
+      : "- Maintain WebFactory production standards while tailoring the layout to the customer's configuration.",
     "- Every customer website MUST be fully bilingual in Spanish and English. Spanish is the default and fallback language.",
     "- Include a visible, keyboard-accessible ES/EN selector that follows the established WebFactory language-switching pattern.",
     "- Persist the visitor's language choice in localStorage and update the document <html lang> value immediately.",
@@ -255,10 +282,14 @@ function buildPrompt(order) {
 }
 
 function revisionPrompt(order) {
+  const template = designTemplateSettings(order);
   return [
     `WEBFACTORY REVISION PROMPT — ${order.orderId}`,
     "",
     "Preserve all approved branding, functionality, customer content, catalog data, employee mappings, schedules, booking behavior, payment behavior, and supplied files.",
+    template.preserveDemoStructure
+      ? `Preserve the selected \"${template.templateName}\" demo structure and compatible interactions; do not replace it with another template or generic layout.`
+      : "Preserve the approved custom WebFactory layout and do not introduce an unrequested demo template.",
     "Preserve complete Spanish/English coverage, the ES/EN selector, Spanish fallback behavior, localStorage preference, and document language synchronization.",
     "Apply only the revisions explicitly requested by the customer.",
     "Do not invent missing business facts.",
@@ -266,7 +297,10 @@ function revisionPrompt(order) {
 }
 
 function brandColors(order) {
+  const template = designTemplateSettings(order);
   return [
+    `Design mode: ${template.mode}`,
+    `Base demo: ${template.templateName}`,
     `Primary: ${order.design?.primary || ""}`,
     `Secondary: ${order.design?.secondary || ""}`,
     `Style: ${order.design?.style || ""}`,
@@ -296,6 +330,7 @@ function bookingSettings(order) {
 }
 
 export async function createSummaryPdf(order) {
+  const template = designTemplateSettings(order);
   const pdf = await PDFDocument.create();
   const regular = await pdf.embedFont(StandardFonts.Helvetica);
   const bold = await pdf.embedFont(StandardFonts.HelveticaBold);
@@ -311,7 +346,7 @@ export async function createSummaryPdf(order) {
     [`Category: ${order.business?.category || ""}`, false],
     [`Phone: ${order.business?.phone || ""}`, false],
     [`Google Maps: ${order.business?.mapsUrl || ""}`, false],
-    [`Design: ${order.design?.style || ""} / ${order.design?.primary || ""} / ${order.design?.secondary || ""}`, false],
+    [`Design: ${template.templateName} / ${order.design?.style || ""} / ${order.design?.primary || ""} / ${order.design?.secondary || ""}`, false],
     ["Languages: Español + English (Spanish default)", false],
     [`Catalog items: ${Array.isArray(order.catalog) ? order.catalog.length : 0}`, false],
     [`Employees: ${Array.isArray(order.team) ? order.team.length : 0}`, false],
@@ -385,6 +420,7 @@ export async function ensureProductionPackage(order) {
   const summaryPdf = await createSummaryPdf(order);
   const { products, services } = splitCatalog(order);
   const localization = localizationSettings(order);
+  const template = designTemplateSettings(order);
 
   zip.file("01_ORDER_SUMMARY/order-summary.pdf", summaryPdf);
   zip.file("01_ORDER_SUMMARY/order-data.json", JSON.stringify(order, null, 2));
@@ -448,6 +484,27 @@ export async function ensureProductionPackage(order) {
       "",
       `Required coverage: ${localization.contentCoverage.join(", ")}.`,
     ].join("\n"),
+  );
+  zip.file("11_DESIGN_BASE/design-base.json", JSON.stringify(template, null, 2));
+  zip.file(
+    "11_DESIGN_BASE/DESIGN_BASE_REQUIREMENTS.txt",
+    template.preserveDemoStructure
+      ? [
+          "WEBFACTORY SELECTED DEMO BASE",
+          "",
+          `Selected demo: ${template.templateName}`,
+          `Demo route: ${template.templateRoute}`,
+          "Preserve the selected demo's structure, responsive layout, navigation, visual hierarchy, component arrangement, catalog experience, cart, booking flow, and compatible interactions.",
+          "Replace its fictional business branding, colors, text, images, catalog, employees, schedules, payments, bookings, and contact information with the customer's supplied information.",
+          "Do not substitute another template or a generic layout.",
+        ].join("\n")
+      : [
+          "WEBFACTORY CUSTOM DESIGN MODE",
+          "",
+          "No demo base was selected.",
+          "Create a custom WebFactory design using the customer's selected style, colors, content, assets, and enabled features.",
+          "Do not force or copy a demo template.",
+        ].join("\n"),
   );
 
   if (order.business?.logoAssetKey) {

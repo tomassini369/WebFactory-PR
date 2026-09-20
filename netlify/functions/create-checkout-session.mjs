@@ -10,6 +10,17 @@ import {
 const PRODUCT_KEY = "webfactory-premium";
 const PRODUCT_LABEL = "WebFactory Premium Commerce Website";
 const OFFICIAL_PRICE_USD = 300;
+const DEMO_TEMPLATES = {
+  "brisa-cocina": "Brisa Cocina",
+  "velocity-auto": "Velocity Auto Care",
+  "northline-barber": "Northline Barber Studio",
+  "aura-beauty": "Aura Beauty Lab",
+  "balance-wellness": "Balance Wellness Room",
+  "luna-market": "Luna Market Boutique",
+  "summit-advisory": "Summit Advisory Group",
+  "isla-living": "Isla Living Realty",
+  "atelier-nueve": "Atelier Nueve",
+};
 
 function env(name) {
   return globalThis.Netlify?.env?.get(name) || "";
@@ -43,6 +54,8 @@ function sanitizeOrder(payload) {
   const customerEmail = cleanText(client.email || b.email, 320);
   const customerName = cleanText(client.name || b.contactName, 180);
   const businessName = cleanText(b.name, 180);
+  const requestedTemplateSlug = cleanText(d.templateSlug, 80);
+  const templateName = DEMO_TEMPLATES[requestedTemplateSlug] || "";
 
   if (!businessName) throw new Error("Business name is required.");
   if (!customerName) throw new Error("Customer name is required.");
@@ -170,6 +183,11 @@ function sanitizeOrder(payload) {
       logoAssetType: cleanText(b.logoAssetType, 120),
     },
     design: {
+      mode: templateName ? "demo_base" : "custom",
+      templateSlug: templateName ? requestedTemplateSlug : "",
+      templateName,
+      templateRoute: templateName ? `/demos/${requestedTemplateSlug}` : "",
+      preserveDemoStructure: Boolean(templateName),
       style: ["Modern","Luxury","Minimal","Bold"].includes(d.style) ? d.style : "Modern",
       primary: cleanText(d.primary, 30),
       secondary: cleanText(d.secondary, 30),

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, type CSSProperties, type Dispatch, type SetStateAction } from 'react'
+import { demoConfigs } from './demoData'
 import './builder.css'
 
 type Language = 'es' | 'en'
@@ -77,6 +78,7 @@ type BuilderState = {
     logoAssetType?: string
   }
   design: {
+    templateSlug: string
     style: BuilderStyle
     primary: string
     secondary: string
@@ -106,6 +108,7 @@ const initialState: BuilderState = {
     instagram: '@northlinestudio',
   },
   design: {
+    templateSlug: '',
     style: 'Modern',
     primary: '#0B1529',
     secondary: '#3C86F6',
@@ -534,13 +537,57 @@ function BusinessStep({state,setState}:{state:BuilderState;setState:Dispatch<Set
   )
 }
 
-function DesignStep({state,setState}:{state:BuilderState;setState:Dispatch<SetStateAction<BuilderState>>}) {
+function DesignStep({state,setState,lang}:{state:BuilderState;setState:Dispatch<SetStateAction<BuilderState>>;lang:Language}) {
   const setDesign = <K extends keyof BuilderState['design']>(key:K, value:BuilderState['design'][K]) =>
     setState((current)=>({...current,design:{...current.design,[key]:value}}))
 
   return (
     <div className="wf-step-content">
-      <div className="wf-step-intro"><small>PASO 2</small><h3>Elige el estilo visual.</h3><p>El cambio aparece inmediatamente en el preview.</p></div>
+      <div className="wf-step-intro">
+        <small>{lang==='es'?'PASO 2 · DISEÑO BASE':'STEP 2 · BASE DESIGN'}</small>
+        <h3>{lang==='es'?'Elige cómo comenzará tu diseño.':'Choose how your design will begin.'}</h3>
+        <p>{lang==='es'
+          ? 'Puedes mantener un diseño personalizado por WebFactory o escoger uno de los demos como diseño base. Si eliges un demo, conservaremos su estructura, navegación y experiencia mientras sustituimos la marca y el contenido.'
+          : 'You can keep a custom WebFactory design or choose one of the demos as your base design. If you choose a demo, we will preserve its structure, navigation, and experience while replacing its branding and content.'}</p>
+      </div>
+      <div className="wf-template-grid">
+        <article className={`wf-template-custom ${state.design.templateSlug===''?'selected':''}`}>
+          <button type="button" onClick={()=>setDesign('templateSlug','')} aria-pressed={state.design.templateSlug===''}>
+            <span className="wf-template-custom-art">
+              <i/><i/><i/>
+              {state.design.templateSlug==='' && <b>✓ {lang==='es'?'Seleccionado':'Selected'}</b>}
+            </span>
+            <small>WEBFACTORY</small>
+            <strong>{lang==='es'?'Diseño personalizado':'Custom design'}</strong>
+          </button>
+          <em>{lang==='es'?'Construido según tu configuración actual':'Built from your current configuration'}</em>
+        </article>
+        {demoConfigs.map((demo)=>(
+          <article key={demo.slug} className={state.design.templateSlug===demo.slug?'selected':''}>
+            <button type="button" onClick={()=>setDesign('templateSlug',demo.slug)} aria-pressed={state.design.templateSlug===demo.slug}>
+              <span style={{backgroundImage:`linear-gradient(180deg,transparent,rgba(5,10,16,.78)),url(${demo.heroImage})`}}>
+                {state.design.templateSlug===demo.slug && <b>✓ {lang==='es'?'Seleccionado':'Selected'}</b>}
+              </span>
+              <small>{demo.category}</small>
+              <strong>{demo.name}</strong>
+            </button>
+            <a href={`/demos/${demo.slug}`} target="_blank" rel="noreferrer">{lang==='es'?'Ver demo completo':'View full demo'} ↗</a>
+          </article>
+        ))}
+      </div>
+      <div className="wf-template-note">
+        <strong>{state.design.templateSlug
+          ? (lang==='es'?'El demo seleccionado será la base exacta de producción.':'The selected demo will be the exact production base.')
+          : (lang==='es'?'WebFactory creará un diseño personalizado.':'WebFactory will create a custom design.')}</strong>
+        <span>{lang==='es'
+          ? (state.design.templateSlug
+              ? 'El demo elegido se personaliza para tu negocio y mantiene su estructura y funciones compatibles.'
+              : 'Se utilizarán tu estilo, colores, contenido y funciones sin copiar obligatoriamente uno de los demos.')
+          : (state.design.templateSlug
+              ? 'The chosen demo is customized for your business while preserving its structure and compatible features.'
+              : 'Your style, colors, content, and features will be used without requiring a copy of a demo.')}</span>
+      </div>
+      <div className="wf-step-intro compact"><small>{lang==='es'?'PERSONALIZACIÓN':'CUSTOMIZATION'}</small><h3>{lang==='es'?'Ajusta estilo y colores.':'Adjust style and colors.'}</h3><p>{lang==='es'?'Estos cambios aplican tu identidad sobre el diseño base seleccionado.':'These changes apply your identity to the selected base design.'}</p></div>
       <div className="wf-style-grid">
         {styles.map((style)=>(
           <button key={style} className={state.design.style===style?'selected':''} onClick={()=>setDesign('style',style)}>
@@ -835,6 +882,7 @@ function FinalStep({state,setStep}:{state:BuilderState;setStep:(step:number)=>vo
   const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(state.business.email.trim())
   const customerReady = Boolean(state.business.name.trim() && state.business.contactName.trim() && emailValid)
   const paymentReady = Object.values(state.payments.methods).some(Boolean)
+  const selectedTemplate = demoConfigs.find((demo)=>demo.slug===state.design.templateSlug)
   const canCheckout = Boolean(readiness?.ready && customerReady && paymentReady && !missingUpload && !checkingOut)
 
   useEffect(()=>{
@@ -896,7 +944,7 @@ function FinalStep({state,setStep}:{state:BuilderState;setStep:(step:number)=>vo
       <div className="wf-step-intro"><small>PASO 8</small><h3>Tu configuración está lista para revisar.</h3><p>El pedido se bloquea para producción solamente después de que Stripe confirma el pago.</p></div>
       <div className="wf-review-grid">
         <article><span>Negocio</span><strong>{state.business.name}</strong><small>{state.business.category}</small><button onClick={()=>setStep(0)}>Editar</button></article>
-        <article><span>Diseño</span><strong>{state.design.style}</strong><div><i style={{background:state.design.primary}}/><i style={{background:state.design.secondary}}/></div><button onClick={()=>setStep(1)}>Editar</button></article>
+        <article><span>Diseño</span><strong>{selectedTemplate?.name || 'Personalizado por WebFactory'}</strong><small>{state.design.style}</small><div><i style={{background:state.design.primary}}/><i style={{background:state.design.secondary}}/></div><button onClick={()=>setStep(1)}>Editar</button></article>
         <article><span>Funciones</span><strong>{enabledFeatures} activas</strong><small>Precio fijo {PRICE}</small><button onClick={()=>setStep(2)}>Editar</button></article>
         <article><span>Catálogo</span><strong>{state.catalog.length} items</strong><small>{appointmentServices.length} con booking</small><button onClick={()=>setStep(3)}>Editar</button></article>
         <article><span>Equipo</span><strong>{state.team.length} empleados</strong><small>Service + Employee</small><button onClick={()=>setStep(4)}>Editar</button></article>
@@ -984,7 +1032,7 @@ export default function WebFactoryBuilder({lang}:{lang:Language}) {
 
   const stepContent = [
     <BusinessStep key="business" state={state} setState={setState}/>,
-    <DesignStep key="design" state={state} setState={setState}/>,
+    <DesignStep key="design" state={state} setState={setState} lang={lang}/>,
     <FeaturesStep key="features" state={state} setState={setState}/>,
     <CatalogStep key="catalog" state={state} setState={setState}/>,
     <TeamStep key="team" state={state} setState={setState}/>,
