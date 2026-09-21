@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "npm run generate:pwa-icons && tsc --noEmit -p tsconfig.app.json && vite build",
+    "test": "node --test netlify/**/*.test.mjs",
     "preview": "vite preview",
     "generate:pwa-icons": "node scripts/generate-pwa-icons.mjs"
   },
