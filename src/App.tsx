@@ -6,6 +6,7 @@ import PaymentSetupPage from './PaymentSetupPage'
 import ClientAdminPage from './ClientAdminPage'
 import ClientStorefront from './ClientStorefront'
 import WebFactoryAdminPage from './WebFactoryAdminPage'
+import PasswordRecoveryPage from './PasswordRecoveryPage'
 
 type Language = 'es' | 'en'
 
@@ -124,7 +125,7 @@ function App(){
     if (!/^\/demos\//.test(window.location.pathname)) document.documentElement.lang=lang
   },[lang])
 
-  const anchors=['#demos','#incluye','#builder','#como-funciona','#faq']
+  const anchors=['#demos','#incluye','/builder','#como-funciona','#faq']
   const demoMatch = window.location.pathname.match(/^\/demos\/([^/]+)\/?$/)
   const paymentSetupRoute = /^\/payment-setup\/?$/.test(window.location.pathname)
   const clientAdminRoute = /^\/client-admin\/?$/.test(window.location.pathname)
@@ -132,12 +133,15 @@ function App(){
   const identityInviteRoute = /^#invite_token=/.test(window.location.hash)
   const identityRecoveryRoute = /^#recovery_token=/.test(window.location.hash)
   const clientSiteMatch = window.location.pathname.match(/^\/sites\/([^/]+)\/?$/)
+  const builderRoute = /^\/builder\/?$/.test(window.location.pathname)
 
+  if (identityRecoveryRoute) return <PasswordRecoveryPage />
   if (webFactoryAdminRoute || identityInviteRoute) return <WebFactoryAdminPage />
-  if (clientAdminRoute || identityRecoveryRoute) return <ClientAdminPage />
+  if (clientAdminRoute) return <ClientAdminPage />
   if (clientSiteMatch) return <ClientStorefront slug={decodeURIComponent(clientSiteMatch[1])} />
   if (paymentSetupRoute) return <PaymentSetupPage />
   if (demoMatch) return <DemoSite slug={demoMatch[1]} />
+  if (builderRoute) return <><header className="header"><a href="/" className="logo"><img src={LOGO} alt="WebFactory PR"/></a><div className="header-actions"><a className="btn secondary desktop-cta" href="/">{lang==='es'?'Volver al inicio':'Back to home'}</a><div className="langs"><button className={lang==='es'?'active':''} onClick={()=>setLang('es')}>ES</button><button className={lang==='en'?'active':''} onClick={()=>setLang('en')}>EN</button></div></div></header><main className="standalone-builder"><section className="section white builder"><div className="shell"><div className="builder-head"><Heading data={t.builder}/><div className="builder-price"><strong>{PRICE}</strong><span>{t.hero.once}</span></div></div><WebFactoryBuilder lang={lang}/></div></section></main></>
 
   return <>
     <header className="header">
@@ -145,7 +149,7 @@ function App(){
       <nav className={menu?'open':''}>{t.nav.map((n,i)=><a key={n} href={anchors[i]} onClick={()=>setMenu(false)}>{n}</a>)}</nav>
       <div className="header-actions">
         <div className="langs"><button className={lang==='es'?'active':''} onClick={()=>setLang('es')}>ES</button><button className={lang==='en'?'active':''} onClick={()=>setLang('en')}>EN</button></div>
-        <a href="#builder" className="btn primary desktop-cta">{t.hero.primary}</a>
+        <a href="/builder" className="btn primary desktop-cta">{t.hero.primary}</a>
         <button className="hamburger" aria-expanded={menu} onClick={()=>setMenu(v=>!v)}><i/><i/><i/></button>
       </div>
     </header>
@@ -158,7 +162,7 @@ function App(){
           <h3>{t.hero.highlight}</h3>
           <p className="lead">{t.hero.text}</p>
           <div className="price"><strong>{PRICE}</strong><span>{t.hero.once}</span></div>
-          <div className="actions"><a className="btn primary" href="#builder">{t.hero.primary} <b>↗</b></a><a className="btn secondary" href="#demos">{t.hero.secondary}</a></div>
+          <div className="actions"><a className="btn primary" href="/builder">{t.hero.primary} <b>↗</b></a><a className="btn secondary" href="#demos">{t.hero.secondary}</a></div>
           <div className="badges">{['Responsive','Carrito','Stripe','ATH Móvil','Bookings','Google Calendar'].map(x=><span key={x}>{x}</span>)}</div>
         </div>
         <Devices/>
@@ -180,8 +184,6 @@ function App(){
 
       <section className="section soft"><div className="shell split"><Heading data={t.calendar}/><div className="calendar"><header><strong>September</strong><span>Team calendar</span></header><div className="week">{['M','T','W','T','F','S','S'].map((x,i)=><b key={i}>{x}</b>)}</div><div className="days">{Array.from({length:28},(_,i)=><i className={[3,8,12,17,18,23].includes(i)?'busy':''} key={i}>{i+1}</i>)}</div><footer><span>● Carlos · 10:00 Haircut</span><span>● María · 1:30 Color</span></footer></div></div></section>
 
-      <section className="section white builder" id="builder"><div className="shell"><div className="builder-head"><Heading data={t.builder}/><div className="builder-price"><strong>{PRICE}</strong><span>{t.hero.once}</span></div></div><WebFactoryBuilder lang={lang}/></div></section>
-
       <section className="section soft"><div className="shell split reverse"><div className="payments"><article className="stripe"><b>stripe</b><strong>$300</strong><small>Secure checkout</small></article><article className="ath"><b>ATH Móvil</b><strong>$300</strong><small>Business payment</small></article><span>✓ Backend verified payment</span></div><Heading data={t.payments}/></div></section>
 
       <section className="section white" id="como-funciona"><div className="shell"><Heading data={t.how}/><div className="steps">{(lang==='es'?[['Personaliza','Configura tu negocio y elige entre diseño personalizado o un demo como diseño base.'],['Compra','Revisa el preview y completa el pago único de $300.'],['Creamos','Con pago verificado el proyecto entra al flujo de producción respetando tu opción de diseño.'],['Revisa','Recibes un preview y una ronda de revisión.'],['Publicamos','Completamos el deployment inicial y queda listo.']]:[['Customize','Configure your business and choose between a custom design or a demo as the base design.'],['Purchase','Review the preview and complete the one-time $300 payment.'],['We build','Verified payment moves the project into production while preserving your design choice.'],['Review','Receive a preview and one revision round.'],['Publish','Initial deployment is completed and ready.']]).map(([a,b],i)=><article key={a}><em>0{i+1}</em><h3>{a}</h3><p>{b}</p></article>)}</div></div></section>
@@ -190,10 +192,10 @@ function App(){
 
       <section className="section white" id="faq"><div className="shell faq"><Heading data={t.faq}/><div>{faqs.map(([q,a])=><details key={q}><summary>{q}<span>+</span></summary><p>{a}</p></details>)}</div></div></section>
 
-      <section className="final"><div className="shell"><div><p className="eyebrow">WEBFACTORY PR</p><h2>{t.final[0]}</h2><p>{t.final[1]}</p></div><aside><strong>{PRICE}</strong><span>{t.hero.once}</span><a href="#builder" className="btn light">{t.hero.primary} ↗</a></aside></div></section>
+      <section className="final"><div className="shell"><div><p className="eyebrow">WEBFACTORY PR</p><h2>{t.final[0]}</h2><p>{t.final[1]}</p></div><aside><strong>{PRICE}</strong><span>{t.hero.once}</span><a href="/builder" className="btn light">{t.hero.primary} ↗</a></aside></div></section>
     </main>
 
-    <footer className="footer"><div className="shell"><div><img src={LOGO} alt="WebFactory PR"/><p>Build. Sell. Book. Grow.</p></div><nav>{['Product','Demos','Features','Builder','FAQ','Contact','Privacy','Terms','Refund Policy'].map((x,i)=><a key={x} href={i===1?'#demos':i===2?'#incluye':i===3?'#builder':i===4?'#faq':i===5?'mailto:WebFactoryPR@gmail.com':'#top'}>{x}</a>)}</nav><p className="copyright">WebFactoryPR@gmail.com · © 2026 WebFactory PR. {t.footer}</p></div></footer>
+    <footer className="footer"><div className="shell"><div><img src={LOGO} alt="WebFactory PR"/><p>Build. Sell. Book. Grow.</p></div><nav>{['Product','Demos','Features','Builder','FAQ','Contact','Privacy','Terms','Refund Policy'].map((x,i)=><a key={x} href={i===1?'#demos':i===2?'#incluye':i===3?'/builder':i===4?'#faq':i===5?'mailto:WebFactoryPR@gmail.com':'#top'}>{x}</a>)}</nav><p className="copyright">WebFactoryPR@gmail.com · © 2026 WebFactory PR. {t.footer}</p></div></footer>
   </>
 }
 
