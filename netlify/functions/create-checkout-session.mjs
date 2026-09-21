@@ -6,6 +6,7 @@ import {
   saveOrder,
   validEmail,
 } from "../lib/order-store.mjs";
+import { assertSameOrigin } from "../lib/client-auth.mjs";
 
 const PRODUCT_KEY = "webfactory-premium";
 const PRODUCT_LABEL = "WebFactory Premium Commerce Website";
@@ -36,7 +37,7 @@ function assetRef(value, draftId) {
   return key.startsWith(`drafts/${draftId}/`) ? key : "";
 }
 
-function sanitizeOrder(payload) {
+export function sanitizeOrder(payload) {
   const draftId = cleanText(payload.draftId, 80);
   if (!/^[a-zA-Z0-9-]{20,80}$/.test(draftId)) throw new Error("Invalid draft ID.");
 
@@ -250,6 +251,13 @@ export default async (req) => {
   }
 
   try {
+    assertSameOrigin(req);
+    if (env("WEBFACTORY_LEGACY_CHECKOUT_ENABLED") !== "true") {
+      return Response.json(
+        { ok:false,message:"The legacy one-time checkout is closed to new orders." },
+        { status:410,headers:{ "Cache-Control":"no-store" } },
+      );
+    }
     const payload = await req.json();
     const order = sanitizeOrder(payload);
     const existing = await getOrder(order.orderId);

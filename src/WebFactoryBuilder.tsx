@@ -64,6 +64,7 @@ type PaymentConfiguration = {
 type BuilderState = {
   business: {
     name: string
+    slug: string
     contactName: string
     category: string
     description: string
@@ -90,7 +91,7 @@ type BuilderState = {
   payments: PaymentConfiguration
 }
 
-const PRICE = '$300'
+const PRICE = '$30'
 const CATALOG_LIMIT = 100
 const STORAGE_KEY = 'webfactory-v2-builder-draft'
 const DRAFT_ID_KEY = 'webfactory-v2-draft-id'
@@ -98,6 +99,7 @@ const DRAFT_ID_KEY = 'webfactory-v2-draft-id'
 const initialState: BuilderState = {
   business: {
     name: 'Northline Studio',
+    slug: 'northline-studio',
     contactName: '',
     category: 'Barber',
     description: 'Cortes modernos, grooming y reservaciones fáciles desde cualquier dispositivo.',
@@ -187,17 +189,18 @@ const initialState: BuilderState = {
 const categories = ['Restaurant','Automotive','Barber','Beauty','Wellness','Retail','Professional Services','Real Estate','Other']
 const styles: BuilderStyle[] = ['Modern','Luxury','Minimal','Bold']
 
-const featureLabels: Record<string,string> = {
-  products: 'Productos',
-  services: 'Servicios',
-  cart: 'Carrito',
+const featureLabels: Record<Language,Record<string,string>> = {
+  es: {
+  products: 'Productos', services: 'Servicios', cart: 'Carrito',
   whatsapp: 'WhatsApp',
-  calls: 'Llamadas',
-  social: 'Redes sociales',
-  form: 'Formulario',
-  maps: 'Google Maps',
-  bookings: 'Reservaciones',
-  calendar: 'Google Calendar',
+  calls: 'Llamadas', social: 'Redes sociales', form: 'Formulario',
+  maps: 'Google Maps', bookings: 'Reservaciones', calendar: 'Google Calendar',
+  },
+  en: {
+  products: 'Products', services: 'Services', cart: 'Cart',
+  whatsapp: 'WhatsApp', calls: 'Calls', social: 'Social media', form: 'Contact form',
+  maps: 'Google Maps', bookings: 'Bookings', calendar: 'Google Calendar',
+  },
 }
 
 const googleMapsHosts = new Set([
@@ -312,7 +315,7 @@ function Field({label,value,onChange,placeholder,type='text'}:{
   )
 }
 
-function Preview({state,device}:{state:BuilderState;device:Device}) {
+function Preview({state,device,lang}:{state:BuilderState;device:Device;lang:Language}) {
   const [catalogOpen,setCatalogOpen] = useState(false)
   const [selectedItem,setSelectedItem] = useState<CatalogItem | null>(null)
   const appointments = state.catalog.filter((item)=>item.type==='service' && item.requiresAppointment)
@@ -332,48 +335,48 @@ function Preview({state,device}:{state:BuilderState;device:Device}) {
         <header>
           <div className="wf-preview-brand">
             {state.business.logo ? <img src={state.business.logo} alt="" /> : <span>{state.business.name.slice(0,2).toUpperCase()}</span>}
-            <strong>{state.business.name || 'Tu negocio'}</strong>
+            <strong>{state.business.name || (lang==='es'?'Tu negocio':'Your business')}</strong>
           </div>
           <nav>
-            <span>Inicio</span>
-            {(state.features.services || state.features.products) && <button className="wf-preview-catalog-link" onClick={()=>setCatalogOpen(true)}>Catálogo</button>}
-            {state.features.bookings && <button>Reservar</button>}
+            <span>{lang==='es'?'Inicio':'Home'}</span>
+            {(state.features.services || state.features.products) && <button className="wf-preview-catalog-link" onClick={()=>setCatalogOpen(true)}>{lang==='es'?'Catálogo':'Catalog'}</button>}
+            {state.features.bookings && <button>{lang==='es'?'Reservar':'Book'}</button>}
           </nav>
         </header>
 
         <section className="wf-preview-hero">
           <small>{state.business.category || 'BUSINESS'}</small>
-          <h3>{state.business.name || 'Tu negocio'}</h3>
-          <p>{state.business.description || 'Describe aquí lo que hace especial a tu negocio.'}</p>
+          <h3>{state.business.name || (lang==='es'?'Tu negocio':'Your business')}</h3>
+          <p>{state.business.description || (lang==='es'?'Describe aquí lo que hace especial a tu negocio.':'Describe what makes your business special.')}</p>
           <div>
-            {(state.features.products || state.features.services) && <button onClick={()=>setCatalogOpen(true)}>Ver productos y servicios</button>}
-            {state.features.bookings && <button className="ghost">Reservar ahora</button>}
+            {(state.features.products || state.features.services) && <button onClick={()=>setCatalogOpen(true)}>{lang==='es'?'Ver productos y servicios':'View products and services'}</button>}
+            {state.features.bookings && <button className="ghost">{lang==='es'?'Reservar ahora':'Book now'}</button>}
             {state.features.whatsapp && <button className="ghost">WhatsApp</button>}
           </div>
         </section>
 
         <section className="wf-preview-catalog-gateway">
-          <small>CATÁLOGO</small>
-          <strong>{visibleCatalog.length} productos y servicios disponibles</strong>
-          <p>El catálogo permanece oculto para mantener la página limpia. El cliente lo abre solamente cuando desea explorar.</p>
-          <button onClick={()=>setCatalogOpen(true)}>Abrir catálogo →</button>
+          <small>{lang==='es'?'CATÁLOGO':'CATALOG'}</small>
+          <strong>{visibleCatalog.length} {lang==='es'?'productos y servicios disponibles':'products and services available'}</strong>
+          <p>{lang==='es'?'El catálogo permanece oculto para mantener la página limpia. El cliente lo abre solamente cuando desea explorar.':'The catalog stays tucked away to keep the page clean and opens when a customer wants to browse.'}</p>
+          <button onClick={()=>setCatalogOpen(true)}>{lang==='es'?'Abrir catálogo':'Open catalog'} →</button>
         </section>
 
         {state.features.bookings && appointments.length > 0 && (
           <section className="wf-preview-booking">
             <small>BOOKING</small>
-            <strong>Reserva en pocos pasos.</strong>
+            <strong>{lang==='es'?'Reserva en pocos pasos.':'Book in a few steps.'}</strong>
             <div>
-              <span>Servicio</span><i>→</i>
-              <span>Empleado</span><i>→</i>
-              <span>Hora</span>
+              <span>{lang==='es'?'Servicio':'Service'}</span><i>→</i>
+              <span>{lang==='es'?'Empleado':'Team member'}</span><i>→</i>
+              <span>{lang==='es'?'Hora':'Time'}</span>
             </div>
           </section>
         )}
 
         {state.team.length > 0 && (
           <section className="wf-preview-team">
-            <small>EQUIPO</small>
+            <small>{lang==='es'?'EQUIPO':'TEAM'}</small>
             <div>
               {state.team.slice(0,4).map((member) => (
                 <article key={member.id}>
@@ -388,13 +391,13 @@ function Preview({state,device}:{state:BuilderState;device:Device}) {
         {state.features.maps && mapsValid && (
           <section className="wf-preview-location">
             <div>
-              <small>UBICACIÓN</small>
-              <strong>Encuéntranos en Google Maps.</strong>
-              <a href={state.business.mapsUrl} target="_blank" rel="noreferrer">Ver ubicación real ↗</a>
+              <small>{lang==='es'?'UBICACIÓN':'LOCATION'}</small>
+              <strong>{lang==='es'?'Encuéntranos en Google Maps.':'Find us on Google Maps.'}</strong>
+              <a href={state.business.mapsUrl} target="_blank" rel="noreferrer">{lang==='es'?'Ver ubicación real':'View location'} ↗</a>
             </div>
             {mapsEmbed ? (
               <iframe
-                title="Ubicación de Google Maps"
+                title={lang==='es'?'Ubicación de Google Maps':'Google Maps location'}
                 src={mapsEmbed}
                 loading="lazy"
                 referrerPolicy="no-referrer-when-downgrade"
@@ -402,14 +405,14 @@ function Preview({state,device}:{state:BuilderState;device:Device}) {
             ) : (
               <a className="wf-preview-map-link" href={state.business.mapsUrl} target="_blank" rel="noreferrer">
                 <span>Google Maps</span>
-                <b>Abrir ubicación real ↗</b>
+                <b>{lang==='es'?'Abrir ubicación real':'Open location'} ↗</b>
               </a>
             )}
           </section>
         )}
 
         <footer>
-          <strong>{state.business.name || 'Tu negocio'}</strong>
+          <strong>{state.business.name || (lang==='es'?'Tu negocio':'Your business')}</strong>
           <span>{state.business.phone}</span>
           {state.features.maps && mapsValid && (
             <a href={state.business.mapsUrl} target="_blank" rel="noreferrer">Google Maps ↗</a>
@@ -420,16 +423,16 @@ function Preview({state,device}:{state:BuilderState;device:Device}) {
           <div className="wf-preview-modal-backdrop" onMouseDown={()=>setCatalogOpen(false)}>
             <section className="wf-preview-catalog-window" onMouseDown={(event)=>event.stopPropagation()}>
               <header>
-                <div><small>CATÁLOGO</small><strong>Productos y servicios</strong></div>
+                <div><small>{lang==='es'?'CATÁLOGO':'CATALOG'}</small><strong>{lang==='es'?'Productos y servicios':'Products and services'}</strong></div>
                 <button onClick={()=>setCatalogOpen(false)}>×</button>
               </header>
               <div className="wf-preview-modal-items">
                 {visibleCatalog.length===0 ? (
-                  <div className="wf-preview-empty">No hay productos o servicios activos en el preview.</div>
+                  <div className="wf-preview-empty">{lang==='es'?'No hay productos o servicios activos en el preview.':'There are no active products or services in this preview.'}</div>
                 ) : visibleCatalog.map((item)=>(
                   <button key={item.id} className="wf-preview-modal-card" onClick={()=>setSelectedItem(item)}>
                     {item.image ? <img src={item.image} alt="" /> : <span className="wf-preview-placeholder">{item.type==='service'?'SERVICE':'PRODUCT'}</span>}
-                    <div><small>{item.type}</small><strong>{item.name || 'Sin nombre'}</strong><b>${Number(item.price || 0).toFixed(2)}</b></div>
+                    <div><small>{item.type==='service'?(lang==='es'?'servicio':'service'):(lang==='es'?'producto':'product')}</small><strong>{item.name || (lang==='es'?'Sin nombre':'Untitled')}</strong><b>${Number(item.price || 0).toFixed(2)}</b></div>
                   </button>
                 ))}
               </div>
@@ -444,11 +447,11 @@ function Preview({state,device}:{state:BuilderState;device:Device}) {
               {selectedItem.image ? <img src={selectedItem.image} alt="" /> : <div className="wf-preview-item-placeholder">{selectedItem.type==='service'?'SERVICE':'PRODUCT'}</div>}
               <div>
                 <small>{selectedItem.type.toUpperCase()}</small>
-                <h4>{selectedItem.name || 'Sin nombre'}</h4>
+                <h4>{selectedItem.name || (lang==='es'?'Sin nombre':'Untitled')}</h4>
                 <strong>${Number(selectedItem.price || 0).toFixed(2)}</strong>
-                <p>{selectedItem.description || 'Descripción del producto o servicio.'}</p>
-                {selectedItem.requiresAppointment && <span>{selectedItem.duration} min · Requiere reservación</span>}
-                <button>{selectedItem.requiresAppointment?'Reservar':'Añadir al carrito'}</button>
+                <p>{selectedItem.description || (lang==='es'?'Descripción del producto o servicio.':'Product or service description.')}</p>
+                {selectedItem.requiresAppointment && <span>{selectedItem.duration} min · {lang==='es'?'Requiere reservación':'Booking required'}</span>}
+                <button>{selectedItem.requiresAppointment?(lang==='es'?'Reservar':'Book'):(lang==='es'?'Añadir al carrito':'Add to cart')}</button>
               </div>
             </section>
           </div>
@@ -458,7 +461,7 @@ function Preview({state,device}:{state:BuilderState;device:Device}) {
   )
 }
 
-function BusinessStep({state,setState}:{state:BuilderState;setState:Dispatch<SetStateAction<BuilderState>>}) {
+function BusinessStep({state,setState,lang}:{state:BuilderState;setState:Dispatch<SetStateAction<BuilderState>>;lang:Language}) {
   const [uploadingLogo,setUploadingLogo] = useState(false)
   const [uploadError,setUploadError] = useState('')
   const setBusiness = <K extends keyof BuilderState['business']>(key:K, value:BuilderState['business'][K]) =>
@@ -484,7 +487,7 @@ function BusinessStep({state,setState}:{state:BuilderState;setState:Dispatch<Set
         },
       }))
     } catch (error) {
-      setUploadError(error instanceof Error ? error.message : 'No se pudo guardar el logo.')
+      setUploadError(error instanceof Error ? error.message : (lang==='es'?'No se pudo guardar el logo.':'The logo could not be saved.'))
     } finally {
       setUploadingLogo(false)
     }
@@ -492,27 +495,29 @@ function BusinessStep({state,setState}:{state:BuilderState;setState:Dispatch<Set
 
   return (
     <div className="wf-step-content">
-      <div className="wf-step-intro"><small>PASO 1</small><h3>Cuéntanos sobre tu negocio.</h3><p>Estos datos alimentan el preview y el pedido de producción.</p></div>
-      <Field label="Nombre del negocio" value={state.business.name} onChange={(v)=>setBusiness('name',v)} />
-      <Field label="Nombre del cliente / contacto" value={state.business.contactName} onChange={(v)=>setBusiness('contactName',v)} placeholder="Persona responsable del pedido" />
+      <div className="wf-step-intro"><small>{lang==='es'?'PASO 1':'STEP 1'}</small><h3>{lang==='es'?'Cuéntanos sobre tu negocio.':'Tell us about your business.'}</h3><p>{lang==='es'?'Estos datos alimentan el preview y tu portal administrativo.':'These details power your preview and administrative portal.'}</p></div>
+      <Field label={lang==='es'?'Nombre del negocio':'Business name'} value={state.business.name} onChange={(v)=>setBusiness('name',v)} />
+      <Field label={lang==='es'?'Enlace preferido':'Preferred link'} value={state.business.slug} onChange={(v)=>setBusiness('slug',v.toLowerCase().replace(/[^a-z0-9-]/g,''))} placeholder="business-name" />
+      <small className="wf-field-help">{lang==='es'?'Tu página usará':'Your page will use'} /sites/{state.business.slug || 'business-name'}</small>
+      <Field label={lang==='es'?'Nombre del cliente / contacto':'Owner / contact name'} value={state.business.contactName} onChange={(v)=>setBusiness('contactName',v)} placeholder={lang==='es'?'Persona responsable de la cuenta':'Person responsible for the account'} />
       <label className="wf-field">
-        <span>Categoría</span>
+        <span>{lang==='es'?'Categoría':'Category'}</span>
         <select value={state.business.category} onChange={(event)=>setBusiness('category',event.target.value)}>
           {categories.map((category)=><option key={category}>{category}</option>)}
         </select>
       </label>
       <label className="wf-field">
-        <span>Descripción</span>
+        <span>{lang==='es'?'Descripción':'Description'}</span>
         <textarea rows={4} value={state.business.description} onChange={(event)=>setBusiness('description',event.target.value)} />
       </label>
       <div className="wf-field-grid">
-        <Field label="Teléfono" value={state.business.phone} onChange={(v)=>setBusiness('phone',v)} />
+        <Field label={lang==='es'?'Teléfono':'Phone'} value={state.business.phone} onChange={(v)=>setBusiness('phone',v)} />
         <Field label="WhatsApp" value={state.business.whatsapp} onChange={(v)=>setBusiness('whatsapp',v)} />
-        <Field label="Email del cliente" type="email" value={state.business.email} onChange={(v)=>setBusiness('email',v)} />
+        <Field label={lang==='es'?'Email del cliente':'Customer email'} type="email" value={state.business.email} onChange={(v)=>setBusiness('email',v)} />
         <Field label="Instagram" value={state.business.instagram} onChange={(v)=>setBusiness('instagram',v)} />
       </div>
       <label className="wf-field wf-maps-field">
-        <span>Enlace de Google Maps</span>
+        <span>{lang==='es'?'Enlace de Google Maps':'Google Maps link'}</span>
         <input
           type="url"
           value={state.business.mapsUrl}
@@ -522,15 +527,15 @@ function BusinessStep({state,setState}:{state:BuilderState;setState:Dispatch<Set
         <small className={state.business.mapsUrl && !isGoogleMapsUrl(state.business.mapsUrl) ? 'invalid' : ''}>
           {state.business.mapsUrl
             ? isGoogleMapsUrl(state.business.mapsUrl)
-              ? '✓ Enlace válido · la ubicación real aparecerá en la página'
-              : 'Usa un enlace válido de Google Maps'
-            : 'Abre Google Maps → Compartir → Copiar enlace y pégalo aquí'}
+              ? (lang==='es'?'✓ Enlace válido · la ubicación real aparecerá en la página':'✓ Valid link · the real location will appear on the page')
+              : (lang==='es'?'Usa un enlace válido de Google Maps':'Use a valid Google Maps link')
+            : (lang==='es'?'Abre Google Maps → Compartir → Copiar enlace y pégalo aquí':'Open Google Maps → Share → Copy link and paste it here')}
         </small>
       </label>
       <label className="wf-upload">
         <input type="file" accept="image/png,image/jpeg,image/webp,image/heic,image/heif" disabled={uploadingLogo} onChange={(event)=>uploadLogo(event.target.files?.[0])} />
-        <span>{uploadingLogo?'Guardando logo…':state.business.logoAssetKey?'✓ Logo guardado para el pedido':'Subir logo del cliente'}</span>
-        <small>El archivo se guarda de forma temporal para incluirlo en el Production Package después del pago.</small>
+        <span>{uploadingLogo?(lang==='es'?'Guardando logo…':'Saving logo…'):state.business.logoAssetKey?(lang==='es'?'✓ Logo guardado':'✓ Logo saved'):(lang==='es'?'Subir logo del cliente':'Upload customer logo')}</span>
+        <small>{lang==='es'?'El archivo se guarda de forma segura para tu website y portal administrativo.':'The file is stored securely for your website and administrative portal.'}</small>
       </label>
       {uploadError && <small className="wf-upload-error">{uploadError}</small>}
     </div>
@@ -648,12 +653,12 @@ function DesignStep({state,setState,lang}:{state:BuilderState;setState:Dispatch<
   )
 }
 
-function FeaturesStep({state,setState}:{state:BuilderState;setState:Dispatch<SetStateAction<BuilderState>>}) {
+function FeaturesStep({state,setState,lang}:{state:BuilderState;setState:Dispatch<SetStateAction<BuilderState>>;lang:Language}) {
   return (
     <div className="wf-step-content">
-      <div className="wf-step-intro"><small>PASO 3</small><h3>Activa lo que tu negocio necesita.</h3><p>El precio permanece igual: {PRICE}.</p></div>
+      <div className="wf-step-intro"><small>{lang==='es'?'PASO 3':'STEP 3'}</small><h3>{lang==='es'?'Activa lo que tu negocio necesita.':'Enable what your business needs.'}</h3><p>{lang==='es'?`La suscripción mensual es ${PRICE}; también puedes escoger el plan anual.`:`The monthly subscription is ${PRICE}; you can also choose the annual plan.`}</p></div>
       <div className="wf-feature-grid">
-        {Object.entries(featureLabels).map(([key,label])=>(
+        {Object.entries(featureLabels[lang]).map(([key,label])=>(
           <Toggle
             key={key}
             label={label}
@@ -662,12 +667,12 @@ function FeaturesStep({state,setState}:{state:BuilderState;setState:Dispatch<Set
           />
         ))}
       </div>
-      <div className="wf-fixed-price"><span>WEBFACTORY PREMIUM COMMERCE WEBSITE</span><strong>{PRICE}</strong><b>Pago único · las funciones no cambian el precio</b></div>
+      <div className="wf-fixed-price"><span>WEBFACTORY COMMERCE PLATFORM</span><strong>{PRICE} / {lang==='es'?'mes':'month'}</strong><b>{lang==='es'?'o $350 / año · 48 horas gratis · sin comisión':'or $350 / year · 48 hours free · no sales commission'}</b></div>
     </div>
   )
 }
 
-function CatalogStep({state,setState}:{state:BuilderState;setState:Dispatch<SetStateAction<BuilderState>>}) {
+function CatalogStep({state,setState,lang}:{state:BuilderState;setState:Dispatch<SetStateAction<BuilderState>>;lang:Language}) {
   const [editingId,setEditingId] = useState<string | null>(null)
   const editingItem = state.catalog.find((item)=>item.id===editingId) ?? null
 
@@ -676,7 +681,7 @@ function CatalogStep({state,setState}:{state:BuilderState;setState:Dispatch<SetS
     const item:CatalogItem = {
       id:createId(type),
       type,
-      name:type==='service'?'Nuevo servicio':'Nuevo producto',
+      name:type==='service'?(lang==='es'?'Nuevo servicio':'New service'):(lang==='es'?'Nuevo producto':'New product'),
       price:0,
       description:'',
       requiresAppointment:type==='service',
@@ -717,7 +722,7 @@ function CatalogStep({state,setState}:{state:BuilderState;setState:Dispatch<SetS
         imageType:asset.contentType,
       })
     } catch (error) {
-      setUploadError(error instanceof Error ? error.message : 'No se pudo guardar la imagen.')
+      setUploadError(error instanceof Error ? error.message : (lang==='es'?'No se pudo guardar la imagen.':'The image could not be saved.'))
     } finally {
       setUploadingId(null)
     }
@@ -725,11 +730,11 @@ function CatalogStep({state,setState}:{state:BuilderState;setState:Dispatch<SetS
 
   return (
     <div className="wf-step-content">
-      <div className="wf-step-intro"><small>PASO 4</small><h3>Construye tu catálogo.</h3><p>Productos y servicios viven en un mismo sistema. Puedes configurar hasta {CATALOG_LIMIT} en total.</p></div>
+      <div className="wf-step-intro"><small>{lang==='es'?'PASO 4':'STEP 4'}</small><h3>{lang==='es'?'Construye tu catálogo.':'Build your catalog.'}</h3><p>{lang==='es'?`Productos y servicios viven en un mismo sistema. Puedes configurar hasta ${CATALOG_LIMIT} en total.`:`Products and services live in one system. You can configure up to ${CATALOG_LIMIT} total.`}</p></div>
       <div className="wf-catalog-actions">
-        <button onClick={()=>addItem('product')} disabled={state.catalog.length>=CATALOG_LIMIT}>+ Producto</button>
-        <button onClick={()=>addItem('service')} disabled={state.catalog.length>=CATALOG_LIMIT}>+ Servicio</button>
-        <span>{state.catalog.length}/{CATALOG_LIMIT} configurados</span>
+        <button onClick={()=>addItem('product')} disabled={state.catalog.length>=CATALOG_LIMIT}>+ {lang==='es'?'Producto':'Product'}</button>
+        <button onClick={()=>addItem('service')} disabled={state.catalog.length>=CATALOG_LIMIT}>+ {lang==='es'?'Servicio':'Service'}</button>
+        <span>{state.catalog.length}/{CATALOG_LIMIT} {lang==='es'?'configurados':'configured'}</span>
       </div>
 
       <div className="wf-catalog-library">
@@ -737,14 +742,14 @@ function CatalogStep({state,setState}:{state:BuilderState;setState:Dispatch<SetS
           <button key={item.id} className="wf-catalog-tile" onClick={()=>setEditingId(item.id)}>
             {item.image ? <img src={item.image} alt="" /> : <span className="wf-catalog-tile-placeholder">{item.type==='service'?'S':'P'}</span>}
             <div>
-              <small>{String(index+1).padStart(2,'0')} · {item.type==='service'?'SERVICIO':'PRODUCTO'}</small>
-              <strong>{item.name || 'Sin nombre'}</strong>
+              <small>{String(index+1).padStart(2,'0')} · {item.type==='service'?(lang==='es'?'SERVICIO':'SERVICE'):(lang==='es'?'PRODUCTO':'PRODUCT')}</small>
+              <strong>{item.name || (lang==='es'?'Sin nombre':'Untitled')}</strong>
               <span>${Number(item.price || 0).toFixed(2)}</span>
             </div>
-            <em>Editar →</em>
+            <em>{lang==='es'?'Editar':'Edit'} →</em>
           </button>
         ))}
-        {state.catalog.length===0 && <div className="wf-empty-editor">Añade tu primer producto o servicio.</div>}
+        {state.catalog.length===0 && <div className="wf-empty-editor">{lang==='es'?'Añade tu primer producto o servicio.':'Add your first product or service.'}</div>}
       </div>
       {uploadError && <small className="wf-upload-error">{uploadError}</small>}
 
@@ -752,25 +757,25 @@ function CatalogStep({state,setState}:{state:BuilderState;setState:Dispatch<SetS
         <div className="wf-builder-modal-backdrop" onMouseDown={()=>setEditingId(null)}>
           <section className="wf-builder-item-modal" onMouseDown={(event)=>event.stopPropagation()}>
             <header>
-              <div><small>{editingItem.type==='service'?'SERVICIO':'PRODUCTO'}</small><h4>{editingItem.name || 'Sin nombre'}</h4></div>
+              <div><small>{editingItem.type==='service'?(lang==='es'?'SERVICIO':'SERVICE'):(lang==='es'?'PRODUCTO':'PRODUCT')}</small><h4>{editingItem.name || (lang==='es'?'Sin nombre':'Untitled')}</h4></div>
               <button onClick={()=>setEditingId(null)}>×</button>
             </header>
             <div className="wf-item-editor modal">
               <label className="wf-item-image">
                 <input type="file" accept="image/png,image/jpeg,image/webp,image/heic,image/heif" disabled={uploadingId===editingItem.id} onChange={(e)=>uploadImage(editingItem.id,e.target.files?.[0])} />
-                {editingItem.image?<img src={editingItem.image} alt="" />:<span>{uploadingId===editingItem.id?'Guardando…':'+ Imagen'}</span>}
+                {editingItem.image?<img src={editingItem.image} alt="" />:<span>{uploadingId===editingItem.id?(lang==='es'?'Guardando…':'Saving…'):(lang==='es'?'+ Imagen':'+ Image')}</span>}
               </label>
               <div>
-                <Field label="Nombre" value={editingItem.name} onChange={(v)=>update(editingItem.id,{name:v})} />
+                <Field label={lang==='es'?'Nombre':'Name'} value={editingItem.name} onChange={(v)=>update(editingItem.id,{name:v})} />
                 <div className="wf-mini-grid">
-                  <label className="wf-field"><span>Precio</span><input type="number" min="0" step=".01" value={editingItem.price} onChange={(e)=>update(editingItem.id,{price:Number(e.target.value)})}/></label>
-                  {editingItem.type==='service' && <label className="wf-field"><span>Duración</span><select value={editingItem.duration} onChange={(e)=>update(editingItem.id,{duration:Number(e.target.value)})}>{[15,30,45,60,75,90,120,180,240].map((min)=><option key={min} value={min}>{min} min</option>)}</select></label>}
+                  <label className="wf-field"><span>{lang==='es'?'Precio':'Price'}</span><input type="number" min="0" step=".01" value={editingItem.price} onChange={(e)=>update(editingItem.id,{price:Number(e.target.value)})}/></label>
+                  {editingItem.type==='service' && <label className="wf-field"><span>{lang==='es'?'Duración':'Duration'}</span><select value={editingItem.duration} onChange={(e)=>update(editingItem.id,{duration:Number(e.target.value)})}>{[15,30,45,60,75,90,120,180,240].map((min)=><option key={min} value={min}>{min} min</option>)}</select></label>}
                 </div>
-                <label className="wf-field"><span>Descripción</span><textarea rows={4} value={editingItem.description} onChange={(e)=>update(editingItem.id,{description:e.target.value})}/></label>
-                {editingItem.type==='service' && <Toggle label="Requiere cita" checked={editingItem.requiresAppointment} onChange={(v)=>update(editingItem.id,{requiresAppointment:v})}/>}
+                <label className="wf-field"><span>{lang==='es'?'Descripción':'Description'}</span><textarea rows={4} value={editingItem.description} onChange={(e)=>update(editingItem.id,{description:e.target.value})}/></label>
+                {editingItem.type==='service' && <Toggle label={lang==='es'?'Requiere cita':'Appointment required'} checked={editingItem.requiresAppointment} onChange={(v)=>update(editingItem.id,{requiresAppointment:v})}/>}
                 <div className="wf-modal-actions">
-                  <button className="danger" onClick={()=>remove(editingItem.id)}>Eliminar</button>
-                  <button className="done" onClick={()=>setEditingId(null)}>Guardar y cerrar</button>
+                  <button className="danger" onClick={()=>remove(editingItem.id)}>{lang==='es'?'Eliminar':'Delete'}</button>
+                  <button className="done" onClick={()=>setEditingId(null)}>{lang==='es'?'Guardar y cerrar':'Save and close'}</button>
                 </div>
               </div>
             </div>
@@ -781,25 +786,25 @@ function CatalogStep({state,setState}:{state:BuilderState;setState:Dispatch<SetS
   )
 }
 
-function TeamStep({state,setState}:{state:BuilderState;setState:Dispatch<SetStateAction<BuilderState>>}) {
+function TeamStep({state,setState,lang}:{state:BuilderState;setState:Dispatch<SetStateAction<BuilderState>>;lang:Language}) {
   const services = state.catalog.filter((item)=>item.type==='service' && item.requiresAppointment)
-  const addMember = () => setState((current)=>({...current,team:[...current.team,{id:createId('employee'),name:'Nuevo empleado',role:'Profesional',serviceIds:[]}]}))
+  const addMember = () => setState((current)=>({...current,team:[...current.team,{id:createId('employee'),name:lang==='es'?'Nuevo empleado':'New team member',role:lang==='es'?'Profesional':'Professional',serviceIds:[]}]}))
   const update = (id:string,patch:Partial<TeamMember>) => setState((current)=>({...current,team:current.team.map((member)=>member.id===id?{...member,...patch}:member)}))
   const remove = (id:string) => setState((current)=>({...current,team:current.team.filter((member)=>member.id!==id)}))
 
   return (
     <div className="wf-step-content">
-      <div className="wf-step-intro"><small>PASO 5</small><h3>Configura tu equipo.</h3><p>Relaciona cada servicio reservable con las personas autorizadas para brindarlo.</p></div>
-      <button className="wf-add-member" onClick={addMember}>+ Añadir empleado</button>
+      <div className="wf-step-intro"><small>{lang==='es'?'PASO 5':'STEP 5'}</small><h3>{lang==='es'?'Configura tu equipo.':'Configure your team.'}</h3><p>{lang==='es'?'Relaciona cada servicio reservable con las personas autorizadas para brindarlo.':'Assign each bookable service to the team members authorized to provide it.'}</p></div>
+      <button className="wf-add-member" onClick={addMember}>+ {lang==='es'?'Añadir empleado':'Add team member'}</button>
       <div className="wf-team-editor">
         {state.team.map((member)=>(
           <article key={member.id}>
-            <header><b>{member.name.slice(0,1).toUpperCase()}</b><button onClick={()=>remove(member.id)}>Eliminar</button></header>
-            <Field label="Nombre" value={member.name} onChange={(v)=>update(member.id,{name:v})}/>
-            <Field label="Rol" value={member.role} onChange={(v)=>update(member.id,{role:v})}/>
+            <header><b>{member.name.slice(0,1).toUpperCase()}</b><button onClick={()=>remove(member.id)}>{lang==='es'?'Eliminar':'Delete'}</button></header>
+            <Field label={lang==='es'?'Nombre':'Name'} value={member.name} onChange={(v)=>update(member.id,{name:v})}/>
+            <Field label={lang==='es'?'Rol':'Role'} value={member.role} onChange={(v)=>update(member.id,{role:v})}/>
             <div className="wf-service-assignment">
-              <span>Servicios que puede brindar</span>
-              {services.length===0?<small>Añade un servicio que requiera cita en Catálogo.</small>:services.map((service)=>(
+              <span>{lang==='es'?'Servicios que puede brindar':'Services this person can provide'}</span>
+              {services.length===0?<small>{lang==='es'?'Añade un servicio que requiera cita en Catálogo.':'Add an appointment-based service in Catalog.'}</small>:services.map((service)=>(
                 <label key={service.id}>
                   <input
                     type="checkbox"
@@ -817,27 +822,27 @@ function TeamStep({state,setState}:{state:BuilderState;setState:Dispatch<SetStat
   )
 }
 
-function HoursStep({state,setState}:{state:BuilderState;setState:Dispatch<SetStateAction<BuilderState>>}) {
+function HoursStep({state,setState,lang}:{state:BuilderState;setState:Dispatch<SetStateAction<BuilderState>>;lang:Language}) {
   const update = (day:string,patch:Partial<DayHours>) =>
     setState((current)=>({...current,hours:{...current.hours,[day]:{...current.hours[day],...patch}}}))
 
   return (
     <div className="wf-step-content">
-      <div className="wf-step-intro"><small>PASO 6</small><h3>Define los horarios generales.</h3><p>En fases posteriores cada empleado podrá usar estos horarios o tener un horario individual.</p></div>
+      <div className="wf-step-intro"><small>{lang==='es'?'PASO 6':'STEP 6'}</small><h3>{lang==='es'?'Define los horarios generales.':'Set general business hours.'}</h3><p>{lang==='es'?'Cada empleado podrá usar estos horarios o tener un horario individual desde el portal.':'Each team member can use these hours or have an individual schedule in the portal.'}</p></div>
       <div className="wf-hours-editor">
         {Object.entries(state.hours).map(([day,hours])=>(
           <article key={day}>
-            <label><input type="checkbox" checked={hours.enabled} onChange={(e)=>update(day,{enabled:e.target.checked})}/><strong>{day}</strong></label>
-            {hours.enabled?<div><input type="time" value={hours.open} onChange={(e)=>update(day,{open:e.target.value})}/><span>hasta</span><input type="time" value={hours.close} onChange={(e)=>update(day,{close:e.target.value})}/></div>:<em>Cerrado</em>}
+            <label><input type="checkbox" checked={hours.enabled} onChange={(e)=>update(day,{enabled:e.target.checked})}/><strong>{lang==='es'?day:({Lunes:'Monday',Martes:'Tuesday','Miércoles':'Wednesday',Jueves:'Thursday',Viernes:'Friday','Sábado':'Saturday',Domingo:'Sunday'} as Record<string,string>)[day]}</strong></label>
+            {hours.enabled?<div><input type="time" value={hours.open} onChange={(e)=>update(day,{open:e.target.value})}/><span>{lang==='es'?'hasta':'to'}</span><input type="time" value={hours.close} onChange={(e)=>update(day,{close:e.target.value})}/></div>:<em>{lang==='es'?'Cerrado':'Closed'}</em>}
           </article>
         ))}
       </div>
-      <div className="wf-hours-note"><strong>Regla de disponibilidad</strong><span>Una cita tendrá que caber completamente dentro del horario antes de poder ofrecerse al cliente.</span></div>
+      <div className="wf-hours-note"><strong>{lang==='es'?'Regla de disponibilidad':'Availability rule'}</strong><span>{lang==='es'?'Una cita tendrá que caber completamente dentro del horario antes de poder ofrecerse al cliente.':'An appointment must fit completely within business hours before it can be offered.'}</span></div>
     </div>
   )
 }
 
-function PaymentsStep({state,setState}:{state:BuilderState;setState:Dispatch<SetStateAction<BuilderState>>}) {
+function PaymentsStep({state,setState,lang}:{state:BuilderState;setState:Dispatch<SetStateAction<BuilderState>>;lang:Language}) {
   const payments = state.payments
   const setMethod = (method:keyof PaymentConfiguration['methods'], value:boolean) => {
     setState((current)=>({
@@ -856,56 +861,56 @@ function PaymentsStep({state,setState}:{state:BuilderState;setState:Dispatch<Set
 
   return (
     <div className="wf-step-content">
-      <div className="wf-step-intro"><small>PASO 7</small><h3>Configura cómo cobrará el negocio.</h3><p>El dinero de las ventas irá directamente a las cuentas del cliente. Nunca solicites contraseñas ni claves secretas aquí.</p></div>
+      <div className="wf-step-intro"><small>{lang==='es'?'PASO 7':'STEP 7'}</small><h3>{lang==='es'?'Configura cómo cobrará el negocio.':'Configure how the business gets paid.'}</h3><p>{lang==='es'?'El dinero de las ventas irá directamente a las cuentas del cliente. Nunca introduzcas contraseñas ni claves secretas aquí.':'Sales funds go directly to the business accounts. Never enter passwords or secret keys here.'}</p></div>
 
       <div className="wf-payment-methods">
         <article className={payments.methods.stripe?'selected':''}>
           <Toggle label="Stripe Connect" checked={payments.methods.stripe} onChange={(value)=>setMethod('stripe',value)} />
-          <p>Tarjetas y métodos elegibles se mostrarán dinámicamente mediante Stripe Checkout.</p>
+          <p>{lang==='es'?'Tarjetas y métodos elegibles se mostrarán dinámicamente mediante Stripe Checkout.':'Cards and eligible payment methods appear dynamically through Stripe Checkout.'}</p>
           {payments.methods.stripe && <>
-            <label className="wf-field"><span>Cuenta Stripe</span><select value={payments.stripe.accountStatus} onChange={(event)=>patchPayments({stripe:{...payments.stripe,accountStatus:event.target.value as 'new'|'existing'}})}><option value="new">Necesito crear una cuenta</option><option value="existing">Ya tengo una cuenta Stripe</option></select></label>
-            <small className="wf-secure-note">Después del pago recibirás un enlace privado para conectar o crear la cuenta directamente con Stripe.</small>
+            <label className="wf-field"><span>{lang==='es'?'Cuenta Stripe':'Stripe account'}</span><select value={payments.stripe.accountStatus} onChange={(event)=>patchPayments({stripe:{...payments.stripe,accountStatus:event.target.value as 'new'|'existing'}})}><option value="new">{lang==='es'?'Necesito crear una cuenta':'I need to create an account'}</option><option value="existing">{lang==='es'?'Ya tengo una cuenta Stripe':'I already have a Stripe account'}</option></select></label>
+            <small className="wf-secure-note">{lang==='es'?'Desde tu portal recibirás un enlace privado para conectar o crear la cuenta directamente con Stripe.':'Your portal will provide a private link to connect or create the account directly with Stripe.'}</small>
           </>}
         </article>
 
         <article className={payments.methods.ath?'selected':''}>
           <Toggle label="ATH Móvil Business" checked={payments.methods.ath} onChange={(value)=>setMethod('ath',value)} />
-          <p>Para clientes en Puerto Rico con una cuenta ATH Móvil Business administrada por el negocio.</p>
+          <p>{lang==='es'?'Para clientes en Puerto Rico con una cuenta ATH Móvil Business administrada por el negocio.':'For Puerto Rico businesses that manage their own ATH Móvil Business account.'}</p>
           {payments.methods.ath && <>
-            <label className="wf-field"><span>Estado de la cuenta</span><select value={payments.ath.accountStatus} onChange={(event)=>patchPayments({ath:{...payments.ath,accountStatus:event.target.value as 'needs_account'|'active'}})}><option value="needs_account">Necesito crear/configurarla</option><option value="active">Ya está activa</option></select></label>
-            <Field label="pATH público del negocio (opcional)" value={payments.ath.publicPath} onChange={(value)=>patchPayments({ath:{...payments.ath,publicPath:value}})} placeholder="Ej. /MiNegocio" />
-            <small className="wf-secure-note">No introduzcas usuario, contraseña, llave API ni información bancaria.</small>
+            <label className="wf-field"><span>{lang==='es'?'Estado de la cuenta':'Account status'}</span><select value={payments.ath.accountStatus} onChange={(event)=>patchPayments({ath:{...payments.ath,accountStatus:event.target.value as 'needs_account'|'active'}})}><option value="needs_account">{lang==='es'?'Necesito crear/configurarla':'I need to create or configure it'}</option><option value="active">{lang==='es'?'Ya está activa':'It is already active'}</option></select></label>
+            <Field label={lang==='es'?'pATH público del negocio (opcional)':'Business public pATH (optional)'} value={payments.ath.publicPath} onChange={(value)=>patchPayments({ath:{...payments.ath,publicPath:value}})} placeholder={lang==='es'?'Ej. /MiNegocio':'E.g. /MyBusiness'} />
+            <small className="wf-secure-note">{lang==='es'?'No introduzcas usuario, contraseña, llave API ni información bancaria.':'Do not enter a username, password, API key, or bank information.'}</small>
           </>}
         </article>
 
         <article className={payments.methods.inPerson?'selected':''}>
-          <Toggle label="Pago presencial" checked={payments.methods.inPerson} onChange={(value)=>setMethod('inPerson',value)} />
-          <p>Permite reservar o realizar una orden y pagar directamente en el establecimiento.</p>
-          {payments.methods.inPerson && <label className="wf-field"><span>Instrucciones para el cliente</span><textarea rows={3} value={payments.inPerson.instructions} onChange={(event)=>patchPayments({inPerson:{instructions:event.target.value}})} /></label>}
+          <Toggle label={lang==='es'?'Pago presencial':'In-person payment'} checked={payments.methods.inPerson} onChange={(value)=>setMethod('inPerson',value)} />
+          <p>{lang==='es'?'Permite reservar o realizar una orden y pagar directamente en el establecimiento.':'Allow customers to book or place an order and pay at the business.'}</p>
+          {payments.methods.inPerson && <label className="wf-field"><span>{lang==='es'?'Instrucciones para el cliente':'Customer instructions'}</span><textarea rows={3} value={payments.inPerson.instructions} onChange={(event)=>patchPayments({inPerson:{instructions:event.target.value}})} /></label>}
         </article>
       </div>
 
       <div className="wf-payment-rules">
-        <label className="wf-field"><span>Pago de productos</span><select value={payments.productPayment} onChange={(event)=>patchPayments({productPayment:event.target.value as 'online'|'in_person'})}><option value="online">Pago online requerido</option><option value="in_person" disabled={!payments.methods.inPerson}>Pagar al recoger / presencial</option></select></label>
-        <label className="wf-field"><span>Pago de reservaciones</span><select value={payments.bookingPayment} onChange={(event)=>patchPayments({bookingPayment:event.target.value as 'full'|'deposit'|'in_person'})}><option value="full">Pago completo para confirmar</option><option value="deposit">Depósito para confirmar</option><option value="in_person" disabled={!payments.methods.inPerson}>Reservar y pagar presencial</option></select></label>
-        {payments.bookingPayment==='deposit' && <label className="wf-field"><span>Depósito requerido</span><select value={payments.bookingDepositPercent} onChange={(event)=>patchPayments({bookingDepositPercent:Number(event.target.value)})}>{[10,20,25,30,50].map((value)=><option key={value} value={value}>{value}%</option>)}</select></label>}
+        <label className="wf-field"><span>{lang==='es'?'Pago de productos':'Product payments'}</span><select value={payments.productPayment} onChange={(event)=>patchPayments({productPayment:event.target.value as 'online'|'in_person'})}><option value="online">{lang==='es'?'Pago online requerido':'Online payment required'}</option><option value="in_person" disabled={!payments.methods.inPerson}>{lang==='es'?'Pagar al recoger / presencial':'Pay at pickup / in person'}</option></select></label>
+        <label className="wf-field"><span>{lang==='es'?'Pago de reservaciones':'Booking payments'}</span><select value={payments.bookingPayment} onChange={(event)=>patchPayments({bookingPayment:event.target.value as 'full'|'deposit'|'in_person'})}><option value="full">{lang==='es'?'Pago completo para confirmar':'Full payment to confirm'}</option><option value="deposit">{lang==='es'?'Depósito para confirmar':'Deposit to confirm'}</option><option value="in_person" disabled={!payments.methods.inPerson}>{lang==='es'?'Reservar y pagar presencial':'Book and pay in person'}</option></select></label>
+        {payments.bookingPayment==='deposit' && <label className="wf-field"><span>{lang==='es'?'Depósito requerido':'Required deposit'}</span><select value={payments.bookingDepositPercent} onChange={(event)=>patchPayments({bookingDepositPercent:Number(event.target.value)})}>{[10,20,25,30,50].map((value)=><option key={value} value={value}>{value}%</option>)}</select></label>}
       </div>
 
       <div className="wf-payment-extras">
-        <Toggle label="Enviar recibo al comprador" checked={payments.sendCustomerReceipt} onChange={(value)=>patchPayments({sendCustomerReceipt:value})} />
-        <Toggle label="Permitir propinas" checked={payments.allowTips} onChange={(value)=>patchPayments({allowTips:value})} />
+        <Toggle label={lang==='es'?'Enviar recibo al comprador':'Send customer receipt'} checked={payments.sendCustomerReceipt} onChange={(value)=>patchPayments({sendCustomerReceipt:value})} />
+        <Toggle label={lang==='es'?'Permitir propinas':'Allow tips'} checked={payments.allowTips} onChange={(value)=>patchPayments({allowTips:value})} />
       </div>
 
-      {!payments.methods.stripe && !payments.methods.ath && !payments.methods.inPerson && <div className="wf-checkout-warning">Selecciona al menos un método de pago para el website del negocio.</div>}
-      <div className="wf-hours-note"><strong>Configuración segura</strong><span>Stripe Connect recopilará identidad, banco y datos fiscales en sus propias pantallas. ATH Móvil se completará durante producción. Los secretos nunca se guardan en el Production Package.</span></div>
+      {!payments.methods.stripe && !payments.methods.ath && !payments.methods.inPerson && <div className="wf-checkout-warning">{lang==='es'?'Selecciona al menos un método de pago para el website del negocio.':'Select at least one payment method for the business website.'}</div>}
+      <div className="wf-hours-note"><strong>{lang==='es'?'Configuración segura':'Secure setup'}</strong><span>{lang==='es'?'Stripe Connect recopilará identidad, banco y datos fiscales en sus propias pantallas. ATH Móvil se completa desde el portal. WebFactory nunca guarda contraseñas ni llaves bancarias.':'Stripe Connect collects identity, banking, and tax details on Stripe screens. ATH Móvil setup is completed through the portal. WebFactory never stores passwords or banking keys.'}</span></div>
     </div>
   )
 }
 
-function FinalStep({state,setStep}:{state:BuilderState;setStep:(step:number)=>void}) {
-  const [readiness,setReadiness] = useState<{ready:boolean;checks?:Record<string,boolean>} | null>(null)
+function FinalStep({state,setStep,lang}:{state:BuilderState;setStep:(step:number)=>void;lang:Language}) {
   const [checkoutError,setCheckoutError] = useState('')
   const [checkingOut,setCheckingOut] = useState(false)
+  const [created,setCreated] = useState<{portalUrl:string;publicUrl:string}|null>(null)
   const appointmentServices = state.catalog.filter((item)=>item.requiresAppointment)
   const enabledFeatures = Object.values(state.features).filter(Boolean).length
   const missingUpload = Boolean(state.business.logo && !state.business.logoAssetKey) ||
@@ -914,16 +919,7 @@ function FinalStep({state,setStep}:{state:BuilderState;setStep:(step:number)=>vo
   const customerReady = Boolean(state.business.name.trim() && state.business.contactName.trim() && emailValid)
   const paymentReady = Object.values(state.payments.methods).some(Boolean)
   const selectedTemplate = demoConfigs.find((demo)=>demo.slug===state.design.templateSlug)
-  const canCheckout = Boolean(readiness?.ready && customerReady && paymentReady && !missingUpload && !checkingOut)
-
-  useEffect(()=>{
-    let active=true
-    fetch('/.netlify/functions/checkout-readiness',{cache:'no-store'})
-      .then((response)=>response.json())
-      .then((result)=>{ if(active) setReadiness(result) })
-      .catch(()=>{ if(active) setReadiness({ready:false}) })
-    return ()=>{active=false}
-  },[])
+  const canCheckout = Boolean(customerReady && paymentReady && state.business.slug.trim() && !missingUpload && !checkingOut)
 
   const startCheckout = async () => {
     if (!canCheckout) return
@@ -932,11 +928,13 @@ function FinalStep({state,setStep}:{state:BuilderState;setStep:(step:number)=>vo
     try {
       const {logo,...business} = state.business
       const catalog = state.catalog.map(({image,...item})=>item)
-      const response = await fetch('/.netlify/functions/create-checkout-session',{
+      const response = await fetch('/.netlify/functions/request-saas-site',{
         method:'POST',
         headers:{'Content-Type':'application/json'},
         body:JSON.stringify({
           draftId:getDraftId(),
+          slug:state.business.slug,
+          locale:lang,
           orderData:{
             client:{
               name:state.business.contactName,
@@ -954,54 +952,49 @@ function FinalStep({state,setStep}:{state:BuilderState;setStep:(step:number)=>vo
         }),
       })
       const result = await response.json()
-      if(!response.ok || !result.ok || !result.checkoutUrl){
-        throw new Error(result.message || 'No se pudo iniciar Stripe Checkout.')
+      if(!response.ok || !result.ok){
+        throw new Error(result.message || (lang==='es'?'No se pudo preparar tu acceso.':'Your access could not be prepared.'))
       }
-      window.location.assign(result.checkoutUrl)
+      setCreated({portalUrl:result.portalUrl,publicUrl:result.publicUrl})
     } catch (error) {
-      setCheckoutError(error instanceof Error ? error.message : 'No se pudo iniciar el checkout.')
+      setCheckoutError(error instanceof Error ? error.message : (lang==='es'?'No se pudo crear tu acceso.':'Your access could not be created.'))
       setCheckingOut(false)
     }
   }
 
-  const readinessText = !readiness
-    ? 'Verificando configuración segura de pagos…'
-    : readiness.ready
-      ? 'Stripe está conectado. Al confirmarse el pago, WebFactory genera el Production Package y envía la orden administrativa automáticamente.'
-      : 'La automatización administrativa todavía necesita completar su configuración segura antes de aceptar pagos.'
-
   return (
     <div className="wf-step-content">
-      <div className="wf-step-intro"><small>PASO 8</small><h3>Tu configuración está lista para revisar.</h3><p>El pedido se bloquea para producción solamente después de que Stripe confirma el pago.</p></div>
+      <div className="wf-step-intro"><small>{lang==='es'?'PASO 8':'STEP 8'}</small><h3>{lang==='es'?'Tu configuración está lista para activar.':'Your setup is ready to activate.'}</h3><p>{lang==='es'?'Recibirás acceso privado para iniciar tu prueba gratuita de 48 horas. No se solicita tarjeta.':'You will receive private access to start your free 48-hour trial. No card is required.'}</p></div>
       <div className="wf-review-grid">
-        <article><span>Negocio</span><strong>{state.business.name}</strong><small>{state.business.category}</small><button onClick={()=>setStep(0)}>Editar</button></article>
-        <article><span>Diseño</span><strong>{selectedTemplate ? `${selectedTemplate.category} — ${selectedTemplate.name}` : 'Personalizado por WebFactory'}</strong><small>{state.design.style}</small><div><i style={{background:state.design.primary}}/><i style={{background:state.design.secondary}}/></div><button onClick={()=>setStep(1)}>Editar</button></article>
-        <article><span>Funciones</span><strong>{enabledFeatures} activas</strong><small>Precio fijo {PRICE}</small><button onClick={()=>setStep(2)}>Editar</button></article>
-        <article><span>Catálogo</span><strong>{state.catalog.length} items</strong><small>{appointmentServices.length} con booking</small><button onClick={()=>setStep(3)}>Editar</button></article>
-        <article><span>Equipo</span><strong>{state.team.length} empleados</strong><small>Service + Employee</small><button onClick={()=>setStep(4)}>Editar</button></article>
-        <article><span>Horarios</span><strong>{Object.values(state.hours).filter((day)=>day.enabled).length} días abiertos</strong><small>Disponibilidad general</small><button onClick={()=>setStep(5)}>Editar</button></article>
-        <article><span>Pagos del website</span><strong>{Object.values(state.payments.methods).filter(Boolean).length} métodos</strong><small>{state.payments.bookingPayment==='deposit'?`${state.payments.bookingDepositPercent}% depósito para citas`:state.payments.bookingPayment}</small><button onClick={()=>setStep(6)}>Editar</button></article>
+        <article><span>{lang==='es'?'Negocio':'Business'}</span><strong>{state.business.name}</strong><small>{state.business.category}</small><button onClick={()=>setStep(0)}>{lang==='es'?'Editar':'Edit'}</button></article>
+        <article><span>{lang==='es'?'Diseño':'Design'}</span><strong>{selectedTemplate ? `${selectedTemplate.category} — ${selectedTemplate.name}` : (lang==='es'?'Personalizado por WebFactory':'Custom by WebFactory')}</strong><small>{state.design.style}</small><div><i style={{background:state.design.primary}}/><i style={{background:state.design.secondary}}/></div><button onClick={()=>setStep(1)}>{lang==='es'?'Editar':'Edit'}</button></article>
+        <article><span>{lang==='es'?'Funciones':'Features'}</span><strong>{enabledFeatures} {lang==='es'?'activas':'active'}</strong><small>{lang==='es'?'$30 mensual · $350 anual':'$30 monthly · $350 yearly'}</small><button onClick={()=>setStep(2)}>{lang==='es'?'Editar':'Edit'}</button></article>
+        <article><span>{lang==='es'?'Catálogo':'Catalog'}</span><strong>{state.catalog.length} {lang==='es'?'elementos':'items'}</strong><small>{appointmentServices.length} {lang==='es'?'con reservación':'with booking'}</small><button onClick={()=>setStep(3)}>{lang==='es'?'Editar':'Edit'}</button></article>
+        <article><span>{lang==='es'?'Equipo':'Team'}</span><strong>{state.team.length} {lang==='es'?'empleados':'team members'}</strong><small>Service + Employee</small><button onClick={()=>setStep(4)}>{lang==='es'?'Editar':'Edit'}</button></article>
+        <article><span>{lang==='es'?'Horarios':'Hours'}</span><strong>{Object.values(state.hours).filter((day)=>day.enabled).length} {lang==='es'?'días abiertos':'open days'}</strong><small>{lang==='es'?'Disponibilidad general':'General availability'}</small><button onClick={()=>setStep(5)}>{lang==='es'?'Editar':'Edit'}</button></article>
+        <article><span>{lang==='es'?'Pagos del website':'Website payments'}</span><strong>{Object.values(state.payments.methods).filter(Boolean).length} {lang==='es'?'métodos':'methods'}</strong><small>{state.payments.bookingPayment==='deposit'?`${state.payments.bookingDepositPercent}% ${lang==='es'?'depósito para citas':'booking deposit'}`:state.payments.bookingPayment}</small><button onClick={()=>setStep(6)}>{lang==='es'?'Editar':'Edit'}</button></article>
       </div>
-      {!customerReady && <div className="wf-checkout-warning">Completa el nombre del cliente, nombre del negocio y un email válido antes de pagar.</div>}
-      {!paymentReady && <div className="wf-checkout-warning">Selecciona al menos un método de pago para la página del negocio.</div>}
-      {missingUpload && <div className="wf-checkout-warning">Hay imágenes todavía sin guardar. Vuelve a cargarlas antes del checkout para incluirlas en el pedido.</div>}
+      {!customerReady && <div className="wf-checkout-warning">{lang==='es'?'Completa el nombre del cliente, nombre del negocio y un email válido.':'Enter the customer name, business name, and a valid email.'}</div>}
+      {!state.business.slug.trim() && <div className="wf-checkout-warning">{lang==='es'?'Escoge el enlace preferido de tu website.':'Choose your preferred website link.'}</div>}
+      {!paymentReady && <div className="wf-checkout-warning">{lang==='es'?'Selecciona al menos un método de pago para la página del negocio.':'Select at least one payment method for the business page.'}</div>}
+      {missingUpload && <div className="wf-checkout-warning">{lang==='es'?'Hay imágenes todavía sin guardar. Vuelve a cargarlas antes de crear tu acceso.':'Some images are not saved yet. Upload them again before creating your access.'}</div>}
       <section className="wf-after-payment" aria-labelledby="wf-after-payment-title">
         <header>
-          <small>DESPUÉS DEL PAGO</small>
-          <h4 id="wf-after-payment-title">Tu portal y las integraciones están incluidos.</h4>
-          <p>La vinculación privada comienza únicamente cuando Stripe confirma el pago de WebFactory.</p>
+          <small>{lang==='es'?'INCLUIDO CON TU CUENTA':'INCLUDED WITH YOUR ACCOUNT'}</small>
+          <h4 id="wf-after-payment-title">{lang==='es'?'Tu portal y las integraciones están incluidos.':'Your portal and integrations are included.'}</h4>
+          <p>{lang==='es'?'El trial comienza solamente cuando entras a tu portal y lo activas.':'Your trial starts only when you enter your portal and activate it.'}</p>
         </header>
         <div>
-          <article><em>01</em><strong>Confirmación segura</strong><span>Recibirás la confirmación de pago, el número de orden y los enlaces privados de activación.</span></article>
-          <article><em>02</em><strong>Conecta tus cuentas</strong><span>Desde tu acceso privado podrás conectar Stripe y autorizar Google Calendar en sus pantallas oficiales.</span></article>
-          <article><em>03</em><strong>Administra tu página</strong><span>Al publicarse, podrás cambiar productos, servicios, precios, empleados, horarios y reglas sin solicitar otro deployment.</span></article>
+          <article><em>01</em><strong>{lang==='es'?'Acceso seguro':'Secure access'}</strong><span>{lang==='es'?'Recibirás por email el enlace privado para establecer tu contraseña.':'You will receive a private email link to set your password.'}</span></article>
+          <article><em>02</em><strong>{lang==='es'?'Conecta tus cuentas':'Connect your accounts'}</strong><span>{lang==='es'?'Desde tu acceso privado podrás conectar Stripe y autorizar Google Calendar en sus pantallas oficiales.':'From your private portal, connect Stripe and authorize Google Calendar on their official screens.'}</span></article>
+          <article><em>03</em><strong>{lang==='es'?'Administra tu página':'Manage your page'}</strong><span>{lang==='es'?'Podrás cambiar productos, servicios, precios, empleados, horarios y reglas sin solicitar otro deployment.':'Change products, services, prices, team members, hours, and rules without requesting another deployment.'}</span></article>
         </div>
-        <p className="wf-after-payment-security">WebFactory nunca te pedirá contraseñas, códigos de seguridad, datos bancarios ni llaves secretas.</p>
+        <p className="wf-after-payment-security">{lang==='es'?'WebFactory nunca te pedirá contraseñas, códigos de seguridad, datos bancarios ni llaves secretas.':'WebFactory will never ask for passwords, security codes, bank details, or secret keys.'}</p>
       </section>
-      <div className="wf-checkout-placeholder">
-        <div><small>SIGUIENTE ETAPA</small><strong>Checkout seguro — {PRICE}</strong><span>{readinessText}</span></div>
-        <button disabled={!canCheckout} onClick={startCheckout}>{checkingOut?'Preparando orden…':'Continuar al checkout'}</button>
-      </div>
+      {created ? <div className="wf-checkout-placeholder success"><div><small>{lang==='es'?'ACCESO ENVIADO':'ACCESS SENT'}</small><strong>{lang==='es'?'Revisa tu email':'Check your email'}</strong><span>{lang==='es'?'Establece tu contraseña, entra al portal y activa las 48 horas gratis cuando estés listo.':'Set your password, enter the portal, and activate the free 48 hours when you are ready.'}</span></div><a className="wf-builder-access-link" href={created.portalUrl}>{lang==='es'?'Abrir portal administrativo':'Open administrative portal'}</a></div> : <div className="wf-checkout-placeholder">
+        <div><small>{lang==='es'?'SIGUIENTE ETAPA':'NEXT STEP'}</small><strong>{lang==='es'?'Crear acceso · 48 horas gratis':'Create access · 48 hours free'}</strong><span>{lang==='es'?'Después escoge $30 mensual o $350 anual. Sin comisión sobre tus ventas.':'Then choose $30 monthly or $350 yearly. No commission on your sales.'}</span></div>
+        <button disabled={!canCheckout} onClick={startCheckout}>{checkingOut?(lang==='es'?'Preparando acceso…':'Preparing access…'):(lang==='es'?'Crear mi cuenta':'Create my account')}</button>
+      </div>}
       {checkoutError && <div className="wf-checkout-warning error">{checkoutError}</div>}
     </div>
   )
@@ -1045,6 +1038,17 @@ export default function WebFactoryBuilder({lang}:{lang:Language}) {
   const [saved,setSaved] = useState(false)
 
   useEffect(()=>{
+    const templateSlug = new URLSearchParams(window.location.search).get('template') || ''
+    const demo = demoConfigs.find((entry)=>entry.slug===templateSlug)
+    if (!demo) return
+    setState((current)=>({
+      ...current,
+      design:{...current.design,templateSlug:demo.slug,primary:demo.dark,secondary:demo.accent},
+    }))
+    setStep(1)
+  },[])
+
+  useEffect(()=>{
     try {
       const persistentState = {
         ...state,
@@ -1075,14 +1079,14 @@ export default function WebFactoryBuilder({lang}:{lang:Language}) {
   }
 
   const stepContent = [
-    <BusinessStep key="business" state={state} setState={setState}/>,
+    <BusinessStep key="business" state={state} setState={setState} lang={lang}/>,
     <DesignStep key="design" state={state} setState={setState} lang={lang}/>,
-    <FeaturesStep key="features" state={state} setState={setState}/>,
-    <CatalogStep key="catalog" state={state} setState={setState}/>,
-    <TeamStep key="team" state={state} setState={setState}/>,
-    <HoursStep key="hours" state={state} setState={setState}/>,
-    <PaymentsStep key="payments" state={state} setState={setState}/>,
-    <FinalStep key="preview" state={state} setStep={setStep}/>,
+    <FeaturesStep key="features" state={state} setState={setState} lang={lang}/>,
+    <CatalogStep key="catalog" state={state} setState={setState} lang={lang}/>,
+    <TeamStep key="team" state={state} setState={setState} lang={lang}/>,
+    <HoursStep key="hours" state={state} setState={setState} lang={lang}/>,
+    <PaymentsStep key="payments" state={state} setState={setState} lang={lang}/>,
+    <FinalStep key="preview" state={state} setStep={setStep} lang={lang}/>,
   ][step]
 
   return (
@@ -1090,11 +1094,11 @@ export default function WebFactoryBuilder({lang}:{lang:Language}) {
       <div className="wf-builder-topbar">
         <div>
           <span>WEBFACTORY BUILDER</span>
-          <strong>PREVIEW — NOT PUBLISHED</strong>
+          <strong>{lang==='es'?'PREVIEW — NO PUBLICADO':'PREVIEW — NOT PUBLISHED'}</strong>
         </div>
         <div className="wf-builder-status">
-          <span className={saved?'saved':''}>{saved?'✓ Draft saved':'Local draft'}</span>
-          <button onClick={reset}>Reset</button>
+          <span className={saved?'saved':''}>{saved?(lang==='es'?'✓ Borrador guardado':'✓ Draft saved'):(lang==='es'?'Borrador local':'Local draft')}</span>
+          <button onClick={reset}>{lang==='es'?'Reiniciar':'Reset'}</button>
         </div>
       </div>
 
@@ -1112,9 +1116,9 @@ export default function WebFactoryBuilder({lang}:{lang:Language}) {
         <section className="wf-builder-panel">
           {stepContent}
           <div className="wf-builder-navigation">
-            <button className="secondary" disabled={step===0} onClick={()=>setStep((current)=>Math.max(0,current-1))}>← Atrás</button>
-            <span>Paso {step+1} de {labels.length}</span>
-            <button className="primary" disabled={step===labels.length-1} onClick={()=>setStep((current)=>Math.min(labels.length-1,current+1))}>Continuar →</button>
+            <button className="secondary" disabled={step===0} onClick={()=>setStep((current)=>Math.max(0,current-1))}>← {lang==='es'?'Atrás':'Back'}</button>
+            <span>{lang==='es'?'Paso':'Step'} {step+1} {lang==='es'?'de':'of'} {labels.length}</span>
+            <button className="primary" disabled={step===labels.length-1} onClick={()=>setStep((current)=>Math.min(labels.length-1,current+1))}>{lang==='es'?'Continuar':'Continue'} →</button>
           </div>
         </section>
 
@@ -1123,14 +1127,14 @@ export default function WebFactoryBuilder({lang}:{lang:Language}) {
             <div className="wf-device-switcher">
               {(['desktop','tablet','mobile'] as Device[]).map((value)=>(
                 <button key={value} className={device===value?'selected':''} onClick={()=>setDevice(value)}>
-                  {value==='desktop'?'▱':value==='tablet'?'▯':'▯'} <span>{value}</span>
+                  {value==='desktop'?'▱':value==='tablet'?'▯':'▯'} <span>{lang==='es'?({desktop:'escritorio',tablet:'tableta',mobile:'móvil'} as Record<Device,string>)[value]:value}</span>
                 </button>
               ))}
             </div>
-            <strong>{PRICE}</strong>
+            <strong>{PRICE} / {lang==='es'?'mes':'month'}</strong>
           </header>
           <div className="wf-live-stage">
-            <Preview state={state} device={device}/>
+            <Preview state={state} device={device} lang={lang}/>
           </div>
         </section>
       </div>

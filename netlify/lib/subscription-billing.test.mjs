@@ -11,6 +11,19 @@ test("trial lasts exactly 48 hours", () => {
   assert.equal(siteEntitlement({ servicePlan: plan }, new Date("2026-09-23T12:00:00.000Z")).public, false);
 });
 
+test("builder-created setup stays private until the owner starts the trial", () => {
+  const site = {
+    servicePlan: {
+      billingModel: "subscription",
+      billingStatus: "pending_activation",
+      subscriptionStatus: "not_started",
+      trialStartedAt: "",
+      trialEndsAt: "",
+    },
+  };
+  assert.deepEqual(siteEntitlement(site), { public: false, reason: "not_started" });
+});
+
 test("legacy one-time plans remain public and independent", () => {
   const entitlement = siteEntitlement({ servicePlan: { billingModel: "one_time", billingStatus: "paid" } });
   assert.deepEqual(entitlement, { public: true, reason: "one_time" });

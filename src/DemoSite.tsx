@@ -347,7 +347,7 @@ function DemoSite({ slug }: { slug: string }) {
 
       <footer className="demo-footer">
         <div><strong>{config.shortName}</strong><span>{config.category} · {ui.demoBy}</span></div>
-        <a href="/#demos">{ui.moreDemos}</a>
+        <nav><a href={`/builder?template=${config.slug}`}>{language==='es'?'Usar este diseño':'Use this design'} →</a><a href="/#demos">{ui.moreDemos}</a></nav>
       </footer>
 
       {catalogOpen && (

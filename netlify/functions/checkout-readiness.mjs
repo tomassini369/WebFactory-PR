@@ -4,6 +4,7 @@ function has(name) {
 
 export default async () => {
   const checks = {
+    legacyCheckoutEnabled: globalThis.Netlify?.env?.get("WEBFACTORY_LEGACY_CHECKOUT_ENABLED") === "true",
     stripeSecret: has("STRIPE_SECRET_KEY"),
     stripePrice: has("STRIPE_PRICE_WEBFACTORY_PREMIUM"),
     stripeWebhook: has("STRIPE_WEBHOOK_SECRET"),
@@ -17,6 +18,7 @@ export default async () => {
   return Response.json({
     ok:true,
     ready,
+    legacyOnly:true,
     checks,
     environment: globalThis.Netlify?.context?.deploy?.context || "unknown",
   }, {

@@ -20,6 +20,44 @@ function positiveNumber(value, fallback = null) {
   return Number.isFinite(number) && number > 0 ? number : fallback;
 }
 
+async function netlifyResourceUsage() {
+  const token = env("NETLIFY_API_TOKEN");
+  const siteId = env("NETLIFY_SITE_ID") || globalThis.Netlify?.context?.site?.id || "1fa77856-faad-4f0f-8f7c-2671e772513f";
+  const accountId = env("NETLIFY_ACCOUNT_ID") || "6822a73b60eda55f284d7067";
+  if (!token) return { connected: false, siteId, accountId, productionDeploysThisMonth: null, estimatedDeployCredits: null };
+  const headers = { Authorization: `Bearer ${token}` };
+  const request = async (path) => {
+    const response = await fetch(`https://api.netlify.com/api/v1${path}`, { headers });
+    if (!response.ok) throw new Error(`Netlify API returned ${response.status}.`);
+    return response.json();
+  };
+  try {
+    const [site, account, deploys] = await Promise.all([
+      request(`/sites/${encodeURIComponent(siteId)}`),
+      request(`/accounts/${encodeURIComponent(accountId)}`),
+      request(`/sites/${encodeURIComponent(siteId)}/deploys?per_page=100`),
+    ]);
+    const start = new Date();
+    start.setUTCDate(1); start.setUTCHours(0, 0, 0, 0);
+    const productionDeploysThisMonth = (Array.isArray(deploys) ? deploys : []).filter((deploy) => {
+      const timestamp = Date.parse(deploy.published_at || deploy.created_at || 0);
+      return deploy.context === "production" && Number.isFinite(timestamp) && timestamp >= start.getTime();
+    }).length;
+    return {
+      connected: true,
+      siteId,
+      accountId,
+      plan: account.type_name || site.plan || "Unknown",
+      productionDeploysThisMonth,
+      estimatedDeployCredits: productionDeploysThisMonth * 15,
+      deploysPageComplete: !Array.isArray(deploys) || deploys.length < 100,
+      error: "",
+    };
+  } catch (error) {
+    return { connected: false, siteId, accountId, productionDeploysThisMonth: null, estimatedDeployCredits: null, error: error?.message || "Netlify API unavailable." };
+  }
+}
+
 async function list(store, prefix = "") {
   const result = await store.list(prefix ? { prefix } : undefined);
   return result.blobs || [];
@@ -106,7 +144,7 @@ export default async (req) => {
       return Response.json({ ok: false, message: "Method not allowed." }, { status: 405 });
     }
     const user = await requirePlatformAdmin();
-    const [sites, orders, commerce, stripeEvents, clientEvents, clientAssets, orderAssets, packages] = await Promise.all([
+    const [sites, orders, commerce, stripeEvents, clientEvents, clientAssets, orderAssets, packages, netlifyUsage] = await Promise.all([
       records(clientSiteStore(), "sites/"),
       records(orderStore(), "orders/"),
       records(clientCommerceStore()),
@@ -115,6 +153,7 @@ export default async (req) => {
       list(clientAssetStore()),
       list(assetStore()),
       list(packageStore()),
+      netlifyResourceUsage(),
     ]);
 
     const now = Date.now();
@@ -143,6 +182,7 @@ export default async (req) => {
       "GOOGLE_OAUTH_CLIENT_ID",
       "GOOGLE_OAUTH_CLIENT_SECRET",
       "WEBFACTORY_TOKEN_ENCRYPTION_KEY",
+      "NETLIFY_API_TOKEN",
     ];
     const configuration = secretNames.map((name) => ({ name, configured: Boolean(env(name)) }));
     const configuredCount = configuration.filter((item) => item.configured).length;
@@ -172,12 +212,16 @@ export default async (req) => {
       capacity: capacity(sites, blockers),
       resources: {
         netlify: {
-          plan: env("WEBFACTORY_NETLIFY_PLAN") || "Not configured",
+          plan: netlifyUsage.plan || env("WEBFACTORY_NETLIFY_PLAN") || "Free",
           monthlyCredits,
           creditsUsed: monthlyCredits ? creditsUsed : null,
           utilizationPercent: creditPercent,
           productionDeployCreditCost: 15,
-          source: monthlyCredits ? "Configured WebFactory snapshot" : "Open Netlify for official billing usage",
+          productionDeploysThisMonth: netlifyUsage.productionDeploysThisMonth,
+          estimatedDeployCredits: netlifyUsage.estimatedDeployCredits,
+          apiConnected: netlifyUsage.connected,
+          apiError: netlifyUsage.error || "",
+          source: netlifyUsage.connected ? "Netlify API + optional official credit snapshot" : (monthlyCredits ? "Configured WebFactory credit snapshot" : "Netlify project metadata; open official billing for exact credits"),
           dashboardUrl: "https://app.netlify.com/projects/webfactorypr/usage-and-billing",
         },
         storage: {

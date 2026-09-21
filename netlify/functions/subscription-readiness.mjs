@@ -11,8 +11,8 @@ export default async (req) => {
       readiness: subscriptionBillingReadiness(),
       entitlement: siteEntitlement(site),
       servicePlan: site.servicePlan || {
-        code: "webfactory-premium-commerce",
-        name: "WebFactory Premium Commerce Website",
+        code: "webfactory-saas",
+        name: "WebFactory Commerce Platform",
         billingModel: "one_time",
         billingStatus: "paid",
         subscriptionStatus: "not_started",

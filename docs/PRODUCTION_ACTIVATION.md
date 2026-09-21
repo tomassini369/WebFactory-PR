@@ -21,6 +21,14 @@ The subscription runtime must remain disabled until all of these are configured 
 - `STRIPE_WEBHOOK_SECRET` — signing secret for the production webhook.
 - `WEBFACTORY_SUBSCRIPTION_ENABLED=true` — set this only after the items above are confirmed.
 
+Control Center resource telemetry can additionally use:
+
+- `NETLIFY_API_TOKEN` — private Netlify personal access token, Functions/runtime scope only.
+- `NETLIFY_SITE_ID` — production site ID.
+- `NETLIFY_ACCOUNT_ID` — owning Netlify team/account ID.
+
+The API integration reports the real plan and production deploy count. Exact credit balance remains labeled separately because Netlify does not expose the official Usage & Billing meter through the project endpoint; never present estimated deploy credits as the official balance.
+
 The existing one-time checkout also continues to use:
 
 - `STRIPE_PRICE_WEBFACTORY_PREMIUM` — existing $300 one-time price.
