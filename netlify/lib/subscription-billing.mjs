@@ -18,16 +18,25 @@ export function subscriptionBillingEnabled() {
 
 export function subscriptionBillingReadiness() {
   const enabled = subscriptionBillingEnabled();
-  const monthlyPriceConfigured = Boolean(env("STRIPE_PRICE_WEBFACTORY_MONTHLY"));
-  const annualPriceConfigured = Boolean(env("STRIPE_PRICE_WEBFACTORY_ANNUAL"));
-  const webhookConfigured = Boolean(env("STRIPE_WEBHOOK_SECRET"));
-  return {
-    enabled,
-    priceConfigured: monthlyPriceConfigured && annualPriceConfigured,
+  const stripeSecretConfigured = Boolean(env("STRIPE_SECRET_KEY"));
+  const monthlyPriceConfigured = env("STRIPE_PRICE_WEBFACTORY_MONTHLY").startsWith("price_");
+  const annualPriceConfigured = env("STRIPE_PRICE_WEBFACTORY_ANNUAL").startsWith("price_");
+  const webhookConfigured = env("STRIPE_WEBHOOK_SECRET").startsWith("whsec_");
+  const checks = {
+    stripeSecretConfigured,
     monthlyPriceConfigured,
     annualPriceConfigured,
     webhookConfigured,
-    ready: enabled && monthlyPriceConfigured && annualPriceConfigured && webhookConfigured,
+  };
+  const missing = Object.entries(checks)
+    .filter(([, configured]) => !configured)
+    .map(([name]) => name);
+  return {
+    enabled,
+    ...checks,
+    priceConfigured: monthlyPriceConfigured && annualPriceConfigured,
+    missing,
+    ready: enabled && missing.length === 0,
   };
 }
 
