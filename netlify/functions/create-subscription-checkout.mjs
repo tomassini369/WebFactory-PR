@@ -19,7 +19,10 @@ export default async (req) => {
   try {
     assertSameOrigin(req);
     const payload = await req.json();
-    const interval = payload.interval === "annual" ? "annual" : "monthly";
+    if (!['monthly', 'annual'].includes(payload.interval)) {
+      throw Object.assign(new Error("Subscription interval must be monthly or annual."), { status: 400 });
+    }
+    const interval = payload.interval;
     const { user, site, membership } = await requireSiteAccess(payload.siteId, ["owner"]);
     if (membership.role !== "owner" && membership.role !== "admin") {
       throw Object.assign(new Error("Only the business owner can select a subscription."), { status: 403 });
