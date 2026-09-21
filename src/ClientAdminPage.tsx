@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { acceptInvite, getUser, handleAuthCallback, login, logout, onAuthChange, requestPasswordRecovery, updateUser, type User } from '@netlify/identity'
 import './client-admin.css'
+import { withAuthRetry } from './auth-retry'
 
 type CatalogItem={id:string;type:'product'|'service';name:string;description:string;price:number;active:boolean;inventory:number|null;requiresAppointment:boolean;duration:number;bufferMinutes:number;imageAssetKey?:string}
 type Employee={id:string;name:string;role:string;active:boolean;serviceIds:string[];calendarId:string;dailyLimit:number;schedule:Record<string,DayHours>;timeOff:Array<{start:string;end:string;note:string}>}
@@ -9,13 +10,13 @@ type ClientSite={siteId:string;slug:string;status:string;revision:number;busines
 type Transaction={transactionId:string;kind:'order'|'booking';customer:{name:string;email:string;phone:string};items:Array<{name:string;quantity:number;unitAmount:number}>;amountTotal:number;paymentStatus:string;status:string;createdAt:string;start?:string}
 type Tab='overview'|'catalog'|'team'|'hours'|'payments'|'calendar'|'commerce'
 
-const api=async(url:string,options?:RequestInit)=>{const response=await fetch(url,{credentials:'include',...options});const result=await response.json();if(!response.ok||result.ok===false)throw new Error(result.message||'No se pudo completar la solicitud.');return result}
+const api=(url:string,options?:RequestInit)=>withAuthRetry(async()=>{const response=await fetch(url,{credentials:'include',cache:'no-store',...options});const result=await response.json();if(!response.ok||result.ok===false)throw new Error(result.message||'No se pudo completar la solicitud.');return result})
 const money=(cents:number)=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(cents/100)
 const uid=(prefix:string)=>`${prefix}-${crypto.randomUUID()}`
 
-function LoginPanel({onLogin}:{onLogin:(user:User)=>void}){
+function LoginPanel({onLogin}:{onLogin:(user:User)=>Promise<void>}){
   const [email,setEmail]=useState('');const [password,setPassword]=useState('');const [error,setError]=useState('');const [busy,setBusy]=useState(false);const [sent,setSent]=useState(false)
-  const submit=async(event:FormEvent)=>{event.preventDefault();setBusy(true);setError('');try{onLogin(await login(email,password))}catch(e){setError(e instanceof Error?e.message:'No se pudo iniciar sesión.')}finally{setBusy(false)}}
+  const submit=async(event:FormEvent)=>{event.preventDefault();setBusy(true);setError('');try{const current=await withAuthRetry(()=>login(email,password));await onLogin(current)}catch(e){setError(e instanceof Error?e.message:'No se pudo iniciar sesión.')}finally{setBusy(false)}}
   const recover=async()=>{if(!email)return setError('Escribe primero tu email.');setBusy(true);setError('');try{await requestPasswordRecovery(email);setSent(true)}catch(e){setError(e instanceof Error?e.message:'No se pudo enviar el enlace.')}finally{setBusy(false)}}
   return <section className="ca-login"><img src="/webfactory-pr-logo.png" alt="WebFactory PR"/><small>PORTAL PRIVADO</small><h1>Administra tu website.</h1><p>Actualiza catálogo, reservaciones, equipo, pagos y calendario desde un solo lugar.</p><form onSubmit={submit}><label>Email<input type="email" value={email} onChange={e=>setEmail(e.target.value)} required/></label><label>Contraseña<input type="password" value={password} onChange={e=>setPassword(e.target.value)} required/></label><button disabled={busy}>{busy?'Verificando…':'Entrar al portal'}</button></form><button className="ca-link" onClick={recover}>Olvidé mi contraseña</button>{sent&&<div className="ca-success">Revisa tu email para restablecer la contraseña.</div>}{error&&<div className="ca-error">{error}</div>}</section>
 }
@@ -37,7 +38,7 @@ export default function ClientAdminPage(){
   const loadCommerce=async()=>{if(!site)return;const result=await api(`/.netlify/functions/client-commerce-admin?siteId=${encodeURIComponent(site.siteId)}`);setCommerce({orders:result.orders,bookings:result.bookings})}
   const loadCalendar=async()=>{if(!site)return;const result=await api(`/.netlify/functions/google-calendar-status?siteId=${encodeURIComponent(site.siteId)}`);setCalendars(result.calendars||[]);setGoogleConfigured(result.configured);if(result.message)setError(result.message)}
   useEffect(()=>{if(tab==='commerce')loadCommerce().catch(e=>setError(e.message));if(tab==='calendar')loadCalendar().catch(e=>setError(e.message))},[tab,site?.siteId])
-  const resetPassword=async()=>{if(newPassword.length<8)return setError('Usa una contraseña de al menos 8 caracteres.');setBusy(true);try{let current:User|null;if(inviteToken){const invited=await acceptInvite(inviteToken,newPassword);if(!invited.email)throw new Error('La invitación no contiene un email válido.');current=await login(invited.email,newPassword)}else{current=await updateUser({password:newPassword})}setResetToken('');setInviteToken('');setAuthMessage('Contraseña guardada.');setUser(current);if(current)await loadSites()}catch(e){setError(e instanceof Error?e.message:'No se pudo guardar la contraseña.')}finally{setBusy(false)}}
+  const resetPassword=async()=>{if(newPassword.length<8)return setError('Usa una contraseña de al menos 8 caracteres.');setBusy(true);try{let current:User|null;if(inviteToken){const invited=await acceptInvite(inviteToken,newPassword);if(!invited.email)throw new Error('La invitación no contiene un email válido.');current=await withAuthRetry(()=>login(invited.email!,newPassword))}else{current=await updateUser({password:newPassword})}setResetToken('');setInviteToken('');setAuthMessage('Contraseña guardada.');setUser(current);if(current)await loadSites()}catch(e){setError(e instanceof Error?e.message:'No se pudo guardar la contraseña.')}finally{setBusy(false)}}
   const signOut=async()=>{await logout();setUser(null);setSite(null)}
   const transactionAction=async(record:Transaction,action:string)=>{if(!site)return;if(!confirm(`¿Confirmas ${action} para ${record.transactionId}?`))return;setBusy(true);try{await api('/.netlify/functions/client-commerce-admin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({siteId:site.siteId,kind:record.kind,transactionId:record.transactionId,action})});await loadCommerce();setMessage('Transacción actualizada.')}catch(e){setError(e instanceof Error?e.message:'No se pudo actualizar.')}finally{setBusy(false)}}
 
