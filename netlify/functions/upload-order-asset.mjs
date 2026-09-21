@@ -1,4 +1,5 @@
 import crypto from "node:crypto";
+import { assertSameOrigin } from "../lib/client-auth.mjs";
 import { assetStore, safeFileName } from "../lib/order-store.mjs";
 
 const MAX_FILE_SIZE = 8 * 1024 * 1024;
@@ -8,6 +9,7 @@ export default async (req) => {
   if (req.method !== "POST") return new Response("Method not allowed", { status: 405 });
 
   try {
+    assertSameOrigin(req);
     const form = await req.formData();
     const file = form.get("file");
     const draftId = String(form.get("draftId") || "").trim();
@@ -45,4 +47,12 @@ export default async (req) => {
   } catch (error) {
     return Response.json({ ok:false,message:error?.message || "Upload failed." }, { status:500 });
   }
+};
+
+export const config = {
+  rateLimit: {
+    windowLimit: 150,
+    windowSize: 3600,
+    aggregateBy: ["ip"],
+  },
 };

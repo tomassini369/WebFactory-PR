@@ -17,7 +17,7 @@ Convert the Phase 1 visual Builder shell into a real interactive simulator while
 - Customer logo upload for local preview
 - Modern, Luxury, Minimal and Bold visual styles
 - Primary and secondary color controls
-- Feature toggles with fixed $300 pricing
+- Feature toggles included with the $30 monthly / $350 annual subscription
 - Unified product/service catalog editor
 - Up to 100 total products/services in the Builder catalog
 - Product/service image upload for preview

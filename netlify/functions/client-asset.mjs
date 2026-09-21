@@ -1,9 +1,10 @@
 import crypto from "node:crypto";
 import { assertSameOrigin, errorResponse, requireSiteAccess } from "../lib/client-auth.mjs";
-import { clientAssetStore } from "../lib/client-store.mjs";
+import { clientAssetStore, getClientSite } from "../lib/client-store.mjs";
+import { siteEntitlement } from "../lib/subscription-billing.mjs";
 import { cleanText, safeFileName } from "../lib/order-store.mjs";
 
-const ALLOWED_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif", "image/svg+xml"]);
+const ALLOWED_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
 const MAX_SIZE = 8 * 1024 * 1024;
 
 export default async (req) => {
@@ -13,6 +14,9 @@ export default async (req) => {
       const siteId = cleanText(url.searchParams.get("siteId"), 120);
       const key = cleanText(url.searchParams.get("key"), 700);
       if (!siteId || !key.startsWith(`sites/${siteId}/`)) throw Object.assign(new Error("Invalid asset."), { status: 400 });
+      const site = await getClientSite(siteId);
+      if (!site) throw Object.assign(new Error("Asset not found."), { status: 404 });
+      if (!siteEntitlement(site).public) await requireSiteAccess(siteId);
       const [data, metadata] = await Promise.all([
         clientAssetStore().get(key, { type: "arrayBuffer" }),
         clientAssetStore().getMetadata(key),
@@ -32,7 +36,7 @@ export default async (req) => {
     await requireSiteAccess(siteId, ["owner", "manager"]);
     const file = form.get("file");
     if (!(file instanceof File)) throw Object.assign(new Error("Image file is required."), { status: 400 });
-    if (!ALLOWED_TYPES.has(file.type)) throw Object.assign(new Error("Use a JPG, PNG, WebP, GIF, or SVG image."), { status: 400 });
+    if (!ALLOWED_TYPES.has(file.type)) throw Object.assign(new Error("Use a JPG, PNG, WebP, or GIF image."), { status: 400 });
     if (file.size > MAX_SIZE) throw Object.assign(new Error("The image cannot exceed 8 MB."), { status: 400 });
     const key = `sites/${siteId}/${Date.now()}-${crypto.randomUUID()}-${safeFileName(file.name, "image")}`;
     await clientAssetStore().set(key, await file.arrayBuffer(), { metadata: {

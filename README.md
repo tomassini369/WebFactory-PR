@@ -4,32 +4,38 @@ Official WebFactory PR product and production website.
 
 ## Official product
 
-**WebFactory Premium Commerce Website — $300 USD one-time**
+**WebFactory Commerce Platform — subscription SaaS**
 
-Includes the WebFactory V2 experience for business website, commerce, products/services, employees, bookings, Stripe/ATH Móvil architecture, Google Calendar architecture, responsive preview and initial publishing workflow.
+- 48-hour free trial with no card.
+- $30 USD monthly or $350 USD yearly.
+- Multi-tenant business website plus private administration portal.
+- Products/services, employees, bookings, Stripe Connect, ATH Móvil architecture, Google Calendar and live content updates.
+- No WebFactory commission on the client's commerce sales.
 
-There are no active Basic, Professional, Payments or monthly-support packages in the current V2 product model.
+The former $300 one-time product remains only as a grandfathered compatibility path for existing paid customers. It is not the public offer and new SaaS customers are never routed into that checkout.
 
 ## Stripe
 
-Production Stripe uses one active product and one active one-time price.
+Production Stripe Billing uses dedicated monthly and annual recurring prices. Client commerce remains separated through Stripe Connect.
 
 Netlify environment variables:
 
 - `STRIPE_SECRET_KEY` — Stripe secret key, stored only in Netlify.
-- `STRIPE_PRICE_WEBFACTORY_PREMIUM` — official Stripe Price ID for the $300 one-time WebFactory Premium product.
+- `STRIPE_PRICE_WEBFACTORY_MONTHLY` — official $30 monthly recurring Price ID.
+- `STRIPE_PRICE_WEBFACTORY_ANNUAL` — official $350 annual recurring Price ID.
+- `STRIPE_PRICE_WEBFACTORY_PREMIUM` — legacy $300 Price ID retained for grandfathered records only.
 - `STRIPE_WEBHOOK_SECRET` — signing secret for the production Stripe webhook.
 - `WEBFACTORY_ORDER_EMAIL` — administrative order recipient.
 - `WEBFACTORY_GMAIL_USER` — Gmail account used for transactional delivery.
 - `WEBFACTORY_GMAIL_APP_PASSWORD` — Gmail App Password stored as a Netlify secret.
 
-The checkout function never trusts a frontend price. It always reads the official Stripe Price ID from the Netlify environment.
+Subscription Checkout never trusts a frontend price. The browser sends only `siteId` and `monthly|annual`; the server selects the authorized Price ID.
 
 ## Checkout safety
 
 The server creates Stripe Checkout Sessions. Payment confirmation must come from Stripe verification/webhooks, never from a success-page redirect alone.
 
-The V2 Builder checks backend readiness before enabling the final checkout. The button remains disabled until Stripe, the verified webhook and Gmail SMTP delivery are all configured.
+The Builder creates a hidden tenant and sends secure portal access. The owner starts the 48-hour trial from the portal; no card or charge is created by the Builder.
 
 Client storefront data is loaded once per visit and refreshed when a visitor returns to a visible tab after at least one minute. Public tenant responses use revision ETags and short Netlify CDN caching, so administrative changes become available quickly without continuous 20-second polling or unnecessary Function invocations.
 
@@ -54,20 +60,21 @@ Official site: https://webfactorypr.netlify.app
 Production branch: `main`
 
 
-## Paid-order automation
+## SaaS activation
 
-1. Customer completes the Builder.
-2. Uploaded images are persisted before payment.
-3. Server stores an authoritative order and creates Stripe Checkout for exactly $300.
-4. Stripe signed webhook confirms payment.
-5. WebFactory generates the Production Package.
-6. Administrative package is sent to the configured WebFactory order email.
-7. Customer receives a separate payment/project confirmation.
-8. Order moves to IN_PRODUCTION.
+1. Customer completes the Builder and chooses a preferred `/sites/:slug` link.
+2. The server validates the configuration, stores assets and creates a hidden tenant.
+3. Netlify Identity sends secure password setup access.
+4. The owner starts the exact 48-hour trial from `/client-admin`.
+5. The website becomes public and remains editable through the portal.
+6. The owner selects $30 monthly or $350 annual.
+7. Stripe's signed webhook activates the subscription and preserves public entitlement.
+
+The signed $300 checkout, Production Package and email workflow remain deployed only for legacy compatibility.
 
 ## Client website runtime
 
-Paid projects now receive a separate multi-tenant runtime. This does not alter the $300 WebFactory purchase checkout.
+Every SaaS customer receives an isolated tenant in the shared multi-tenant runtime.
 
 - `/client-admin` is the authenticated client portal.
 - `/sites/:slug` is the dynamic bilingual client website runtime.
@@ -90,4 +97,4 @@ Additional production secrets/configuration:
 
 ## Production runtime readiness
 
-Checkout readiness is evaluated server-side. A production deploy must have the Stripe secret, official Stripe price, Stripe webhook signing secret, order destination email, Gmail sender account and Gmail App Password available to Netlify Functions before the Builder enables the live $300 checkout.
+Subscription readiness is evaluated server-side and requires the Stripe key, both recurring Price IDs, the signed webhook secret and `WEBFACTORY_SUBSCRIPTION_ENABLED=true`. The legacy checkout has a separate readiness endpoint and does not control the public Builder.

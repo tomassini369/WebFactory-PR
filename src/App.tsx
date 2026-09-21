@@ -10,7 +10,7 @@ import PasswordRecoveryPage from './PasswordRecoveryPage'
 
 type Language = 'es' | 'en'
 
-const PRICE = '$300'
+const PRICE = '$30'
 const LOGO = '/webfactory-pr-logo.png'
 
 const content = {
@@ -20,20 +20,20 @@ const content = {
       eyebrow:'WEBSITE + COMMERCE + BOOKINGS',
       title:['Tu negocio.','Tu website.','Todo en un solo lugar.'],
       highlight:'Vende. Recibe citas. Cobra online.',
-      text:'Website profesional preparado para productos, servicios, ventas, pagos y reservaciones.',
+      text:'Crea, publica y administra tu website comercial desde un portal privado. Comienza con 48 horas gratis y sin tarjeta.',
       primary:'Crear mi website',
       secondary:'Ver ejemplos',
-      once:'Pago único'
+      once:'al mes'
     },
-    value:['UNA SOLA SOLUCIÓN','Un website. Un precio. Todo incluido.','Sin paquetes complicados. Sin conocimientos técnicos. Sin necesidad de programar. WebFactory adapta la experiencia al negocio.'],
-    demos:['DEMOS','Diseñado para diferentes tipos de negocio.','Puedes solicitar un diseño personalizado o escoger cualquiera de estos demos como diseño base para tu página.'],
+    value:['UNA SOLA SOLUCIÓN','Tu website y portal administrativo, siempre editables.','Sin programar y sin comisión sobre tus ventas. Actualiza catálogo, equipo, horarios, pagos y reservaciones desde tu portal.'],
+    demos:['DEMOS','Diseñado para diferentes tipos de negocio.','Escoge un demo como base, personaliza colores y contenido en el Builder y administra el resultado desde tu propio portal.'],
     includes:['WHAT YOU GET','Todo lo que necesita un negocio para vender y organizarse online.','Una experiencia unificada para mostrar, vender, cobrar y reservar.'],
     commerce:['COMMERCE','Vende tus productos y servicios.','Catálogo unificado, detalle por item, carrito global y checkout preparado para pagos seguros.'],
     services:['SERVICES','Servicios simples o con reservación.','Un servicio puede venderse directamente o activar booking con empleado, duración, depósito y disponibilidad.'],
     booking:['BOOKING','Tus clientes reservan. Tu equipo se organiza.','La disponibilidad se calcula por Service + Employee + Time, no por una capacidad genérica del negocio.'],
     employees:['EMPLOYEES','Cada servicio se conecta con el empleado correcto.','Asigna servicios, horarios, descansos, vacaciones, límites diarios y reglas individuales sin duplicar el catálogo.'],
     calendar:['GOOGLE CALENDAR','El calendario real de tu equipo entra en la ecuación.','WebFactory podrá consultar conflictos, crear eventos, actualizar, cancelar y reprogramar por empleado o calendario.'],
-    builder:['WEBFACTORY BUILDER','Avanzado por dentro. Fácil por fuera.','El cliente configura su negocio paso a paso mientras ve cómo cambia su website en tiempo real.'],
+    builder:['WEBFACTORY BUILDER','Avanzado por dentro. Fácil por fuera.','Configura tu negocio paso a paso, mira el preview y activa tu propio website con 48 horas gratis.'],
     payments:['PAYMENTS','Recibe tu dinero directamente.','Stripe y ATH Móvil se conectan a las cuentas del negocio. WebFactory no recibe el dinero generado por las ventas del cliente.'],
     how:['HOW IT WORKS','De configuración a publicación en cinco pasos.'],
     trust:['TRUST','Construido para una experiencia clara, segura y profesional.'],
@@ -47,20 +47,20 @@ const content = {
       eyebrow:'WEBSITE + COMMERCE + BOOKINGS',
       title:['Your business.','Your website.','Everything in one place.'],
       highlight:'Sell. Book. Get paid online.',
-      text:'A professional website prepared for products, services, sales, payments and bookings.',
+      text:'Create, publish and manage your commerce website from a private portal. Start with 48 hours free and no card.',
       primary:'Create my website',
       secondary:'View examples',
-      once:'One-time payment'
+      once:'per month'
     },
-    value:['ONE COMPLETE SOLUTION','One website. One price. Everything included.','No complicated packages. No technical knowledge. No coding required. WebFactory adapts the experience to the business.'],
-    demos:['DEMOS','Built for different types of businesses.','You can request a custom design or choose any of these demos as the base design for your website.'],
+    value:['ONE COMPLETE SOLUTION','Your website and admin portal, always editable.','No coding and no commission on your sales. Update your catalog, team, hours, payments and bookings from your portal.'],
+    demos:['DEMOS','Built for different types of businesses.','Choose a demo as your base, customize colors and content in the Builder, and manage the result from your own portal.'],
     includes:['WHAT YOU GET','Everything a business needs to sell and stay organized online.','One unified experience to present, sell, collect payments and manage bookings.'],
     commerce:['COMMERCE','Sell your products and services.','Unified catalog, item detail views, a global cart and checkout prepared for secure payments.'],
     services:['SERVICES','Services with or without appointments.','A service can be sold directly or activate booking with employee, duration, deposit and availability.'],
     booking:['BOOKING','Your customers book. Your team stays organized.','Availability is calculated by Service + Employee + Time, not by generic business-wide capacity.'],
     employees:['EMPLOYEES','Every service connects to the right employee.','Assign services, schedules, breaks, vacations, daily limits and individual rules without duplicating the catalog.'],
     calendar:['GOOGLE CALENDAR','Your team’s real calendar becomes part of availability.','WebFactory can check conflicts, create events, update, cancel and reschedule by employee or calendar.'],
-    builder:['WEBFACTORY BUILDER','Powerful underneath. Simple on the surface.','Customers configure their business step by step while seeing the website update in real time.'],
+    builder:['WEBFACTORY BUILDER','Powerful underneath. Simple on the surface.','Configure your business step by step, preview it and activate your own website with 48 hours free.'],
     payments:['PAYMENTS','Receive your money directly.','Stripe and ATH Móvil connect to the business accounts. WebFactory does not receive the money generated by client sales.'],
     how:['HOW IT WORKS','From setup to publishing in five steps.'],
     trust:['TRUST','Built for a clear, secure and professional experience.'],
@@ -70,33 +70,43 @@ const content = {
   }
 }
 
-const features = [
-  ['Responsive','Desktop, tablet and mobile layouts designed as one experience.'],
-  ['Commerce','Products, services, item views, cart and checkout architecture.'],
-  ['Bookings','Employee-aware scheduling with duration, buffer and deposits.'],
-  ['Payments','Stripe + ATH Móvil prepared for secure backend verification.'],
-  ['Employees','Service mapping, schedules, breaks, vacations and limits.'],
-  ['Launch','Preview, initial deployment, SSL, basic SEO and one revision round.']
-]
+const features = {
+  es: [
+    ['Responsive','Diseño unificado para computadora, tableta y móvil.'],
+    ['Commerce','Productos, servicios, vistas individuales, carrito y checkout.'],
+    ['Reservaciones','Disponibilidad por empleado con duración, buffer y depósitos.'],
+    ['Pagos','Stripe + ATH Móvil preparados para verificación segura en el servidor.'],
+    ['Equipo','Servicios, horarios, descansos, vacaciones y límites por empleado.'],
+    ['Portal','Publica cambios de catálogo, equipo, horarios e integraciones en tiempo real.'],
+  ],
+  en: [
+    ['Responsive','Desktop, tablet and mobile layouts designed as one experience.'],
+    ['Commerce','Products, services, item views, cart and checkout architecture.'],
+    ['Bookings','Employee-aware scheduling with duration, buffer and deposits.'],
+    ['Payments','Stripe + ATH Móvil prepared for secure backend verification.'],
+    ['Employees','Service mapping, schedules, breaks, vacations and limits.'],
+    ['Portal','Publish changes to your catalog, team, hours and integrations in real time.'],
+  ],
+}
 
 const faqEs = [
-  ['¿El precio cambia si activo más funciones?','No. WebFactory tiene un solo producto y el precio permanece en $300.'],
+  ['¿Cuánto cuesta WebFactory?','$30 al mes o $350 al año. Puedes probarlo por 48 horas sin tarjeta y no cobramos comisión sobre tus ventas.'],
   ['¿WebFactory recibe el dinero de mis ventas?','No. Stripe y ATH Móvil se conectan a las cuentas del negocio.'],
   ['¿Puedo vender productos y también recibir citas?','Sí. El mismo website puede manejar productos, servicios, carrito y reservaciones.'],
-  ['¿Mi página será igual a uno de los demos?','Tú decides. Puedes recibir un diseño personalizado por WebFactory o escoger un demo como base exacta. Al escoger un demo conservamos su estructura y experiencia, reemplazando la marca, imágenes, textos, catálogo y configuraciones con las de tu negocio.'],
+  ['¿Mi página será igual a uno de los demos?','Tú decides. Puedes comenzar con un diseño personalizado o escoger un demo como base. El Builder aplica tu marca, colores, textos, catálogo y configuraciones.'],
   ['¿Cómo se evita el double booking?','La arquitectura revalida base de datos, empleado, horarios, holds y Google Calendar antes de confirmar.'],
-  ['¿El website se crea automáticamente con IA?','No en V1. Después de un pago verificado se genera el Production Package para el flujo administrativo.'],
-  ['¿Puedo usar mi propio logo?','Sí. El cliente podrá subir su logo y archivos desde el Builder.']
+  ['¿Puedo modificarlo después de publicarlo?','Sí. Tu portal administrativo permite cambiar productos, servicios, precios, empleados, horarios, pagos y calendario sin solicitar otro deployment.'],
+  ['¿Puedo usar mi propio logo?','Sí. Puedes subir tu logo e imágenes desde el Builder y administrar el contenido desde tu portal.']
 ]
 
 const faqEn = [
-  ['Does the price change if I enable more features?','No. WebFactory has one product and the price remains $300.'],
+  ['How much does WebFactory cost?','$30 per month or $350 per year. Try it free for 48 hours with no card, and we charge no commission on your sales.'],
   ['Does WebFactory receive money from my sales?','No. Stripe and ATH Móvil connect to the business accounts.'],
   ['Can I sell products and also accept appointments?','Yes. The same website can handle products, services, cart and bookings.'],
-  ['Will my website look exactly like one of the demos?','You decide. You can receive a custom WebFactory design or choose a demo as the exact base. When a demo is selected, we preserve its structure and experience while replacing its branding, images, text, catalog, and settings with your business information.'],
+  ['Will my website look exactly like one of the demos?','You decide. Start with a custom design or choose a demo as your base. The Builder applies your brand, colors, copy, catalog and settings.'],
   ['How is double booking prevented?','The architecture rechecks the database, employee, schedules, holds and Google Calendar before confirmation.'],
-  ['Is the website created automatically with AI?','Not in V1. After verified payment, the Production Package is generated for the administrative workflow.'],
-  ['Can I use my own logo?','Yes. Customers will be able to upload their logo and files from the Builder.']
+  ['Can I edit it after publishing?','Yes. Your admin portal lets you change products, services, prices, employees, hours, payments and calendar without requesting another deployment.'],
+  ['Can I use my own logo?','Yes. Upload your logo and images in the Builder and manage your content from the portal.']
 ]
 
 function Heading({data,invert=false}:{data:string[],invert?:boolean}) {
@@ -141,7 +151,7 @@ function App(){
   if (clientSiteMatch) return <ClientStorefront slug={decodeURIComponent(clientSiteMatch[1])} />
   if (paymentSetupRoute) return <PaymentSetupPage />
   if (demoMatch) return <DemoSite slug={demoMatch[1]} />
-  if (builderRoute) return <><header className="header"><a href="/" className="logo"><img src={LOGO} alt="WebFactory PR"/></a><div className="header-actions"><a className="btn secondary desktop-cta" href="/">{lang==='es'?'Volver al inicio':'Back to home'}</a><div className="langs"><button className={lang==='es'?'active':''} onClick={()=>setLang('es')}>ES</button><button className={lang==='en'?'active':''} onClick={()=>setLang('en')}>EN</button></div></div></header><main className="standalone-builder"><section className="section white builder"><div className="shell"><div className="builder-head"><Heading data={t.builder}/><div className="builder-price"><strong>{PRICE}</strong><span>{t.hero.once}</span></div></div><WebFactoryBuilder lang={lang}/></div></section></main></>
+  if (builderRoute) return <><header className="header"><a href="/" className="logo"><img src={LOGO} alt="WebFactory PR"/></a><div className="header-actions"><a className="btn secondary desktop-cta" href="/">{lang==='es'?'Volver al inicio':'Back to home'}</a><div className="langs"><button className={lang==='es'?'active':''} onClick={()=>setLang('es')}>ES</button><button className={lang==='en'?'active':''} onClick={()=>setLang('en')}>EN</button></div></div></header><main className="standalone-builder"><section className="section white builder"><div className="shell"><div className="builder-head"><Heading data={t.builder}/><div className="builder-price"><strong>48h</strong><span>{lang==='es'?'gratis · sin tarjeta':'free · no card'}</span></div></div><WebFactoryBuilder lang={lang}/></div></section></main></>
 
   return <>
     <header className="header">
@@ -161,22 +171,22 @@ function App(){
           <h1>{t.hero.title.map(x=><span key={x}>{x}</span>)}</h1>
           <h3>{t.hero.highlight}</h3>
           <p className="lead">{t.hero.text}</p>
-          <div className="price"><strong>{PRICE}</strong><span>{t.hero.once}</span></div>
+          <div className="price"><strong>{PRICE}</strong><span>{t.hero.once} · 48h {lang==='es'?'gratis':'free'}</span></div>
           <div className="actions"><a className="btn primary" href="/builder">{t.hero.primary} <b>↗</b></a><a className="btn secondary" href="#demos">{t.hero.secondary}</a></div>
-          <div className="badges">{['Responsive','Carrito','Stripe','ATH Móvil','Bookings','Google Calendar'].map(x=><span key={x}>{x}</span>)}</div>
+          <div className="badges">{(lang==='es'?['Responsive','Carrito','Stripe','ATH Móvil','Reservaciones','Google Calendar']:['Responsive','Cart','Stripe','ATH Móvil','Bookings','Google Calendar']).map(x=><span key={x}>{x}</span>)}</div>
         </div>
         <Devices/>
       </section>
 
-      <section className="value" id="incluye"><div className="shell value-grid"><Heading data={t.value}/><aside><small>WEBFACTORY PREMIUM COMMERCE WEBSITE</small><strong>{PRICE}</strong><span>{t.hero.once}</span></aside></div></section>
+      <section className="value" id="incluye"><div className="shell value-grid"><Heading data={t.value}/><aside><small>WEBFACTORY COMMERCE PLATFORM</small><strong>{PRICE}</strong><span>{t.hero.once} · {lang==='es'?'o $350 al año':'or $350 yearly'}</span></aside></div></section>
 
-      <section className="section white" id="demos"><div className="shell"><Heading data={t.demos}/><div className="demo-design-options"><article><b>01</b><div><strong>{lang==='es'?'Diseño personalizado':'Custom design'}</strong><span>{lang==='es'?'WebFactory crea la página según la identidad, contenido y configuración de tu negocio.':'WebFactory creates the page around your business identity, content, and configuration.'}</span></div></article><article><b>02</b><div><strong>{lang==='es'?'Diseño basado en un demo':'Demo-based design'}</strong><span>{lang==='es'?'Escoges el demo que prefieres; conservamos su estructura y experiencia, y sustituimos la marca, imágenes, textos, catálogo y configuraciones.':'Choose the demo you prefer; we preserve its structure and experience while replacing the branding, images, text, catalog, and settings.'}</span></div></article></div><div className="demo-base-assurance"><strong>{lang==='es'?'Lo que ves es la base que recibirás.':'What you see is the base you will receive.'}</strong><span>{lang==='es'?'Cuando seleccionas un demo en el Builder, esa elección queda guardada en tu pedido y en el Production Package.':'When you select a demo in the Builder, that choice is saved with your order and in the Production Package.'}</span></div><div className="demo-grid">{demoConfigs.map((demo,i)=><article className="demo" key={demo.slug}><div className={'demo-art d'+i} style={{backgroundImage:`linear-gradient(180deg,rgba(11,21,41,.05),rgba(11,21,41,.4)),url(${demo.heroImage})`,backgroundSize:'cover',backgroundPosition:'center'}}><div className="demo-window"><span>{demo.name}</span><strong>{demo.category}</strong><i/><i/><i/></div><div className="demo-mobile"><b>{demo.shortName.slice(0,2)}</b><i/><i/></div></div><small>{demo.category} · {lang==='es'?'DISEÑO BASE DISPONIBLE':'BASE DESIGN AVAILABLE'}</small><h3>{demo.name}</h3><a href={`/demos/${demo.slug}`}>{lang==='es'?'Ver demo en vivo':'View live demo'} ↗</a></article>)}</div></div></section>
+      <section className="section white" id="demos"><div className="shell"><Heading data={t.demos}/><div className="demo-design-options"><article><b>01</b><div><strong>{lang==='es'?'Diseño personalizado':'Custom design'}</strong><span>{lang==='es'?'Configura la identidad, contenido y funciones de tu negocio desde cero.':'Configure your business identity, content and features from scratch.'}</span></div></article><article><b>02</b><div><strong>{lang==='es'?'Diseño basado en un demo':'Demo-based design'}</strong><span>{lang==='es'?'Escoge una estructura lista y personaliza marca, imágenes, textos, catálogo y colores.':'Choose a ready-made structure and customize branding, images, copy, catalog and colors.'}</span></div></article></div><div className="demo-base-assurance"><strong>{lang==='es'?'Lo que ves es una base editable.':'What you see is an editable base.'}</strong><span>{lang==='es'?'Selecciona el demo y el Builder abrirá con ese diseño para que lo personalices.':'Select a demo and the Builder opens with that design ready to customize.'}</span></div><div className="demo-grid">{demoConfigs.map((demo,i)=><article className="demo" key={demo.slug}><div className={'demo-art d'+i} style={{backgroundImage:`linear-gradient(180deg,rgba(11,21,41,.05),rgba(11,21,41,.4)),url(${demo.heroImage})`,backgroundSize:'cover',backgroundPosition:'center'}}><div className="demo-window"><span>{demo.name}</span><strong>{demo.category}</strong><i/><i/><i/></div><div className="demo-mobile"><b>{demo.shortName.slice(0,2)}</b><i/><i/></div></div><small>{demo.category} · {lang==='es'?'DISEÑO BASE DISPONIBLE':'BASE DESIGN AVAILABLE'}</small><h3>{demo.name}</h3><div className="demo-links"><a href={`/demos/${demo.slug}`}>{lang==='es'?'Ver demo':'View demo'} ↗</a><a href={`/builder?template=${demo.slug}`}>{lang==='es'?'Usar diseño':'Use design'} →</a></div></article>)}</div></div></section>
 
-      <section className="section soft"><div className="shell"><Heading data={t.includes}/><div className="feature-grid">{features.map(([a,b],i)=><article key={a}><em>0{i+1}</em><h3>{a}</h3><p>{b}</p></article>)}</div></div></section>
+      <section className="section soft"><div className="shell"><Heading data={t.includes}/><div className="feature-grid">{features[lang].map(([a,b],i)=><article key={a}><em>0{i+1}</em><h3>{a}</h3><p>{b}</p></article>)}</div></div></section>
 
       <section className="section white"><div className="shell split"><Heading data={t.commerce}/><div className="commerce"><div className="catalog"><small>CATALOG</small><article><i/><span><b>Premium Shampoo</b><small>$29.99</small></span><button>+</button></article><article><i/><span><b>Hair Treatment</b><small>$45.00</small></span><button>+</button></article></div><b className="arrow">→</b><div className="cart"><small>CART</small><strong>2 items</strong><span>Subtotal</span><h3>$74.99</h3><button>Checkout</button></div></div></div></section>
 
-      <section className="section soft"><div className="shell split reverse"><div className="service-stack"><article><small>SERVICE</small><h3>Premium Haircut</h3><p>$35 · 45 min</p><div><span>Carlos</span><span>José</span></div><button>Reservar cita</button></article><article><small>SERVICE</small><h3>Basic Wash</h3><p>$40</p><button>Comprar servicio</button></article></div><Heading data={t.services}/></div></section>
+      <section className="section soft"><div className="shell split reverse"><div className="service-stack"><article><small>SERVICE</small><h3>Premium Haircut</h3><p>$35 · 45 min</p><div><span>Carlos</span><span>José</span></div><button>{lang==='es'?'Reservar cita':'Book appointment'}</button></article><article><small>SERVICE</small><h3>Basic Wash</h3><p>$40</p><button>{lang==='es'?'Comprar servicio':'Buy service'}</button></article></div><Heading data={t.services}/></div></section>
 
       <section className="section navy"><div className="shell split"><Heading data={t.booking} invert/><div className="booking-flow">{['Service','Employee','Date','Time','Payment','Confirmed'].map((x,i)=><div key={x}><small>0{i+1}</small><strong>{x}</strong>{i<5&&<span>↓</span>}</div>)}</div></div></section>
 
@@ -184,15 +194,15 @@ function App(){
 
       <section className="section soft"><div className="shell split"><Heading data={t.calendar}/><div className="calendar"><header><strong>September</strong><span>Team calendar</span></header><div className="week">{['M','T','W','T','F','S','S'].map((x,i)=><b key={i}>{x}</b>)}</div><div className="days">{Array.from({length:28},(_,i)=><i className={[3,8,12,17,18,23].includes(i)?'busy':''} key={i}>{i+1}</i>)}</div><footer><span>● Carlos · 10:00 Haircut</span><span>● María · 1:30 Color</span></footer></div></div></section>
 
-      <section className="section soft"><div className="shell split reverse"><div className="payments"><article className="stripe"><b>stripe</b><strong>$300</strong><small>Secure checkout</small></article><article className="ath"><b>ATH Móvil</b><strong>$300</strong><small>Business payment</small></article><span>✓ Backend verified payment</span></div><Heading data={t.payments}/></div></section>
+      <section className="section soft"><div className="shell split reverse"><div className="payments"><article className="stripe"><b>stripe</b><strong>$74.99</strong><small>Secure checkout</small></article><article className="ath"><b>ATH Móvil</b><strong>$35.00</strong><small>Business payment</small></article><span>✓ {lang==='es'?'Fondos directos al negocio':'Funds go directly to the business'}</span></div><Heading data={t.payments}/></div></section>
 
-      <section className="section white" id="como-funciona"><div className="shell"><Heading data={t.how}/><div className="steps">{(lang==='es'?[['Personaliza','Configura tu negocio y elige entre diseño personalizado o un demo como diseño base.'],['Compra','Revisa el preview y completa el pago único de $300.'],['Creamos','Con pago verificado el proyecto entra al flujo de producción respetando tu opción de diseño.'],['Revisa','Recibes un preview y una ronda de revisión.'],['Publicamos','Completamos el deployment inicial y queda listo.']]:[['Customize','Configure your business and choose between a custom design or a demo as the base design.'],['Purchase','Review the preview and complete the one-time $300 payment.'],['We build','Verified payment moves the project into production while preserving your design choice.'],['Review','Receive a preview and one revision round.'],['Publish','Initial deployment is completed and ready.']]).map(([a,b],i)=><article key={a}><em>0{i+1}</em><h3>{a}</h3><p>{b}</p></article>)}</div></div></section>
+      <section className="section white" id="como-funciona"><div className="shell"><Heading data={t.how}/><div className="steps">{(lang==='es'?[['Personaliza','Configura el negocio, escoge un demo y ajusta colores, contenido y funciones.'],['Verifica','Recibe el acceso privado por email y establece tu contraseña.'],['Prueba','Activa 48 horas gratis sin tarjeta y publica tu website.'],['Conecta','Vincula Stripe Connect y Google Calendar desde el portal cuando los necesites.'],['Continúa','Escoge $30 mensual o $350 anual para mantener el website público.']]:[['Customize','Configure the business, choose a demo and adjust colors, content and features.'],['Verify','Receive private access by email and set your password.'],['Try it','Activate 48 hours free with no card and publish your website.'],['Connect','Link Stripe Connect and Google Calendar from the portal when needed.'],['Continue','Choose $30 monthly or $350 yearly to keep the website public.']]).map(([a,b],i)=><article key={a}><em>0{i+1}</em><h3>{a}</h3><p>{b}</p></article>)}</div></div></section>
 
       <section className="section soft"><div className="shell"><Heading data={t.trust}/><div className="trust">{['Responsive','Secure Payments','Employee Booking','Google Calendar','Direct Payments','Preview Before Publishing'].map((x,i)=><div key={x}><span>{['↔','✓','◉','▦','$','◫'][i]}</span><b>{x}</b></div>)}</div></div></section>
 
       <section className="section white" id="faq"><div className="shell faq"><Heading data={t.faq}/><div>{faqs.map(([q,a])=><details key={q}><summary>{q}<span>+</span></summary><p>{a}</p></details>)}</div></div></section>
 
-      <section className="final"><div className="shell"><div><p className="eyebrow">WEBFACTORY PR</p><h2>{t.final[0]}</h2><p>{t.final[1]}</p></div><aside><strong>{PRICE}</strong><span>{t.hero.once}</span><a href="/builder" className="btn light">{t.hero.primary} ↗</a></aside></div></section>
+      <section className="final"><div className="shell"><div><p className="eyebrow">WEBFACTORY PR</p><h2>{t.final[0]}</h2><p>{t.final[1]}</p></div><aside><strong>48h</strong><span>{lang==='es'?'gratis · luego $30/mes o $350/año':'free · then $30/month or $350/year'}</span><a href="/builder" className="btn light">{t.hero.primary} ↗</a></aside></div></section>
     </main>
 
     <footer className="footer"><div className="shell"><div><img src={LOGO} alt="WebFactory PR"/><p>Build. Sell. Book. Grow.</p></div><nav>{['Product','Demos','Features','Builder','FAQ','Contact','Privacy','Terms','Refund Policy'].map((x,i)=><a key={x} href={i===1?'#demos':i===2?'#incluye':i===3?'/builder':i===4?'#faq':i===5?'mailto:WebFactoryPR@gmail.com':'#top'}>{x}</a>)}</nav><p className="copyright">WebFactoryPR@gmail.com · © 2026 WebFactory PR. {t.footer}</p></div></footer>

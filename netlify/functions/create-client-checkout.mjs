@@ -2,6 +2,7 @@ import crypto from "node:crypto";
 import { createBookingHold } from "../lib/booking-engine.mjs";
 import { clientCommerceStore, commerceKey, getClientSite, getClientSiteBySlug } from "../lib/client-store.mjs";
 import { cleanText, publicBaseUrl, validEmail } from "../lib/order-store.mjs";
+import { siteEntitlement } from "../lib/subscription-billing.mjs";
 
 function env(name) { return globalThis.Netlify?.env?.get(name) || ""; }
 
@@ -48,6 +49,7 @@ export default async (req) => {
     const payload = await req.json();
     const site = payload.siteId ? await getClientSite(payload.siteId) : await getClientSiteBySlug(payload.slug);
     if (!site) throw Object.assign(new Error("Business site not found."), { status: 404 });
+    if (!siteEntitlement(site).public) throw Object.assign(new Error("Business site is not available."), { status: 404 });
     const customer = {
       name: cleanText(payload.customer?.name, 180),
       email: cleanText(payload.customer?.email, 320),

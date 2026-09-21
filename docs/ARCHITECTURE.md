@@ -1,6 +1,6 @@
 # WebFactory PR V2 — Technical Architecture
 
-This document follows the WebFactory PR master specification. The existing logo, navy/blue/white identity, single $300 product, Service + Employee + Time booking model, Stripe + ATH Móvil payments, and post-payment Production Package are fixed product requirements unless explicitly changed by the owner.
+WebFactory is a multi-tenant subscription platform. The existing logo and navy/blue/white identity remain fixed. New customers use a 48-hour trial followed by $30 monthly or $350 annual billing. Service + Employee + Time, Stripe Connect, ATH Móvil architecture and Google Calendar remain core capabilities. The older $300 checkout and Production Package exist only for grandfathered compatibility.
 
 ## Frontend
 - React 19 + TypeScript.
@@ -45,7 +45,8 @@ Each tenant is keyed by `siteId`; membership indexes are keyed by a one-way norm
 ## Client administration
 
 - Netlify Identity provides authentication through `@netlify/identity`.
-- Portal accounts are provisioned only from a valid paid-order activation token; no public signup UI exists.
+- Portal accounts can be provisioned from a server-validated Builder request or by the platform administrator. Public Netlify Identity signup remains disabled.
+- Builder-created tenants remain hidden until the verified owner starts the 48-hour trial from the portal.
 - Server-side membership checks protect every tenant mutation.
 - The client can update business content, catalog, inventory, services, employees, schedules, payment rules and calendar mapping without a deploy.
 - Stripe identity, bank, tax and mandatory security remediation remain on Stripe-hosted screens.
@@ -57,7 +58,7 @@ Each tenant is keyed by `siteId`; membership indexes are keyed by a one-way norm
 - The server reloads canonical prices and inventory from the tenant record.
 - Stripe-hosted Checkout Sessions are created as direct charges on the connected account.
 - Dynamic payment methods are enabled by omitting `payment_method_types`.
-- Client-sale webhooks use a separate signing secret and idempotency store from the WebFactory $300 order webhook.
+- Client-sale webhooks use a separate signing secret and idempotency store from WebFactory subscription billing and the grandfathered order webhook.
 - The success URL never marks a transaction paid.
 - Paid bookings generate Google Calendar events and separate customer/business emails.
 - An hourly retry function resumes email/calendar delivery and removes expired booking holds.

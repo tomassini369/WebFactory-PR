@@ -45,7 +45,7 @@ export function createTrialServicePlan(now = new Date()) {
   const ends = new Date(started.getTime() + 48 * 60 * 60 * 1000);
   return {
     code: "webfactory-saas",
-    name: "WebFactory SaaS Website",
+    name: "WebFactory Commerce Platform",
     billingModel: "subscription",
     billingStatus: "trial",
     subscriptionStatus: "trial",
@@ -127,8 +127,8 @@ export function billingStateFor(event, current = {}) {
 
   return {
     ...current,
-    code: current.code || "webfactory-premium-commerce",
-    name: current.name || "WebFactory Premium Commerce Website",
+    code: current.code || "webfactory-saas",
+    name: current.name || "WebFactory Commerce Platform",
     billingModel: "subscription",
     billingStatus,
     subscriptionStatus,
