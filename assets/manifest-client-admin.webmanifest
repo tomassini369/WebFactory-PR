@@ -1,0 +1,35 @@
+{
+  "id": "/client-admin",
+  "name": "Admin/Log In",
+  "short_name": "Admin/Log In",
+  "description": "Acceso privado al portal administrativo de WebFactory.",
+  "start_url": "/client-admin",
+  "scope": "/client-admin",
+  "display": "standalone",
+  "background_color": "#FFFFFF",
+  "theme_color": "#0B1529",
+  "orientation": "any",
+  "lang": "es",
+  "categories": ["business", "productivity"],
+  "prefer_related_applications": false,
+  "icons": [
+    {
+      "src": "/icon-clean-192.png?v=4",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-clean-512.png?v=4",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-clean-maskable-512.png?v=4",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

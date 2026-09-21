@@ -7,63 +7,6 @@ const background = { r: 255, g: 255, b: 255, alpha: 1 }
 
 await mkdir(outputDir, { recursive: true })
 
-async function cleanOfficialLogo() {
-  const { data, info } = await sharp(source)
-    .ensureAlpha()
-    .raw()
-    .toBuffer({ resolveWithObject: true })
-
-  const { width, height, channels } = info
-  const flaggedRows = new Array(height).fill(false)
-
-  // Detect large solid black horizontal bands only near the top/bottom.
-  // This preserves the real black WF lettering and WebFactory typography.
-  for (let y = 0; y < height; y += 1) {
-    const normalizedY = y / height
-    if (normalizedY > 0.38 && normalizedY < 0.62) continue
-
-    let nearBlack = 0
-    for (let x = 0; x < width; x += 1) {
-      const offset = (y * width + x) * channels
-      const r = data[offset]
-      const g = data[offset + 1]
-      const b = data[offset + 2]
-      const a = data[offset + 3]
-      if (a > 220 && r < 24 && g < 24 && b < 24) nearBlack += 1
-    }
-
-    if (nearBlack / width > 0.5) flaggedRows[y] = true
-  }
-
-  const groups = []
-  let start = null
-  for (let y = 0; y <= height; y += 1) {
-    const active = y < height && flaggedRows[y]
-    if (active && start === null) start = y
-    if (!active && start !== null) {
-      if (y - start >= Math.max(8, Math.round(height * 0.015))) groups.push([start, y - 1])
-      start = null
-    }
-  }
-
-  for (const [from, to] of groups) {
-    for (let y = from; y <= to; y += 1) {
-      for (let x = 0; x < width; x += 1) {
-        const offset = (y * width + x) * channels
-        data[offset] = 255
-        data[offset + 1] = 255
-        data[offset + 2] = 255
-        data[offset + 3] = 255
-      }
-    }
-  }
-
-  return sharp(data, { raw: info })
-    .png()
-    .trim({ background: '#ffffff', threshold: 12 })
-    .toBuffer()
-}
-
 async function makeIcon(cleanLogo, size, filename, safeScale = 0.68) {
   const innerWidth = Math.round(size * safeScale)
   const innerHeight = Math.round(size * safeScale)
@@ -72,6 +15,7 @@ async function makeIcon(cleanLogo, size, filename, safeScale = 0.68) {
     .resize(innerWidth, innerHeight, {
       fit: 'contain',
       withoutEnlargement: false,
+      background,
     })
     .png()
     .toBuffer()
@@ -89,7 +33,9 @@ async function makeIcon(cleanLogo, size, filename, safeScale = 0.68) {
     .toFile(`${outputDir}/${filename}`)
 }
 
-const cleanLogo = await cleanOfficialLogo()
+// Use the verified official source directly. It already has a clean white
+// background, so no pixel replacement or trimming is needed.
+const cleanLogo = source
 
 await Promise.all([
   makeIcon(cleanLogo, 180, 'apple-touch-icon-clean.png', 0.68),
