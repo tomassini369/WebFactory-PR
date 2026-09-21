@@ -1,5 +1,5 @@
 import { errorResponse, requireSiteAccess } from "../lib/client-auth.mjs";
-import { subscriptionBillingReadiness } from "../lib/subscription-billing.mjs";
+import { siteEntitlement, subscriptionBillingReadiness } from "../lib/subscription-billing.mjs";
 
 export default async (req) => {
   if (req.method !== "GET") return Response.json({ ok: false, message: "Method not allowed." }, { status: 405 });
@@ -9,6 +9,7 @@ export default async (req) => {
     return Response.json({
       ok: true,
       readiness: subscriptionBillingReadiness(),
+      entitlement: siteEntitlement(site),
       servicePlan: site.servicePlan || {
         code: "webfactory-premium-commerce",
         name: "WebFactory Premium Commerce Website",

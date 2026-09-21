@@ -1,10 +1,12 @@
 import { getClientSiteBySlug, publicClientSite } from "../lib/client-store.mjs";
+import { siteEntitlement } from "../lib/subscription-billing.mjs";
 
 export default async (req) => {
   if (req.method !== "GET") return Response.json({ ok: false, message: "Method not allowed." }, { status: 405 });
   const slug = new URL(req.url).searchParams.get("slug") || "";
   const site = await getClientSiteBySlug(slug);
-  if (!site || !["active", "preview", "setup_pending"].includes(site.status)) {
+  const entitlement = siteEntitlement(site);
+  if (!site || !["active", "preview", "setup_pending", "trial"].includes(site.status) || !entitlement.public) {
     return Response.json({ ok: false, message: "Business site not found." }, { status: 404, headers: { "Cache-Control": "no-store" } });
   }
   const etag = `W/"${site.siteId}-${Number(site.revision || 0)}"`;
