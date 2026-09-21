@@ -1,4 +1,9 @@
-const CACHE_NAME = "webfactory-pr-v4";
+const CACHE_NAME = "webfactory-pr-v5";
+
+const ADMIN_SHELLS = {
+  "/webfactory-admin": "./webfactory-admin/index.html",
+  "/client-admin": "./client-admin/index.html"
+};
 
 const STATIC_ASSETS = [
   "./",
@@ -6,6 +11,8 @@ const STATIC_ASSETS = [
   "./manifest-v2.webmanifest",
   "./manifest-webfactory-admin.webmanifest",
   "./manifest-client-admin.webmanifest",
+  "./webfactory-admin/index.html",
+  "./client-admin/index.html",
   "./webfactory-pr-logo.png",
   "./apple-touch-icon-clean.png",
   "./icon-clean-192.png",
@@ -37,7 +44,9 @@ self.addEventListener("fetch", (event) => {
   }
 
   if (event.request.mode === "navigate") {
-    event.respondWith(fetch(event.request).catch(() => caches.match("./index.html")));
+    const path = new URL(event.request.url).pathname.replace(/\/$/, "") || "/";
+    const fallback = ADMIN_SHELLS[path] || "./index.html";
+    event.respondWith(fetch(event.request).catch(() => caches.match(fallback)));
     return;
   }
 
