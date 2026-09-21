@@ -67,6 +67,12 @@ export function siteEntitlement(site, now = new Date()) {
   if (["active", "trialing"].includes(plan.subscriptionStatus)) {
     return { public: true, reason: "subscription" };
   }
+  // Stripe can keep retrying a failed renewal while a subscription is past_due.
+  // Keep the paid service available until Stripe makes the subscription unpaid,
+  // paused, or canceled instead of inventing a separate WebFactory grace period.
+  if (plan.subscriptionStatus === "past_due") {
+    return { public: true, reason: "payment_retry" };
+  }
   if (plan.subscriptionStatus === "trial") {
     const endsAt = Date.parse(plan.trialEndsAt || "");
     if (Number.isFinite(endsAt) && endsAt > new Date(now).getTime()) {
@@ -129,7 +135,9 @@ export function billingStateFor(event, current = {}) {
     stripeCustomerId: object.customer || current.stripeCustomerId || "",
     stripeSubscriptionId: subscriptionIdFor(event) || current.stripeSubscriptionId || "",
     currentPeriodEnd: object.current_period_end ? new Date(object.current_period_end * 1000).toISOString() : (current.currentPeriodEnd || ""),
-    cancelAtPeriodEnd: Boolean(object.cancel_at_period_end),
+    cancelAtPeriodEnd: typeof object.cancel_at_period_end === "boolean"
+      ? object.cancel_at_period_end
+      : Boolean(current.cancelAtPeriodEnd),
     lastBillingEvent: event.type,
     lastBillingEventAt: new Date().toISOString(),
   };
