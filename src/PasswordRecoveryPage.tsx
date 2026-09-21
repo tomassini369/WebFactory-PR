@@ -51,12 +51,13 @@ export default function PasswordRecoveryPage(){
   const t=copy[lang]
 
   useEffect(()=>{document.documentElement.lang=lang},[lang])
+  useEffect(()=>{if(ready&&!user&&!done)setError(copy[lang].invalid)},[lang,ready,user,done])
   useEffect(()=>{(async()=>{try{
     const callback=await handleAuthCallback()
     const current=callback?.user||await getUser()
     if(!current) throw new Error(t.invalid)
     setUser(current)
-  }catch(e){setError(e instanceof Error?e.message:t.invalid)}finally{setReady(true)}})()},[])
+  }catch{setError(copy.es.invalid)}finally{setReady(true)}})()},[])
 
   const save=async()=>{
     setError('')
