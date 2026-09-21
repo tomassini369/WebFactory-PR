@@ -18,14 +18,54 @@ export function subscriptionBillingEnabled() {
 
 export function subscriptionBillingReadiness() {
   const enabled = subscriptionBillingEnabled();
-  const priceConfigured = Boolean(env("STRIPE_PRICE_WEBFACTORY_MONTHLY"));
+  const monthlyPriceConfigured = Boolean(env("STRIPE_PRICE_WEBFACTORY_MONTHLY"));
+  const annualPriceConfigured = Boolean(env("STRIPE_PRICE_WEBFACTORY_ANNUAL"));
   const webhookConfigured = Boolean(env("STRIPE_WEBHOOK_SECRET"));
   return {
     enabled,
-    priceConfigured,
+    priceConfigured: monthlyPriceConfigured && annualPriceConfigured,
+    monthlyPriceConfigured,
+    annualPriceConfigured,
     webhookConfigured,
-    ready: enabled && priceConfigured && webhookConfigured,
+    ready: enabled && monthlyPriceConfigured && annualPriceConfigured && webhookConfigured,
   };
+}
+
+export function createTrialServicePlan(now = new Date()) {
+  const started = new Date(now);
+  const ends = new Date(started.getTime() + 48 * 60 * 60 * 1000);
+  return {
+    code: "webfactory-saas",
+    name: "WebFactory SaaS Website",
+    billingModel: "subscription",
+    billingStatus: "trial",
+    subscriptionStatus: "trial",
+    migrationEligible: false,
+    trialStartedAt: started.toISOString(),
+    trialEndsAt: ends.toISOString(),
+    currentPeriodEnd: "",
+    cancelAtPeriodEnd: false,
+    stripeCustomerId: "",
+    stripeSubscriptionId: "",
+  };
+}
+
+export function siteEntitlement(site, now = new Date()) {
+  const plan = site?.servicePlan || {};
+  if (!plan.billingModel || plan.billingModel === "one_time") {
+    return { public: plan.billingStatus !== "unpaid", reason: "one_time" };
+  }
+  if (["active", "trialing"].includes(plan.subscriptionStatus)) {
+    return { public: true, reason: "subscription" };
+  }
+  if (plan.subscriptionStatus === "trial") {
+    const endsAt = Date.parse(plan.trialEndsAt || "");
+    if (Number.isFinite(endsAt) && endsAt > new Date(now).getTime()) {
+      return { public: true, reason: "trial", trialEndsAt: plan.trialEndsAt };
+    }
+    return { public: false, reason: "trial_expired", trialEndsAt: plan.trialEndsAt || "" };
+  }
+  return { public: false, reason: plan.subscriptionStatus || "subscription_required" };
 }
 
 export function isSubscriptionBillingEvent(event) {
@@ -54,10 +94,11 @@ export function billingStateFor(event, current = {}) {
   let billingStatus = current.billingStatus || "unpaid";
 
   if (event.type === "checkout.session.completed") {
-    subscriptionStatus = "pending_activation";
-    billingStatus = object.payment_status === "paid" || object.payment_status === "no_payment_required" ? "paid" : "pending";
+    const paid = object.payment_status === "paid" || object.payment_status === "no_payment_required";
+    subscriptionStatus = paid ? "active" : "pending_activation";
+    billingStatus = paid ? "paid" : "pending";
   } else if (event.type === "invoice.paid") {
-    subscriptionStatus = current.subscriptionStatus === "not_started" ? "active" : current.subscriptionStatus;
+    subscriptionStatus = "active";
     billingStatus = "paid";
   } else if (event.type === "invoice.payment_failed") {
     subscriptionStatus = "past_due";
@@ -92,7 +133,11 @@ export async function processSubscriptionBillingEvent(event) {
   const site = await getClientSite(siteId);
   if (!site) throw new Error(`Subscription site ${siteId} was not found.`);
   const servicePlan = billingStateFor(event, site.servicePlan || {});
-  const updated = await patchClientSite(siteId, { servicePlan });
+  const entitlement = siteEntitlement({ ...site, servicePlan });
+  const updated = await patchClientSite(siteId, {
+    servicePlan,
+    status: entitlement.public ? "active" : "subscription_required",
+  });
   return {
     enabled: true,
     ignored: false,
