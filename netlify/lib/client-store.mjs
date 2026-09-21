@@ -174,6 +174,18 @@ export async function ensureClientSiteForOrder(order) {
     },
     googleCalendar: { connected: false, calendarEmail: "", connectedAt: "", employeeCalendars: {} },
     settings: { locale: "es", timezone: "America/Puerto_Rico", currency: "usd" },
+    servicePlan: {
+      code: "webfactory-premium-commerce",
+      name: "WebFactory Premium Commerce Website",
+      billingModel: "one_time",
+      billingStatus: "paid",
+      subscriptionStatus: "not_started",
+      migrationEligible: true,
+      sourceOrderId: order.orderId,
+      activatedAt: order.paidAt || now,
+      currentPeriodEnd: "",
+      cancelAtPeriodEnd: false,
+    },
   });
 }
 

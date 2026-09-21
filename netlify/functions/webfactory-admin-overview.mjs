@@ -45,6 +45,7 @@ function latestDate(value) {
 function publicClient(site) {
   const members = Array.isArray(site.members) ? site.members : [];
   const owner = members.find((member) => member.role === "owner") || members[0];
+  const servicePlan = site.servicePlan || {};
   return {
     siteId: site.siteId,
     slug: site.slug,
@@ -56,6 +57,10 @@ function publicClient(site) {
     employees: Array.isArray(site.employees) ? site.employees.length : 0,
     stripeStatus: site.paymentRules?.stripeCapabilityStatus || "not_started",
     calendarConnected: Boolean(site.googleCalendar?.connected),
+    planName: servicePlan.name || "WebFactory Premium Commerce Website",
+    billingModel: servicePlan.billingModel || "one_time",
+    billingStatus: servicePlan.billingStatus || "paid",
+    subscriptionStatus: servicePlan.subscriptionStatus || "not_started",
     updatedAt: site.updatedAt || site.createdAt || "",
     publicPath: site.slug ? `/sites/${site.slug}` : "",
   };
