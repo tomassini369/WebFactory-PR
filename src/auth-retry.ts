@@ -5,13 +5,13 @@ function retryable(error:unknown){
   return error instanceof TypeError||/load failed|failed to fetch|network|timeout|authentication required/i.test(message)
 }
 
-export async function withAuthRetry<T>(operation:()=>Promise<T>,attempts=3){
+export async function withAuthRetry<T>(operation:()=>Promise<T>,attempts=5){
   let lastError:unknown
   for(let attempt=0;attempt<attempts;attempt+=1){
     try{return await operation()}catch(error){
       lastError=error
       if(!retryable(error)||attempt===attempts-1)throw error
-      await delay(350*(attempt+1))
+      await delay(400*Math.pow(2,attempt))
     }
   }
   throw lastError
