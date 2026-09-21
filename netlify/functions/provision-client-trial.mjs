@@ -21,7 +21,7 @@ const defaultHours = {
 };
 
 async function ensureClientIdentity(email, siteId, businessName) {
-  const users = await admin.listUsers({ page: 1, perPage: 1000 });
+  const users = await admin.listUsers({ page: 1, perPage: 500 });
   let user = users.find((candidate) => normalizeEmail(candidate.email) === email);
   if (!user) {
     user = await admin.createUser({
