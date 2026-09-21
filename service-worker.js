@@ -1,19 +1,16 @@
-const CACHE_NAME = "webfactory-pr-v2";
+const CACHE_NAME = "webfactory-pr-v4";
 
 const STATIC_ASSETS = [
   "./",
   "./index.html",
-  "./success.html",
-  "./styles.css",
-  "./app.js",
-  "./manifest.webmanifest",
-  "./assets/webfactory-pr-logo.png",
-  "./assets/builder-dashboard.png",
-  "./assets/payment-methods-strip.png",
-  "./assets/icon-180.png",
-  "./assets/icon-192.png",
-  "./assets/icon-512.png",
-  "./assets/icon-maskable-512.png"
+  "./manifest-v2.webmanifest",
+  "./manifest-webfactory-admin.webmanifest",
+  "./manifest-client-admin.webmanifest",
+  "./webfactory-pr-logo.png",
+  "./apple-touch-icon-clean.png",
+  "./icon-clean-192.png",
+  "./icon-clean-512.png",
+  "./icon-clean-maskable-512.png"
 ];
 
 self.addEventListener("install", (event) => {
@@ -39,7 +36,12 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
+  if (event.request.mode === "navigate") {
+    event.respondWith(fetch(event.request).catch(() => caches.match("./index.html")));
+    return;
+  }
+
   event.respondWith(
-    caches.match(event.request).then((cached) => cached || fetch(event.request))
+    fetch(event.request).catch(() => caches.match(event.request))
   );
 });
