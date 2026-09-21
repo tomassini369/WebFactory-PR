@@ -85,8 +85,15 @@ export default async (req) => {
   }
   try {
     assertSameOrigin(req);
-    const payload = await req.json();
-    const order = sanitizeOrder(payload);
+    const payload = await req.json().catch(() => {
+      throw Object.assign(new Error("Invalid request payload."), { status: 400 });
+    });
+    let order;
+    try {
+      order = sanitizeOrder(payload);
+    } catch (error) {
+      throw Object.assign(error, { status: 400 });
+    }
     const ownerEmail = normalizeEmail(order.client.email);
     const requestedSlug = slugify(payload.slug || order.business.name);
     const existingForEmail = await sitesForEmail(ownerEmail);
