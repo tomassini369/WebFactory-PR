@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 import { eventStore } from "../lib/order-store.mjs";
 import { processPaidOrder } from "../lib/process-paid-order.mjs";
+import { isSubscriptionBillingEvent, processSubscriptionBillingEvent } from "../lib/subscription-billing.mjs";
 
 function env(name) {
   return globalThis.Netlify?.env?.get(name) || "";
@@ -52,6 +53,17 @@ export default async (req) => {
     const processed = await eventStore().get(processedKey, { type:"json" });
     if (processed?.completed) {
       return Response.json({ received:true,duplicate:true });
+    }
+
+    if (isSubscriptionBillingEvent(event)) {
+      const billing = await processSubscriptionBillingEvent(event);
+      await eventStore().setJSON(processedKey, {
+        completed:true,
+        eventType:event.type,
+        billing,
+        processedAt:new Date().toISOString(),
+      });
+      return Response.json({ received:true,billing });
     }
 
     if (!["checkout.session.completed","checkout.session.async_payment_succeeded"].includes(event.type)) {

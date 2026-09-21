@@ -6,6 +6,7 @@ import {
   clientSiteStore,
 } from "../lib/client-store.mjs";
 import { assetStore, eventStore, orderStore, packageStore } from "../lib/order-store.mjs";
+import { subscriptionBillingReadiness } from "../lib/subscription-billing.mjs";
 
 const TERMINAL_ORDER_STATUSES = new Set(["IN_PRODUCTION", "PREVIEW_READY", "COMPLETED"]);
 const RECOVERABLE_ORDER_STATUSES = new Set(["PAID", "PACKAGE_GENERATING", "PACKAGE_READY", "EMAIL_SENT"]);
@@ -128,6 +129,8 @@ export default async (req) => {
     const connectedCalendar = sites.filter((site) => site.googleCalendar?.connected).length;
     const completedOrders = orders.filter((order) => TERMINAL_ORDER_STATUSES.has(order.status)).length;
     const publishedSites = sites.filter((site) => ["active", "published", "live"].includes(site.status)).length;
+    const activeSubscriptions = sites.filter((site) => ["active", "trialing"].includes(site.servicePlan?.subscriptionStatus)).length;
+    const pastDueSubscriptions = sites.filter((site) => ["past_due", "unpaid"].includes(site.servicePlan?.subscriptionStatus)).length;
     const secretNames = [
       "STRIPE_SECRET_KEY",
       "STRIPE_PRICE_WEBFACTORY_PREMIUM",
@@ -160,6 +163,8 @@ export default async (req) => {
         commerceRecords: commerce.length,
         connectedStripe,
         connectedCalendar,
+        activeSubscriptions,
+        pastDueSubscriptions,
         blockers,
       },
       capacity: capacity(sites, blockers),
@@ -194,6 +199,7 @@ export default async (req) => {
         total: configuration.length,
         configuration,
       },
+      subscriptionBilling: subscriptionBillingReadiness(),
       operations: {
         orderStatuses: countBy(orders, "status"),
         transactionStatuses: countBy(commerce, "status"),
