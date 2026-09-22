@@ -11,7 +11,7 @@ const money = (value: number, language: DemoLanguage) =>
 function DemoNotice({ ui }: { ui: DemoUi }) {
   return (
     <div className="wf-demo-notice">
-      <a href="/#demos">← WebFactory PR</a>
+      <a href="/templates">← WebFactory PR</a>
       <span>{ui.demoNotice}</span>
       <a href="/#builder">{ui.createWebsite}</a>
     </div>
@@ -120,7 +120,7 @@ function DemoSite({ slug }: { slug: string }) {
     return (
       <main className="demo-not-found">
         <h1>{ui.notFound}</h1>
-        <a href="/#demos">{ui.returnWebFactory}</a>
+        <a href="/templates">{ui.returnWebFactory}</a>
       </main>
     )
   }
@@ -357,7 +357,7 @@ function DemoSite({ slug }: { slug: string }) {
 
       <footer className="demo-footer">
         <div><strong>{config.shortName}</strong><span>{config.category} · {ui.demoBy}</span></div>
-        <nav><a href={`/builder?template=${config.slug}`}>{language==='es'?'Usar este diseño':'Use this design'} →</a><a href="/#demos">{ui.moreDemos}</a></nav>
+        <nav><a href={`/builder?template=${config.slug}`}>{language==='es'?'Usar este Template':'Use this Template'} →</a><a href="/templates">{ui.moreDemos}</a></nav>
       </footer>
 
       {catalogOpen && (
