@@ -254,6 +254,163 @@ export const demoConfigs: DemoConfig[] = [
     aboutTitle: 'One site, two revenue streams.',
     aboutText: 'Atelier Nueve enseña cómo un negocio creativo puede vender productos y, al mismo tiempo, reservar talleres con capacidad grupal.',
     trust: ['Product sales', 'Workshop capacity', 'Combined checkout']
+  },
+  {
+    slug: 'aqua-shine-carwash', category: 'Car Wash', name: 'Aqua Shine Car Wash', shortName: 'AQUA SHINE',
+    kicker: 'WASH · DETAIL · PROTECT', headline: 'Drive clean. Shine longer.',
+    description: 'Car wash moderno con paquetes rápidos, detailing, add-ons y reservaciones por vehículo y horario.',
+    heroImage: pexels(29504462), gallery: [pexels(5233271), pexels(11139243), pexels(37809581)],
+    location: 'Carolina, Puerto Rico', phone: '(787) 555-0201', hours: 'Lun–Dom · 8 AM–6 PM',
+    accent: '#21A7FF', accent2: '#84D8FF', dark: '#071A2B', cream: '#F2FAFF',
+    features: ['Wash packages', 'Detail booking', 'Add-ons', 'WhatsApp'],
+    items: [
+      {id:'aqua-1',type:'service',name:'Lavado Express',price:25,description:'Lavado exterior rápido con espuma, enjuague y secado.',image:pexels(5233271),appointment:true,duration:30,employees:['Luis','Mara'],badge:'Fast'},
+      {id:'aqua-2',type:'service',name:'Full Detail',price:145,description:'Limpieza completa interior y exterior con acabado premium.',image:pexels(31389821),appointment:true,duration:180,deposit:35,employees:['Luis'],badge:'Premium'},
+      {id:'aqua-3',type:'service',name:'Ceramic Boost',price:85,description:'Protección rápida para brillo y repelencia de agua.',image:pexels(14908957),appointment:true,duration:75,deposit:20,employees:['Mara']},
+      {id:'aqua-4',type:'product',name:'Kit de cuidado',price:39,description:'Productos básicos para mantener el acabado entre visitas.',image:pexels(11139243),badge:'Shop'}
+    ],
+    employees: [
+      {id:'aqua-luis',name:'Luis Vega',role:'Detail Specialist',initials:'LV',services:['Lavado Express','Full Detail']},
+      {id:'aqua-mara',name:'Mara Cruz',role:'Wash Specialist',initials:'MC',services:['Lavado Express','Ceramic Boost']}
+    ],
+    bookingLabel: 'Reservar lavado', cartEnabled: true, bookingEnabled: true,
+    aboutTitle: 'Un car wash que también vende conveniencia.',
+    aboutText: 'Este demo combina paquetes, horarios, depósitos, técnicos y productos complementarios en una experiencia rápida desde móvil.',
+    trust: ['Fast booking', 'Vehicle services', 'Secure deposits']
+  },
+  {
+    slug: 'verde-vivo-landscaping', category: 'Landscaping', name: 'Verde Vivo Landscaping', shortName: 'VERDE VIVO',
+    kicker: 'LAWNS · GARDENS · OUTDOOR CARE', headline: 'Tu patio, siempre listo.',
+    description: 'Servicios de recorte, mantenimiento, limpieza y diseño exterior con visitas programadas y cotizaciones.',
+    heroImage: pexels(1458694), gallery: [pexels(58929), pexels(1301856), pexels(1084540)],
+    location: 'Arecibo, Puerto Rico', phone: '(787) 555-0202', hours: 'Lun–Sáb · 7 AM–5 PM',
+    accent: '#65A30D', accent2: '#B7E37B', dark: '#17351E', cream: '#F6FAF1',
+    features: ['Service booking', 'Recurring care', 'Quote requests', 'Maps'],
+    items: [
+      {id:'verde-1',type:'service',name:'Recorte de patio',price:55,description:'Corte y terminación básica de césped residencial.',image:pexels(58929),appointment:true,duration:90,employees:['Javier','Noel'],badge:'Popular'},
+      {id:'verde-2',type:'service',name:'Limpieza de patio',price:95,description:'Remoción de hojas, ramas y desperdicios de áreas exteriores.',image:pexels(1301856),appointment:true,duration:120,deposit:20,employees:['Noel']},
+      {id:'verde-3',type:'service',name:'Mantenimiento de jardín',price:125,description:'Mantenimiento de plantas, bordes y áreas verdes.',image:pexels(1084540),appointment:true,duration:150,deposit:25,employees:['Javier']},
+      {id:'verde-4',type:'service',name:'Visita para cotización',price:0,displayPrice:'Cotización gratis',description:'Evaluación presencial para trabajos especiales.',image:pexels(1458694),appointment:true,duration:30,employees:['Javier'],purchasable:false}
+    ],
+    employees: [
+      {id:'verde-javier',name:'Javier Soto',role:'Landscape Lead',initials:'JS',services:['Recorte de patio','Mantenimiento de jardín','Visita para cotización']},
+      {id:'verde-noel',name:'Noel Díaz',role:'Outdoor Care Technician',initials:'ND',services:['Recorte de patio','Limpieza de patio']}
+    ],
+    bookingLabel: 'Agendar servicio', cartEnabled: false, bookingEnabled: true,
+    aboutTitle: 'Mantenimiento exterior organizado por zona y horario.',
+    aboutText: 'Verde Vivo permite mostrar servicios, solicitar cotizaciones y coordinar visitas sin depender de llamadas para cada cita.',
+    trust: ['Route-ready', 'Quote visits', 'Recurring service']
+  },
+  {
+    slug: 'sonido-vivo-artist', category: 'Music Artist', name: 'Sonido Vivo', shortName: 'SONIDO VIVO',
+    kicker: 'LIVE MUSIC · EVENTS · BOOKINGS', headline: 'Bring the live set to your event.',
+    description: 'Demo para artista musical con paquetes de presentación, fechas reservables, depósitos y contacto para eventos privados.',
+    heroImage: pexels(1763075), gallery: [pexels(1190297), pexels(164829), pexels(167636)],
+    location: 'Puerto Rico', phone: '(787) 555-0203', hours: 'Bookings · By availability',
+    accent: '#A855F7', accent2: '#E2B7FF', dark: '#120A1D', cream: '#FAF5FF',
+    features: ['Artist booking', 'Event packages', 'Deposits', 'Social media'],
+    items: [
+      {id:'music-1',type:'service',name:'Set acústico',price:450,description:'Presentación íntima para restaurantes, lounges y eventos pequeños.',image:pexels(1190297),appointment:true,duration:90,deposit:100,employees:['Alex'],badge:'Popular'},
+      {id:'music-2',type:'service',name:'Full Live Performance',price:1200,description:'Presentación completa para actividades privadas y eventos.',image:pexels(1763075),appointment:true,duration:180,deposit:300,employees:['Alex'],badge:'Featured'},
+      {id:'music-3',type:'service',name:'Meet & Plan',price:0,displayPrice:'Consulta gratis',description:'Llamada para coordinar repertorio, horario y requisitos técnicos.',image:pexels(164829),appointment:true,duration:30,employees:['Alex'],purchasable:false}
+    ],
+    employees: [{id:'music-alex',name:'Alex Rivera',role:'Performing Artist',initials:'AR',services:['Set acústico','Full Live Performance','Meet & Plan']}],
+    bookingLabel: 'Consultar fecha', cartEnabled: false, bookingEnabled: true,
+    aboutTitle: 'Booking artístico sin cadenas de mensajes.',
+    aboutText: 'Este demo convierte paquetes musicales en opciones claras con disponibilidad, depósito y contacto directo para producción.',
+    trust: ['Date availability', 'Event deposits', 'Social links']
+  },
+  {
+    slug: 'motorlab-garage', category: 'Auto Repair', name: 'MotorLab Garage', shortName: 'MOTORLAB',
+    kicker: 'DIAGNOSTICS · REPAIR · MAINTENANCE', headline: 'Repairs explained. Appointments simplified.',
+    description: 'Taller de mecánica con diagnóstico, mantenimiento, servicios reservables y técnicos asignados.',
+    heroImage: pexels(4489732), gallery: [pexels(3806288), pexels(6872172), pexels(8985454)],
+    location: 'Bayamón, Puerto Rico', phone: '(787) 555-0204', hours: 'Lun–Sáb · 8 AM–5 PM',
+    accent: '#F59E0B', accent2: '#FFD27A', dark: '#151515', cream: '#FFF9ED',
+    features: ['Repair booking', 'Diagnostics', 'Technicians', 'Deposits'],
+    items: [
+      {id:'motor-1',type:'service',name:'Diagnóstico general',price:75,description:'Inspección inicial para identificar fallas y próximos pasos.',image:pexels(3806288),appointment:true,duration:60,employees:['Carlos','Edwin'],badge:'Start here'},
+      {id:'motor-2',type:'service',name:'Cambio de aceite',price:65,description:'Servicio de aceite y revisión básica de mantenimiento.',image:pexels(4489732),appointment:true,duration:45,employees:['Edwin']},
+      {id:'motor-3',type:'service',name:'Frenos',price:180,description:'Inspección y servicio de frenos según condición del vehículo.',image:pexels(6872172),appointment:true,duration:120,deposit:40,employees:['Carlos']},
+      {id:'motor-4',type:'service',name:'Evaluación de reparación mayor',price:95,description:'Evaluación para trabajos de motor, suspensión o transmisión.',image:pexels(8985454),appointment:true,duration:90,employees:['Carlos'],badge:'Advanced'}
+    ],
+    employees: [
+      {id:'motor-carlos',name:'Carlos Méndez',role:'Master Technician',initials:'CM',services:['Diagnóstico general','Frenos','Evaluación de reparación mayor']},
+      {id:'motor-edwin',name:'Edwin López',role:'Service Technician',initials:'EL',services:['Diagnóstico general','Cambio de aceite']}
+    ],
+    bookingLabel: 'Reservar diagnóstico', cartEnabled: false, bookingEnabled: true,
+    aboutTitle: 'Un taller con agenda clara desde el primer contacto.',
+    aboutText: 'MotorLab organiza servicios por técnico y duración para reducir llamadas y mejorar el flujo de citas.',
+    trust: ['Technician matching', 'Service duration', 'Appointment deposits']
+  },
+  {
+    slug: 'manos-de-confianza-care', category: 'Care Services', name: 'Manos de Confianza', shortName: 'MANOS DE CONFIANZA',
+    kicker: 'CHILDCARE · SENIOR CARE · FAMILY SUPPORT', headline: 'Care built around the people you love.',
+    description: 'Servicios de cuido para niños y envejecientes con consultas, visitas, cuidadores y horarios coordinados.',
+    heroImage: pexels(7551754), gallery: [pexels(3768131), pexels(7551762), pexels(4473870)],
+    location: 'San Juan, Puerto Rico', phone: '(787) 555-0205', hours: 'Lun–Dom · By schedule',
+    accent: '#4F8A8B', accent2: '#A8D8D8', dark: '#17393A', cream: '#F4FBFB',
+    features: ['Care consultation', 'Caregiver booking', 'Family contact', 'Scheduling'],
+    items: [
+      {id:'care-1',type:'service',name:'Consulta de cuido infantil',price:0,displayPrice:'Consulta gratis',description:'Conversación inicial para conocer necesidades, horarios y rutina del menor.',image:pexels(3768131),appointment:true,duration:30,employees:['María'],purchasable:false},
+      {id:'care-2',type:'service',name:'Cuido infantil por hora',price:22,description:'Servicio programado de cuidado infantil en el hogar.',image:pexels(7551754),appointment:true,duration:120,deposit:25,employees:['María','Elena']},
+      {id:'care-3',type:'service',name:'Acompañamiento para envejecientes',price:24,description:'Compañía y apoyo no médico para adultos mayores.',image:pexels(7551762),appointment:true,duration:120,deposit:25,employees:['Elena'],badge:'Senior care'},
+      {id:'care-4',type:'service',name:'Consulta familiar',price:0,displayPrice:'Consulta gratis',description:'Coordinación inicial de horarios y tipo de apoyo requerido.',image:pexels(4473870),appointment:true,duration:30,employees:['María','Elena'],purchasable:false}
+    ],
+    employees: [
+      {id:'care-maria',name:'María Torres',role:'Childcare Provider',initials:'MT',services:['Consulta de cuido infantil','Cuido infantil por hora','Consulta familiar']},
+      {id:'care-elena',name:'Elena Ramos',role:'Family Care Provider',initials:'ER',services:['Cuido infantil por hora','Acompañamiento para envejecientes','Consulta familiar']}
+    ],
+    bookingLabel: 'Coordinar consulta', cartEnabled: false, bookingEnabled: true,
+    aboutTitle: 'Coordinación clara para servicios sensibles.',
+    aboutText: 'Este demo está diseñado para presentar servicios de cuido, perfiles y disponibilidad sin hacer afirmaciones médicas.',
+    trust: ['Family intake', 'Provider schedules', 'Clear service scope']
+  },
+  {
+    slug: 'pour-house-bartending', category: 'Bartending', name: 'Pour House Events', shortName: 'POUR HOUSE',
+    kicker: 'MOBILE BAR · EVENTS · EXPERIENCES', headline: 'A polished bar experience, wherever you celebrate.',
+    description: 'Bartending móvil para bodas, cumpleaños y eventos corporativos con paquetes, add-ons y depósitos.',
+    heroImage: pexels(1283219), gallery: [pexels(602750), pexels(2531186), pexels(1267361)],
+    location: 'Puerto Rico', phone: '(787) 555-0206', hours: 'Events · By reservation',
+    accent: '#D4A373', accent2: '#F0D1B2', dark: '#1B1715', cream: '#FFF9F3',
+    features: ['Event booking', 'Packages', 'Deposits', 'Inquiry form'],
+    items: [
+      {id:'bar-1',type:'service',name:'Bartender Solo',price:350,description:'Servicio de bartender para eventos pequeños de duración limitada.',image:pexels(602750),appointment:true,duration:240,deposit:100,employees:['Nico'],badge:'Small events'},
+      {id:'bar-2',type:'service',name:'Mobile Bar Experience',price:850,description:'Paquete de barra móvil con setup y servicio para eventos medianos.',image:pexels(1283219),appointment:true,duration:300,deposit:200,employees:['Nico','Sara'],badge:'Popular'},
+      {id:'bar-3',type:'service',name:'Wedding Bar Service',price:1500,description:'Servicio ampliado para bodas y actividades de mayor duración.',image:pexels(2531186),appointment:true,duration:420,deposit:350,employees:['Nico','Sara']},
+      {id:'bar-4',type:'service',name:'Event consultation',price:0,displayPrice:'Free consultation',description:'Consulta para estimar invitados, tiempo y necesidades del evento.',image:pexels(1267361),appointment:true,duration:30,employees:['Sara'],purchasable:false}
+    ],
+    employees: [
+      {id:'bar-nico',name:'Nico Rivera',role:'Lead Bartender',initials:'NR',services:['Bartender Solo','Mobile Bar Experience','Wedding Bar Service']},
+      {id:'bar-sara',name:'Sara León',role:'Event Coordinator',initials:'SL',services:['Mobile Bar Experience','Wedding Bar Service','Event consultation']}
+    ],
+    bookingLabel: 'Consultar evento', cartEnabled: false, bookingEnabled: true,
+    aboutTitle: 'Paquetes de evento listos para cotizar y reservar.',
+    aboutText: 'Pour House convierte consultas de eventos en paquetes claros con depósitos y disponibilidad por fecha.',
+    trust: ['Event deposits', 'Package options', 'Date booking']
+  },
+  {
+    slug: 'mesa-boricua-catering', category: 'Catering', name: 'Mesa Boricua Catering', shortName: 'MESA BORICUA',
+    kicker: 'CATERING · EVENTS · PRIVATE DINING', headline: 'Menus made for gathering.',
+    description: 'Catering para eventos con paquetes por tamaño, degustaciones, depósitos y consultas de menú.',
+    heroImage: pexels(587741), gallery: [pexels(1267320), pexels(958545), pexels(262978)],
+    location: 'Puerto Rico', phone: '(787) 555-0207', hours: 'Lun–Sáb · 9 AM–6 PM',
+    accent: '#C96A3D', accent2: '#F3B38D', dark: '#2B1C17', cream: '#FFF7F1',
+    features: ['Catering packages', 'Tastings', 'Event booking', 'Deposits'],
+    items: [
+      {id:'cat-1',type:'service',name:'Paquete íntimo · hasta 20 personas',price:650,description:'Paquete de catering para reuniones pequeñas y familiares.',image:pexels(1267320),appointment:true,duration:240,deposit:150,employees:['Chef Ana'],badge:'20 guests'},
+      {id:'cat-2',type:'service',name:'Paquete celebración · hasta 50 personas',price:1450,description:'Catering para cumpleaños, actividades y celebraciones medianas.',image:pexels(958545),appointment:true,duration:300,deposit:300,employees:['Chef Ana','Luis'],badge:'Popular'},
+      {id:'cat-3',type:'service',name:'Paquete evento grande · hasta 100 personas',price:2850,description:'Servicio de catering ampliado para eventos grandes.',image:pexels(587741),appointment:true,duration:420,deposit:600,employees:['Chef Ana','Luis']},
+      {id:'cat-4',type:'service',name:'Degustación / consulta',price:75,description:'Sesión para revisar menú, cantidades y necesidades del evento.',image:pexels(262978),appointment:true,duration:60,employees:['Chef Ana']}
+    ],
+    employees: [
+      {id:'cat-ana',name:'Ana Morales',role:'Executive Chef',initials:'AM',services:['Paquete íntimo · hasta 20 personas','Paquete celebración · hasta 50 personas','Paquete evento grande · hasta 100 personas','Degustación / consulta']},
+      {id:'cat-luis',name:'Luis Pérez',role:'Event Operations',initials:'LP',services:['Paquete celebración · hasta 50 personas','Paquete evento grande · hasta 100 personas']}
+    ],
+    bookingLabel: 'Consultar fecha', cartEnabled: false, bookingEnabled: true, groupBooking: true,
+    aboutTitle: 'Menús, capacidad y fechas en una sola experiencia.',
+    aboutText: 'Mesa Boricua permite presentar paquetes por cantidad de invitados y coordinar degustaciones o eventos desde el mismo sistema.',
+    trust: ['Guest-count packages', 'Event deposits', 'Tasting appointments']
   }
 ]
 
