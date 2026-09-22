@@ -211,6 +211,12 @@ export function publicClientSite(site) {
       logoUrl: site.business?.logoAssetKey
         ? `/.netlify/functions/client-asset?siteId=${encodeURIComponent(site.siteId)}&key=${encodeURIComponent(site.business.logoAssetKey)}`
         : "",
+      heroUrl: site.business?.heroAssetKey
+        ? `/.netlify/functions/client-asset?siteId=${encodeURIComponent(site.siteId)}&key=${encodeURIComponent(site.business.heroAssetKey)}`
+        : "",
+      galleryUrls: Array.isArray(site.business?.galleryAssetKeys)
+        ? site.business.galleryAssetKeys.map((key) => `/.netlify/functions/client-asset?siteId=${encodeURIComponent(site.siteId)}&key=${encodeURIComponent(key)}`)
+        : [],
     },
     design: site.design,
     features: site.features,
