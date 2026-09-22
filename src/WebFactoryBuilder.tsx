@@ -593,7 +593,7 @@ function BusinessStep({state,setState,lang}:{state:BuilderState;setState:Dispatc
         <span>{uploadingLogo?(lang==='es'?'Guardando logo…':'Saving logo…'):state.business.logoAssetKey?(lang==='es'?'✓ Logo guardado':'✓ Logo saved'):(lang==='es'?'Subir logo del cliente':'Upload customer logo')}</span>
         <small>{lang==='es'?'El archivo se guarda de forma segura para tu website y portal administrativo.':'The file is stored securely for your website and administrative portal.'}</small>
       </label>
-      <div className="wf-step-intro compact"><small>{lang==='es'?'FOTOS DE LA PLANTILLA':'TEMPLATE PHOTOS'}</small><h3>{lang==='es'?'Usa las fotos reales de tu negocio.':'Use your real business photos.'}</h3><p>{lang==='es'?'La composición del demo se conserva; solo reemplazamos las imágenes de muestra.':'The demo composition is preserved; only the sample photography is replaced.'}</p></div>
+      <div className="wf-step-intro compact"><small>{lang==='es'?'FOTOS DE LA PLANTILLA':'TEMPLATE PHOTOS'}</small><h3>{lang==='es'?'Usa las fotos reales de tu negocio.':'Use your real business photos.'}</h3><p>{lang==='es'?'La composición del Template se conserva; solo reemplazamos las imágenes de muestra.':'The Template composition is preserved; only the sample photography is replaced.'}</p></div>
       <label className="wf-upload">
         <input type="file" accept="image/png,image/jpeg,image/webp,image/heic,image/heif" disabled={uploadingLogo} onChange={(event)=>uploadHero(event.target.files?.[0])} />
         <span>{state.business.heroAssetKey?(lang==='es'?'✓ Imagen principal guardada':'✓ Hero image saved'):(lang==='es'?'Subir imagen principal / Hero':'Upload main / Hero image')}</span>
@@ -645,8 +645,8 @@ function DesignStep({state,setState,lang}:{state:BuilderState;setState:Dispatch<
         <small>{lang==='es'?'PASO 2 · DISEÑO BASE':'STEP 2 · BASE DESIGN'}</small>
         <h3>{lang==='es'?'Elige cómo comenzará tu diseño.':'Choose how your design will begin.'}</h3>
         <p>{lang==='es'
-          ? 'Puedes mantener un diseño personalizado por WebFactory o escoger un Template como diseño base. Si eliges un demo, conservaremos su estructura, navegación y experiencia mientras sustituimos la marca y el contenido.'
-          : 'You can keep a custom WebFactory design or choose a Template as your base design. If you choose a demo, we will preserve its structure, navigation, and experience while replacing its branding and content.'}</p>
+          ? 'Puedes mantener un diseño personalizado por WebFactory o escoger un Template como diseño base. Si eliges un Template, conservaremos su estructura, navegación y experiencia mientras sustituimos la marca y el contenido.'
+          : 'You can keep a custom WebFactory design or choose a Template as your base design. If you choose a Template, we will preserve its structure, navigation, and experience while replacing its branding and content.'}</p>
       </div>
       <div className="wf-template-grid">
         <article className={`wf-template-custom ${state.design.templateSlug===''?'selected':''}`}>
@@ -681,7 +681,7 @@ function DesignStep({state,setState,lang}:{state:BuilderState;setState:Dispatch<
         </>:null}
       </div>
       {state.design.templateSlug===''&&<>
-        <div className="wf-step-intro compact"><small>{lang==='es'?'CUSTOM LAYOUT':'CUSTOM LAYOUT'}</small><h3>{lang==='es'?'Escoge la composición inicial.':'Choose the starting composition.'}</h3><p>{lang==='es'?'Estas opciones cambian la presentación sin depender de ningún demo.':'These options change the presentation without depending on a demo.'}</p></div>
+        <div className="wf-step-intro compact"><small>{lang==='es'?'CUSTOM LAYOUT':'CUSTOM LAYOUT'}</small><h3>{lang==='es'?'Escoge la composición inicial.':'Choose the starting composition.'}</h3><p>{lang==='es'?'Estas opciones cambian la presentación sin depender de ningún Template.':'These options change the presentation without depending on a Template.'}</p></div>
         <div className="wf-custom-layout-grid">
           {[
             ['split',lang==='es'?'Hero dividido':'Split hero'],
@@ -711,7 +711,7 @@ function DesignStep({state,setState,lang}:{state:BuilderState;setState:Dispatch<
         <span>{lang==='es'
           ? (state.design.templateSlug
               ? 'El Template elegido se personaliza para tu negocio y mantiene su estructura y funciones compatibles.'
-              : 'Se utilizarán tu estilo, colores, contenido y funciones sin copiar obligatoriamente uno de los demos.')
+              : 'Se utilizarán tu estilo, colores, contenido y funciones sin copiar obligatoriamente uno de los Templates.')
           : (state.design.templateSlug
               ? 'The chosen Template is customized for your business while preserving its structure and compatible features.'
               : 'Your style, colors, content, and features will be used without requiring a copy of a demo.')}</span>
