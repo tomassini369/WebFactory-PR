@@ -7,6 +7,7 @@ import ClientAdminPage from './ClientAdminPage'
 import ClientStorefront from './ClientStorefront'
 import WebFactoryAdminPage from './WebFactoryAdminPage'
 import PasswordRecoveryPage from './PasswordRecoveryPage'
+import LegalPage from './LegalPage'
 
 type Language = 'es' | 'en'
 
@@ -146,8 +147,14 @@ function App(){
   const identityRecoveryRoute = /^#recovery_token=/.test(window.location.hash)
   const clientSiteMatch = window.location.pathname.match(/^\/sites\/([^/]+)\/?$/)
   const builderRoute = /^\/builder\/?$/.test(window.location.pathname)
+  const privacyRoute = /^\/privacy\/?$/.test(window.location.pathname)
+  const termsRoute = /^\/terms\/?$/.test(window.location.pathname)
+  const refundRoute = /^\/refund-policy\/?$/.test(window.location.pathname)
 
   if (identityRecoveryRoute) return <PasswordRecoveryPage />
+  if (privacyRoute) return <LegalPage kind="privacy" />
+  if (termsRoute) return <LegalPage kind="terms" />
+  if (refundRoute) return <LegalPage kind="refund" />
   if (webFactoryAdminRoute || identityInviteRoute) return <WebFactoryAdminPage />
   if (clientAdminRoute) return <ClientAdminPage />
   if (clientSiteMatch) return <ClientStorefront slug={decodeURIComponent(clientSiteMatch[1])} />
@@ -212,7 +219,7 @@ function App(){
       <section className="final"><div className="shell"><div><p className="eyebrow">WEBFACTORY PR</p><h2>{t.final[0]}</h2><p>{t.final[1]}</p></div><aside><strong>48h</strong><span>{lang==='es'?'gratis · luego $30/mes o $350/año':'free · then $30/month or $350/year'}</span><a href="/builder" className="btn light">{t.hero.primary} ↗</a></aside></div></section>
     </main>
 
-    <footer className="footer"><div className="shell"><div><img src={LOGO} alt="WebFactory PR"/><p>Build. Sell. Book. Grow.</p></div><nav>{['Product','Templates','Features','Builder','FAQ','Contact','Privacy','Terms','Refund Policy'].map((x,i)=><a key={x} href={i===1?'/templates':i===2?'#incluye':i===3?'/builder':i===4?'#faq':i===5?'mailto:WebFactoryPR@gmail.com':'#top'}>{x}</a>)}</nav><p className="copyright">WebFactoryPR@gmail.com · © 2026 WebFactory PR. {t.footer}</p></div></footer>
+    <footer className="footer"><div className="shell"><div><img src={LOGO} alt="WebFactory PR"/><p>Build. Sell. Book. Grow.</p></div><nav>{['Product','Templates','Features','Builder','FAQ','Contact','Privacy','Terms','Refund Policy'].map((x,i)=>{const href=i===1?'/templates':i===2?'#incluye':i===3?'/builder':i===4?'#faq':i===5?'mailto:WebFactoryPR@gmail.com':i===6?'/privacy':i===7?'/terms':i===8?'/refund-policy':'#top';const legal=i>=6;return <a key={x} href={href} target={legal?'_blank':undefined} rel={legal?'noreferrer':undefined}>{x}</a>})}</nav><p className="copyright">WebFactoryPR@gmail.com · © 2026 WebFactory PR. {t.footer}</p></div></footer>
   </>
 }
 
