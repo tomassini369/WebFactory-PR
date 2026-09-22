@@ -62,7 +62,7 @@ const copy={
           'WebFactory may update this Privacy Policy as the platform, integrations, or legal requirements change. Material revisions will be reflected by an updated effective or revision date on this page.'
         ]],
         ['13. Contact',[
-          'Privacy questions or requests may be sent to WebFactoryPR@gmail.com.'
+          'Privacy questions or requests may be sent to info@webfactorypr.com.'
         ]]
       ]
     },
@@ -84,7 +84,7 @@ const copy={
         ]],
         ['4. Billing and renewals',[
           'Subscription checkout and recurring billing are processed by Stripe. A paid subscription renews according to the billing interval selected unless it is canceled before the next renewal.',
-          'Until a self-service cancellation control is available in the portal, account owners may request subscription cancellation by contacting WebFactoryPR@gmail.com. Cancellation does not automatically erase business records or customer transaction history.',
+          'Until a self-service cancellation control is available in the portal, account owners may request subscription cancellation by contacting billing@webfactorypr.com. Cancellation does not automatically erase business records or customer transaction history.',
           'If a renewal fails, Stripe may retry payment. WebFactory may restrict or unpublish service when a subscription becomes unpaid, canceled, paused, or otherwise no longer entitled to public service.'
         ]],
         ['5. Business sales and merchant responsibility',[
@@ -138,7 +138,7 @@ const copy={
           'These Terms are intended to operate under the laws applicable to WebFactory PR and its services in Puerto Rico and the United States, without limiting consumer rights that cannot lawfully be waived. Before filing a formal dispute, users are encouraged to contact WebFactory so the issue can be reviewed and, when possible, resolved directly.'
         ]],
         ['18. Contact',[
-          'Questions about these Terms may be sent to WebFactoryPR@gmail.com.'
+          'Questions about these Terms may be sent to info@webfactorypr.com.'
         ]]
       ]
     },
@@ -156,7 +156,7 @@ const copy={
         ]],
         ['3. Canceling future renewals',[
           'Canceling a subscription stops future renewal charges but does not automatically refund the current paid billing period. Unless otherwise required by law or specifically stated by WebFactory, access may continue through the end of the already-paid period.',
-          'Until self-service subscription cancellation is available in the client portal, the account owner can request cancellation at WebFactoryPR@gmail.com. Requests should be sent before the next renewal date.'
+          'Until self-service subscription cancellation is available in the client portal, the account owner can request cancellation at billing@webfactorypr.com. Requests should be sent before the next renewal date.'
         ]],
         ['4. Failed, past-due, or interrupted payments',[
           'A failed payment is not a refund. Stripe may retry a failed renewal. WebFactory may keep service available during a payment-retry state and may later restrict publication if the subscription becomes unpaid, paused, or canceled.'
@@ -173,7 +173,7 @@ const copy={
           'Grandfathered WebFactory accounts purchased under an earlier one-time-payment arrangement remain subject to the written terms that applied to that purchase, together with any non-waivable rights under applicable law.'
         ]],
         ['8. How to request a WebFactory billing review',[
-          'For a WebFactory subscription billing issue, email WebFactoryPR@gmail.com from the email associated with the account and include the business name, approximate charge date, amount, and a brief explanation. Do not send full card numbers, banking passwords, secret keys, or 2FA codes by email.'
+          'For a WebFactory subscription billing issue, email billing@webfactorypr.com from the email associated with the account and include the business name, approximate charge date, amount, and a brief explanation. Do not send full card numbers, banking passwords, secret keys, or 2FA codes by email.'
         ]],
         ['9. Policy changes',[
           'WebFactory may update this Refund Policy as billing features or service plans change. Changes apply prospectively unless applicable law requires otherwise.'
@@ -236,7 +236,7 @@ const copy={
           'WebFactory puede actualizar esta Política de Privacidad cuando cambien la plataforma, las integraciones o los requisitos aplicables. Las revisiones materiales se reflejarán mediante una fecha de vigencia o actualización nueva.'
         ]],
         ['13. Contacto',[
-          'Preguntas o solicitudes de privacidad pueden enviarse a WebFactoryPR@gmail.com.'
+          'Preguntas o solicitudes de privacidad pueden enviarse a info@webfactorypr.com.'
         ]]
       ]
     },
@@ -258,7 +258,7 @@ const copy={
         ]],
         ['4. Facturación y renovaciones',[
           'El checkout de suscripción y la facturación recurrente se procesan mediante Stripe. La suscripción pagada se renueva según el intervalo seleccionado a menos que se cancele antes de la próxima renovación.',
-          'Mientras no exista una opción de cancelación automática dentro del portal, el titular puede solicitar cancelación escribiendo a WebFactoryPR@gmail.com. Cancelar no elimina automáticamente registros comerciales ni historial de transacciones.',
+          'Mientras no exista una opción de cancelación automática dentro del portal, el titular puede solicitar cancelación escribiendo a billing@webfactorypr.com. Cancelar no elimina automáticamente registros comerciales ni historial de transacciones.',
           'Si una renovación falla, Stripe puede reintentar el cobro. WebFactory puede restringir o despublicar el servicio cuando la suscripción quede impaga, cancelada, pausada o sin derecho de publicación.'
         ]],
         ['5. Ventas del negocio y responsabilidad comercial',[
@@ -312,7 +312,7 @@ const copy={
           'Estos Términos están diseñados para operar bajo las leyes aplicables a WebFactory PR y sus servicios en Puerto Rico y Estados Unidos, sin limitar derechos del consumidor que legalmente no puedan renunciarse. Antes de iniciar una disputa formal, se recomienda contactar a WebFactory para evaluar y, cuando sea posible, resolver el asunto directamente.'
         ]],
         ['18. Contacto',[
-          'Preguntas sobre estos Términos pueden enviarse a WebFactoryPR@gmail.com.'
+          'Preguntas sobre estos Términos pueden enviarse a info@webfactorypr.com.'
         ]]
       ]
     },
@@ -330,7 +330,7 @@ const copy={
         ]],
         ['3. Cancelar futuras renovaciones',[
           'Cancelar una suscripción detiene renovaciones futuras pero no reembolsa automáticamente el periodo ya pagado. Salvo que la ley exija otra cosa o WebFactory lo indique específicamente, el acceso puede continuar hasta finalizar el periodo pagado.',
-          'Mientras no exista cancelación automática en el portal, el titular puede solicitar cancelación en WebFactoryPR@gmail.com. La solicitud debe enviarse antes de la próxima fecha de renovación.'
+          'Mientras no exista cancelación automática en el portal, el titular puede solicitar cancelación en billing@webfactorypr.com. La solicitud debe enviarse antes de la próxima fecha de renovación.'
         ]],
         ['4. Pagos fallidos o vencidos',[
           'Un pago fallido no constituye un reembolso. Stripe puede reintentar una renovación fallida. WebFactory puede mantener el servicio durante un estado de reintento y posteriormente restringir la publicación si la suscripción queda impaga, pausada o cancelada.'
@@ -347,7 +347,7 @@ const copy={
           'Las cuentas grandfathered adquiridas bajo un acuerdo anterior de pago único continúan sujetas a las condiciones escritas aplicables a esa compra, junto con derechos que la ley no permita renunciar.'
         ]],
         ['8. Cómo solicitar revisión de un cargo WebFactory',[
-          'Para un problema de facturación de una suscripción WebFactory, escribe a WebFactoryPR@gmail.com desde el email asociado a la cuenta e incluye nombre del negocio, fecha aproximada del cargo, cantidad y una explicación breve. No envíes números completos de tarjeta, contraseñas bancarias, llaves secretas ni códigos 2FA por email.'
+          'Para un problema de facturación de una suscripción WebFactory, escribe a billing@webfactorypr.com desde el email asociado a la cuenta e incluye nombre del negocio, fecha aproximada del cargo, cantidad y una explicación breve. No envíes números completos de tarjeta, contraseñas bancarias, llaves secretas ni códigos 2FA por email.'
         ]],
         ['9. Cambios a esta política',[
           'WebFactory puede actualizar esta Política de Reembolsos cuando cambien las funciones de facturación o planes. Los cambios aplican prospectivamente salvo que la ley exija otra cosa.'
@@ -366,7 +366,7 @@ export default function LegalPage({kind}:{kind:LegalKind}){
     <section className="legal-hero"><div><p>WEBFACTORY PR · LEGAL</p><h1>{page.title}</h1><span>{updated[lang]}</span><p>{page.intro}</p></div></section>
     <article className="legal-content">
       {page.sections.map(([title,paragraphs])=><section key={title}><h2>{title}</h2>{paragraphs.map((paragraph,index)=><p key={index}>{paragraph}</p>)}</section>)}
-      <aside><strong>{lang==='es'?'¿Necesitas ayuda?':'Need help?'}</strong><p>{lang==='es'?'Contáctanos sobre estas políticas o tu cuenta.':'Contact us about these policies or your account.'}</p><a href="mailto:WebFactoryPR@gmail.com">WebFactoryPR@gmail.com</a></aside>
+      <aside><strong>{lang==='es'?'¿Necesitas ayuda?':'Need help?'}</strong><p>{lang==='es'?'Contáctanos sobre estas políticas o tu cuenta.':'Contact us about these policies or your account.'}</p><a href="mailto:info@webfactorypr.com">info@webfactorypr.com</a></aside>
     </article>
     <footer className="legal-footer"><a href="/privacy" target="_blank" rel="noreferrer">Privacy</a><a href="/terms" target="_blank" rel="noreferrer">Terms</a><a href="/refund-policy" target="_blank" rel="noreferrer">Refund Policy</a><span>© 2026 WebFactory PR</span></footer>
   </main>

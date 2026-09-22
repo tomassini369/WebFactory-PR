@@ -74,7 +74,7 @@ export default function PaymentSetupPage() {
   const languageButtons=<div className="portal-language"><button className={lang==='en'?'active':''} onClick={()=>setLang('en')}>EN</button><button className={lang==='es'?'active':''} onClick={()=>setLang('es')}>ES</button></div>
 
   if (loading) return <main className="payment-setup-page"><section className="payment-setup-card">{languageButtons}<p>{es?'Verificando enlace privado…':'Verifying private link…'}</p></section></main>
-  if (error && !setup) return <main className="payment-setup-page"><section className="payment-setup-card">{languageButtons}<img src="/webfactory-pr-logo.png" alt="WebFactory PR"/><small>{es?'ENLACE PRIVADO':'PRIVATE LINK'}</small><h1>{es?'No pudimos abrir esta configuración.':'We could not open this setup.'}</h1><p className="payment-error">{error}</p><a href="mailto:webfactorypr@gmail.com">{es?'Contactar a WebFactory':'Contact WebFactory'}</a></section></main>
+  if (error && !setup) return <main className="payment-setup-page"><section className="payment-setup-card">{languageButtons}<img src="/webfactory-pr-logo.png" alt="WebFactory PR"/><small>{es?'ENLACE PRIVADO':'PRIVATE LINK'}</small><h1>{es?'No pudimos abrir esta configuración.':'We could not open this setup.'}</h1><p className="payment-error">{error}</p><a href="mailto:support@webfactorypr.com">{es?'Contactar a WebFactory':'Contact WebFactory'}</a></section></main>
 
   const stripeActive = setup?.stripe?.capabilityStatus === 'active'
   return <main className="payment-setup-page">

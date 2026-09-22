@@ -26,10 +26,23 @@ Netlify environment variables:
 - `STRIPE_PRICE_WEBFACTORY_PREMIUM` — legacy $300 Price ID retained for grandfathered records only.
 - `STRIPE_WEBHOOK_SECRET` — signing secret for the production Stripe webhook.
 - `WEBFACTORY_ORDER_EMAIL` — administrative order recipient.
-- `WEBFACTORY_GMAIL_USER` — Gmail account used for transactional delivery.
-- `WEBFACTORY_GMAIL_APP_PASSWORD` — Gmail App Password stored as a Netlify secret.
+- `MAILJET_API_KEY` and `MAILJET_SECRET_KEY` — Mailjet SMTP credentials, stored only as Netlify secrets.
+- `MAILJET_SMTP_HOST` / `MAILJET_SMTP_PORT` — Mailjet SMTP endpoint (`in-v3.mailjet.com:587`).
+- `WEBFACTORY_EMAIL_FROM_TEAM`, `WEBFACTORY_EMAIL_FROM_SUPPORT`, `WEBFACTORY_EMAIL_FROM_BILLING`, `WEBFACTORY_EMAIL_FROM_INFO` — approved corporate senders.
+- `WEBFACTORY_GMAIL_USER` and `WEBFACTORY_GMAIL_APP_PASSWORD` — temporary legacy fallback only.
 
 Subscription Checkout never trusts a frontend price. The browser sends only `siteId` and `monthly|annual`; the server selects the authorized Price ID.
+
+## Corporate email
+
+Inbound corporate email is handled by ImprovMX and forwarded to the administrative Gmail inbox. Outbound transactional email uses Mailjet as the official transport through backend-only Netlify Functions.
+
+- `team@webfactorypr.com` — platform, invitations, activation and account notices.
+- `support@webfactorypr.com` — support and customer service.
+- `billing@webfactorypr.com` — subscriptions, payments, renewals and billing notices.
+- `info@webfactorypr.com` — public contact and general inquiries.
+
+DNS keeps the ImprovMX MX records, one combined SPF record for Mailjet and ImprovMX, Mailjet DKIM, and DMARC monitoring. Secret values are stored only in Netlify environment variables and are never committed. Gmail SMTP remains a temporary fallback until Mailjet production delivery tests are complete.
 
 ## Checkout safety
 

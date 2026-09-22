@@ -1,10 +1,6 @@
-import nodemailer from "nodemailer";
+import { emailConfigured, sendEmail } from "../lib/email.mjs";
 import { getClientSiteBySlug } from "../lib/client-store.mjs";
 import { cleanText, validEmail } from "../lib/order-store.mjs";
-
-function env(name) {
-  return globalThis.Netlify?.env?.get(name) || "";
-}
 
 function sameOrigin(req) {
   const origin = req.headers.get("origin") || "";
@@ -35,21 +31,13 @@ export default async (req) => {
       return Response.json({ ok:false,message:"Contact form is not available." }, { status:404 });
     }
 
-    const user = env("WEBFACTORY_GMAIL_USER");
-    const pass = env("WEBFACTORY_GMAIL_APP_PASSWORD");
-    if (!user || !pass) {
+    if (!emailConfigured()) {
       return Response.json({ ok:false,message:"Contact delivery is temporarily unavailable." }, { status:503 });
     }
 
-    const tx = nodemailer.createTransport({
-      host:"smtp.gmail.com",
-      port:465,
-      secure:true,
-      auth:{ user,pass },
-    });
-
-    await tx.sendMail({
-      from:`WebFactory Contact <${user}>`,
+    await sendEmail({
+      category:"info",
+      fromName:"WebFactory Contact",
       to:site.business.email,
       replyTo:email,
       subject:`Website contact — ${site.business.name || slug}`,

@@ -76,7 +76,7 @@ Each tenant is keyed by `siteId`; membership indexes are keyed by a one-way norm
 - Administrator destination is read from WEBFACTORY_ORDER_EMAIL.
 - Customer receives a separate confirmation without internal prompts, credentials or backend information.
 - Live checkout is not enabled unless Stripe, webhook and Gmail SMTP readiness checks all pass.
-- Required email variables: WEBFACTORY_GMAIL_USER and secret WEBFACTORY_GMAIL_APP_PASSWORD.
+- Mailjet is the primary outbound transport through `MAILJET_API_KEY` and `MAILJET_SECRET_KEY`; Gmail variables remain a temporary fallback. Corporate sender addresses are selected by message category and all secrets live only in Netlify.
 
 ## Delivery phases
 1. Homepage + visual system + responsive foundation.

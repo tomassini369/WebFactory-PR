@@ -1,5 +1,5 @@
 import crypto from "node:crypto";
-import nodemailer from "nodemailer";
+import { emailConfigured as transportConfigured, sendEmail } from "./email.mjs";
 import { createSummaryPdf } from "./production-package.mjs";
 import { getOrder, packageStore, patchOrder, publicBaseUrl } from "./order-store.mjs";
 import { createPaymentSetupAccess } from "./payment-setup.mjs";
@@ -9,20 +9,6 @@ const ZIP_ATTACHMENT_LIMIT = 12 * 1024 * 1024;
 
 function env(name) {
   return globalThis.Netlify?.env?.get(name) || "";
-}
-
-function transporter() {
-  const user = env("WEBFACTORY_GMAIL_USER");
-  const pass = env("WEBFACTORY_GMAIL_APP_PASSWORD");
-  if (!user || !pass) {
-    throw new Error("Missing WEBFACTORY_GMAIL_USER or WEBFACTORY_GMAIL_APP_PASSWORD.");
-  }
-  return nodemailer.createTransport({
-    host: "smtp.gmail.com",
-    port: 465,
-    secure: true,
-    auth: { user, pass },
-  });
 }
 
 function adminText(order, packageLink, attachedZip) {
@@ -112,11 +98,7 @@ function customerText(order, paymentSetupLink, portalActivationLink) {
 }
 
 export function emailConfigured() {
-  return Boolean(
-    env("WEBFACTORY_GMAIL_USER") &&
-      env("WEBFACTORY_GMAIL_APP_PASSWORD") &&
-      env("WEBFACTORY_ORDER_EMAIL"),
-  );
+  return Boolean(transportConfigured() && env("WEBFACTORY_ORDER_EMAIL"));
 }
 
 export async function sendOrderEmails(order) {
@@ -124,9 +106,7 @@ export async function sendOrderEmails(order) {
     throw new Error("Production Package is not ready.");
   }
 
-  const tx = transporter();
   const adminTo = env("WEBFACTORY_ORDER_EMAIL");
-  const fromUser = env("WEBFACTORY_GMAIL_USER");
   const baseUrl = publicBaseUrl();
   const packageLink =
     `${baseUrl}/.netlify/functions/download-order-package?orderId=${encodeURIComponent(order.orderId)}&token=${encodeURIComponent(order.package.downloadToken)}`;
@@ -194,8 +174,8 @@ export async function sendOrderEmails(order) {
       }
     }
 
-    const adminInfo = await tx.sendMail({
-      from: `WebFactory PR <${fromUser}>`,
+    const adminInfo = await sendEmail({
+      category: "team",
       to: adminTo,
       replyTo: current.client?.email || undefined,
       subject: `WebFactory — Nuevo proyecto pagado #${current.orderId} — ${current.business?.name || "Cliente"}`,
@@ -229,8 +209,8 @@ export async function sendOrderEmails(order) {
     const privateQuery = `orderId=${encodeURIComponent(current.orderId)}&token=${encodeURIComponent(setupAccess.token)}`;
     const paymentSetupLink = `${baseUrl}/payment-setup?${privateQuery}`;
     const portalActivationLink = `${baseUrl}/client-admin?${privateQuery}`;
-    const customerInfo = await tx.sendMail({
-      from: `WebFactory PR <${fromUser}>`,
+    const customerInfo = await sendEmail({
+      category: "billing",
       to: current.client.email,
       subject: `WebFactory PR — Pago confirmado — ${current.orderId}`,
       text: customerText(current, paymentSetupLink, portalActivationLink),

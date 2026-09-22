@@ -9,10 +9,13 @@ export default async () => {
     stripePrice: has("STRIPE_PRICE_WEBFACTORY_PREMIUM"),
     stripeWebhook: has("STRIPE_WEBHOOK_SECRET"),
     orderEmail: has("WEBFACTORY_ORDER_EMAIL"),
-    gmailUser: has("WEBFACTORY_GMAIL_USER"),
-    gmailAppPassword: has("WEBFACTORY_GMAIL_APP_PASSWORD"),
+    mailjetApiKey: has("MAILJET_API_KEY"),
+    mailjetSecretKey: has("MAILJET_SECRET_KEY"),
+    gmailFallback: has("WEBFACTORY_GMAIL_USER") && has("WEBFACTORY_GMAIL_APP_PASSWORD"),
   };
-  const ready = Object.values(checks).every(Boolean) &&
+  const ready = checks.legacyCheckoutEnabled && checks.stripeSecret && checks.stripePrice &&
+    checks.stripeWebhook && checks.orderEmail &&
+    ((checks.mailjetApiKey && checks.mailjetSecretKey) || checks.gmailFallback) &&
     globalThis.Netlify?.context?.deploy?.context === "production";
 
   return Response.json({
