@@ -116,7 +116,7 @@ export default async (req) => {
       const logoAssetKey = await copyDraftAsset(order.business.logoAssetKey, siteId, "logo");
       const heroAssetKey = await copyDraftAsset(order.business.heroAssetKey, siteId, "hero");
       const galleryAssetKeys = [];
-      for (const [index, asset] of (order.business.galleryAssets || []).entries()) {
+      for (const [index, asset] of (order.business.galleryAssets || []).slice(0,100).entries()) {
         const key = await copyDraftAsset(asset.assetKey, siteId, `gallery-${index + 1}`);
         if (key) galleryAssetKeys.push(key);
       }
