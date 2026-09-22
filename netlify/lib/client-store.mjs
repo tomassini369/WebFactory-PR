@@ -167,6 +167,7 @@ export async function ensureClientSiteForOrder(order) {
     catalog,
     employees,
     hours: order.hours || {},
+    settings: site.settings || { locale: "es", timezone: "America/Puerto_Rico", currency: "usd" },
     paymentRules: {
       ...(order.payments || {}),
       stripeConnectedAccountId: order.stripeConnectedAccountId || "",
@@ -205,6 +206,8 @@ export function publicClientSite(site) {
       email: site.business?.email || "",
       mapsUrl: site.business?.mapsUrl || "",
       instagram: site.business?.instagram || "",
+      facebook: site.business?.facebook || "",
+      x: site.business?.x || "",
       logoUrl: site.business?.logoAssetKey
         ? `/.netlify/functions/client-asset?siteId=${encodeURIComponent(site.siteId)}&key=${encodeURIComponent(site.business.logoAssetKey)}`
         : "",
