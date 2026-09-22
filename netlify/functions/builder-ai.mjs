@@ -98,11 +98,11 @@ export default async (req) => {
     const apiKey = env("ANTHROPIC_API_KEY");
     const baseUrl = env("ANTHROPIC_BASE_URL");
     if (!apiKey || !baseUrl) {
-      return Response.json({ok:false,message:"WebFactory AI is not active on this deployment yet."},{status:503});
+      return Response.json({ok:false,message:"Factory AI is not active on this deployment yet."},{status:503});
     }
 
     const current = body?.current && typeof body.current === "object" ? body.current : {};
-    const system = `You are WebFactory AI, a website configuration assistant inside the existing WebFactory PR multi-tenant SaaS.
+    const system = `You are Factory AI, a website configuration assistant inside the existing WebFactory PR multi-tenant SaaS.
 
 CRITICAL ARCHITECTURE RULES:
 - NEVER create or suggest a new Netlify site, deployment, repository, branch, domain, standalone app, or external customer project.
@@ -179,12 +179,12 @@ Use empty arrays when the prompt does not justify catalog or team generation.`;
       }),
     });
     const result = await response.json();
-    if (!response.ok) throw new Error(result?.error?.message || "Claude could not generate the website configuration.");
+    if (!response.ok) throw new Error(result?.error?.message || "Factory AI could not generate the website configuration.");
     const raw = Array.isArray(result?.content) ? result.content.filter((part)=>part?.type==="text").map((part)=>part.text).join("\n") : "";
     const proposal = sanitize(extractJson(raw));
     return Response.json({ok:true,proposal,model:result?.model || env("WEBFACTORY_AI_MODEL") || "claude-sonnet-5"},{headers:{"Cache-Control":"no-store"}});
   } catch (error) {
-    return Response.json({ok:false,message:error?.message || "WebFactory AI could not complete the request."},{status:500,headers:{"Cache-Control":"no-store"}});
+    return Response.json({ok:false,message:error?.message || "Factory AI could not complete the request."},{status:500,headers:{"Cache-Control":"no-store"}});
   }
 };
 
