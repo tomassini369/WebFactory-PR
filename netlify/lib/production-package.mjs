@@ -258,7 +258,7 @@ function buildPrompt(order) {
     "- Do not invent an address, phone number, price, certification, review, service, employee, history, guarantee, statistic, or business claim.",
     "- Preserve the selected branding, colors, visual style, catalog, employees, schedules, booking settings, payment selections, and supplied files.",
     template.preserveTemplateStructure
-      ? `- REQUIRED DESIGN BASE: Reproduce the structure, responsive layout, navigation, component arrangement, visual hierarchy, catalog experience, cart, booking flow, and compatible interactions of the WebFactory demo \"${template.templateLabel}\" (${template.templateRoute}). Replace only the fictional branding, colors, content, images, catalog, employees, schedules, payments, and business configuration with the customer's supplied information.`
+      ? `- REQUIRED DESIGN BASE: Reproduce the structure, responsive layout, navigation, component arrangement, visual hierarchy, catalog experience, cart, booking flow, and compatible interactions of the WebFactory Template \"${template.templateLabel}\" (${template.templateRoute}). Replace only the fictional branding, colors, content, images, catalog, employees, schedules, payments, and business configuration with the customer's supplied information.`
       : "- DESIGN MODE: Create a custom WebFactory design from the customer's selected style, colors, content, and enabled features. Do not force a Template.",
     template.preserveTemplateStructure
       ? "- Do not substitute a different template, generic layout, or unrelated design for the selected Template base."
