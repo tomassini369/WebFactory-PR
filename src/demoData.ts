@@ -411,6 +411,167 @@ export const demoConfigs: DemoConfig[] = [
     aboutTitle: 'Menús, capacidad y fechas en una sola experiencia.',
     aboutText: 'Mesa Boricua permite presentar paquetes por cantidad de invitados y coordinar degustaciones o eventos desde el mismo sistema.',
     trust: ['Guest-count packages', 'Event deposits', 'Tasting appointments']
+  },
+  {
+    slug: 'pulse-dj-services', category: 'DJ Services', name: 'Pulse DJ Services', shortName: 'PULSE DJ',
+    kicker: 'MUSIC · EVENTS · ENERGY', headline: 'Your event. Your crowd. Your soundtrack.',
+    description: 'DJ profesional para bodas, cumpleaños y eventos corporativos con paquetes, consulta previa y depósitos.',
+    heroImage: pexels(1540406), gallery: [pexels(2608517), pexels(1190297), pexels(167636)],
+    location: 'Puerto Rico', phone: '(787) 555-0210', hours: 'Events · By reservation',
+    accent: '#7C3AED', accent2: '#C4B5FD', dark: '#120B24', cream: '#FAF8FF',
+    features: ['Event booking', 'DJ packages', 'Deposits', 'Consultation'],
+    items: [
+      {id:'dj-1',type:'service',name:'DJ Essential',price:450,description:'Servicio de DJ para eventos pequeños con setup básico de audio.',image:pexels(1540406),appointment:true,duration:240,deposit:100,employees:['Marco'],badge:'Popular'},
+      {id:'dj-2',type:'service',name:'DJ + Lighting',price:850,description:'Paquete con DJ, audio y luces para eventos medianos.',image:pexels(2608517),appointment:true,duration:300,deposit:200,employees:['Marco','Javi'],badge:'Featured'},
+      {id:'dj-3',type:'service',name:'Wedding Experience',price:1500,description:'Cobertura extendida para bodas con coordinación musical previa.',image:pexels(1190297),appointment:true,duration:420,deposit:350,employees:['Marco','Javi']},
+      {id:'dj-4',type:'service',name:'Consulta musical',price:0,displayPrice:'Consulta gratis',description:'Reunión para definir estilo musical, tiempos y detalles del evento.',image:pexels(167636),appointment:true,duration:30,employees:['Marco'],purchasable:false}
+    ],
+    employees: [
+      {id:'dj-marco',name:'Marco Rivera',role:'Lead DJ',initials:'MR',services:['DJ Essential','DJ + Lighting','Wedding Experience','Consulta musical']},
+      {id:'dj-javi',name:'Javi Soto',role:'Event Production',initials:'JS',services:['DJ + Lighting','Wedding Experience']}
+    ],
+    bookingLabel: 'Consultar fecha', cartEnabled: false, bookingEnabled: true,
+    aboutTitle: 'Paquetes de entretenimiento listos para reservar.',
+    aboutText: 'Pulse muestra cómo un DJ puede organizar paquetes, disponibilidad y depósitos sin manejar todo por mensajes.',
+    trust: ['Date booking', 'Event deposits', 'Package options']
+  },
+  {
+    slug: 'solid-build-construction', category: 'Construction', name: 'Solid Build Construction', shortName: 'SOLID BUILD',
+    kicker: 'BUILD · REMODEL · IMPROVE', headline: 'Built right from the first estimate.',
+    description: 'Servicios de construcción y remodelación con consultas, visitas técnicas, estimados y planificación de proyectos.',
+    heroImage: pexels(2219024), gallery: [pexels(1216589), pexels(159306), pexels(209266)],
+    location: 'Puerto Rico', phone: '(787) 555-0211', hours: 'Lun–Sáb · 7 AM–5 PM',
+    accent: '#E67E22', accent2: '#F7C98B', dark: '#2A2118', cream: '#FFF8F1',
+    features: ['Estimate visits', 'Project consultation', 'Team assignment', 'Lead form'],
+    items: [
+      {id:'build-1',type:'service',name:'Visita para estimado',price:0,displayPrice:'Cotización',description:'Visita inicial para evaluar alcance, medidas y necesidades del proyecto.',image:pexels(1216589),appointment:true,duration:60,employees:['Rafael'],purchasable:false,badge:'Start here'},
+      {id:'build-2',type:'service',name:'Remodelación interior',price:3500,displayPrice:'Desde $3,500',description:'Servicio de remodelación de interiores sujeto a evaluación.',image:pexels(209266),appointment:true,duration:120,deposit:250,employees:['Rafael','Luis']},
+      {id:'build-3',type:'service',name:'Construcción liviana',price:2500,displayPrice:'Desde $2,500',description:'Trabajos de construcción liviana y mejoras estructurales menores.',image:pexels(2219024),appointment:true,duration:120,deposit:250,employees:['Luis']},
+      {id:'build-4',type:'service',name:'Consulta de proyecto',price:95,description:'Sesión para revisar ideas, prioridades y próximos pasos.',image:pexels(159306),appointment:true,duration:45,employees:['Rafael']}
+    ],
+    employees: [
+      {id:'build-rafael',name:'Rafael Ortiz',role:'Project Lead',initials:'RO',services:['Visita para estimado','Remodelación interior','Consulta de proyecto']},
+      {id:'build-luis',name:'Luis Vega',role:'Construction Specialist',initials:'LV',services:['Remodelación interior','Construcción liviana']}
+    ],
+    bookingLabel: 'Solicitar estimado', cartEnabled: false, bookingEnabled: true,
+    aboutTitle: 'Del primer contacto al proyecto organizado.',
+    aboutText: 'Solid Build permite convertir solicitudes de construcción en visitas técnicas y consultas estructuradas.',
+    trust: ['Estimate visits', 'Project intake', 'Team schedules']
+  },
+  {
+    slug: 'fresh-home-cleaning', category: 'House Cleaning', name: 'Fresh Home Cleaning', shortName: 'FRESH HOME',
+    kicker: 'CLEAN · RESET · RELAX', headline: 'A cleaner home, without the back-and-forth.',
+    description: 'Servicios de limpieza residencial con paquetes, frecuencia, disponibilidad y personal asignado.',
+    heroImage: pexels(4239031), gallery: [pexels(4107120), pexels(4099264), pexels(6197122)],
+    location: 'Puerto Rico', phone: '(787) 555-0212', hours: 'Lun–Sáb · 8 AM–6 PM',
+    accent: '#38BDF8', accent2: '#BAE6FD', dark: '#113247', cream: '#F3FBFF',
+    features: ['Cleaning booking', 'Recurring visits', 'Team assignment', 'Deposits'],
+    items: [
+      {id:'clean-1',type:'service',name:'Limpieza básica',price:95,description:'Limpieza general de áreas principales del hogar.',image:pexels(4107120),appointment:true,duration:120,deposit:20,employees:['Ana','Mia'],badge:'Popular'},
+      {id:'clean-2',type:'service',name:'Deep Cleaning',price:185,description:'Limpieza profunda con atención adicional a cocina, baños y detalles.',image:pexels(4239031),appointment:true,duration:240,deposit:40,employees:['Ana'],badge:'Deep clean'},
+      {id:'clean-3',type:'service',name:'Move In / Move Out',price:225,description:'Limpieza completa para propiedades vacías antes o después de mudanza.',image:pexels(6197122),appointment:true,duration:300,deposit:50,employees:['Ana','Mia']},
+      {id:'clean-4',type:'service',name:'Consulta de frecuencia',price:0,displayPrice:'Gratis',description:'Consulta para organizar mantenimiento semanal o quincenal.',image:pexels(4099264),appointment:true,duration:20,employees:['Mia'],purchasable:false}
+    ],
+    employees: [
+      {id:'clean-ana',name:'Ana López',role:'Cleaning Lead',initials:'AL',services:['Limpieza básica','Deep Cleaning','Move In / Move Out']},
+      {id:'clean-mia',name:'Mia Torres',role:'Home Care Specialist',initials:'MT',services:['Limpieza básica','Move In / Move Out','Consulta de frecuencia']}
+    ],
+    bookingLabel: 'Reservar limpieza', cartEnabled: false, bookingEnabled: true,
+    aboutTitle: 'Limpieza residencial con horarios claros.',
+    aboutText: 'Fresh Home organiza servicios por duración, equipo y frecuencia para facilitar reservas repetidas.',
+    trust: ['Recurring service', 'Team assignment', 'Easy booking']
+  },
+  {
+    slug: 'sealpro-roofing', category: 'Roof Sealing', name: 'SealPro Roofing', shortName: 'SEALPRO',
+    kicker: 'ROOF SEALING · REPAIR · PROTECTION', headline: 'Protect your roof before the next storm.',
+    description: 'Sellado de techos, inspecciones, mantenimiento y reparaciones con visitas para estimado y citas técnicas.',
+    heroImage: pexels(439391), gallery: [pexels(259588), pexels(280229), pexels(2219024)],
+    location: 'Puerto Rico', phone: '(787) 555-0213', hours: 'Lun–Sáb · 7 AM–5 PM',
+    accent: '#0EA5E9', accent2: '#7DD3FC', dark: '#102A3A', cream: '#F4FBFF',
+    features: ['Roof inspection', 'Estimate visit', 'Repair booking', 'Lead form'],
+    items: [
+      {id:'roof-1',type:'service',name:'Inspección de techo',price:75,description:'Evaluación visual para identificar filtraciones, grietas y áreas críticas.',image:pexels(439391),appointment:true,duration:60,employees:['Joel'],badge:'Start here'},
+      {id:'roof-2',type:'service',name:'Sellado preventivo',price:850,displayPrice:'Desde $850',description:'Servicio de sellado preventivo sujeto a medida y condición del techo.',image:pexels(259588),appointment:true,duration:120,deposit:150,employees:['Joel','Eric']},
+      {id:'roof-3',type:'service',name:'Reparación de filtración',price:275,displayPrice:'Desde $275',description:'Reparación localizada de filtraciones y puntos vulnerables.',image:pexels(280229),appointment:true,duration:90,deposit:75,employees:['Eric']},
+      {id:'roof-4',type:'service',name:'Visita para cotización',price:0,displayPrice:'Cotización gratis',description:'Visita para medir área y preparar un estimado.',image:pexels(2219024),appointment:true,duration:45,employees:['Joel'],purchasable:false}
+    ],
+    employees: [
+      {id:'roof-joel',name:'Joel Santiago',role:'Roofing Specialist',initials:'JS',services:['Inspección de techo','Sellado preventivo','Visita para cotización']},
+      {id:'roof-eric',name:'Eric Ramos',role:'Repair Technician',initials:'ER',services:['Sellado preventivo','Reparación de filtración']}
+    ],
+    bookingLabel: 'Solicitar inspección', cartEnabled: false, bookingEnabled: true,
+    aboutTitle: 'Inspecciones y estimados sin complicaciones.',
+    aboutText: 'SealPro convierte solicitudes de sellado y filtraciones en visitas técnicas organizadas.',
+    trust: ['Inspection booking', 'Estimate visits', 'Repair scheduling']
+  },
+  {
+    slug: 'agua-clara-plumbing', category: 'Plumbing', name: 'Agua Clara Plumbing', shortName: 'AGUA CLARA',
+    kicker: 'PLUMBING · REPAIRS · INSTALLATION', headline: 'Leaks fixed. Water flowing.',
+    description: 'Servicios de plomería para reparaciones, instalaciones, destapes y diagnósticos con técnicos asignados.',
+    heroImage: pexels(8486972), gallery: [pexels(8005397), pexels(8486974), pexels(5691622)],
+    location: 'Puerto Rico', phone: '(787) 555-0214', hours: 'Lun–Sáb · 7 AM–6 PM',
+    accent: '#0284C7', accent2: '#93C5FD', dark: '#0C2C42', cream: '#F3FAFF',
+    features: ['Service booking', 'Emergency requests', 'Technicians', 'Quote visits'],
+    items: [
+      {id:'plumb-1',type:'service',name:'Diagnóstico de plomería',price:85,description:'Evaluación inicial para identificar la causa del problema.',image:pexels(8486972),appointment:true,duration:60,employees:['Miguel','Leo'],badge:'Start here'},
+      {id:'plumb-2',type:'service',name:'Reparación de fuga',price:140,displayPrice:'Desde $140',description:'Reparación de fugas visibles o accesibles.',image:pexels(8005397),appointment:true,duration:90,deposit:30,employees:['Miguel']},
+      {id:'plumb-3',type:'service',name:'Destape de tubería',price:125,description:'Servicio de destape para drenajes y tuberías residenciales.',image:pexels(5691622),appointment:true,duration:90,employees:['Leo']},
+      {id:'plumb-4',type:'service',name:'Instalación de fixture',price:165,displayPrice:'Desde $165',description:'Instalación de grifería, lavamanos u otros fixtures.',image:pexels(8486974),appointment:true,duration:120,deposit:35,employees:['Miguel','Leo']}
+    ],
+    employees: [
+      {id:'plumb-miguel',name:'Miguel Cruz',role:'Licensed Plumber',initials:'MC',services:['Diagnóstico de plomería','Reparación de fuga','Instalación de fixture']},
+      {id:'plumb-leo',name:'Leo Rivera',role:'Plumbing Technician',initials:'LR',services:['Diagnóstico de plomería','Destape de tubería','Instalación de fixture']}
+    ],
+    bookingLabel: 'Reservar plomero', cartEnabled: false, bookingEnabled: true,
+    aboutTitle: 'Servicios de plomería organizados por problema.',
+    aboutText: 'Agua Clara ayuda al cliente a seleccionar el tipo de servicio y coordinar la visita del técnico adecuado.',
+    trust: ['Technician assignment', 'Repair booking', 'Quote-ready']
+  },
+  {
+    slug: 'volt-pro-electric', category: 'Electrician', name: 'Volt Pro Electric', shortName: 'VOLT PRO',
+    kicker: 'ELECTRICAL · INSTALLATION · TROUBLESHOOTING', headline: 'Safe power. Clear scheduling.',
+    description: 'Servicios eléctricos para diagnóstico, instalaciones, paneles y reparaciones con técnicos y citas.',
+    heroImage: pexels(257736), gallery: [pexels(442150), pexels(8005397), pexels(5691630)],
+    location: 'Puerto Rico', phone: '(787) 555-0215', hours: 'Lun–Sáb · 7 AM–6 PM',
+    accent: '#FACC15', accent2: '#FDE68A', dark: '#1F2937', cream: '#FFFDF2',
+    features: ['Electrical booking', 'Technicians', 'Estimate visits', 'Contact form'],
+    items: [
+      {id:'elec-1',type:'service',name:'Diagnóstico eléctrico',price:95,description:'Evaluación de fallas, breakers, tomas y circuitos.',image:pexels(257736),appointment:true,duration:60,employees:['Iván','Raúl'],badge:'Start here'},
+      {id:'elec-2',type:'service',name:'Instalación de lámpara o abanico',price:145,displayPrice:'Desde $145',description:'Instalación de fixture eléctrico residencial.',image:pexels(442150),appointment:true,duration:90,deposit:30,employees:['Iván']},
+      {id:'elec-3',type:'service',name:'Reparación de circuito',price:175,displayPrice:'Desde $175',description:'Diagnóstico y reparación de problemas en circuitos existentes.',image:pexels(5691630),appointment:true,duration:120,deposit:40,employees:['Raúl']},
+      {id:'elec-4',type:'service',name:'Visita para panel / proyecto',price:0,displayPrice:'Cotización',description:'Evaluación para trabajos mayores o paneles.',image:pexels(8005397),appointment:true,duration:45,employees:['Iván'],purchasable:false}
+    ],
+    employees: [
+      {id:'elec-ivan',name:'Iván Morales',role:'Electrician',initials:'IM',services:['Diagnóstico eléctrico','Instalación de lámpara o abanico','Visita para panel / proyecto']},
+      {id:'elec-raul',name:'Raúl Pérez',role:'Electrical Technician',initials:'RP',services:['Diagnóstico eléctrico','Reparación de circuito']}
+    ],
+    bookingLabel: 'Reservar electricista', cartEnabled: false, bookingEnabled: true,
+    aboutTitle: 'Servicios eléctricos con visitas programadas.',
+    aboutText: 'Volt Pro organiza diagnósticos y proyectos por técnico, duración y tipo de trabajo.',
+    trust: ['Technician schedules', 'Estimate visits', 'Service booking']
+  },
+  {
+    slug: 'precision-auto-body', category: 'Auto Body', name: 'Precision Auto Body', shortName: 'PRECISION',
+    kicker: 'BODYWORK · PAINT · COLLISION', headline: 'From damage to clean lines again.',
+    description: 'Hojalatería y pintura con inspecciones, estimados, reparación de paneles y citas para evaluación.',
+    heroImage: pexels(3806288), gallery: [pexels(6872172), pexels(4489732), pexels(8985454)],
+    location: 'Puerto Rico', phone: '(787) 555-0216', hours: 'Lun–Sáb · 8 AM–5 PM',
+    accent: '#EF4444', accent2: '#FCA5A5', dark: '#171717', cream: '#FFF5F5',
+    features: ['Damage inspection', 'Estimate booking', 'Body repair', 'Paint services'],
+    items: [
+      {id:'body-1',type:'service',name:'Inspección de daños',price:0,displayPrice:'Evaluación',description:'Evaluación inicial de golpes, paneles y pintura.',image:pexels(3806288),appointment:true,duration:45,employees:['Tony'],purchasable:false,badge:'Start here'},
+      {id:'body-2',type:'service',name:'Reparación de panel',price:350,displayPrice:'Desde $350',description:'Reparación de golpes y deformaciones en paneles.',image:pexels(6872172),appointment:true,duration:120,deposit:75,employees:['Tony','Luis']},
+      {id:'body-3',type:'service',name:'Pintura parcial',price:450,displayPrice:'Desde $450',description:'Preparación y pintura localizada de paneles.',image:pexels(4489732),appointment:true,duration:120,deposit:100,employees:['Luis']},
+      {id:'body-4',type:'service',name:'Cotización de colisión',price:0,displayPrice:'Cotización',description:'Evaluación para reparación de daños por choque.',image:pexels(8985454),appointment:true,duration:60,employees:['Tony'],purchasable:false}
+    ],
+    employees: [
+      {id:'body-tony',name:'Tony Rivera',role:'Body Repair Specialist',initials:'TR',services:['Inspección de daños','Reparación de panel','Cotización de colisión']},
+      {id:'body-luis',name:'Luis Cruz',role:'Paint Specialist',initials:'LC',services:['Reparación de panel','Pintura parcial']}
+    ],
+    bookingLabel: 'Solicitar evaluación', cartEnabled: false, bookingEnabled: true,
+    aboutTitle: 'Evaluación visual antes de comenzar la reparación.',
+    aboutText: 'Precision permite organizar inspecciones, estimados y servicios de hojalatería en un flujo claro.',
+    trust: ['Damage inspection', 'Repair estimates', 'Paint scheduling']
   }
 ]
 
