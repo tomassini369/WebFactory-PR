@@ -578,4 +578,26 @@ export const demoConfigs: DemoConfig[] = [
   }
 ]
 
+
+export type TemplateGroup = {
+  id: string
+  nameEs: string
+  nameEn: string
+  categories: string[]
+}
+
+export const templateGroups: TemplateGroup[] = [
+  {id:'food-hospitality',nameEs:'Comida y Hospitalidad',nameEn:'Food & Hospitality',categories:['Restaurant','Catering','Bartending']},
+  {id:'beauty-wellness',nameEs:'Belleza y Bienestar',nameEn:'Beauty & Wellness',categories:['Barber','Beauty','Cosmetology','Wellness']},
+  {id:'automotive',nameEs:'Automotriz',nameEn:'Automotive',categories:['Car Wash','Auto Repair','Auto Body']},
+  {id:'home-property',nameEs:'Hogar y Propiedad',nameEn:'Home & Property Services',categories:['Landscaping','Construction','House Cleaning','Roof Sealing','Plumbing','Electrician']},
+  {id:'events-entertainment',nameEs:'Eventos y Entretenimiento',nameEn:'Events & Entertainment',categories:['Music Artist','DJ Services']},
+  {id:'professional',nameEs:'Servicios Profesionales',nameEn:'Professional Services',categories:['Professional Services','Real Estate']},
+  {id:'retail-creative',nameEs:'Retail y Creativo',nameEn:'Retail & Creative',categories:['Retail','Other']},
+  {id:'care',nameEs:'Servicios de Cuido',nameEn:'Care Services',categories:['Care Services']},
+]
+
+export const templateGroupForCategory = (category: string) =>
+  templateGroups.find((group) => group.categories.includes(category))
+
 export const demoBySlug = (slug: string) => demoConfigs.find((demo) => demo.slug === slug)
