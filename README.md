@@ -98,3 +98,5 @@ Additional production secrets/configuration:
 ## Production runtime readiness
 
 Subscription readiness is evaluated server-side and requires the Stripe key, both recurring Price IDs, the signed webhook secret and `WEBFACTORY_SUBSCRIPTION_ENABLED=true`. The legacy checkout has a separate readiness endpoint and does not control the public Builder.
+
+<!-- deploy-trigger: gallery-update-2026-09-22 -->
