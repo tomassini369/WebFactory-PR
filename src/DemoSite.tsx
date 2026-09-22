@@ -207,8 +207,8 @@ function DemoSite({ slug }: { slug: string }) {
         </nav>
         <div className="demo-header-actions">
           <div className="demo-languages" role="group" aria-label={ui.language}>
-            <button className={language === 'es' ? 'active' : ''} onClick={() => setLanguage('es')} aria-pressed={language === 'es'}>ES</button>
             <button className={language === 'en' ? 'active' : ''} onClick={() => setLanguage('en')} aria-pressed={language === 'en'}>EN</button>
+            <button className={language === 'es' ? 'active' : ''} onClick={() => setLanguage('es')} aria-pressed={language === 'es'}>ES</button>
           </div>
           {config.bookingEnabled && <button className="demo-outline" onClick={() => startBooking()}>{config.bookingLabel}</button>}
           {config.cartEnabled && (
