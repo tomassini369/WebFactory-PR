@@ -388,7 +388,7 @@ function Preview({state,device,lang}:{state:BuilderState;device:Device;lang:Lang
           </section>
         )}
 
-        {(state.business.gallery||[]).length>0&&<section className="wf-preview-gallery">{(state.business.gallery||[]).slice(0,4).map((image,index)=><img key={index} src={image} alt="" />)}</section>}
+        {(state.business.gallery||[]).length>0&&<section className="wf-preview-gallery">{(state.business.gallery||[]).map((image,index)=><img key={index} src={image} alt="" />)}</section>}
 
         {state.team.length > 0 && (
           <section className="wf-preview-team">
