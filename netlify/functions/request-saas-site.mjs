@@ -159,7 +159,7 @@ export default async (req) => {
           stripeCapabilityStatus: "not_started",
         },
         googleCalendar: { connected: false, calendarEmail: "", connectedAt: "", employeeCalendars: {} },
-        settings: { locale: payload.locale === "en" ? "en" : "es", timezone: "America/Puerto_Rico", currency: "usd" },
+        settings: { locale: payload.locale === "es" ? "es" : "en", timezone: "America/Puerto_Rico", currency: "usd" },
         servicePlan: pendingSubscriptionPlan(),
       });
     }
