@@ -18,6 +18,23 @@ export const clientCommerceStore = () => scopedStore("webfactory-client-commerce
 export const clientEventStore = () => scopedStore("webfactory-client-events");
 export const clientOAuthStore = () => scopedStore("webfactory-client-oauth");
 
+export function normalizeSiteDesign(design = {}) {
+  const legacyTemplateMode = design.mode === "demo_base";
+  const templateSlug = cleanText(design.templateSlug, 80);
+  return {
+    ...design,
+    mode: legacyTemplateMode ? "template_base" : (design.mode || (templateSlug ? "template_base" : "custom")),
+    templateSlug,
+    templateCategory: cleanText(design.templateCategory, 180),
+    templateName: cleanText(design.templateName, 220),
+    templateRoute: templateSlug
+      ? cleanText(design.templateRoute, 500).replace(/^\/demos\//, "/templates/") || `/templates/${templateSlug}`
+      : "",
+    preserveTemplateStructure: Boolean(design.preserveTemplateStructure ?? design.preserveDemoStructure ?? templateSlug),
+    preserveDemoStructure: undefined,
+  };
+}
+
 export function normalizeEmail(value) {
   return cleanText(value, 320).toLowerCase();
 }
@@ -43,7 +60,8 @@ export function siteKey(siteId) {
 
 export async function getClientSite(siteId) {
   if (!siteId) return null;
-  return clientSiteStore().get(siteKey(siteId), { type: "json" });
+  const site = await clientSiteStore().get(siteKey(siteId), { type: "json" });
+  return site ? {...site, design: normalizeSiteDesign(site.design || {})} : null;
 }
 
 export async function getClientSiteBySlug(slug) {
@@ -162,7 +180,7 @@ export async function ensureClientSiteForOrder(order) {
     revision: 1,
     members: [{ email: ownerEmail, role: "owner" }],
     business,
-    design: { ...(order.design || {}) },
+    design: normalizeSiteDesign(order.design || {}),
     features: { ...(order.features || {}) },
     catalog,
     employees,
@@ -218,7 +236,7 @@ export function publicClientSite(site) {
         ? site.business.galleryAssetKeys.map((key) => `/.netlify/functions/client-asset?siteId=${encodeURIComponent(site.siteId)}&key=${encodeURIComponent(key)}`)
         : [],
     },
-    design: site.design,
+    design: normalizeSiteDesign(site.design || {}),
     features: site.features,
     catalog: (site.catalog || []).filter((item) => item.active !== false).map((item) => ({
       id: item.id,
