@@ -36,28 +36,32 @@ const copy={
           'If a business chooses to connect Google Calendar, WebFactory uses the authorization granted by that business to check availability and support creation, updating, cancellation, or rescheduling of booking-related calendar events.',
           'Google authorization tokens are stored in encrypted form by the WebFactory backend. Users can stop using the integration by disconnecting access through their Google account and contacting WebFactory if additional removal assistance is needed.'
         ]],
-        ['6. Service providers and integrations',[
+        ['6. AI-assisted Builder',[
+          'If you use WebFactory AI, the business description, requested changes, and limited current Builder content needed to perform the request may be sent through Netlify AI Gateway to Anthropic Claude for inference. WebFactory does not give Claude access to payment credentials, secrets, deployments, repositories, webhooks, or authentication settings.',
+          'AI output is returned as structured configuration and is validated before it can be applied to the Builder. Netlify states that AI Gateway does not store prompts or model outputs. Users should avoid including unnecessary sensitive personal information in AI prompts.'
+        ]],
+        ['7. Service providers and integrations',[
           'WebFactory relies on service providers to operate the platform, including Netlify for hosting, serverless functions, identity, and storage; Stripe for billing, connected-account commerce, and payment processing; Google for Calendar integration; and email infrastructure for transactional messages.',
           'These providers process information under their own terms and privacy policies. WebFactory shares only information reasonably necessary to provide the requested integration or service.'
         ]],
-        ['7. Data storage, retention, and security',[
+        ['8. Data storage, retention, and security',[
           'WebFactory uses access controls, server-side validation, restricted administrative access, encrypted Google OAuth tokens, secure payment verification, and other technical safeguards designed to protect platform information.',
           'Information is retained while needed to operate an active account or website and for reasonable periods afterward when necessary for security, dispute handling, fraud prevention, backup recovery, accounting, or legal obligations. No Internet service can guarantee absolute security.'
         ]],
-        ['8. Your choices and requests',[
+        ['9. Your choices and requests',[
           'Portal users can edit much of their business information directly. You may also contact WebFactory to request access, correction, deletion, or other assistance concerning personal information associated with your WebFactory account, subject to security verification and applicable retention obligations.',
           'Businesses are responsible for responding to privacy requests from their own customers when the request concerns the business’s commercial relationship, products, services, or records.'
         ]],
-        ['9. Children',[
+        ['10. Children',[
           'WebFactory business accounts and administrative portals are intended for adults and authorized business users. WebFactory is not designed as a service directed to children.'
         ]],
-        ['10. International and third-party processing',[
+        ['11. International and third-party processing',[
           'WebFactory and its service providers may process or store information in locations where their infrastructure operates. By using integrations such as Stripe, Netlify, or Google, information may be handled according to those providers’ infrastructure and applicable terms.'
         ]],
-        ['11. Changes to this policy',[
+        ['12. Changes to this policy',[
           'WebFactory may update this Privacy Policy as the platform, integrations, or legal requirements change. Material revisions will be reflected by an updated effective or revision date on this page.'
         ]],
-        ['12. Contact',[
+        ['13. Contact',[
           'Privacy questions or requests may be sent to WebFactoryPR@gmail.com.'
         ]]
       ]
@@ -104,32 +108,36 @@ const copy={
           'Booking availability can consider service duration, employee assignment, business hours, stored bookings, temporary holds, limits, and connected Google Calendar conflicts. Because external calendars, networks, customers, and staff can change, WebFactory does not guarantee that every displayed time will remain available until the booking is confirmed.',
           'The client business remains responsible for fulfilling, changing, canceling, and communicating about appointments with its customers.'
         ]],
-        ['10. Third-party services',[
+        ['10. AI-assisted creation',[
+          'WebFactory AI can use Anthropic Claude through Netlify AI Gateway to propose website configuration, bilingual copy, Template selection, layout, features, catalog content, and team-role content.',
+          'AI suggestions are drafts. The account owner is responsible for reviewing accuracy, pricing, claims, translations, rights, and legal compliance before applying or publishing AI-generated content. WebFactory AI is intentionally restricted from creating separate customer deployments or changing platform secrets, payment credentials, authentication, webhooks, repositories, or infrastructure.'
+        ]],
+        ['11. Third-party services',[
           'Stripe, Google, Netlify, ATH Móvil, email providers, social networks, Google Maps, and other linked services are operated by third parties. Their availability, approval requirements, fees, terms, and outages are outside WebFactory’s direct control.',
           'Use of a third-party integration is also subject to the provider’s own terms and policies.'
         ]],
-        ['11. Acceptable use',[
+        ['12. Acceptable use',[
           'You may not use WebFactory for unlawful activity, fraud, malware, credential theft, unauthorized access, intellectual-property infringement, deceptive commerce, prohibited payment activity, or conduct that materially disrupts the platform or harms other users.',
           'WebFactory may remove or restrict content or accounts when reasonably necessary to protect users, comply with legal obligations, enforce provider requirements, or protect platform integrity.'
         ]],
-        ['12. Service changes and availability',[
+        ['13. Service changes and availability',[
           'WebFactory may maintain, update, replace, add, or discontinue features as the platform evolves. We aim to provide reliable service but do not guarantee uninterrupted or error-free operation, continuous availability of third-party integrations, or that every feature will remain unchanged.'
         ]],
-        ['13. Disclaimers and limitation of liability',[
+        ['14. Disclaimers and limitation of liability',[
           'To the maximum extent permitted by applicable law, WebFactory is provided on an “as available” basis. WebFactory does not guarantee business revenue, sales, search ranking, appointment volume, third-party approval, or uninterrupted operation.',
           'To the maximum extent permitted by applicable law, WebFactory will not be liable for indirect, incidental, special, consequential, or lost-profit damages arising from use of the platform. Any non-waivable rights or remedies provided by applicable law remain unaffected.'
         ]],
-        ['14. Indemnity',[
+        ['15. Indemnity',[
           'To the extent permitted by law, a business using WebFactory is responsible for claims arising from its products, services, business content, customer promises, taxes, licenses, refunds, employment relationships, or unlawful use of the platform.'
         ]],
-        ['15. Termination',[
+        ['16. Termination',[
           'You may stop using WebFactory and request cancellation of an active subscription. WebFactory may terminate or suspend service for material violations, security risks, nonpayment, unlawful activity, or where continued operation is not reasonably possible.',
           'Sections that by their nature should survive termination—including payment obligations, ownership, disclaimers, and limitations—continue to apply.'
         ]],
-        ['16. Governing framework and disputes',[
+        ['17. Governing framework and disputes',[
           'These Terms are intended to operate under the laws applicable to WebFactory PR and its services in Puerto Rico and the United States, without limiting consumer rights that cannot lawfully be waived. Before filing a formal dispute, users are encouraged to contact WebFactory so the issue can be reviewed and, when possible, resolved directly.'
         ]],
-        ['17. Contact',[
+        ['18. Contact',[
           'Questions about these Terms may be sent to WebFactoryPR@gmail.com.'
         ]]
       ]
@@ -202,28 +210,32 @@ const copy={
           'Si un negocio conecta Google Calendar, WebFactory utiliza la autorización otorgada para consultar disponibilidad y apoyar la creación, actualización, cancelación o reprogramación de eventos relacionados con reservaciones.',
           'Los tokens de autorización de Google se almacenan cifrados en el backend de WebFactory. El usuario puede revocar el acceso desde su cuenta de Google y contactar a WebFactory si necesita asistencia adicional para remover la integración.'
         ]],
-        ['6. Proveedores e integraciones',[
+        ['6. Builder asistido por IA',[
+          'Si utilizas WebFactory AI, la descripción del negocio, los cambios solicitados y contenido limitado del Builder necesario para completar la solicitud pueden enviarse mediante Netlify AI Gateway a Anthropic Claude para inferencia. WebFactory no concede a Claude acceso a credenciales de pago, secretos, deployments, repositorios, webhooks ni configuraciones de autenticación.',
+          'La respuesta de IA regresa como configuración estructurada y se valida antes de poder aplicarse al Builder. Netlify indica que AI Gateway no almacena prompts ni respuestas del modelo. Los usuarios deben evitar incluir información personal sensible innecesaria en los prompts.'
+        ]],
+        ['7. Proveedores e integraciones',[
           'WebFactory utiliza proveedores para operar la plataforma, incluyendo Netlify para hosting, funciones, identidad y almacenamiento; Stripe para facturación, cuentas conectadas y procesamiento de pagos; Google para Calendar; e infraestructura de email para mensajes transaccionales.',
           'Estos proveedores procesan información conforme a sus propios términos y políticas. WebFactory comparte solamente la información razonablemente necesaria para ofrecer la integración o servicio solicitado.'
         ]],
-        ['7. Almacenamiento, retención y seguridad',[
+        ['8. Almacenamiento, retención y seguridad',[
           'WebFactory utiliza controles de acceso, validación en servidor, acceso administrativo restringido, tokens OAuth de Google cifrados, verificación segura de pagos y otras medidas técnicas diseñadas para proteger la información.',
           'La información se conserva mientras sea necesaria para operar una cuenta o website activo y durante periodos razonables posteriores cuando sea necesario para seguridad, disputas, prevención de fraude, recuperación, contabilidad u obligaciones legales. Ningún servicio de Internet puede garantizar seguridad absoluta.'
         ]],
-        ['8. Tus opciones y solicitudes',[
+        ['9. Tus opciones y solicitudes',[
           'Los usuarios del portal pueden editar gran parte de la información de su negocio directamente. También puedes contactar a WebFactory para solicitar acceso, corrección, eliminación u otra asistencia relacionada con información personal de tu cuenta, sujeto a verificación de seguridad y obligaciones aplicables de retención.',
           'Los negocios son responsables de responder solicitudes de privacidad de sus propios clientes cuando la solicitud se relaciona con la relación comercial, productos, servicios o registros del negocio.'
         ]],
-        ['9. Menores',[
+        ['10. Menores',[
           'Las cuentas comerciales y los portales administrativos de WebFactory están dirigidos a adultos y usuarios comerciales autorizados. WebFactory no está diseñado como un servicio dirigido a menores.'
         ]],
-        ['10. Procesamiento por terceros',[
+        ['11. Procesamiento por terceros',[
           'WebFactory y sus proveedores pueden procesar o almacenar información en las ubicaciones donde operen sus infraestructuras. Al utilizar integraciones como Stripe, Netlify o Google, la información puede manejarse según la infraestructura y términos aplicables de esos proveedores.'
         ]],
-        ['11. Cambios a esta política',[
+        ['12. Cambios a esta política',[
           'WebFactory puede actualizar esta Política de Privacidad cuando cambien la plataforma, las integraciones o los requisitos aplicables. Las revisiones materiales se reflejarán mediante una fecha de vigencia o actualización nueva.'
         ]],
-        ['12. Contacto',[
+        ['13. Contacto',[
           'Preguntas o solicitudes de privacidad pueden enviarse a WebFactoryPR@gmail.com.'
         ]]
       ]
@@ -270,32 +282,36 @@ const copy={
           'La disponibilidad puede considerar duración, empleado, horario, citas almacenadas, holds temporales, límites y conflictos de Google Calendar. Debido a que calendarios, redes, clientes y empleados pueden cambiar, WebFactory no garantiza que cada horario mostrado permanezca disponible hasta confirmarse.',
           'El negocio es responsable de cumplir, modificar, cancelar y comunicarse con sus clientes acerca de las citas.'
         ]],
-        ['10. Servicios de terceros',[
+        ['10. Creación asistida por IA',[
+          'WebFactory AI puede utilizar Anthropic Claude mediante Netlify AI Gateway para proponer configuración del website, contenido bilingüe, selección de Template, layout, funciones, catálogo y roles del equipo.',
+          'Las sugerencias de IA son borradores. El titular de la cuenta es responsable de revisar exactitud, precios, afirmaciones, traducciones, derechos y cumplimiento antes de aplicar o publicar contenido generado por IA. WebFactory AI está restringido intencionalmente para que no pueda crear deployments separados de clientes ni modificar secretos, credenciales de pago, autenticación, webhooks, repositorios o infraestructura.'
+        ]],
+        ['11. Servicios de terceros',[
           'Stripe, Google, Netlify, ATH Móvil, proveedores de email, redes sociales, Google Maps y otros servicios enlazados son operados por terceros. Su disponibilidad, aprobación, tarifas, términos y fallas están fuera del control directo de WebFactory.',
           'El uso de una integración también está sujeto a los términos y políticas del proveedor correspondiente.'
         ]],
-        ['11. Uso aceptable',[
+        ['12. Uso aceptable',[
           'No puedes usar WebFactory para actividad ilegal, fraude, malware, robo de credenciales, acceso no autorizado, infracción de propiedad intelectual, comercio engañoso, actividad de pago prohibida o conducta que interrumpa materialmente la plataforma o perjudique a otros usuarios.',
           'WebFactory puede remover o restringir contenido o cuentas cuando sea razonablemente necesario para proteger usuarios, cumplir obligaciones, requisitos de proveedores o la integridad de la plataforma.'
         ]],
-        ['12. Cambios y disponibilidad del servicio',[
+        ['13. Cambios y disponibilidad del servicio',[
           'WebFactory puede mantener, actualizar, reemplazar, añadir o discontinuar funciones mientras evoluciona la plataforma. Buscamos brindar un servicio confiable, pero no garantizamos operación ininterrumpida, ausencia de errores, disponibilidad continua de integraciones de terceros ni que toda función permanezca sin cambios.'
         ]],
-        ['13. Descargos y limitación de responsabilidad',[
+        ['14. Descargos y limitación de responsabilidad',[
           'Hasta el máximo permitido por la ley aplicable, WebFactory se ofrece “según disponibilidad”. WebFactory no garantiza ingresos, ventas, posicionamiento, volumen de reservaciones, aprobación por terceros ni operación ininterrumpida.',
           'Hasta el máximo permitido por la ley aplicable, WebFactory no será responsable por daños indirectos, incidentales, especiales, consecuentes o pérdida de ganancias derivados del uso de la plataforma. Los derechos o remedios que no puedan renunciarse legalmente no se afectan.'
         ]],
-        ['14. Responsabilidad del negocio',[
+        ['15. Responsabilidad del negocio',[
           'En la medida permitida por ley, el negocio que utiliza WebFactory es responsable de reclamaciones relacionadas con sus productos, servicios, contenido, promesas a clientes, impuestos, licencias, reembolsos, relaciones laborales o uso ilegal de la plataforma.'
         ]],
-        ['15. Terminación',[
+        ['16. Terminación',[
           'Puedes dejar de usar WebFactory y solicitar la cancelación de una suscripción activa. WebFactory puede suspender o terminar el servicio por violaciones materiales, riesgos de seguridad, falta de pago, actividad ilegal o cuando continuar el servicio no sea razonablemente posible.',
           'Las disposiciones que por su naturaleza deban continuar —incluyendo pagos, propiedad, descargos y limitaciones— permanecen aplicables.'
         ]],
-        ['16. Marco aplicable y disputas',[
+        ['17. Marco aplicable y disputas',[
           'Estos Términos están diseñados para operar bajo las leyes aplicables a WebFactory PR y sus servicios en Puerto Rico y Estados Unidos, sin limitar derechos del consumidor que legalmente no puedan renunciarse. Antes de iniciar una disputa formal, se recomienda contactar a WebFactory para evaluar y, cuando sea posible, resolver el asunto directamente.'
         ]],
-        ['17. Contacto',[
+        ['18. Contacto',[
           'Preguntas sobre estos Términos pueden enviarse a WebFactoryPR@gmail.com.'
         ]]
       ]
