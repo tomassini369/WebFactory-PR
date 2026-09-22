@@ -1,4 +1,4 @@
-# WebFactory PR V2
+# WebFactory PR v2.1.0
 
 Official WebFactory PR product and production website.
 
@@ -39,7 +39,7 @@ The Builder creates a hidden tenant and sends secure portal access. The owner st
 
 Client storefront data is loaded once per visit and refreshed when a visitor returns to a visible tab after at least one minute. Public tenant responses use revision ETags and short Netlify CDN caching, so administrative changes become available quickly without continuous 20-second polling or unnecessary Function invocations.
 
-## Current V2 stack
+## Current v2.1 stack
 
 - React + TypeScript + Vite
 - Netlify + Netlify Functions
@@ -52,6 +52,24 @@ Client storefront data is loaded once per visit and refreshed when a visitor ret
 - Up to 100 products/services per website
 - Real Google Maps location links
 - PWA/Home Screen support as WebFactoryPR
+
+## Version 2.1.0 — Factory AI
+
+This version introduces the first built-in AI creation layer for WebFactory PR while preserving the existing shared multi-tenant architecture.
+
+Major additions include:
+
+- **Factory AI** inside the WebFactory Builder.
+- AI-assisted Template or Custom selection, layout, palette, bilingual content, starter catalog, services, and team roles.
+- Explicit review step before AI changes are applied.
+- Server-side validation and rate limiting for AI requests.
+- Customer websites remain inside the shared WebFactory runtime at `/sites/:slug`; no customer-specific Netlify deployments are created.
+- English-first / Spanish-secondary platform localization with bilingual customer-content fields.
+- Complete Template-model migration and categorized Templates library.
+- Client and WebFactory admin portal improvements, including password visibility and Remember Me.
+- Complete Privacy, Terms, and Refund Policy pages.
+- Homepage presentation for Factory AI.
+- Stripe Billing, Stripe Connect, ATH Móvil, booking, employee availability, and Google Calendar integrations remain isolated from the AI write surface.
 
 ## Production
 
@@ -72,16 +90,16 @@ Production branch: `main`
 
 The signed $300 checkout, Production Package and email workflow remain deployed only for legacy compatibility.
 
-## WebFactory AI
+## Factory AI
 
-WebFactory AI runs inside the existing multi-tenant Builder and uses Anthropic Claude through Netlify AI Gateway.
+**Factory AI** is WebFactory PR’s built-in AI website creation and editing assistant. It runs inside the existing multi-tenant Builder and uses Anthropic Claude through Netlify AI Gateway.
 
-- AI never creates a separate customer Netlify site, repository, deployment, branch, or domain.
+- Factory AI never creates a separate customer Netlify site, repository, deployment, branch, or domain.
 - Customer websites remain tenants rendered at `/sites/:slug` inside the same WebFactory runtime.
 - The browser calls the protected Netlify Function at `/api/builder-ai`; provider credentials are available only to Netlify compute.
-- Claude may propose Template/Custom selection, layout, palette, bilingual copy, features, starter catalog items, and team roles.
+- Factory AI may propose Template/Custom selection, layout, palette, bilingual copy, features, starter catalog items, and team roles.
 - Payment configuration, authentication, webhooks, secrets, contact credentials, deployment infrastructure, and integrations are outside the AI write surface.
-- AI responses are server-validated JSON and require explicit **Apply to Builder** action before changing the local Builder draft.
+- Factory AI responses are server-validated JSON and require explicit **Apply to Builder** action before changing the local Builder draft.
 - The function is rate-limited per IP to reduce abuse and AI credit consumption.
 - Default model: `claude-sonnet-5`, overridable with `WEBFACTORY_AI_MODEL`.
 
