@@ -191,7 +191,6 @@ export async function ensureClientSiteForOrder(order) {
     catalog,
     employees,
     hours: order.hours || {},
-    settings: site.settings || { locale: "en", timezone: "America/Puerto_Rico", currency: "usd" },
     paymentRules: {
       ...(order.payments || {}),
       stripeConnectedAccountId: order.stripeConnectedAccountId || "",
