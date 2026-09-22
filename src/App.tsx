@@ -127,7 +127,7 @@ function Devices(){
 }
 
 function App(){
-  const [lang,setLang]=useState<Language>('es')
+  const [lang,setLang]=useState<Language>('en')
   const [menu,setMenu]=useState(false)
   const t=content[lang]
   const faqs=lang==='es'?faqEs:faqEn
