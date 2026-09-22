@@ -22,16 +22,21 @@ async function verifyMerchantCapability(accountId) {
   return account.configuration?.merchant?.capabilities?.card_payments?.status || "pending";
 }
 
-function canonicalCart(site, requested) {
+function localizedText(item, lang, field) {
+  if (field === "name") return lang === "es" ? (item.nameEs || item.nameEn || item.name || "") : (item.nameEn || item.name || item.nameEs || "");
+  return lang === "es" ? (item.descriptionEs || item.descriptionEn || item.description || "") : (item.descriptionEn || item.description || item.descriptionEs || "");
+}
+
+function canonicalCart(site, requested, lang) {
   if (!Array.isArray(requested) || requested.length === 0 || requested.length > 20) throw Object.assign(new Error("Choose between 1 and 20 catalog items."), { status: 400 });
   return requested.map((entry) => {
     const item = (site.catalog || []).find((candidate) => candidate.id === entry.id && candidate.active !== false && !candidate.requiresAppointment);
     if (!item) throw Object.assign(new Error("A selected catalog item is unavailable."), { status: 409 });
     const quantity = Math.max(1, Math.min(20, Math.floor(Number(entry.quantity || 1))));
     if (item.inventory !== null && item.inventory !== undefined && quantity > Number(item.inventory)) {
-      throw Object.assign(new Error(`${item.name} does not have enough inventory.`), { status: 409 });
+      throw Object.assign(new Error(`${localizedText(item, lang, "name")} does not have enough inventory.`), { status: 409 });
     }
-    return { id: item.id, name: item.name, description: item.description, quantity, unitAmount: Math.round(Number(item.price) * 100) };
+    return { id: item.id, name: localizedText(item, lang, "name"), description: localizedText(item, lang, "description"), quantity, unitAmount: Math.round(Number(item.price) * 100) };
   });
 }
 
@@ -57,6 +62,7 @@ export default async (req) => {
     };
     if (!customer.name || !validEmail(customer.email)) throw Object.assign(new Error("Customer name and a valid email are required."), { status: 400 });
 
+    const lang = payload.lang === "es" ? "es" : "en";
     const transactionId = `txn_${crypto.randomUUID()}`;
     let hold = null;
     let items;
@@ -71,10 +77,11 @@ export default async (req) => {
       const unitAmount = site.paymentRules?.bookingPayment === "deposit"
         ? Math.round(fullAmount * Number(site.paymentRules?.bookingDepositPercent || 25) / 100)
         : fullAmount;
-      items = [{ id: service.id, name: site.paymentRules?.bookingPayment === "deposit" ? `Deposit — ${service.name}` : service.name, description: `${employee.name} · ${new Date(hold.start).toLocaleString("en-US", { timeZone: site.settings?.timezone || "America/Puerto_Rico" })}`, quantity: 1, unitAmount }];
+      const serviceName = localizedText(service, lang, "name");
+      items = [{ id: service.id, name: site.paymentRules?.bookingPayment === "deposit" ? `${lang === "es" ? "Depósito" : "Deposit"} — ${serviceName}` : serviceName, description: `${employee.name} · ${new Date(hold.start).toLocaleString(lang === "es" ? "es-PR" : "en-US", { timeZone: site.settings?.timezone || "America/Puerto_Rico" })}`, quantity: 1, unitAmount }];
     } else {
       kind = "order";
-      items = canonicalCart(site, payload.items);
+      items = canonicalCart(site, payload.items, lang);
     }
 
     const inPerson = kind === "booking"
