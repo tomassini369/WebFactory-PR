@@ -136,7 +136,8 @@ function App(){
   },[lang])
 
   const anchors=['/templates','#incluye','/builder','#como-funciona','#faq']
-  const templateMatch = window.location.pathname.match(/^\/templates\/([^/]+)\/?$/) || window.location.pathname.match(/^\/demos\/([^/]+)\/?$/)
+  const templateMatch = window.location.pathname.match(/^\/templates\/([^/]+)\/?$/)
+  const legacyDemoMatch = window.location.pathname.match(/^\/demos\/([^/]+)\/?$/)
   const templatesRoute = /^\/templates\/?$/.test(window.location.pathname)
   const paymentSetupRoute = /^\/payment-setup\/?$/.test(window.location.pathname)
   const clientAdminRoute = /^\/client-admin\/?$/.test(window.location.pathname)
@@ -151,6 +152,10 @@ function App(){
   if (clientAdminRoute) return <ClientAdminPage />
   if (clientSiteMatch) return <ClientStorefront slug={decodeURIComponent(clientSiteMatch[1])} />
   if (paymentSetupRoute) return <PaymentSetupPage />
+  if (legacyDemoMatch) {
+    window.location.replace(`/templates/${legacyDemoMatch[1]}`)
+    return null
+  }
   if (templateMatch) return <DemoSite slug={templateMatch[1]} />
   if (templatesRoute) return <><header className="header"><a href="/" className="logo"><img src={LOGO} alt="WebFactory PR"/></a><div className="header-actions"><a className="btn secondary desktop-cta" href="/client-admin">{lang==='es'?'Portal de clientes':'Client portal'}</a><a className="btn secondary desktop-cta" href="/">{lang==='es'?'Volver al inicio':'Back to home'}</a><div className="langs"><button className={lang==='es'?'active':''} onClick={()=>setLang('es')}>ES</button><button className={lang==='en'?'active':''} onClick={()=>setLang('en')}>EN</button></div></div></header><TemplatesPage lang={lang}/></>
   if (builderRoute) return <><header className="header"><a href="/" className="logo"><img src={LOGO} alt="WebFactory PR"/></a><div className="header-actions"><a className="btn secondary desktop-cta" href="/client-admin">{lang==='es'?'Sign In · Portal':'Sign In · Portal'}</a><a className="btn secondary desktop-cta" href="/">{lang==='es'?'Volver al inicio':'Back to home'}</a><div className="langs"><button className={lang==='es'?'active':''} onClick={()=>setLang('es')}>ES</button><button className={lang==='en'?'active':''} onClick={()=>setLang('en')}>EN</button></div></div></header><main className="standalone-builder"><section className="section white builder"><div className="shell"><div className="builder-head"><Heading data={t.builder}/><div className="builder-price"><strong>48h</strong><span>{lang==='es'?'gratis · sin tarjeta':'free · no card'}</span></div></div><WebFactoryBuilder lang={lang}/></div></section></main></>
