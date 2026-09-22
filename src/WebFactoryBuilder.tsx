@@ -358,6 +358,7 @@ function Preview({state,device,lang}:{state:BuilderState;device:Device;lang:Lang
         </header>
 
         <section className="wf-preview-hero">
+          {state.business.hero&&<img className="wf-preview-hero-photo" src={state.business.hero} alt="" />}
           <small>{state.business.category || 'BUSINESS'}</small>
           <h3>{state.business.name || (lang==='es'?'Tu negocio':'Your business')}</h3>
           <p>{state.business.description || (lang==='es'?'Describe aquí lo que hace especial a tu negocio.':'Describe what makes your business special.')}</p>
@@ -386,6 +387,8 @@ function Preview({state,device,lang}:{state:BuilderState;device:Device;lang:Lang
             </div>
           </section>
         )}
+
+        {(state.business.gallery||[]).length>0&&<section className="wf-preview-gallery">{(state.business.gallery||[]).slice(0,4).map((image,index)=><img key={index} src={image} alt="" />)}</section>}
 
         {state.team.length > 0 && (
           <section className="wf-preview-team">
