@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type Dispatch, type SetStateAction } from 'react'
 import { demoConfigs } from './demoData'
 
 type Language='es'|'en'
@@ -16,7 +16,7 @@ type Proposal={
 const categories=[...new Set([...demoConfigs.map((demo)=>demo.category),'Other'])]
 const createId=(prefix:string)=>`${prefix}-${Date.now()}-${Math.random().toString(36).slice(2,7)}`
 
-export default function BuilderAiAssistant({state,setState,lang}:{state:any;setState:React.Dispatch<React.SetStateAction<any>>;lang:Language}){
+export default function BuilderAiAssistant({state,setState,lang}:{state:any;setState:Dispatch<SetStateAction<any>>;lang:Language}){
   const [open,setOpen]=useState(false)
   const [prompt,setPrompt]=useState('')
   const [busy,setBusy]=useState(false)
