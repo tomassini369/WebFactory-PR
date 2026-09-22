@@ -74,30 +74,7 @@ export const demoConfigs: DemoConfig[] = [
     aboutText: 'Este demo combina catálogo de menú, ordering, carrito, horarios y reservaciones para mostrar cómo un restaurante puede centralizar su experiencia digital.',
     trust: ['Fresh daily', 'Secure checkout', 'Mobile ordering']
   },
-  {
-    slug: 'velocity-auto', category: 'Automotive', name: 'Velocity Auto Care', shortName: 'VELOCITY',
-    kicker: 'DETAILING · PROTECTION · CARE', headline: 'Your car deserves showroom energy.',
-    description: 'Detailing premium con servicios reservables, técnicos asignados, depósitos y una experiencia visual de alto impacto.',
-    heroImage: pexels(37809581), gallery: [pexels(5233271), pexels(14908957), pexels(31389821)],
-    location: 'Bayamón, Puerto Rico', phone: '(787) 555-0184', hours: 'Lun–Sáb · 8 AM–6 PM',
-    accent: '#8DFF00', accent2: '#D2FF66', dark: '#050505', cream: '#F6F8F3',
-    features: ['Service booking', 'Technician selection', 'Deposits', 'WhatsApp'],
-    items: [
-      {id:'vel-1',type:'service',name:'Lavado exterior con espuma',price:149,description:'Lavado exterior del vehículo con jabón y espuma, tal como se representa en la imagen.',image:pexels(5233271),appointment:true,duration:180,deposit:40,employees:['Mateo','Luis'],badge:'Popular'},
-      {id:'vel-2',type:'service',name:'Pulido de pintura',price:299,description:'Pulido profesional de la carrocería para mejorar brillo y acabado, exactamente como se observa en la imagen.',image:pexels(14908957),appointment:true,duration:240,deposit:50,employees:['Mateo'],badge:'Premium'},
-      {id:'vel-3',type:'service',name:'Limpieza interior detallada',price:95,description:'Limpieza manual del interior del vehículo con paño y trabajo de detalle.',image:pexels(31389821),appointment:true,duration:120,deposit:25,employees:['Luis','Adrián']},
-      {id:'vel-4',type:'product',name:'Productos de cuidado automotriz',price:39,description:'Set de botellas y productos para limpieza y mantenimiento del vehículo como los mostrados en la imagen.',image:pexels(11139243),badge:'Shop'}
-    ],
-    employees: [
-      {id:'mateo',name:'Mateo Cruz',role:'Paint & Ceramic Specialist',initials:'MC',services:['Lavado exterior con espuma','Pulido de pintura']},
-      {id:'luis',name:'Luis Vega',role:'Detail Technician',initials:'LV',services:['Lavado exterior con espuma','Limpieza interior detallada']},
-      {id:'adrian',name:'Adrián Soto',role:'Interior Specialist',initials:'AS',services:['Limpieza interior detallada']}
-    ],
-    bookingLabel: 'Reservar servicio', cartEnabled: true, bookingEnabled: true,
-    aboutTitle: 'Servicios visuales que se venden solos.',
-    aboutText: 'Velocity demuestra cómo WebFactory combina servicios reservables, depósitos, selección de técnico, productos complementarios y WhatsApp en una sola experiencia.',
-    trust: ['Deposit ready', 'Employee schedules', 'Service gallery']
-  },
+
   {
     slug: 'northline-barber', category: 'Barber', name: 'Northline Barber Studio', shortName: 'NORTHLINE',
     kicker: 'MODERN GROOMING STUDIO', headline: 'Look sharp. Book fast.',
