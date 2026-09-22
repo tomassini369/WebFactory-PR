@@ -75,6 +75,12 @@ type BuilderState = {
     instagram: string
     facebook: string
     x: string
+    hero?: string
+    heroAssetKey?: string
+    heroAssetName?: string
+    heroAssetType?: string
+    gallery?: string[]
+    galleryAssets?: Array<{assetKey:string;fileName:string;contentType:string}>
     logo?: string
     logoAssetKey?: string
     logoAssetName?: string
@@ -112,6 +118,8 @@ const initialState: BuilderState = {
     instagram: '',
     facebook: '',
     x: '',
+    gallery: [],
+    galleryAssets: [],
   },
   design: {
     templateSlug: '',
@@ -1062,7 +1070,7 @@ export default function WebFactoryBuilder({lang}:{lang:Language}) {
     try {
       const persistentState = {
         ...state,
-        business: {...state.business,logo:undefined},
+        business: {...state.business,logo:undefined,hero:undefined,gallery:undefined},
         catalog: state.catalog.map((item)=>({...item,image:undefined})),
       }
       localStorage.setItem(STORAGE_KEY,JSON.stringify(persistentState))
