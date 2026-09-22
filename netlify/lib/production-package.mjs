@@ -48,18 +48,18 @@ function localizationSettings(order) {
 
 function designTemplateSettings(order) {
   const design = order.design || {};
-  const usesDemo = design.mode === "demo_base" && Boolean(design.templateSlug && design.templateName);
+  const usesTemplate = ["template_base","demo_base"].includes(design.mode) && Boolean(design.templateSlug && design.templateName);
   return {
-    mode: usesDemo ? "demo_base" : "custom",
-    templateSlug: usesDemo ? design.templateSlug : "",
-    templateCategory: usesDemo ? design.templateCategory || "" : "",
-    templateName: usesDemo ? design.templateName : "Custom WebFactory design",
-    templateLabel: usesDemo
+    mode: usesTemplate ? "template_base" : "custom",
+    templateSlug: usesTemplate ? design.templateSlug : "",
+    templateCategory: usesTemplate ? design.templateCategory || "" : "",
+    templateName: usesTemplate ? design.templateName : "Custom WebFactory design",
+    templateLabel: usesTemplate
       ? [design.templateCategory, design.templateName].filter(Boolean).join(" — ")
       : "Custom WebFactory design",
-    templateRoute: usesDemo ? design.templateRoute || `/demos/${design.templateSlug}` : "",
-    preserveDemoStructure: usesDemo,
-    customizationScope: usesDemo
+    templateRoute: usesTemplate ? design.templateRoute?.replace(/^\/demos\//,"/templates/") || `/templates/${design.templateSlug}` : "",
+    preserveTemplateStructure: usesTemplate,
+    customizationScope: usesTemplate
       ? ["business branding", "logo", "colors", "customer content", "images", "catalog", "employees", "hours", "payments", "bookings", "contact information"]
       : ["business branding", "logo", "colors", "customer content", "images", "catalog", "employees", "hours", "payments", "bookings", "contact information", "custom layout"],
   };
@@ -108,9 +108,9 @@ function requirementText(order) {
     "",
     "DESIGN",
     `Design mode: ${template.mode}`,
-    `Base demo: ${template.templateLabel}`,
-    `Base demo route: ${template.templateRoute || "not applicable"}`,
-    `Preserve demo structure: ${template.preserveDemoStructure ? "required" : "not applicable"}`,
+    `Base Template: ${template.templateLabel}`,
+    `Template route: ${template.templateRoute || "not applicable"}`,
+    `Preserve Template structure: ${template.preserveTemplateStructure ? "required" : "not applicable"}`,
     `Style: ${design.style || ""}`,
     `Primary color: ${design.primary || ""}`,
     `Secondary color: ${design.secondary || ""}`,
@@ -257,11 +257,11 @@ function buildPrompt(order) {
     "- Use ONLY customer-supplied information contained in the Production Package.",
     "- Do not invent an address, phone number, price, certification, review, service, employee, history, guarantee, statistic, or business claim.",
     "- Preserve the selected branding, colors, visual style, catalog, employees, schedules, booking settings, payment selections, and supplied files.",
-    template.preserveDemoStructure
+    template.preserveTemplateStructure
       ? `- REQUIRED DESIGN BASE: Reproduce the structure, responsive layout, navigation, component arrangement, visual hierarchy, catalog experience, cart, booking flow, and compatible interactions of the WebFactory demo \"${template.templateLabel}\" (${template.templateRoute}). Replace only the fictional branding, colors, content, images, catalog, employees, schedules, payments, and business configuration with the customer's supplied information.`
-      : "- DESIGN MODE: Create a custom WebFactory design from the customer's selected style, colors, content, and enabled features. Do not force a demo template.",
-    template.preserveDemoStructure
-      ? "- Do not substitute a different template, generic layout, or unrelated design for the selected demo base."
+      : "- DESIGN MODE: Create a custom WebFactory design from the customer's selected style, colors, content, and enabled features. Do not force a Template.",
+    template.preserveTemplateStructure
+      ? "- Do not substitute a different template, generic layout, or unrelated design for the selected Template base."
       : "- Maintain WebFactory production standards while tailoring the layout to the customer's configuration.",
     "- Every customer website MUST be fully bilingual in Spanish and English. Spanish is the default and fallback language.",
     "- Include a visible, keyboard-accessible ES/EN selector that follows the established WebFactory language-switching pattern.",
@@ -291,9 +291,9 @@ function revisionPrompt(order) {
     `WEBFACTORY REVISION PROMPT — ${order.orderId}`,
     "",
     "Preserve all approved branding, functionality, customer content, catalog data, employee mappings, schedules, booking behavior, payment behavior, and supplied files.",
-    template.preserveDemoStructure
-      ? `Preserve the selected \"${template.templateLabel}\" demo structure and compatible interactions; do not replace it with another template or generic layout.`
-      : "Preserve the approved custom WebFactory layout and do not introduce an unrequested demo template.",
+    template.preserveTemplateStructure
+      ? `Preserve the selected \"${template.templateLabel}\" Template structure and compatible interactions; do not replace it with another Template or generic layout.`
+      : "Preserve the approved custom WebFactory layout and do not introduce an unrequested Template.",
     "Preserve complete Spanish/English coverage, the ES/EN selector, Spanish fallback behavior, localStorage preference, and document language synchronization.",
     "Apply only the revisions explicitly requested by the customer.",
     "Do not invent missing business facts.",
@@ -304,7 +304,7 @@ function brandColors(order) {
   const template = designTemplateSettings(order);
   return [
     `Design mode: ${template.mode}`,
-    `Base demo: ${template.templateLabel}`,
+    `Base Template: ${template.templateLabel}`,
     `Primary: ${order.design?.primary || ""}`,
     `Secondary: ${order.design?.secondary || ""}`,
     `Style: ${order.design?.style || ""}`,
@@ -492,22 +492,22 @@ export async function ensureProductionPackage(order) {
   zip.file("11_DESIGN_BASE/design-base.json", JSON.stringify(template, null, 2));
   zip.file(
     "11_DESIGN_BASE/DESIGN_BASE_REQUIREMENTS.txt",
-    template.preserveDemoStructure
+    template.preserveTemplateStructure
       ? [
-          "WEBFACTORY SELECTED DEMO BASE",
+          "WEBFACTORY SELECTED TEMPLATE BASE",
           "",
-          `Selected demo: ${template.templateLabel}`,
-          `Demo route: ${template.templateRoute}`,
-          "Preserve the selected demo's structure, responsive layout, navigation, visual hierarchy, component arrangement, catalog experience, cart, booking flow, and compatible interactions.",
+          `Selected Template: ${template.templateLabel}`,
+          `Template route: ${template.templateRoute}`,
+          "Preserve the selected Template's structure, responsive layout, navigation, visual hierarchy, component arrangement, catalog experience, cart, booking flow, and compatible interactions.",
           "Replace its fictional business branding, colors, text, images, catalog, employees, schedules, payments, bookings, and contact information with the customer's supplied information.",
           "Do not substitute another template or a generic layout.",
         ].join("\n")
       : [
           "WEBFACTORY CUSTOM DESIGN MODE",
           "",
-          "No demo base was selected.",
+          "No Template base was selected.",
           "Create a custom WebFactory design using the customer's selected style, colors, content, assets, and enabled features.",
-          "Do not force or copy a demo template.",
+          "Do not force or copy a Template.",
         ].join("\n"),
   );
 
