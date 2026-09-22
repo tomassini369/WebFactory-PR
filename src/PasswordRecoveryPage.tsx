@@ -40,7 +40,7 @@ const copy={
 }
 
 export default function PasswordRecoveryPage(){
-  const [lang,setLang]=useState<Language>('es')
+  const [lang,setLang]=useState<Language>('en')
   const [user,setUser]=useState<User|null>(null)
   const [password,setPassword]=useState('')
   const [confirm,setConfirm]=useState('')
