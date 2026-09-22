@@ -416,7 +416,7 @@ export const demoConfigs: DemoConfig[] = [
     slug: 'solid-build-construction', category: 'Construction', name: 'Solid Build Construction', shortName: 'SOLID BUILD',
     kicker: 'BUILD · REMODEL · IMPROVE', headline: 'Built right from the first estimate.',
     description: 'Servicios de construcción y remodelación con consultas, visitas técnicas, estimados y planificación de proyectos.',
-    heroImage: pexels(2219024), gallery: [pexels(1216589), pexels(159306), pexels(209266)],
+    heroImage: pexels(2219024), gallery: [pexels(1216589), pexels(209266), pexels(2219024)],
     location: 'Puerto Rico', phone: '(787) 555-0211', hours: 'Lun–Sáb · 7 AM–5 PM',
     accent: '#E67E22', accent2: '#F7C98B', dark: '#2A2118', cream: '#FFF8F1',
     features: ['Estimate visits', 'Project consultation', 'Team assignment', 'Lead form'],
@@ -424,7 +424,7 @@ export const demoConfigs: DemoConfig[] = [
       {id:'build-1',type:'service',name:'Visita para estimado',price:0,displayPrice:'Cotización',description:'Visita inicial para evaluar alcance, medidas y necesidades del proyecto.',image:pexels(1216589),appointment:true,duration:60,employees:['Rafael'],purchasable:false,badge:'Start here'},
       {id:'build-2',type:'service',name:'Remodelación interior',price:3500,displayPrice:'Desde $3,500',description:'Servicio de remodelación de interiores sujeto a evaluación.',image:pexels(209266),appointment:true,duration:120,deposit:250,employees:['Rafael','Luis']},
       {id:'build-3',type:'service',name:'Construcción liviana',price:2500,displayPrice:'Desde $2,500',description:'Trabajos de construcción liviana y mejoras estructurales menores.',image:pexels(2219024),appointment:true,duration:120,deposit:250,employees:['Luis']},
-      {id:'build-4',type:'service',name:'Consulta de proyecto',price:95,description:'Sesión para revisar ideas, prioridades y próximos pasos.',image:pexels(159306),appointment:true,duration:45,employees:['Rafael']}
+      {id:'build-4',type:'service',name:'Consulta de proyecto',price:95,description:'Sesión para revisar ideas, prioridades y próximos pasos.',image:pexels(209266),appointment:true,duration:45,employees:['Rafael']}
     ],
     employees: [
       {id:'build-rafael',name:'Rafael Ortiz',role:'Project Lead',initials:'RO',services:['Visita para estimado','Remodelación interior','Consulta de proyecto']},
