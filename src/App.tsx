@@ -156,7 +156,7 @@ function App(){
   return <>
     <header className="header">
       <a href="#top" className="logo"><img src={LOGO} alt="WebFactory PR"/></a>
-      <nav className={menu?'open':''}>{t.nav.map((n,i)=><a key={n} href={anchors[i]} onClick={()=>setMenu(false)}>{n}</a>)}</nav>
+      <nav className={menu?'open':''}>{t.nav.map((n,i)=><a key={n} href={anchors[i]} onClick={()=>setMenu(false)}>{n}</a>)}<a className="mobile-portal-link" href="/client-admin" onClick={()=>setMenu(false)}>{lang==='es'?'Sign In · Portal de clientes':'Sign In · Client Portal'}</a></nav>
       <div className="header-actions">
         <a href="/client-admin" className="btn secondary desktop-cta">{lang==='es'?'Portal de clientes':'Client portal'}</a>
         <div className="langs"><button className={lang==='es'?'active':''} onClick={()=>setLang('es')}>ES</button><button className={lang==='en'?'active':''} onClick={()=>setLang('en')}>EN</button></div>
