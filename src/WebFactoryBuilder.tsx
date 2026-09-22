@@ -88,6 +88,8 @@ type BuilderState = {
   }
   design: {
     templateSlug: string
+    customLayout: 'split' | 'centered' | 'editorial' | 'showcase'
+    sectionOrder: string[]
     style: BuilderStyle
     primary: string
     secondary: string
@@ -123,6 +125,8 @@ const initialState: BuilderState = {
   },
   design: {
     templateSlug: '',
+    customLayout: 'split',
+    sectionOrder: ['catalog','team','about','gallery','contact'],
     style: 'Modern',
     primary: '#0B1529',
     secondary: '#3C86F6',
@@ -666,6 +670,30 @@ function DesignStep({state,setState,lang}:{state:BuilderState;setState:Dispatch<
           </article>
         ))}
       </div>
+      {state.design.templateSlug===''&&<>
+        <div className="wf-step-intro compact"><small>{lang==='es'?'CUSTOM LAYOUT':'CUSTOM LAYOUT'}</small><h3>{lang==='es'?'Escoge la composición inicial.':'Choose the starting composition.'}</h3><p>{lang==='es'?'Estas opciones cambian la presentación sin depender de ningún demo.':'These options change the presentation without depending on a demo.'}</p></div>
+        <div className="wf-custom-layout-grid">
+          {[
+            ['split',lang==='es'?'Hero dividido':'Split hero'],
+            ['centered',lang==='es'?'Hero centrado':'Centered hero'],
+            ['editorial',lang==='es'?'Editorial':'Editorial'],
+            ['showcase',lang==='es'?'Visual / Showcase':'Visual / Showcase'],
+          ].map(([value,label])=><button type="button" key={value} className={state.design.customLayout===value?'selected':''} onClick={()=>setDesign('customLayout',value as BuilderState['design']['customLayout'])}><span className={'wf-custom-layout-art '+value}><i/><i/><i/></span><strong>{label}</strong></button>)}
+        </div>
+        <div className="wf-step-intro compact"><small>{lang==='es'?'ORDEN DE SECCIONES':'SECTION ORDER'}</small><h3>{lang==='es'?'Organiza el contenido.':'Arrange the content.'}</h3><p>{lang==='es'?'Usa las flechas para cambiar el orden. Hero permanece como portada.':'Use the arrows to change the order. Hero remains the cover.'}</p></div>
+        <div className="wf-section-order">
+          {state.design.sectionOrder.map((section,index)=>{
+            const labels:Record<string,string>={catalog:lang==='es'?'Catálogo':'Catalog',team:lang==='es'?'Equipo':'Team',about:'About',gallery:lang==='es'?'Galería':'Gallery',contact:lang==='es'?'Contacto':'Contact'}
+            const move=(direction:number)=>setState((current)=>{
+              const next=[...current.design.sectionOrder]; const target=index+direction
+              if(target<0||target>=next.length)return current
+              ;[next[index],next[target]]=[next[target],next[index]]
+              return {...current,design:{...current.design,sectionOrder:next}}
+            })
+            return <div key={section}><span>{index+1}. {labels[section]||section}</span><span><button type="button" disabled={index===0} onClick={()=>move(-1)}>↑</button><button type="button" disabled={index===state.design.sectionOrder.length-1} onClick={()=>move(1)}>↓</button></span></div>
+          })}
+        </div>
+      </>}
       <div className="wf-template-note">
         <strong>{state.design.templateSlug
           ? (lang==='es'?'El demo seleccionado será la base exacta de producción.':'The selected demo will be the exact production base.')
