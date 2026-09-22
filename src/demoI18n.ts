@@ -22,7 +22,7 @@ type LocalizedDemo = {
   employeeRoles: string[]
 }
 
-const localizedDemos: Record<string, Record<DemoLanguage, LocalizedDemo>> = {
+const localizedDemos: Record<string, Partial<Record<DemoLanguage, LocalizedDemo>>> = {
   'brisa-cocina': {
     es: {
       category: 'Restaurante', kicker: 'COCINA COSTERA · SAN JUAN', headline: 'Sabores del Caribe, servidos con calma.',
@@ -276,7 +276,203 @@ const localizedDemos: Record<string, Record<DemoLanguage, LocalizedDemo>> = {
         {name:'Private creative workshop',description:'A creative session for a small group working with art materials around a table.'},
       ],
     },
-  },
+  },,
+  'aqua-shine-carwash': { en: {
+    category:'Car Wash', kicker:'WASH · DETAIL · PROTECT', headline:'Drive clean. Shine longer.',
+    description:'A modern car wash with express packages, detailing, add-ons, and vehicle-based appointment scheduling.',
+    hours:'Mon–Sun · 8 AM–6 PM', features:['Wash packages','Detail booking','Add-ons','WhatsApp'], bookingLabel:'Book a wash',
+    aboutTitle:'A car wash built around convenience.', aboutText:'Aqua Shine combines packages, schedules, deposits, specialists, and complementary products in a fast mobile-first experience.',
+    trust:['Fast booking','Vehicle services','Secure deposits'], employeeRoles:['Detail Specialist','Wash Specialist'],
+    items:[
+      {name:'Express Wash',description:'Quick exterior wash with foam, rinse, and drying.',badge:'Fast'},
+      {name:'Full Detail',description:'Complete interior and exterior cleaning with a premium finish.',badge:'Premium'},
+      {name:'Ceramic Boost',description:'Quick protection for added shine and water repellency.'},
+      {name:'Care Kit',description:'Essential products to maintain the finish between visits.',badge:'Shop'},
+    ],
+  }},
+  'verde-vivo-landscaping': { en: {
+    category:'Landscaping', kicker:'LAWNS · GARDENS · OUTDOOR CARE', headline:'Your yard, always ready.',
+    description:'Lawn cutting, maintenance, cleanup, and outdoor design services with scheduled visits and estimates.',
+    hours:'Mon–Sat · 7 AM–5 PM', features:['Service booking','Recurring care','Quote requests','Maps'], bookingLabel:'Schedule service',
+    aboutTitle:'Outdoor maintenance organized by area and schedule.', aboutText:'Verde Vivo lets customers explore services, request estimates, and coordinate visits without relying on phone calls for every appointment.',
+    trust:['Route-ready','Quote visits','Recurring service'], employeeRoles:['Landscape Lead','Outdoor Care Technician'],
+    items:[
+      {name:'Lawn Cutting',description:'Basic residential lawn cutting and finishing.',badge:'Popular'},
+      {name:'Yard Cleanup',description:'Removal of leaves, branches, and outdoor debris.'},
+      {name:'Garden Maintenance',description:'Maintenance of plants, borders, and green areas.'},
+      {name:'Estimate Visit',description:'On-site evaluation for special projects.',displayPrice:'Free estimate'},
+    ],
+  }},
+  'sonido-vivo-artist': { en: {
+    category:'Music Artist', kicker:'LIVE MUSIC · EVENTS · BOOKINGS', headline:'Bring the live set to your event.',
+    description:'A music artist Template with performance packages, bookable dates, deposits, and private-event inquiries.',
+    hours:'Bookings · By availability', features:['Artist booking','Event packages','Deposits','Social media'], bookingLabel:'Check a date',
+    aboutTitle:'Artist booking without endless message threads.', aboutText:'Sonido Vivo turns music packages into clear options with availability, deposits, and direct production contact.',
+    trust:['Date availability','Event deposits','Social links'], employeeRoles:['Performing Artist'],
+    items:[
+      {name:'Acoustic Set',description:'An intimate performance for restaurants, lounges, and smaller events.',badge:'Popular'},
+      {name:'Full Live Performance',description:'A full performance for private activities and events.',badge:'Featured'},
+      {name:'Meet & Plan',description:'A call to coordinate repertoire, timing, and technical requirements.',displayPrice:'Free consultation'},
+    ],
+  }},
+  'motorlab-garage': { en: {
+    category:'Auto Repair', kicker:'DIAGNOSTICS · REPAIR · MAINTENANCE', headline:'Repairs explained. Appointments simplified.',
+    description:'An auto repair shop with diagnostics, maintenance, bookable services, and assigned technicians.',
+    hours:'Mon–Sat · 8 AM–5 PM', features:['Repair booking','Diagnostics','Technicians','Deposits'], bookingLabel:'Book diagnostics',
+    aboutTitle:'A repair shop with a clear schedule from the first contact.', aboutText:'MotorLab organizes services by technician and duration to reduce calls and improve appointment flow.',
+    trust:['Technician matching','Service duration','Appointment deposits'], employeeRoles:['Master Technician','Service Technician'],
+    items:[
+      {name:'General Diagnostic',description:'Initial inspection to identify issues and next steps.',badge:'Start here'},
+      {name:'Oil Change',description:'Oil service with a basic maintenance inspection.'},
+      {name:'Brake Service',description:'Brake inspection and service based on vehicle condition.'},
+      {name:'Major Repair Evaluation',description:'Evaluation for engine, suspension, or transmission work.',badge:'Advanced'},
+    ],
+  }},
+  'manos-de-confianza-care': { en: {
+    category:'Care Services', kicker:'CHILDCARE · SENIOR CARE · FAMILY SUPPORT', headline:'Care built around the people you love.',
+    description:'Child and senior care services with consultations, visits, caregivers, and coordinated schedules.',
+    hours:'Mon–Sun · By schedule', features:['Care consultation','Caregiver booking','Family contact','Scheduling'], bookingLabel:'Schedule a consultation',
+    aboutTitle:'Clear coordination for sensitive services.', aboutText:'This Template presents care services, provider profiles, and availability without making medical claims.',
+    trust:['Family intake','Provider schedules','Clear service scope'], employeeRoles:['Childcare Provider','Family Care Provider'],
+    items:[
+      {name:'Childcare Consultation',description:'Initial conversation to understand the child’s needs, schedule, and routine.',displayPrice:'Free consultation'},
+      {name:'Hourly Childcare',description:'Scheduled in-home childcare service.'},
+      {name:'Senior Companionship',description:'Non-medical companionship and support for older adults.',badge:'Senior care'},
+      {name:'Family Consultation',description:'Initial coordination of schedules and the type of support required.',displayPrice:'Free consultation'},
+    ],
+  }},
+  'pour-house-bartending': { en: {
+    category:'Bartending', kicker:'MOBILE BAR · EVENTS · EXPERIENCES', headline:'A polished bar experience, wherever you celebrate.',
+    description:'Mobile bartending for weddings, birthdays, and corporate events with packages, add-ons, and deposits.',
+    hours:'Events · By reservation', features:['Event booking','Packages','Deposits','Inquiry form'], bookingLabel:'Plan an event',
+    aboutTitle:'Event packages ready to quote and book.', aboutText:'Pour House turns event inquiries into clear packages with deposits and date-based availability.',
+    trust:['Event deposits','Package options','Date booking'], employeeRoles:['Lead Bartender','Event Coordinator'],
+    items:[
+      {name:'Solo Bartender',description:'Bartending service for smaller events with a defined service window.',badge:'Small events'},
+      {name:'Mobile Bar Experience',description:'Mobile bar setup and service package for medium-size events.',badge:'Popular'},
+      {name:'Wedding Bar Service',description:'Expanded bartending service for weddings and longer events.'},
+      {name:'Event Consultation',description:'Consultation to estimate guest count, timing, and event needs.',displayPrice:'Free consultation'},
+    ],
+  }},
+  'mesa-boricua-catering': { en: {
+    category:'Catering', kicker:'CATERING · EVENTS · PRIVATE DINING', headline:'Menus made for gathering.',
+    description:'Event catering with guest-count packages, tastings, deposits, and menu consultations.',
+    hours:'Mon–Sat · 9 AM–6 PM', features:['Catering packages','Tastings','Event booking','Deposits'], bookingLabel:'Check a date',
+    aboutTitle:'Menus, capacity, and dates in one experience.', aboutText:'Mesa Boricua presents packages by guest count and coordinates tastings or events from the same system.',
+    trust:['Guest-count packages','Event deposits','Tasting appointments'], employeeRoles:['Executive Chef','Event Operations'],
+    items:[
+      {name:'Intimate Package · up to 20 guests',description:'Catering package for small and family gatherings.',badge:'20 guests'},
+      {name:'Celebration Package · up to 50 guests',description:'Catering for birthdays, activities, and medium-size celebrations.',badge:'Popular'},
+      {name:'Large Event Package · up to 100 guests',description:'Expanded catering service for larger events.'},
+      {name:'Tasting / Consultation',description:'Session to review the menu, quantities, and event requirements.'},
+    ],
+  }},
+  'pulse-dj-services': { en: {
+    category:'DJ Services', kicker:'MUSIC · EVENTS · ENERGY', headline:'Your event. Your crowd. Your soundtrack.',
+    description:'Professional DJ services for weddings, birthdays, and corporate events with packages, planning, and deposits.',
+    hours:'Events · By reservation', features:['Event booking','DJ packages','Deposits','Consultation'], bookingLabel:'Check a date',
+    aboutTitle:'Entertainment packages ready to book.', aboutText:'Pulse shows how a DJ can organize packages, availability, and deposits without managing everything through messages.',
+    trust:['Date booking','Event deposits','Package options'], employeeRoles:['Lead DJ','Event Production'],
+    items:[
+      {name:'DJ Essential',description:'DJ service for smaller events with a basic audio setup.',badge:'Popular'},
+      {name:'DJ + Lighting',description:'DJ, audio, and lighting package for medium-size events.',badge:'Featured'},
+      {name:'Wedding Experience',description:'Extended wedding coverage with advance music coordination.'},
+      {name:'Music Consultation',description:'Meeting to define music style, timing, and event details.',displayPrice:'Free consultation'},
+    ],
+  }},
+  'solid-build-construction': { en: {
+    category:'Construction', kicker:'BUILD · REMODEL · IMPROVE', headline:'Built right from the first estimate.',
+    description:'Construction and remodeling services with consultations, site visits, estimates, and project planning.',
+    hours:'Mon–Sat · 7 AM–5 PM', features:['Estimate visits','Project consultation','Team assignment','Lead form'], bookingLabel:'Request an estimate',
+    aboutTitle:'From first contact to an organized project.', aboutText:'Solid Build turns construction requests into structured site visits and consultations.',
+    trust:['Estimate visits','Project intake','Team schedules'], employeeRoles:['Project Lead','Construction Specialist'],
+    items:[
+      {name:'Estimate Visit',description:'Initial visit to assess scope, measurements, and project needs.',displayPrice:'Estimate',badge:'Start here'},
+      {name:'Interior Remodeling',description:'Interior remodeling service subject to an on-site evaluation.',displayPrice:'From $3,500'},
+      {name:'Light Construction',description:'Light construction work and minor structural improvements.',displayPrice:'From $2,500'},
+      {name:'Project Consultation',description:'Session to review ideas, priorities, and next steps.'},
+    ],
+  }},
+  'fresh-home-cleaning': { en: {
+    category:'House Cleaning', kicker:'CLEAN · RESET · RELAX', headline:'A cleaner home, without the back-and-forth.',
+    description:'Residential cleaning services with packages, recurring frequency, availability, and assigned staff.',
+    hours:'Mon–Sat · 8 AM–6 PM', features:['Cleaning booking','Recurring visits','Team assignment','Deposits'], bookingLabel:'Book cleaning',
+    aboutTitle:'Residential cleaning with clear schedules.', aboutText:'Fresh Home organizes services by duration, team, and frequency to make repeat bookings easier.',
+    trust:['Recurring service','Team assignment','Easy booking'], employeeRoles:['Cleaning Lead','Home Care Specialist'],
+    items:[
+      {name:'Basic Cleaning',description:'General cleaning of the home’s main areas.',badge:'Popular'},
+      {name:'Deep Cleaning',description:'Deep cleaning with added attention to kitchens, bathrooms, and details.',badge:'Deep clean'},
+      {name:'Move In / Move Out',description:'Complete cleaning for empty properties before or after a move.'},
+      {name:'Frequency Consultation',description:'Consultation to arrange weekly or biweekly maintenance.',displayPrice:'Free'},
+    ],
+  }},
+  'sealpro-roofing': { en: {
+    category:'Roof Sealing', kicker:'ROOF SEALING · REPAIR · PROTECTION', headline:'Protect your roof before the next storm.',
+    description:'Roof sealing, inspections, maintenance, and repairs with estimate visits and technical appointments.',
+    hours:'Mon–Sat · 7 AM–5 PM', features:['Roof inspection','Estimate visit','Repair booking','Lead form'], bookingLabel:'Request an inspection',
+    aboutTitle:'Inspections and estimates without complications.', aboutText:'SealPro turns roof-sealing and leak requests into organized technical visits.',
+    trust:['Inspection booking','Estimate visits','Repair scheduling'], employeeRoles:['Roofing Specialist','Repair Technician'],
+    items:[
+      {name:'Roof Inspection',description:'Visual evaluation to identify leaks, cracks, and critical areas.',badge:'Start here'},
+      {name:'Preventive Roof Sealing',description:'Preventive sealing service based on roof size and condition.',displayPrice:'From $850'},
+      {name:'Leak Repair',description:'Localized repair of leaks and vulnerable areas.',displayPrice:'From $275'},
+      {name:'Estimate Visit',description:'Visit to measure the area and prepare an estimate.',displayPrice:'Free estimate'},
+    ],
+  }},
+  'agua-clara-plumbing': { en: {
+    category:'Plumbing', kicker:'PLUMBING · REPAIRS · INSTALLATION', headline:'Leaks fixed. Water flowing.',
+    description:'Plumbing services for repairs, installations, drain clearing, and diagnostics with assigned technicians.',
+    hours:'Mon–Sat · 7 AM–6 PM', features:['Service booking','Emergency requests','Technicians','Quote visits'], bookingLabel:'Book a plumber',
+    aboutTitle:'Plumbing services organized by problem.', aboutText:'Agua Clara helps customers select the right type of service and coordinate a visit with the appropriate technician.',
+    trust:['Technician assignment','Repair booking','Quote-ready'], employeeRoles:['Licensed Plumber','Plumbing Technician'],
+    items:[
+      {name:'Plumbing Diagnostic',description:'Initial evaluation to identify the cause of the problem.',badge:'Start here'},
+      {name:'Leak Repair',description:'Repair of visible or accessible leaks.',displayPrice:'From $140'},
+      {name:'Drain Clearing',description:'Drain and residential pipe clearing service.'},
+      {name:'Fixture Installation',description:'Installation of faucets, sinks, or other fixtures.',displayPrice:'From $165'},
+    ],
+  }},
+  'volt-pro-electric': { en: {
+    category:'Electrician', kicker:'ELECTRICAL · INSTALLATION · TROUBLESHOOTING', headline:'Safe power. Clear scheduling.',
+    description:'Electrical services for diagnostics, installations, panels, and repairs with technicians and appointments.',
+    hours:'Mon–Sat · 7 AM–6 PM', features:['Electrical booking','Technicians','Estimate visits','Contact form'], bookingLabel:'Book an electrician',
+    aboutTitle:'Electrical services with scheduled visits.', aboutText:'Volt Pro organizes diagnostics and projects by technician, duration, and type of work.',
+    trust:['Technician schedules','Estimate visits','Service booking'], employeeRoles:['Electrician','Electrical Technician'],
+    items:[
+      {name:'Electrical Diagnostic',description:'Evaluation of faults, breakers, outlets, and circuits.',badge:'Start here'},
+      {name:'Light or Fan Installation',description:'Installation of a residential electrical fixture.',displayPrice:'From $145'},
+      {name:'Circuit Repair',description:'Diagnosis and repair of issues in existing circuits.',displayPrice:'From $175'},
+      {name:'Panel / Project Visit',description:'Evaluation for larger projects or electrical panels.',displayPrice:'Estimate'},
+    ],
+  }},
+  'precision-auto-body': { en: {
+    category:'Auto Body', kicker:'BODYWORK · PAINT · COLLISION', headline:'From damage to clean lines again.',
+    description:'Auto body and paint services with inspections, estimates, panel repair, and evaluation appointments.',
+    hours:'Mon–Sat · 8 AM–5 PM', features:['Damage inspection','Estimate booking','Body repair','Paint services'], bookingLabel:'Request an evaluation',
+    aboutTitle:'A visual evaluation before repairs begin.', aboutText:'Precision organizes inspections, estimates, bodywork, and paint services in one clear flow.',
+    trust:['Damage inspection','Repair estimates','Paint scheduling'], employeeRoles:['Body Repair Specialist','Paint Specialist'],
+    items:[
+      {name:'Damage Inspection',description:'Initial evaluation of dents, panels, and paint.',displayPrice:'Evaluation',badge:'Start here'},
+      {name:'Panel Repair',description:'Repair of dents and deformations in body panels.',displayPrice:'From $350'},
+      {name:'Partial Paint',description:'Preparation and localized paintwork for body panels.',displayPrice:'From $450'},
+      {name:'Collision Estimate',description:'Evaluation for collision-damage repairs.',displayPrice:'Estimate'},
+    ],
+  }},
+  'bella-vita-salon': { en: {
+    category:'Cosmetology', kicker:'HAIR · BEAUTY · STYLE', headline:'Your look, your appointment, your stylist.',
+    description:'A full-service beauty and cosmetology salon offering hair, color, makeup, nails, and stylist-specific availability.',
+    hours:'Tue–Sat · 9 AM–7 PM', features:['Salon booking','Stylist selection','Deposits','Beauty services'], bookingLabel:'Book an appointment',
+    aboutTitle:'A complete salon with specialist-based scheduling.', aboutText:'Bella Vita shows how a cosmetology salon can connect every service with the right professional, manage duration and deposits, and organize bookings from one page.',
+    trust:['Stylist selection','Service duration','Beauty deposits'], employeeRoles:['Master Cosmetologist','Hair Stylist','Beauty & Nail Artist'],
+    items:[
+      {name:'Blowout & Styling',description:'Professional wash, blowout, and styling.',badge:'Popular'},
+      {name:'Full Color',description:'Full-color service based on hair length and condition.',displayPrice:'From $120',badge:'Color'},
+      {name:'Keratin Treatment',description:'Keratin treatment to smooth and improve hair manageability.',displayPrice:'From $175'},
+      {name:'Professional Makeup',description:'Professional makeup for events and special occasions.'},
+      {name:'Manicure & Gel',description:'Manicure with gel finish and a basic design.'},
+      {name:'Transformation Consultation',description:'Consultation for color, haircut, or image transformation.',displayPrice:'Free consultation'},
+    ],
+  }}
 }
 
 export const localizeDemo = (config: DemoConfig, language: DemoLanguage): DemoConfig => {
