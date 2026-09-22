@@ -184,7 +184,7 @@ export function sanitizeOrder(payload) {
       heroAssetKey: assetRef(b.heroAssetKey, draftId),
       heroAssetName: cleanText(b.heroAssetName, 200),
       heroAssetType: cleanText(b.heroAssetType, 120),
-      galleryAssets: Array.isArray(b.galleryAssets) ? b.galleryAssets.slice(0,4).map((asset) => ({
+      galleryAssets: Array.isArray(b.galleryAssets) ? b.galleryAssets.slice(0,100).map((asset) => ({
         assetKey: assetRef(asset?.assetKey, draftId),
         fileName: cleanText(asset?.fileName, 200),
         contentType: cleanText(asset?.contentType, 120),
