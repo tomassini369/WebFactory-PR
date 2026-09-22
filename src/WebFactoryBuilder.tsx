@@ -11,8 +11,12 @@ type CatalogItem = {
   id: string
   type: ItemType
   name: string
+  nameEn?: string
+  nameEs?: string
   price: number
   description: string
+  descriptionEn?: string
+  descriptionEs?: string
   image?: string
   imageAssetKey?: string
   imageName?: string
@@ -25,6 +29,8 @@ type TeamMember = {
   id: string
   name: string
   role: string
+  roleEn?: string
+  roleEs?: string
   serviceIds: string[]
 }
 
@@ -64,10 +70,14 @@ type PaymentConfiguration = {
 type BuilderState = {
   business: {
     name: string
+    nameEn?: string
+    nameEs?: string
     slug: string
     contactName: string
     category: string
     description: string
+    descriptionEn?: string
+    descriptionEs?: string
     phone: string
     whatsapp: string
     email: string
@@ -334,6 +344,11 @@ function Field({label,value,onChange,placeholder,type='text'}:{
 
 function Preview({state,device,lang}:{state:BuilderState;device:Device;lang:Language}) {
   const [catalogOpen,setCatalogOpen] = useState(false)
+  const businessName = lang==='es' ? (state.business.nameEs || state.business.nameEn || state.business.name) : (state.business.nameEn || state.business.name || state.business.nameEs || '')
+  const businessDescription = lang==='es' ? (state.business.descriptionEs || state.business.descriptionEn || state.business.description) : (state.business.descriptionEn || state.business.description || state.business.descriptionEs || '')
+  const itemName = (item:CatalogItem) => lang==='es' ? (item.nameEs || item.nameEn || item.name) : (item.nameEn || item.name || item.nameEs || '')
+  const itemDescription = (item:CatalogItem) => lang==='es' ? (item.descriptionEs || item.descriptionEn || item.description) : (item.descriptionEn || item.description || item.descriptionEs || '')
+  const memberRole = (member:TeamMember) => lang==='es' ? (member.roleEs || member.roleEn || member.role) : (member.roleEn || member.role || member.roleEs || '')
   const [selectedItem,setSelectedItem] = useState<CatalogItem | null>(null)
   const appointments = state.catalog.filter((item)=>item.type==='service' && item.requiresAppointment)
   const mapsValid = isGoogleMapsUrl(state.business.mapsUrl)
@@ -351,8 +366,8 @@ function Preview({state,device,lang}:{state:BuilderState;device:Device;lang:Lang
       <div className={`wf-preview-page style-${state.design.style.toLowerCase()}`}>
         <header>
           <div className="wf-preview-brand">
-            {state.business.logo ? <img src={state.business.logo} alt="" /> : <span>{state.business.name.slice(0,2).toUpperCase()}</span>}
-            <strong>{state.business.name || (lang==='es'?'Tu negocio':'Your business')}</strong>
+            {state.business.logo ? <img src={state.business.logo} alt="" /> : <span>{businessName.slice(0,2).toUpperCase()}</span>}
+            <strong>{businessName || (lang==='es'?'Tu negocio':'Your business')}</strong>
           </div>
           <nav>
             <span>{lang==='es'?'Inicio':'Home'}</span>
@@ -364,8 +379,8 @@ function Preview({state,device,lang}:{state:BuilderState;device:Device;lang:Lang
         <section className="wf-preview-hero">
           {state.business.hero&&<img className="wf-preview-hero-photo" src={state.business.hero} alt="" />}
           <small>{state.business.category || 'BUSINESS'}</small>
-          <h3>{state.business.name || (lang==='es'?'Tu negocio':'Your business')}</h3>
-          <p>{state.business.description || (lang==='es'?'Describe aquí lo que hace especial a tu negocio.':'Describe what makes your business special.')}</p>
+          <h3>{businessName || (lang==='es'?'Tu negocio':'Your business')}</h3>
+          <p>{businessDescription || (lang==='es'?'Describe aquí lo que hace especial a tu negocio.':'Describe what makes your business special.')}</p>
           <div>
             {(state.features.products || state.features.services) && <button onClick={()=>setCatalogOpen(true)}>{lang==='es'?'Ver productos y servicios':'View products and services'}</button>}
             {state.features.bookings && <button className="ghost">{lang==='es'?'Reservar ahora':'Book now'}</button>}
@@ -401,7 +416,7 @@ function Preview({state,device,lang}:{state:BuilderState;device:Device;lang:Lang
               {state.team.slice(0,4).map((member) => (
                 <article key={member.id}>
                   <b>{member.name.slice(0,1).toUpperCase()}</b>
-                  <span><strong>{member.name}</strong><em>{member.role}</em></span>
+                  <span><strong>{member.name}</strong><em>{memberRole(member)}</em></span>
                 </article>
               ))}
             </div>
@@ -432,7 +447,7 @@ function Preview({state,device,lang}:{state:BuilderState;device:Device;lang:Lang
         )}
 
         <footer>
-          <strong>{state.business.name || (lang==='es'?'Tu negocio':'Your business')}</strong>
+          <strong>{businessName || (lang==='es'?'Tu negocio':'Your business')}</strong>
           <span>{state.business.phone}</span>
           {state.features.maps && mapsValid && (
             <a href={state.business.mapsUrl} target="_blank" rel="noreferrer">Google Maps ↗</a>
@@ -452,7 +467,7 @@ function Preview({state,device,lang}:{state:BuilderState;device:Device;lang:Lang
                 ) : visibleCatalog.map((item)=>(
                   <button key={item.id} className="wf-preview-modal-card" onClick={()=>setSelectedItem(item)}>
                     {item.image ? <img src={item.image} alt="" /> : <span className="wf-preview-placeholder">{item.type==='service'?'SERVICE':'PRODUCT'}</span>}
-                    <div><small>{item.type==='service'?(lang==='es'?'servicio':'service'):(lang==='es'?'producto':'product')}</small><strong>{item.name || (lang==='es'?'Sin nombre':'Untitled')}</strong><b>${Number(item.price || 0).toFixed(2)}</b></div>
+                    <div><small>{item.type==='service'?(lang==='es'?'servicio':'service'):(lang==='es'?'producto':'product')}</small><strong>{itemName(item) || (lang==='es'?'Sin nombre':'Untitled')}</strong><b>${Number(item.price || 0).toFixed(2)}</b></div>
                   </button>
                 ))}
               </div>
@@ -467,9 +482,9 @@ function Preview({state,device,lang}:{state:BuilderState;device:Device;lang:Lang
               {selectedItem.image ? <img src={selectedItem.image} alt="" /> : <div className="wf-preview-item-placeholder">{selectedItem.type==='service'?'SERVICE':'PRODUCT'}</div>}
               <div>
                 <small>{selectedItem.type.toUpperCase()}</small>
-                <h4>{selectedItem.name || (lang==='es'?'Sin nombre':'Untitled')}</h4>
+                <h4>{itemName(selectedItem) || (lang==='es'?'Sin nombre':'Untitled')}</h4>
                 <strong>${Number(selectedItem.price || 0).toFixed(2)}</strong>
-                <p>{selectedItem.description || (lang==='es'?'Descripción del producto o servicio.':'Product or service description.')}</p>
+                <p>{itemDescription(selectedItem) || (lang==='es'?'Descripción del producto o servicio.':'Product or service description.')}</p>
                 {selectedItem.requiresAppointment && <span>{selectedItem.duration} min · {lang==='es'?'Requiere reservación':'Booking required'}</span>}
                 <button>{selectedItem.requiresAppointment?(lang==='es'?'Reservar':'Book'):(lang==='es'?'Añadir al carrito':'Add to cart')}</button>
               </div>
@@ -550,7 +565,10 @@ function BusinessStep({state,setState,lang}:{state:BuilderState;setState:Dispatc
     <div className="wf-step-content">
       <div className="wf-step-intro"><small>{lang==='es'?'PASO 1 · INFORMACIÓN':'STEP 1 · BUSINESS INFO'}</small><h3>{lang==='es'?'Cuéntanos sobre tu negocio.':'Tell us about your business.'}</h3><p>{lang==='es'?'Completa únicamente tus datos reales. Todo lo que escribas aquí se reflejará en tu website y portal administrativo.':'Enter only your real business information. Everything entered here will be reflected on your website and administrative portal.'}</p></div>
       <div className="wf-guidance"><b>{lang==='es'?'Guía':'Guidance'}</b><span>{lang==='es'?'Empieza por nombre y enlace. Luego añade las formas de contacto que quieras publicar. Puedes dejar en blanco cualquier red social que no utilices.':'Start with the name and preferred link. Then add only the contact methods you want to publish. Leave any unused social network blank.'}</span></div>
-      <Field label={lang==='es'?'Nombre del negocio':'Business name'} value={state.business.name} onChange={(v)=>setBusiness('name',v)} />
+      <div className="wf-bilingual-grid">
+        <Field label="Business name · English" value={state.business.nameEn ?? state.business.name} onChange={(v)=>setState((current)=>({...current,business:{...current.business,name:v,nameEn:v}}))} />
+        <Field label="Nombre del negocio · Español" value={state.business.nameEs ?? ''} onChange={(v)=>setBusiness('nameEs',v)} />
+      </div>
       <Field label={lang==='es'?'Enlace preferido':'Preferred link'} value={state.business.slug} onChange={(v)=>setBusiness('slug',v.toLowerCase().replace(/[^a-z0-9-]/g,''))} placeholder="business-name" />
       <small className="wf-field-help">{lang==='es'?'Tu página usará':'Your page will use'} /sites/{state.business.slug || 'business-name'}</small>
       <Field label={lang==='es'?'Nombre del cliente / contacto':'Owner / contact name'} value={state.business.contactName} onChange={(v)=>setBusiness('contactName',v)} placeholder={lang==='es'?'Persona responsable de la cuenta':'Person responsible for the account'} />
@@ -560,10 +578,10 @@ function BusinessStep({state,setState,lang}:{state:BuilderState;setState:Dispatc
           {categories.map((category)=><option key={category}>{category}</option>)}
         </select>
       </label>
-      <label className="wf-field">
-        <span>{lang==='es'?'Descripción':'Description'}</span>
-        <textarea rows={4} value={state.business.description} onChange={(event)=>setBusiness('description',event.target.value)} />
-      </label>
+      <div className="wf-bilingual-grid">
+        <label className="wf-field"><span>Business description · English</span><textarea rows={4} value={state.business.descriptionEn ?? state.business.description} onChange={(event)=>setState((current)=>({...current,business:{...current.business,description:event.target.value,descriptionEn:event.target.value}}))} /></label>
+        <label className="wf-field"><span>Descripción del negocio · Español</span><textarea rows={4} value={state.business.descriptionEs ?? ''} onChange={(event)=>setBusiness('descriptionEs',event.target.value)} /></label>
+      </div>
       <div className="wf-field-grid">
         <Field label={lang==='es'?'Teléfono':'Phone'} value={state.business.phone} onChange={(v)=>setBusiness('phone',v)} />
         <Field label="WhatsApp" value={state.business.whatsapp} onChange={(v)=>setBusiness('whatsapp',v)} />
@@ -785,9 +803,13 @@ function CatalogStep({state,setState,lang}:{state:BuilderState;setState:Dispatch
     const item:CatalogItem = {
       id:createId(type),
       type,
-      name:type==='service'?(lang==='es'?'Nuevo servicio':'New service'):(lang==='es'?'Nuevo producto':'New product'),
+      name:type==='service'?'New service':'New product',
+      nameEn:type==='service'?'New service':'New product',
+      nameEs:'',
       price:0,
       description:'',
+      descriptionEn:'',
+      descriptionEs:'',
       requiresAppointment:type==='service',
       duration:type==='service'?45:0,
     }
@@ -847,7 +869,7 @@ function CatalogStep({state,setState,lang}:{state:BuilderState;setState:Dispatch
             {item.image ? <img src={item.image} alt="" /> : <span className="wf-catalog-tile-placeholder">{item.type==='service'?'S':'P'}</span>}
             <div>
               <small>{String(index+1).padStart(2,'0')} · {item.type==='service'?(lang==='es'?'SERVICIO':'SERVICE'):(lang==='es'?'PRODUCTO':'PRODUCT')}</small>
-              <strong>{item.name || (lang==='es'?'Sin nombre':'Untitled')}</strong>
+              <strong>{itemName(item) || (lang==='es'?'Sin nombre':'Untitled')}</strong>
               <span>${Number(item.price || 0).toFixed(2)}</span>
             </div>
             <em>{lang==='es'?'Editar':'Edit'} →</em>
@@ -870,12 +892,18 @@ function CatalogStep({state,setState,lang}:{state:BuilderState;setState:Dispatch
                 {editingItem.image?<img src={editingItem.image} alt="" />:<span>{uploadingId===editingItem.id?(lang==='es'?'Guardando…':'Saving…'):(lang==='es'?'+ Imagen':'+ Image')}</span>}
               </label>
               <div>
-                <Field label={lang==='es'?'Nombre':'Name'} value={editingItem.name} onChange={(v)=>update(editingItem.id,{name:v})} />
+                <div className="wf-bilingual-grid">
+                  <Field label="Name · English" value={editingItem.nameEn ?? editingItem.name} onChange={(v)=>update(editingItem.id,{name:v,nameEn:v})} />
+                  <Field label="Nombre · Español" value={editingItem.nameEs ?? ''} onChange={(v)=>update(editingItem.id,{nameEs:v})} />
+                </div>
                 <div className="wf-mini-grid">
                   <label className="wf-field"><span>{lang==='es'?'Precio':'Price'}</span><input type="number" min="0" step=".01" value={editingItem.price} onChange={(e)=>update(editingItem.id,{price:Number(e.target.value)})}/></label>
                   {editingItem.type==='service' && <label className="wf-field"><span>{lang==='es'?'Duración':'Duration'}</span><select value={editingItem.duration} onChange={(e)=>update(editingItem.id,{duration:Number(e.target.value)})}>{[15,30,45,60,75,90,120,180,240].map((min)=><option key={min} value={min}>{min} min</option>)}</select></label>}
                 </div>
-                <label className="wf-field"><span>{lang==='es'?'Descripción':'Description'}</span><textarea rows={4} value={editingItem.description} onChange={(e)=>update(editingItem.id,{description:e.target.value})}/></label>
+                <div className="wf-bilingual-grid">
+                  <label className="wf-field"><span>Description · English</span><textarea rows={4} value={editingItem.descriptionEn ?? editingItem.description} onChange={(e)=>update(editingItem.id,{description:e.target.value,descriptionEn:e.target.value})}/></label>
+                  <label className="wf-field"><span>Descripción · Español</span><textarea rows={4} value={editingItem.descriptionEs ?? ''} onChange={(e)=>update(editingItem.id,{descriptionEs:e.target.value})}/></label>
+                </div>
                 {editingItem.type==='service' && <Toggle label={lang==='es'?'Requiere cita':'Appointment required'} checked={editingItem.requiresAppointment} onChange={(v)=>update(editingItem.id,{requiresAppointment:v})}/>}
                 <div className="wf-modal-actions">
                   <button className="danger" onClick={()=>remove(editingItem.id)}>{lang==='es'?'Eliminar':'Delete'}</button>
@@ -892,7 +920,7 @@ function CatalogStep({state,setState,lang}:{state:BuilderState;setState:Dispatch
 
 function TeamStep({state,setState,lang}:{state:BuilderState;setState:Dispatch<SetStateAction<BuilderState>>;lang:Language}) {
   const services = state.catalog.filter((item)=>item.type==='service' && item.requiresAppointment)
-  const addMember = () => setState((current)=>({...current,team:[...current.team,{id:createId('employee'),name:lang==='es'?'Nuevo empleado':'New team member',role:lang==='es'?'Profesional':'Professional',serviceIds:[]}]}))
+  const addMember = () => setState((current)=>({...current,team:[...current.team,{id:createId('employee'),name:'New team member',role:'Professional',roleEn:'Professional',roleEs:'',serviceIds:[]}]}))
   const update = (id:string,patch:Partial<TeamMember>) => setState((current)=>({...current,team:current.team.map((member)=>member.id===id?{...member,...patch}:member)}))
   const remove = (id:string) => setState((current)=>({...current,team:current.team.filter((member)=>member.id!==id)}))
 
@@ -905,7 +933,10 @@ function TeamStep({state,setState,lang}:{state:BuilderState;setState:Dispatch<Se
           <article key={member.id}>
             <header><b>{member.name.slice(0,1).toUpperCase()}</b><button onClick={()=>remove(member.id)}>{lang==='es'?'Eliminar':'Delete'}</button></header>
             <Field label={lang==='es'?'Nombre':'Name'} value={member.name} onChange={(v)=>update(member.id,{name:v})}/>
-            <Field label={lang==='es'?'Rol':'Role'} value={member.role} onChange={(v)=>update(member.id,{role:v})}/>
+            <div className="wf-bilingual-grid">
+              <Field label="Role · English" value={member.roleEn ?? member.role} onChange={(v)=>update(member.id,{role:v,roleEn:v})}/>
+              <Field label="Rol · Español" value={member.roleEs ?? ''} onChange={(v)=>update(member.id,{roleEs:v})}/>
+            </div>
             <div className="wf-service-assignment">
               <span>{lang==='es'?'Servicios que puede brindar':'Services this person can provide'}</span>
               {services.length===0?<small>{lang==='es'?'Añade un servicio que requiera cita en Catálogo.':'Add an appointment-based service in Catalog.'}</small>:services.map((service)=>(
