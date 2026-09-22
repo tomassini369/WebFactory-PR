@@ -128,7 +128,7 @@ export default function ClientStorefront({slug}:{slug:string}){
     site.features.calendar&&'Google Calendar',
   ].filter(Boolean) as string[]
   const heroImage=site.business.heroUrl||template?.heroImage||visibleCatalog.find(item=>item.imageUrl)?.imageUrl||''
-  const galleryImages=(site.business.galleryUrls?.length?site.business.galleryUrls:template?.gallery||[]).slice(0,4)
+  const galleryImages=site.business.galleryUrls?.length?site.business.galleryUrls:(template?.gallery||[])
   const hours=formatHours(site.hours)
   const initials=(name:string)=>name.split(/\s+/).slice(0,2).map((part:string)=>part[0]||'').join('').toUpperCase()
   const styles={
