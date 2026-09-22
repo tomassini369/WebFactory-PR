@@ -232,19 +232,7 @@ function App(){
 
       <section className="section white" id="como-funciona"><div className="shell"><Heading data={t.how}/><div className="steps">{(lang==='es'?[['Describe o personaliza','Configura manualmente o usa Factory AI para proponer Template/Custom, contenido bilingüe y estructura.'],['Revisa','Mira el preview y decide si aplicar o descartar la propuesta de IA antes de guardar cambios.'],['Verifica','Recibe el acceso privado por email y establece tu contraseña.'],['Prueba','Activa 48 horas gratis sin tarjeta y publica tu website dentro de WebFactory.'],['Conecta y continúa','Vincula Stripe Connect y Google Calendar cuando los necesites y luego escoge $30 mensual o $350 anual.']]:[['Describe or customize','Configure manually or use Factory AI to propose Template/Custom, bilingual content and structure.'],['Review','Preview the result and choose whether to apply or discard the AI proposal before saving changes.'],['Verify','Receive private access by email and set your password.'],['Try it','Activate 48 hours free with no card and publish your website inside WebFactory.'],['Connect and continue','Link Stripe Connect and Google Calendar when needed, then choose $30 monthly or $350 yearly.']]).map(([a,b],i)=><article key={a}><em>0{i+1}</em><h3>{a}</h3><p>{b}</p></article>)}</div></div></section>
 
-      <section className="section soft"><div className="shell"><Heading data={t.trust}/><div className="trust">{['Responsive','Secure Payments','Employee Booking','Google Calendar','Direct Payments','Factory AI'].map((x,i)=><div key={x}><span>{['↔','✓','◉','▦','
-
-      <section className="section white" id="faq"><div className="shell faq"><Heading data={t.faq}/><div>{faqs.map(([q,a])=><details key={q}><summary>{q}<span>+</span></summary><p>{a}</p></details>)}</div></div></section>
-
-      <section className="final"><div className="shell"><div><p className="eyebrow">WEBFACTORY PR</p><h2>{t.final[0]}</h2><p>{t.final[1]}</p></div><aside><strong>48h</strong><span>{lang==='es'?'gratis · luego $30/mes o $350/año':'free · then $30/month or $350/year'}</span><a href="/builder" className="btn light">{t.hero.primary} ↗</a></aside></div></section>
-    </main>
-
-    <footer className="footer"><div className="shell"><div><img src={LOGO} alt="WebFactory PR"/><p>Build. Sell. Book. Grow.</p></div><nav>{(lang==='es'?['Producto','Templates','Funciones','Builder','FAQ','Contacto','Privacidad','Términos','Política de Reembolsos']:['Product','Templates','Features','Builder','FAQ','Contact','Privacy','Terms','Refund Policy']).map((x,i)=>{const href=i===1?'/templates':i===2?'#incluye':i===3?'/builder':i===4?'#faq':i===5?'mailto:WebFactoryPR@gmail.com':i===6?'/privacy':i===7?'/terms':i===8?'/refund-policy':'#top';const legal=i>=6;return <a key={x} href={href} target={legal?'_blank':undefined} rel={legal?'noreferrer':undefined}>{x}</a>})}</nav><p className="copyright">WebFactoryPR@gmail.com · © 2026 WebFactory PR. {t.footer}</p></div></footer>
-  </>
-}
-
-export default App
-,'✦'][i]}</span><b>{x}</b></div>)}</div></div></section>
+      <section className="section soft"><div className="shell"><Heading data={t.trust}/><div className="trust">{['Responsive','Secure Payments','Employee Booking','Google Calendar','Direct Payments','Factory AI'].map((x,i)=><div key={x}><span>{['↔','✓','◉','▦','$','✦'][i]}</span><b>{x}</b></div>)}</div></div></section>
 
       <section className="section white" id="faq"><div className="shell faq"><Heading data={t.faq}/><div>{faqs.map(([q,a])=><details key={q}><summary>{q}<span>+</span></summary><p>{a}</p></details>)}</div></div></section>
 
