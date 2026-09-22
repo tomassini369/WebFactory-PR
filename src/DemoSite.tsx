@@ -67,7 +67,7 @@ function DemoSite({ slug }: { slug: string }) {
   const baseConfig = demoBySlug(slug)
   const [language, setLanguage] = useState<DemoLanguage>(() => {
     const saved = window.localStorage.getItem('webfactory-demo-language')
-    return saved === 'en' ? 'en' : 'es'
+    return saved === 'es' ? 'es' : 'en'
   })
   const config = useMemo(() => baseConfig ? localizeDemo(baseConfig, language) : undefined, [baseConfig, language])
   const ui = demoUi[language]
