@@ -136,3 +136,12 @@
 
 .wf-bilingual-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
 @media(max-width:720px){.wf-bilingual-grid{grid-template-columns:1fr}}
+
+.wf-ai-assistant{margin:0 0 14px;border:1px solid #c9dcf5;border-radius:14px;background:linear-gradient(135deg,#f7fbff,#eef5ff);overflow:hidden}
+.wf-ai-toggle{width:100%;min-height:58px;padding:11px 13px;display:grid;grid-template-columns:34px 1fr auto;align-items:center;gap:10px;border:0;background:transparent;color:var(--navy);text-align:left;cursor:pointer}
+.wf-ai-toggle>span{width:34px;height:34px;display:flex;align-items:center;justify-content:center;border-radius:10px;background:linear-gradient(145deg,#0b1529,#3c86f6);color:#fff;font-size:1rem}
+.wf-ai-toggle>div{display:grid;gap:2px}.wf-ai-toggle small{color:var(--blue);font-size:.56rem;font-weight:900;letter-spacing:.1em}.wf-ai-toggle strong{font-size:.78rem}.wf-ai-toggle>b{font-size:1rem}
+.wf-ai-body{padding:0 13px 13px;display:grid;gap:10px}.wf-ai-body>p{margin:0;color:#627083;font-size:.67rem;line-height:1.5}.wf-ai-body textarea{width:100%;padding:11px;border:1px solid #c8d8ec;border-radius:11px;background:#fff;color:var(--navy);font:inherit;font-size:.72rem;line-height:1.5;resize:vertical;outline:none}.wf-ai-body textarea:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(60,134,246,.10)}
+.wf-ai-actions{display:flex;align-items:center;justify-content:space-between;gap:10px}.wf-ai-actions span{color:#8794a5;font-size:.58rem}.wf-ai-actions button,.wf-ai-proposal nav button{min-height:36px;padding:0 11px;border:0;border-radius:9px;background:var(--blue);color:#fff;font-size:.65rem;font-weight:850;cursor:pointer}.wf-ai-actions button:disabled{opacity:.55;cursor:wait}
+.wf-ai-error{padding:9px 10px;border-radius:9px;background:#fff0f0;color:#a33;font-size:.65rem;line-height:1.4}
+.wf-ai-proposal{padding:12px;display:grid;gap:8px;border:1px solid #bdd5f4;border-radius:11px;background:#fff}.wf-ai-proposal>small{color:var(--blue);font-size:.56rem;font-weight:900;letter-spacing:.1em}.wf-ai-proposal>strong{font-size:.75rem;line-height:1.45}.wf-ai-proposal>div{display:flex;gap:6px;flex-wrap:wrap}.wf-ai-proposal>div span{padding:5px 7px;border-radius:999px;background:#edf5ff;color:#496079;font-size:.57rem;font-weight:800}.wf-ai-proposal>p{margin:0;color:#728095;font-size:.61rem;line-height:1.45}.wf-ai-proposal nav{display:flex;justify-content:flex-end;gap:7px}.wf-ai-proposal nav button.secondary{border:1px solid #cbd9eb;background:#fff;color:#526273}
