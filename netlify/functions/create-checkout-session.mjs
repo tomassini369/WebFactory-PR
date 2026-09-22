@@ -200,6 +200,8 @@ export function sanitizeOrder(payload) {
       templateName: template?.name || "",
       templateRoute: template ? `/demos/${requestedTemplateSlug}` : "",
       preserveDemoStructure: Boolean(template),
+      customLayout: ["split","centered","editorial","showcase"].includes(d.customLayout) ? d.customLayout : "split",
+      sectionOrder: Array.isArray(d.sectionOrder) ? d.sectionOrder.filter((section) => ["catalog","team","about","gallery","contact"].includes(section)).slice(0,5) : ["catalog","team","about","gallery","contact"],
       style: ["Modern","Luxury","Minimal","Bold"].includes(d.style) ? d.style : "Modern",
       primary: cleanText(d.primary, 30),
       secondary: cleanText(d.secondary, 30),
