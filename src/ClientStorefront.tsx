@@ -16,12 +16,14 @@ const socialUrl=(value:string,network:'instagram'|'facebook'|'x')=>{
   const handle=raw.replace(/^@/,'')
   return network==='instagram'?`https://instagram.com/${handle}`:network==='facebook'?`https://facebook.com/${handle}`:`https://x.com/${handle}`
 }
-const formatHours=(hours:any)=>{
+const formatHours=(hours:any,lang:'es'|'en')=>{
   const active=Object.entries(hours||{}).filter(([,value]:any)=>value?.enabled)
   if(!active.length)return ''
+  const names:Record<string,{en:string;es:string}>={monday:{en:'Monday',es:'Lunes'},lunes:{en:'Monday',es:'Lunes'},tuesday:{en:'Tuesday',es:'Martes'},martes:{en:'Tuesday',es:'Martes'},wednesday:{en:'Wednesday',es:'Miércoles'},miercoles:{en:'Wednesday',es:'Miércoles'},'miércoles':{en:'Wednesday',es:'Miércoles'},thursday:{en:'Thursday',es:'Jueves'},jueves:{en:'Thursday',es:'Jueves'},friday:{en:'Friday',es:'Viernes'},viernes:{en:'Friday',es:'Viernes'},saturday:{en:'Saturday',es:'Sábado'},sabado:{en:'Saturday',es:'Sábado'},'sábado':{en:'Saturday',es:'Sábado'},sunday:{en:'Sunday',es:'Domingo'},domingo:{en:'Sunday',es:'Domingo'}}
+  const label=(day:string)=>names[day.toLowerCase()]?.[lang]||day
   const first=active[0] as [string,any]
   const last=active[active.length-1] as [string,any]
-  return `${first[0]}–${last[0]} · ${first[1].open}–${first[1].close}`
+  return `${label(first[0])}–${label(last[0])} · ${first[1].open}–${first[1].close}`
 }
 
 export default function ClientStorefront({slug}:{slug:string}){
@@ -87,7 +89,7 @@ export default function ClientStorefront({slug}:{slug:string}){
     if(!site)return
     setBusy(true);setError('')
     try{
-      const body=booking?{siteId:site.siteId,customer,booking}:{siteId:site.siteId,customer,items:cart}
+      const body=booking?{siteId:site.siteId,customer,booking,lang}:{siteId:site.siteId,customer,items:cart,lang}
       const r=await fetch('/.netlify/functions/create-client-checkout',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
       const x=await r.json()
       if(!r.ok)throw new Error(x.message)
@@ -137,7 +139,7 @@ export default function ClientStorefront({slug}:{slug:string}){
   const sectionOrder=site.design?.templateSlug?['catalog','team','about','gallery','contact']:(site.design?.sectionOrder?.length?site.design.sectionOrder:['catalog','team','about','gallery','contact'])
   const sectionPosition=(key:string)=>sectionOrder.indexOf(key)>=0?sectionOrder.indexOf(key)+2:99
   const customLayout=site.design?.templateSlug?'demo':(site.design?.customLayout||'split')
-  const hours=formatHours(site.hours)
+  const hours=formatHours(site.hours,lang)
   const initials=(name:string)=>name.split(/\s+/).slice(0,2).map((part:string)=>part[0]||'').join('').toUpperCase()
   const styles={
     '--demo-accent':site.design?.secondary||template?.accent||'#3C86F6',
