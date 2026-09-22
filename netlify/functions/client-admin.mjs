@@ -12,10 +12,14 @@ function color(value, fallback) {
 function sanitizeBusiness(value = {}, current = {}) {
   return {
     ...current,
-    name: cleanText(value.name ?? current.name, 180),
+    name: cleanText(value.nameEn ?? value.name ?? current.nameEn ?? current.name, 180),
+    nameEn: cleanText(value.nameEn ?? value.name ?? current.nameEn ?? current.name, 180),
+    nameEs: cleanText(value.nameEs ?? current.nameEs, 180),
     contactName: cleanText(value.contactName ?? current.contactName, 180),
     category: cleanText(value.category ?? current.category, 180),
-    description: cleanText(value.description ?? current.description, 6000),
+    description: cleanText(value.descriptionEn ?? value.description ?? current.descriptionEn ?? current.description, 6000),
+    descriptionEn: cleanText(value.descriptionEn ?? value.description ?? current.descriptionEn ?? current.description, 6000),
+    descriptionEs: cleanText(value.descriptionEs ?? current.descriptionEs, 6000),
     phone: cleanText(value.phone ?? current.phone, 80),
     whatsapp: cleanText(value.whatsapp ?? current.whatsapp, 80),
     email: cleanText(value.email ?? current.email, 320),
@@ -36,8 +40,12 @@ function sanitizeCatalog(value) {
     return {
       id,
       type: item.type === "service" ? "service" : "product",
-      name: cleanText(item.name, 220),
-      description: cleanText(item.description, 6000),
+      name: cleanText(item.nameEn || item.name || item.nameEs, 220),
+      nameEn: cleanText(item.nameEn || item.name, 220),
+      nameEs: cleanText(item.nameEs, 220),
+      description: cleanText(item.descriptionEn || item.description || item.descriptionEs, 6000),
+      descriptionEn: cleanText(item.descriptionEn || item.description, 6000),
+      descriptionEs: cleanText(item.descriptionEs, 6000),
       price: Math.round(Math.max(0, Number(item.price || 0)) * 100) / 100,
       active: item.active !== false,
       inventory: item.type === "product" && item.inventory !== null && item.inventory !== ""
@@ -58,7 +66,9 @@ function sanitizeEmployees(value, catalog) {
   return value.map((member, index) => ({
     id: cleanText(member.id || `employee-${index + 1}`, 120),
     name: cleanText(member.name, 180),
-    role: cleanText(member.role, 180),
+    role: cleanText(member.roleEn || member.role || member.roleEs, 180),
+    roleEn: cleanText(member.roleEn || member.role, 180),
+    roleEs: cleanText(member.roleEs, 180),
     active: member.active !== false,
     serviceIds: Array.isArray(member.serviceIds)
       ? [...new Set(member.serviceIds.map((id) => cleanText(id, 120)).filter((id) => serviceIds.has(id)))].slice(0, 100)
