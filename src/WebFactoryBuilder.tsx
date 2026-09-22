@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, type CSSProperties, type Dispatch, type SetStateAction } from 'react'
 import { demoConfigs, templateGroups, templateGroupForCategory } from './demoData'
+import BuilderAiAssistant from './BuilderAiAssistant'
 import './builder.css'
 
 type Language = 'es' | 'en'
@@ -1255,6 +1256,7 @@ export default function WebFactoryBuilder({lang}:{lang:Language}) {
             <div><small>{lang==='es'?'CONFIGURACIÓN GUIADA':'GUIDED SETUP'}</small><strong>{labels[step]}</strong></div>
             <span>{completion}%</span>
           </div>
+          <BuilderAiAssistant state={state} setState={setState} lang={lang}/>
           {stepContent}
           <div className="wf-builder-navigation">
             <button className="secondary" disabled={step===0} onClick={()=>setStep((current)=>Math.max(0,current-1))}>← {lang==='es'?'Atrás':'Back'}</button>
