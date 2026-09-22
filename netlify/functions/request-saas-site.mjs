@@ -114,6 +114,12 @@ export default async (req) => {
       const now = new Date().toISOString();
       const siteId = `site-${crypto.randomUUID()}`;
       const logoAssetKey = await copyDraftAsset(order.business.logoAssetKey, siteId, "logo");
+      const heroAssetKey = await copyDraftAsset(order.business.heroAssetKey, siteId, "hero");
+      const galleryAssetKeys = [];
+      for (const [index, asset] of (order.business.galleryAssets || []).entries()) {
+        const key = await copyDraftAsset(asset.assetKey, siteId, `gallery-${index + 1}`);
+        if (key) galleryAssetKeys.push(key);
+      }
       const catalog = [];
       for (const item of order.catalog) {
         catalog.push({
@@ -141,7 +147,7 @@ export default async (req) => {
         updatedAt: now,
         revision: 1,
         members: [{ email: ownerEmail, role: "owner" }],
-        business: { ...order.business, logoAssetKey },
+        business: { ...order.business, logoAssetKey, heroAssetKey, galleryAssetKeys },
         design: { ...order.design },
         features: { ...order.features },
         catalog,
