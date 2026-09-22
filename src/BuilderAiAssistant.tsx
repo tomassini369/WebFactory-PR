@@ -52,10 +52,10 @@ export default function BuilderAiAssistant({state,setState,lang}:{state:any;setS
         }),
       })
       const result=await response.json()
-      if(!response.ok||!result.ok)throw new Error(result.message||'Forge AI could not generate a proposal.')
+      if(!response.ok||!result.ok)throw new Error(result.message||'Factory AI could not generate a proposal.')
       setProposal(result.proposal)
     }catch(e){
-      setError(e instanceof Error?e.message:(lang==='es'?'Forge AI no pudo completar la solicitud.':'Forge AI could not complete the request.'))
+      setError(e instanceof Error?e.message:(lang==='es'?'Factory AI no pudo completar la solicitud.':'Factory AI could not complete the request.'))
     }finally{setBusy(false)}
   }
 
@@ -102,15 +102,15 @@ export default function BuilderAiAssistant({state,setState,lang}:{state:any;setS
 
   return <section className={'wf-ai-assistant '+(open?'open':'')}>
     <button className="wf-ai-toggle" type="button" onClick={()=>setOpen(value=>!value)}>
-      <span>✦</span><div><small>FORGE AI · BY WEBFACTORY</small><strong>{lang==='es'?'Crea con Forge AI':'Build with Forge AI'}</strong></div><b>{open?'−':'+'}</b>
+      <span>✦</span><div><small>FACTORY AI · BY WEBFACTORY</small><strong>{lang==='es'?'Crea con Factory AI':'Build with Factory AI'}</strong></div><b>{open?'−':'+'}</b>
     </button>
     {open&&<div className="wf-ai-body">
       <p>{lang==='es'?'Describe el negocio o el cambio que quieres. La IA solo modifica la configuración dentro de WebFactory; nunca crea otro proyecto o deployment.':'Describe the business or change you want. AI only modifies configuration inside WebFactory; it never creates another project or deployment.'}</p>
       <textarea rows={5} maxLength={1400} value={prompt} onChange={e=>setPrompt(e.target.value)} placeholder={lang==='es'?'Ejemplo: Tengo un salón de belleza en Puerto Rico. Quiero un website moderno con servicios de color, keratina, uñas y booking por especialista.':'Example: I own a beauty salon in Puerto Rico. I want a modern website with color, keratin, nails and specialist booking.'}/>
-      <div className="wf-ai-actions"><span>{prompt.length}/1400</span><button type="button" disabled={busy} onClick={generate}>{busy?(lang==='es'?'Forge AI está creando…':'Forge AI is creating…'):(lang==='es'?'Generar propuesta':'Generate proposal')} ✦</button></div>
+      <div className="wf-ai-actions"><span>{prompt.length}/1400</span><button type="button" disabled={busy} onClick={generate}>{busy?(lang==='es'?'Factory AI está creando…':'Factory AI is creating…'):(lang==='es'?'Generar propuesta':'Generate proposal')} ✦</button></div>
       {error&&<div className="wf-ai-error">{error}</div>}
       {proposal&&<div className="wf-ai-proposal">
-        <small>{lang==='es'?'PROPUESTA DE FORGE AI':'FORGE AI PROPOSAL'}</small>
+        <small>{lang==='es'?'PROPUESTA DE FACTORY AI':'FACTORY AI PROPOSAL'}</small>
         <strong>{lang==='es'?(proposal.summaryEs||proposal.summaryEn):(proposal.summaryEn||proposal.summaryEs)}</strong>
         <div>
           <span>{proposal.design.templateSlug?'Template · '+(demoConfigs.find(x=>x.slug===proposal.design.templateSlug)?.name||proposal.design.templateSlug):'Custom'}</span>
