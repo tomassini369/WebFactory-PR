@@ -5,7 +5,8 @@ const root = process.cwd();
 const source = await fs.readFile(path.join(root, "src", "demoData.ts"), "utf8");
 const ids = [...source.matchAll(/pexels\((\d+)/g)].map((match) => match[1]);
 const uniqueIds = [...new Set(ids)];
-const outDir = path.join(root, "public", "demo-images");
+// Vite serves `assets/` as the public directory for this project.
+const outDir = path.join(root, "assets", "demo-images");
 await fs.mkdir(outDir, { recursive: true });
 
 for (const id of uniqueIds) {
