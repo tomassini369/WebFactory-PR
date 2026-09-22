@@ -134,34 +134,8 @@ const initialState: BuilderState = {
     bookings: true,
     calendar: true,
   },
-  catalog: [
-    {
-      id: 'service-1',
-      type: 'service',
-      name: 'Premium Haircut',
-      price: 35,
-      description: 'Corte profesional con terminación y styling.',
-      requiresAppointment: true,
-      duration: 45,
-    },
-    {
-      id: 'product-1',
-      type: 'product',
-      name: 'Styling Clay',
-      price: 24,
-      description: 'Producto de styling con acabado natural.',
-      requiresAppointment: false,
-      duration: 0,
-    },
-  ],
-  team: [
-    {
-      id: 'employee-1',
-      name: 'Carlos Rivera',
-      role: 'Barber',
-      serviceIds: ['service-1'],
-    },
-  ],
+  catalog: [],
+  team: [],
   hours: {
     Lunes: { enabled: true, open: '09:00', close: '17:00' },
     Martes: { enabled: true, open: '09:00', close: '17:00' },
