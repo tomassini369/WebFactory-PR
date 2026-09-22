@@ -325,7 +325,7 @@ function Toggle({checked,onChange,label,help}:{checked:boolean;onChange:(value:b
       onClick={() => onChange(!checked)}
     >
       <span><i /></span>
-      <span className="wf-toggle-copy"><b>{label}</b>{help&&<small>{help}</small>}</span>
+      <div className="wf-toggle-copy"><b>{label}</b>{help&&<small>{help}</small>}</div>
       <em>{checked?'ON':'OFF'}</em>
     </button>
   )
@@ -690,7 +690,8 @@ function DesignStep({state,setState,lang}:{state:BuilderState;setState:Dispatch<
 function FeaturesStep({state,setState,lang}:{state:BuilderState;setState:Dispatch<SetStateAction<BuilderState>>;lang:Language}) {
   return (
     <div className="wf-step-content">
-      <div className="wf-step-intro"><small>{lang==='es'?'PASO 3':'STEP 3'}</small><h3>{lang==='es'?'Activa lo que tu negocio necesita.':'Enable what your business needs.'}</h3><p>{lang==='es'?`La suscripción mensual es ${PRICE}; también puedes escoger el plan anual.`:`The monthly subscription is ${PRICE}; you can also choose the annual plan.`}</p></div>
+      <div className="wf-step-intro"><small>{lang==='es'?'PASO 3 · FUNCIONES':'STEP 3 · FEATURES'}</small><h3>{lang==='es'?'Activa exactamente lo que tu negocio necesita.':'Enable exactly what your business needs.'}</h3><p>{lang==='es'?'Cada interruptor controla una función real del website. Si lo apagas, esa función no debe aparecer en la página publicada.':'Each switch controls a real website capability. If you turn it off, that capability should not appear on the published site.'}</p></div>
+      <div className="wf-guidance"><b>{lang==='es'?'Cómo funciona':'How it works'}</b><span>{lang==='es'?'Activa solo las funciones que quieras ofrecer. Las opciones se aplican directamente a la página generada y luego pueden cambiarse desde el portal.':'Enable only the capabilities you want. These choices apply directly to the generated website and can later be changed from the portal.'}</span></div>
       <div className="wf-feature-grid">
         {Object.entries(featureLabels[lang]).map(([key,label])=>(
           <Toggle
