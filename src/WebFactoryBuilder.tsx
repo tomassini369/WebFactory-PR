@@ -73,6 +73,8 @@ type BuilderState = {
     email: string
     mapsUrl: string
     instagram: string
+    facebook: string
+    x: string
     logo?: string
     logoAssetKey?: string
     logoAssetName?: string
@@ -93,21 +95,23 @@ type BuilderState = {
 
 const PRICE = '$30'
 const CATALOG_LIMIT = 100
-const STORAGE_KEY = 'webfactory-v2-builder-draft'
+const STORAGE_KEY = 'webfactory-v3-builder-draft'
 const DRAFT_ID_KEY = 'webfactory-v2-draft-id'
 
 const initialState: BuilderState = {
   business: {
-    name: 'Northline Studio',
-    slug: 'northline-studio',
+    name: '',
+    slug: '',
     contactName: '',
-    category: 'Barber',
-    description: 'Cortes modernos, grooming y reservaciones fáciles desde cualquier dispositivo.',
-    phone: '(787) 555-0101',
-    whatsapp: '(787) 555-0101',
-    email: 'hello@example.com',
-    mapsUrl: 'https://www.google.com/maps/search/?api=1&query=San+Juan%2C+Puerto+Rico',
-    instagram: '@northlinestudio',
+    category: 'Other',
+    description: '',
+    phone: '',
+    whatsapp: '',
+    email: '',
+    mapsUrl: '',
+    instagram: '',
+    facebook: '',
+    x: '',
   },
   design: {
     templateSlug: '',
@@ -188,6 +192,33 @@ const initialState: BuilderState = {
 
 const categories = ['Restaurant','Automotive','Barber','Beauty','Wellness','Retail','Professional Services','Real Estate','Other']
 const styles: BuilderStyle[] = ['Modern','Luxury','Minimal','Bold']
+
+const featureHelp: Record<Language,Record<string,string>> = {
+  es: {
+    products:'Muestra productos físicos o digitales dentro del catálogo.',
+    services:'Muestra servicios y permite marcar cuáles requieren cita.',
+    cart:'Permite añadir artículos y continuar al checkout.',
+    whatsapp:'Abre una conversación directa con el WhatsApp configurado.',
+    calls:'Permite llamar al teléfono del negocio con un toque.',
+    social:'Muestra Instagram, Facebook y X cuando estén configurados.',
+    form:'Añade un formulario de contacto para visitantes.',
+    maps:'Muestra o enlaza la ubicación real de Google Maps.',
+    bookings:'Activa reservaciones por servicio, empleado y horario.',
+    calendar:'Conecta Google Calendar para disponibilidad y conflictos.',
+  },
+  en: {
+    products:'Shows physical or digital products in the catalog.',
+    services:'Shows services and lets you mark which ones require appointments.',
+    cart:'Lets visitors add items and continue to checkout.',
+    whatsapp:'Opens a direct conversation with the configured WhatsApp number.',
+    calls:'Lets visitors call the business phone with one tap.',
+    social:'Shows Instagram, Facebook and X when configured.',
+    form:'Adds a visitor contact form.',
+    maps:'Shows or links the real Google Maps location.',
+    bookings:'Enables bookings by service, employee and time.',
+    calendar:'Connects Google Calendar for availability and conflicts.',
+  },
+}
 
 const featureLabels: Record<Language,Record<string,string>> = {
   es: {
@@ -285,7 +316,7 @@ const readFile = (file: File) =>
 const createId = (prefix: string) =>
   `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2,7)}`
 
-function Toggle({checked,onChange,label}:{checked:boolean;onChange:(value:boolean)=>void;label:string}) {
+function Toggle({checked,onChange,label,help}:{checked:boolean;onChange:(value:boolean)=>void;label:string;help?:string}) {
   return (
     <button
       type="button"
@@ -294,7 +325,7 @@ function Toggle({checked,onChange,label}:{checked:boolean;onChange:(value:boolea
       onClick={() => onChange(!checked)}
     >
       <span><i /></span>
-      <b>{label}</b>
+      <span className="wf-toggle-copy"><b>{label}</b>{help&&<small>{help}</small>}</span>
       <em>{checked?'ON':'OFF'}</em>
     </button>
   )
@@ -495,7 +526,8 @@ function BusinessStep({state,setState,lang}:{state:BuilderState;setState:Dispatc
 
   return (
     <div className="wf-step-content">
-      <div className="wf-step-intro"><small>{lang==='es'?'PASO 1':'STEP 1'}</small><h3>{lang==='es'?'Cuéntanos sobre tu negocio.':'Tell us about your business.'}</h3><p>{lang==='es'?'Estos datos alimentan el preview y tu portal administrativo.':'These details power your preview and administrative portal.'}</p></div>
+      <div className="wf-step-intro"><small>{lang==='es'?'PASO 1 · INFORMACIÓN':'STEP 1 · BUSINESS INFO'}</small><h3>{lang==='es'?'Cuéntanos sobre tu negocio.':'Tell us about your business.'}</h3><p>{lang==='es'?'Completa únicamente tus datos reales. Todo lo que escribas aquí se reflejará en tu website y portal administrativo.':'Enter only your real business information. Everything entered here will be reflected on your website and administrative portal.'}</p></div>
+      <div className="wf-guidance"><b>{lang==='es'?'Guía':'Guidance'}</b><span>{lang==='es'?'Empieza por nombre y enlace. Luego añade las formas de contacto que quieras publicar. Puedes dejar en blanco cualquier red social que no utilices.':'Start with the name and preferred link. Then add only the contact methods you want to publish. Leave any unused social network blank.'}</span></div>
       <Field label={lang==='es'?'Nombre del negocio':'Business name'} value={state.business.name} onChange={(v)=>setBusiness('name',v)} />
       <Field label={lang==='es'?'Enlace preferido':'Preferred link'} value={state.business.slug} onChange={(v)=>setBusiness('slug',v.toLowerCase().replace(/[^a-z0-9-]/g,''))} placeholder="business-name" />
       <small className="wf-field-help">{lang==='es'?'Tu página usará':'Your page will use'} /sites/{state.business.slug || 'business-name'}</small>
@@ -514,7 +546,9 @@ function BusinessStep({state,setState,lang}:{state:BuilderState;setState:Dispatc
         <Field label={lang==='es'?'Teléfono':'Phone'} value={state.business.phone} onChange={(v)=>setBusiness('phone',v)} />
         <Field label="WhatsApp" value={state.business.whatsapp} onChange={(v)=>setBusiness('whatsapp',v)} />
         <Field label={lang==='es'?'Email del cliente':'Customer email'} type="email" value={state.business.email} onChange={(v)=>setBusiness('email',v)} />
-        <Field label="Instagram" value={state.business.instagram} onChange={(v)=>setBusiness('instagram',v)} />
+        <Field label="Instagram" value={state.business.instagram} onChange={(v)=>setBusiness('instagram',v)} placeholder="https://instagram.com/..." />
+        <Field label="Facebook" value={state.business.facebook} onChange={(v)=>setBusiness('facebook',v)} placeholder="https://facebook.com/..." />
+        <Field label="X" value={state.business.x} onChange={(v)=>setBusiness('x',v)} placeholder="https://x.com/..." />
       </div>
       <label className="wf-field wf-maps-field">
         <span>{lang==='es'?'Enlace de Google Maps':'Google Maps link'}</span>
@@ -662,6 +696,7 @@ function FeaturesStep({state,setState,lang}:{state:BuilderState;setState:Dispatc
           <Toggle
             key={key}
             label={label}
+            help={featureHelp[lang][key]}
             checked={Boolean(state.features[key])}
             onChange={(value)=>setState((current)=>({...current,features:{...current.features,[key]:value}}))}
           />
@@ -1114,6 +1149,10 @@ export default function WebFactoryBuilder({lang}:{lang:Language}) {
         </aside>
 
         <section className="wf-builder-panel">
+          <div className="wf-setup-guidance">
+            <div><small>{lang==='es'?'CONFIGURACIÓN GUIADA':'GUIDED SETUP'}</small><strong>{labels[step]}</strong></div>
+            <span>{completion}%</span>
+          </div>
           {stepContent}
           <div className="wf-builder-navigation">
             <button className="secondary" disabled={step===0} onClick={()=>setStep((current)=>Math.max(0,current-1))}>← {lang==='es'?'Atrás':'Back'}</button>
