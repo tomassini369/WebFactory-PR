@@ -185,14 +185,14 @@ export async function ensureClientSiteForOrder(order) {
     catalog,
     employees,
     hours: order.hours || {},
-    settings: site.settings || { locale: "es", timezone: "America/Puerto_Rico", currency: "usd" },
+    settings: site.settings || { locale: "en", timezone: "America/Puerto_Rico", currency: "usd" },
     paymentRules: {
       ...(order.payments || {}),
       stripeConnectedAccountId: order.stripeConnectedAccountId || "",
       stripeCapabilityStatus: order.stripeConnectCapabilityStatus || "not_started",
     },
     googleCalendar: { connected: false, calendarEmail: "", connectedAt: "", employeeCalendars: {} },
-    settings: { locale: "es", timezone: "America/Puerto_Rico", currency: "usd" },
+    settings: { locale: "en", timezone: "America/Puerto_Rico", currency: "usd" },
     servicePlan: {
       code: "webfactory-premium-commerce",
       name: "WebFactory Premium Commerce Website",
