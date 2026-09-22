@@ -40,8 +40,14 @@ export default function BuilderAiAssistant({state,setState,lang}:{state:any;setS
             },
             design:state.design,
             features:state.features,
-            catalogCount:state.catalog.length,
-            teamCount:state.team.length,
+            catalog:state.catalog.map((item:any)=>({
+              type:item.type,name:item.name,nameEn:item.nameEn,nameEs:item.nameEs,
+              description:item.description,descriptionEn:item.descriptionEn,descriptionEs:item.descriptionEs,
+              price:item.price,requiresAppointment:item.requiresAppointment,duration:item.duration,
+            })),
+            team:state.team.map((member:any)=>({
+              name:member.name,role:member.role,roleEn:member.roleEn,roleEs:member.roleEs,
+            })),
           },
         }),
       })
