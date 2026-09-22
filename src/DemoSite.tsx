@@ -113,7 +113,7 @@ function DemoSite({ slug }: { slug: string }) {
 
   useEffect(() => {
     if (!config) return
-    document.title = `${config.name} — WebFactory Demo`
+    document.title = `${config.name} — WebFactory Template`
   }, [config])
 
   if (!config) {
