@@ -125,6 +125,8 @@ function DemoSite({ slug }: { slug: string }) {
     )
   }
 
+  const showcaseFeatures = Array.from(new Set([...config.features, 'WhatsApp', 'Direct calls', 'Social media', 'Contact form', 'Google Maps', 'Google Calendar']))
+
   const styles = {
     '--demo-accent': config.accent,
     '--demo-accent-2': config.accent2,
@@ -238,7 +240,7 @@ function DemoSite({ slug }: { slug: string }) {
         </section>
 
         <section className="demo-feature-strip">
-          {config.features.map((feature, index) => (
+          {showcaseFeatures.map((feature, index) => (
             <div key={feature}>
               <span>0{index + 1}</span>
               <strong>{feature}</strong>
@@ -341,6 +343,14 @@ function DemoSite({ slug }: { slug: string }) {
             <span>{ui.mapPreview}</span>
             <i />
             <b>{config.location}</b>
+          </div>
+          <div className="demo-function-showcase">
+            <article><small>WHATSAPP</small><strong>Chat directo</strong><span>Ejemplo de acceso rápido al número configurado.</span></article>
+            <article><small>CALL</small><strong>Llamada con un toque</strong><span>El teléfono del negocio abre la función de llamadas.</span></article>
+            <article><small>SOCIAL</small><strong>Instagram · Facebook · X</strong><span>Las redes activas aparecen como enlaces públicos.</span></article>
+            <article><small>FORM</small><strong>Formulario de contacto</strong><span>El visitante puede enviar un mensaje al email del negocio.</span></article>
+            <article><small>MAPS</small><strong>Google Maps</strong><span>La ubicación configurada se enlaza desde la página.</span></article>
+            <article><small>CALENDAR</small><strong>Google Calendar</strong><span>Ejemplo de sincronización con disponibilidad y reservaciones.</span></article>
           </div>
         </section>
       </main>
