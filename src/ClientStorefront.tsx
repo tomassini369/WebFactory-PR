@@ -129,6 +129,9 @@ export default function ClientStorefront({slug}:{slug:string}){
   ].filter(Boolean) as string[]
   const heroImage=site.business.heroUrl||template?.heroImage||visibleCatalog.find(item=>item.imageUrl)?.imageUrl||''
   const galleryImages=site.business.galleryUrls?.length?site.business.galleryUrls:(template?.gallery||[])
+  const sectionOrder=site.design?.templateSlug?['catalog','team','about','gallery','contact']:(site.design?.sectionOrder?.length?site.design.sectionOrder:['catalog','team','about','gallery','contact'])
+  const sectionPosition=(key:string)=>sectionOrder.indexOf(key)>=0?sectionOrder.indexOf(key)+2:99
+  const customLayout=site.design?.templateSlug?'demo':(site.design?.customLayout||'split')
   const hours=formatHours(site.hours)
   const initials=(name:string)=>name.split(/\s+/).slice(0,2).map((part:string)=>part[0]||'').join('').toUpperCase()
   const styles={
@@ -138,7 +141,7 @@ export default function ClientStorefront({slug}:{slug:string}){
     '--demo-cream':template?.cream||'#F3F6FB',
   } as CSSProperties
 
-  return <div className={`demo-site client-template template-${site.design?.templateSlug||'custom'}`} style={styles}>
+  return <div className={`demo-site client-template template-${site.design?.templateSlug||'custom'} custom-layout-${customLayout}`} style={styles}>
     <header className="demo-header">
       <a className="demo-brand" href="#site-top">{site.business.logoUrl?<img className="cs-template-logo" src={site.business.logoUrl} alt={site.business.name}/>:site.business.name}</a>
       <nav>
@@ -154,7 +157,7 @@ export default function ClientStorefront({slug}:{slug:string}){
       </div>
     </header>
 
-    <main id="site-top">
+    <main id="site-top" className={site.design?.templateSlug?'':'cs-custom-main'}>
       <section className="demo-hero">
         {heroImage&&<img src={heroImage} alt="" />}
         <div className="demo-hero-overlay"/>
@@ -177,22 +180,22 @@ export default function ClientStorefront({slug}:{slug:string}){
 
       {activeFeatureLabels.length>0&&<section className="demo-feature-strip">{activeFeatureLabels.slice(0,6).map((feature,index)=><div key={feature}><span>{String(index+1).padStart(2,'0')}</span><strong>{feature}</strong></div>)}</section>}
 
-      {(site.features.products!==false||site.features.services!==false)&&<section className="demo-section demo-catalog" id="services">
+      {(site.features.products!==false||site.features.services!==false)&&<section className="demo-section demo-catalog" id="services" style={{order:sectionPosition('catalog')}}>
         <div className="demo-section-heading"><div><small>{site.business.category?.toUpperCase()}</small><h2>{t.available}</h2></div><p>{site.business.description}</p></div>
         <div className="demo-catalog-gateway"><div><small>{lang==='es'?'CATÁLOGO DISPONIBLE':'CATALOG AVAILABLE'}</small><strong>{visibleCatalog.length} {lang==='es'?'productos y servicios':'products and services'}</strong><span>{lang==='es'?'Explora el catálogo completo cuando estés listo.':'Open the full catalog when you are ready.'}</span></div><button className="demo-solid" onClick={()=>setCatalog(true)}>{t.catalog}</button></div>
       </section>}
 
-      {site.employees.length>0&&site.features.bookings&&<section className="demo-section demo-team-section" id="team">
+      {site.employees.length>0&&site.features.bookings&&<section className="demo-section demo-team-section" id="team" style={{order:sectionPosition('team')}}>
         <div className="demo-section-heading"><div><small>{lang==='es'?'EQUIPO':'TEAM'}</small><h2>{lang==='es'?'Profesionales disponibles':'Available professionals'}</h2></div><p>{lang==='es'?'Cada servicio se conecta con las personas autorizadas para ofrecerlo.':'Each service connects to the people authorized to provide it.'}</p></div>
         <div className="demo-team-grid">{site.employees.map(employee=><article key={employee.id}><span>{initials(employee.name)}</span><small>{employee.role}</small><h3>{employee.name}</h3><div>{employee.serviceIds.map(id=>{const item=site.catalog.find(x=>x.id===id);return item?<b key={id}>{item.name}</b>:null})}</div></article>)}</div>
       </section>}
 
-      <section className="demo-section" id="about">
+      <section className="demo-section" id="about" style={{order:sectionPosition('about')}}>
         <div className="demo-section-heading"><div><small>{site.business.category?.toUpperCase()}</small><h2>{site.business.name}</h2></div><p>{site.business.description}</p></div>
       </section>
-      {galleryImages.length>0&&<section className="demo-gallery">{galleryImages.map((image,index)=><figure key={image} className={index===0?'wide':''}><img src={image} alt="" loading="lazy"/></figure>)}</section>}
+      {galleryImages.length>0&&<section className="demo-gallery" style={{order:sectionPosition('gallery')}}>{galleryImages.map((image,index)=><figure key={image} className={index===0?'wide':''}><img src={image} alt="" loading="lazy"/></figure>)}</section>}
 
-      <section className="demo-section cs-template-contact" id="contact">
+      <section className="demo-section cs-template-contact" id="contact" style={{order:sectionPosition('contact')}}>
         <div className="demo-section-heading"><div><small>{lang==='es'?'CONTACTO':'CONTACT'}</small><h2>{lang==='es'?'Conecta con nosotros':'Get in touch'}</h2></div><p>{lang==='es'?'Usa cualquiera de las opciones activadas por el negocio.':'Use any contact option enabled by the business.'}</p></div>
         <div className="cs-contact-grid">
           <div className="cs-contact-links">
