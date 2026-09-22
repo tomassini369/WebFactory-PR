@@ -173,7 +173,6 @@ Use empty arrays when the prompt does not justify catalog or team generation.`;
       body:JSON.stringify({
         model: env("WEBFACTORY_AI_MODEL") || "claude-sonnet-5",
         max_tokens:3500,
-        temperature:0.35,
         system,
         messages:[{role:"user",content:JSON.stringify(userPayload)}],
       }),
