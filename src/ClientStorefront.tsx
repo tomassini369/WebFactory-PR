@@ -27,7 +27,7 @@ const formatHours=(hours:any)=>{
 export default function ClientStorefront({slug}:{slug:string}){
   const [site,setSite]=useState<Site|null>(null)
   const [error,setError]=useState('')
-  const [lang,setLang]=useState<'es'|'en'>('es')
+  const [lang,setLang]=useState<'es'|'en'>('en')
   const [catalog,setCatalog]=useState(false)
   const [cart,setCart]=useState<CartLine[]>([])
   const [booking,setBooking]=useState<{serviceId:string;employeeId:string;date:string;start:string}|null>(null)
