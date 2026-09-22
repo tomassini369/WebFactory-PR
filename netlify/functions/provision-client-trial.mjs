@@ -111,7 +111,7 @@ export default async (req) => {
         },
         googleCalendar: { connected: false, calendarEmail: "", connectedAt: "", employeeCalendars: {} },
         settings: {
-          locale: payload.locale === "en" ? "en" : "es",
+          locale: payload.locale === "es" ? "es" : "en",
           timezone: "America/Puerto_Rico",
           currency: "usd",
         },
