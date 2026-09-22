@@ -14,14 +14,14 @@ const socialUrl=(value:string,network:'instagram'|'facebook'|'x')=>{
   if(!raw)return ''
   if(/^https?:\/\//i.test(raw))return raw
   const handle=raw.replace(/^@/,'')
-  return network==='instagram'?\`https://instagram.com/\${handle}\`:network==='facebook'?\`https://facebook.com/\${handle}\`:\`https://x.com/\${handle}\`
+  return network==='instagram'?`https://instagram.com/${handle}`:network==='facebook'?`https://facebook.com/${handle}`:`https://x.com/${handle}`
 }
 const formatHours=(hours:any)=>{
   const active=Object.entries(hours||{}).filter(([,value]:any)=>value?.enabled)
   if(!active.length)return ''
   const first=active[0] as [string,any]
   const last=active[active.length-1] as [string,any]
-  return \`\${first[0]}–\${last[0]} · \${first[1].open}–\${first[1].close}\`
+  return `${first[0]}–${last[0]} · ${first[1].open}–${first[1].close}`
 }
 
 export default function ClientStorefront({slug}:{slug:string}){
@@ -42,7 +42,7 @@ export default function ClientStorefront({slug}:{slug:string}){
     let active=true
     let initial=true
     let loadedAt=0
-    const load=()=>fetch(\`/.netlify/functions/public-client-site?slug=\${encodeURIComponent(slug)}\`).then(async r=>{
+    const load=()=>fetch(`/.netlify/functions/public-client-site?slug=${encodeURIComponent(slug)}`).then(async r=>{
       const x=await r.json()
       if(!r.ok)throw new Error(x.message)
       if(!active)return
@@ -137,7 +137,7 @@ export default function ClientStorefront({slug}:{slug:string}){
     '--demo-cream':template?.cream||'#F3F6FB',
   } as CSSProperties
 
-  return <div className={\`demo-site client-template template-\${site.design?.templateSlug||'custom'}\`} style={styles}>
+  return <div className={`demo-site client-template template-${site.design?.templateSlug||'custom'}`} style={styles}>
     <header className="demo-header">
       <a className="demo-brand" href="#site-top">{site.business.logoUrl?<img className="cs-template-logo" src={site.business.logoUrl} alt={site.business.name}/>:site.business.name}</a>
       <nav>
@@ -164,13 +164,13 @@ export default function ClientStorefront({slug}:{slug:string}){
           <div className="demo-hero-actions">
             {site.features.bookings&&visibleCatalog.some(x=>x.requiresAppointment)&&<button className="demo-solid large" onClick={()=>beginBooking(visibleCatalog.find(x=>x.requiresAppointment)!)}>{t.book}</button>}
             {(site.features.products!==false||site.features.services!==false)&&<button className="demo-glass large" onClick={()=>setCatalog(true)}>{t.catalog}</button>}
-            {site.features.whatsapp&&whatsapp&&<a className="demo-glass large" href={\`https://wa.me/\${whatsapp}\`} target="_blank" rel="noreferrer">WhatsApp</a>}
+            {site.features.whatsapp&&whatsapp&&<a className="demo-glass large" href={`https://wa.me/${whatsapp}`} target="_blank" rel="noreferrer">WhatsApp</a>}
           </div>
         </div>
         <aside className="demo-hero-meta">
           {site.features.maps&&site.business.mapsUrl&&<div><small>MAPS</small><a href={site.business.mapsUrl} target="_blank" rel="noreferrer">Google Maps ↗</a></div>}
           {hours&&<div><small>{lang==='es'?'HORARIO':'HOURS'}</small><strong>{hours}</strong></div>}
-          {site.features.calls&&site.business.phone&&<div><small>{lang==='es'?'LLAMAR':'CALL'}</small><a href={\`tel:\${site.business.phone}\`}>{site.business.phone}</a></div>}
+          {site.features.calls&&site.business.phone&&<div><small>{lang==='es'?'LLAMAR':'CALL'}</small><a href={`tel:${site.business.phone}`}>{site.business.phone}</a></div>}
         </aside>
       </section>
 
@@ -194,9 +194,9 @@ export default function ClientStorefront({slug}:{slug:string}){
         <div className="demo-section-heading"><div><small>{lang==='es'?'CONTACTO':'CONTACT'}</small><h2>{lang==='es'?'Conecta con nosotros':'Get in touch'}</h2></div><p>{lang==='es'?'Usa cualquiera de las opciones activadas por el negocio.':'Use any contact option enabled by the business.'}</p></div>
         <div className="cs-contact-grid">
           <div className="cs-contact-links">
-            {site.features.calls&&site.business.phone&&<a href={\`tel:\${site.business.phone}\`}>☎ {site.business.phone}</a>}
-            {site.business.email&&<a href={\`mailto:\${site.business.email}\`}>✉ {site.business.email}</a>}
-            {site.features.whatsapp&&whatsapp&&<a href={\`https://wa.me/\${whatsapp}\`} target="_blank" rel="noreferrer">WhatsApp ↗</a>}
+            {site.features.calls&&site.business.phone&&<a href={`tel:${site.business.phone}`}>☎ {site.business.phone}</a>}
+            {site.business.email&&<a href={`mailto:${site.business.email}`}>✉ {site.business.email}</a>}
+            {site.features.whatsapp&&whatsapp&&<a href={`https://wa.me/${whatsapp}`} target="_blank" rel="noreferrer">WhatsApp ↗</a>}
             {site.features.maps&&site.business.mapsUrl&&<a href={site.business.mapsUrl} target="_blank" rel="noreferrer">Google Maps ↗</a>}
             {site.features.social&&instagram&&<a href={instagram} target="_blank" rel="noreferrer">Instagram ↗</a>}
             {site.features.social&&facebook&&<a href={facebook} target="_blank" rel="noreferrer">Facebook ↗</a>}
