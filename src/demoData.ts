@@ -52,8 +52,7 @@ export type DemoConfig = {
   trust: string[]
 }
 
-const pexels = (id: number, width = 1600) =>
-  `https://images.pexels.com/photos/${id}/pexels-photo-${id}.jpeg?auto=compress&cs=tinysrgb&w=${width}`
+const pexels = (id: number, _width = 1600) => `/demo-images/${id}.jpg`
 
 export const demoConfigs: DemoConfig[] = [
   {
