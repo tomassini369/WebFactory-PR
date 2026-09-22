@@ -13,7 +13,6 @@ const PRODUCT_LABEL = "WebFactory Premium Commerce Website";
 const OFFICIAL_PRICE_USD = 300;
 const TEMPLATE_CATALOG = {
   "brisa-cocina": { category: "Restaurant", name: "Brisa Cocina" },
-  "velocity-auto": { category: "Automotive", name: "Velocity Auto Care" },
   "northline-barber": { category: "Barber", name: "Northline Barber Studio" },
   "aura-beauty": { category: "Beauty", name: "Aura Beauty Lab" },
   "balance-wellness": { category: "Wellness", name: "Balance Wellness Room" },
@@ -21,7 +20,22 @@ const TEMPLATE_CATALOG = {
   "summit-advisory": { category: "Professional Services", name: "Summit Advisory Group" },
   "isla-living": { category: "Real Estate", name: "Isla Living Realty" },
   "atelier-nueve": { category: "Other", name: "Atelier Nueve" },
-};
+  "aqua-shine-carwash": { category: "Car Wash", name: "Aqua Shine Car Wash" },
+  "verde-vivo-landscaping": { category: "Landscaping", name: "Verde Vivo Landscaping" },
+  "sonido-vivo-artist": { category: "Music Artist", name: "Sonido Vivo" },
+  "motorlab-garage": { category: "Auto Repair", name: "MotorLab Garage" },
+  "manos-de-confianza-care": { category: "Care Services", name: "Manos de Confianza" },
+  "pour-house-bartending": { category: "Bartending", name: "Pour House Events" },
+  "mesa-boricua-catering": { category: "Catering", name: "Mesa Boricua Catering" },
+  "pulse-dj-services": { category: "DJ Services", name: "Pulse DJ Services" },
+  "solid-build-construction": { category: "Construction", name: "Solid Build Construction" },
+  "fresh-home-cleaning": { category: "House Cleaning", name: "Fresh Home Cleaning" },
+  "sealpro-roofing": { category: "Roof Sealing", name: "SealPro Roofing" },
+  "agua-clara-plumbing": { category: "Plumbing", name: "Agua Clara Plumbing" },
+  "volt-pro-electric": { category: "Electrician", name: "Volt Pro Electric" },
+  "precision-auto-body": { category: "Auto Body", name: "Precision Auto Body" },
+  "bella-vita-salon": { category: "Cosmetology", name: "Bella Vita Salon" },
+}
 
 function env(name) {
   return globalThis.Netlify?.env?.get(name) || "";
