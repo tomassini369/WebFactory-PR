@@ -68,7 +68,7 @@ export function sanitizeOrder(payload) {
 
   const customerEmail = cleanText(client.email || b.email, 320);
   const customerName = cleanText(client.name || b.contactName, 180);
-  const businessName = cleanText(b.name, 180);
+  const businessName = cleanText(b.nameEn || b.name || b.nameEs, 180);
   const requestedTemplateSlug = cleanText(d.templateSlug, 80);
   const template = TEMPLATE_CATALOG[requestedTemplateSlug] || null;
 
@@ -79,9 +79,13 @@ export function sanitizeOrder(payload) {
   const sanitizedCatalog = catalog.map((item, index) => ({
     id: cleanText(item.id || `item-${index + 1}`, 120),
     type: item.type === "service" ? "service" : "product",
-    name: cleanText(item.name, 220),
+    name: cleanText(item.nameEn || item.name || item.nameEs, 220),
+    nameEn: cleanText(item.nameEn || item.name, 220),
+    nameEs: cleanText(item.nameEs, 220),
     price: Math.max(0, Number(item.price || 0)),
-    description: cleanText(item.description, 6000),
+    description: cleanText(item.descriptionEn || item.description || item.descriptionEs, 6000),
+    descriptionEn: cleanText(item.descriptionEn || item.description, 6000),
+    descriptionEs: cleanText(item.descriptionEs, 6000),
     requiresAppointment: Boolean(item.requiresAppointment),
     duration: Math.max(0, Math.min(1440, Number(item.duration || 0))),
     imageAssetKey: assetRef(item.imageAssetKey, draftId),
@@ -92,7 +96,9 @@ export function sanitizeOrder(payload) {
   const sanitizedTeam = team.map((member, index) => ({
     id: cleanText(member.id || `employee-${index + 1}`, 120),
     name: cleanText(member.name, 180),
-    role: cleanText(member.role, 180),
+    role: cleanText(member.roleEn || member.role || member.roleEs, 180),
+    roleEn: cleanText(member.roleEn || member.role, 180),
+    roleEs: cleanText(member.roleEs, 180),
     serviceIds: Array.isArray(member.serviceIds)
       ? member.serviceIds.slice(0, 100).map((id) => cleanText(id, 120))
       : [],
@@ -169,9 +175,9 @@ export function sanitizeOrder(payload) {
     },
     localization: {
       enabled: true,
-      languages: ["es", "en"],
-      defaultLanguage: "es",
-      fallbackLanguage: "es",
+      languages: ["en", "es"],
+      defaultLanguage: "en",
+      fallbackLanguage: "en",
       languageSwitcher: true,
       persistSelection: true,
       persistence: "localStorage",
@@ -185,9 +191,13 @@ export function sanitizeOrder(payload) {
     },
     business: {
       name: businessName,
+      nameEn: cleanText(b.nameEn || b.name, 180),
+      nameEs: cleanText(b.nameEs, 180),
       contactName: customerName,
       category: cleanText(b.category, 180),
-      description: cleanText(b.description, 6000),
+      description: cleanText(b.descriptionEn || b.description || b.descriptionEs, 6000),
+      descriptionEn: cleanText(b.descriptionEn || b.description, 6000),
+      descriptionEs: cleanText(b.descriptionEs, 6000),
       phone: cleanText(b.phone, 80),
       whatsapp: cleanText(b.whatsapp, 80),
       email: cleanText(b.email || customerEmail, 320),
