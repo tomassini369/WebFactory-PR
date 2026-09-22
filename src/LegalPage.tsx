@@ -37,7 +37,7 @@ const copy={
           'Google authorization tokens are stored in encrypted form by the WebFactory backend. Users can stop using the integration by disconnecting access through their Google account and contacting WebFactory if additional removal assistance is needed.'
         ]],
         ['6. AI-assisted Builder',[
-          'If you use WebFactory AI, the business description, requested changes, and limited current Builder content needed to perform the request may be sent through Netlify AI Gateway to Anthropic Claude for inference. WebFactory does not give Claude access to payment credentials, secrets, deployments, repositories, webhooks, or authentication settings.',
+          'If you use Factory AI, the business description, requested changes, and limited current Builder content needed to perform the request may be sent through Netlify AI Gateway to Anthropic Claude for inference. WebFactory does not give Claude access to payment credentials, secrets, deployments, repositories, webhooks, or authentication settings.',
           'AI output is returned as structured configuration and is validated before it can be applied to the Builder. Netlify states that AI Gateway does not store prompts or model outputs. Users should avoid including unnecessary sensitive personal information in AI prompts.'
         ]],
         ['7. Service providers and integrations',[
@@ -109,8 +109,8 @@ const copy={
           'The client business remains responsible for fulfilling, changing, canceling, and communicating about appointments with its customers.'
         ]],
         ['10. AI-assisted creation',[
-          'WebFactory AI can use Anthropic Claude through Netlify AI Gateway to propose website configuration, bilingual copy, Template selection, layout, features, catalog content, and team-role content.',
-          'AI suggestions are drafts. The account owner is responsible for reviewing accuracy, pricing, claims, translations, rights, and legal compliance before applying or publishing AI-generated content. WebFactory AI is intentionally restricted from creating separate customer deployments or changing platform secrets, payment credentials, authentication, webhooks, repositories, or infrastructure.'
+          'Factory AI can use Anthropic Claude through Netlify AI Gateway to propose website configuration, bilingual copy, Template selection, layout, features, catalog content, and team-role content.',
+          'AI suggestions are drafts. The account owner is responsible for reviewing accuracy, pricing, claims, translations, rights, and legal compliance before applying or publishing AI-generated content. Factory AI is intentionally restricted from creating separate customer deployments or changing platform secrets, payment credentials, authentication, webhooks, repositories, or infrastructure.'
         ]],
         ['11. Third-party services',[
           'Stripe, Google, Netlify, ATH Móvil, email providers, social networks, Google Maps, and other linked services are operated by third parties. Their availability, approval requirements, fees, terms, and outages are outside WebFactory’s direct control.',
@@ -211,7 +211,7 @@ const copy={
           'Los tokens de autorización de Google se almacenan cifrados en el backend de WebFactory. El usuario puede revocar el acceso desde su cuenta de Google y contactar a WebFactory si necesita asistencia adicional para remover la integración.'
         ]],
         ['6. Builder asistido por IA',[
-          'Si utilizas WebFactory AI, la descripción del negocio, los cambios solicitados y contenido limitado del Builder necesario para completar la solicitud pueden enviarse mediante Netlify AI Gateway a Anthropic Claude para inferencia. WebFactory no concede a Claude acceso a credenciales de pago, secretos, deployments, repositorios, webhooks ni configuraciones de autenticación.',
+          'Si utilizas Factory AI, la descripción del negocio, los cambios solicitados y contenido limitado del Builder necesario para completar la solicitud pueden enviarse mediante Netlify AI Gateway a Anthropic Claude para inferencia. WebFactory no concede a Claude acceso a credenciales de pago, secretos, deployments, repositorios, webhooks ni configuraciones de autenticación.',
           'La respuesta de IA regresa como configuración estructurada y se valida antes de poder aplicarse al Builder. Netlify indica que AI Gateway no almacena prompts ni respuestas del modelo. Los usuarios deben evitar incluir información personal sensible innecesaria en los prompts.'
         ]],
         ['7. Proveedores e integraciones',[
@@ -283,8 +283,8 @@ const copy={
           'El negocio es responsable de cumplir, modificar, cancelar y comunicarse con sus clientes acerca de las citas.'
         ]],
         ['10. Creación asistida por IA',[
-          'WebFactory AI puede utilizar Anthropic Claude mediante Netlify AI Gateway para proponer configuración del website, contenido bilingüe, selección de Template, layout, funciones, catálogo y roles del equipo.',
-          'Las sugerencias de IA son borradores. El titular de la cuenta es responsable de revisar exactitud, precios, afirmaciones, traducciones, derechos y cumplimiento antes de aplicar o publicar contenido generado por IA. WebFactory AI está restringido intencionalmente para que no pueda crear deployments separados de clientes ni modificar secretos, credenciales de pago, autenticación, webhooks, repositorios o infraestructura.'
+          'Factory AI puede utilizar Anthropic Claude mediante Netlify AI Gateway para proponer configuración del website, contenido bilingüe, selección de Template, layout, funciones, catálogo y roles del equipo.',
+          'Las sugerencias de IA son borradores. El titular de la cuenta es responsable de revisar exactitud, precios, afirmaciones, traducciones, derechos y cumplimiento antes de aplicar o publicar contenido generado por IA. Factory AI está restringido intencionalmente para que no pueda crear deployments separados de clientes ni modificar secretos, credenciales de pago, autenticación, webhooks, repositorios o infraestructura.'
         ]],
         ['11. Servicios de terceros',[
           'Stripe, Google, Netlify, ATH Móvil, proveedores de email, redes sociales, Google Maps y otros servicios enlazados son operados por terceros. Su disponibilidad, aprobación, tarifas, términos y fallas están fuera del control directo de WebFactory.',
