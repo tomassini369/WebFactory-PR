@@ -83,9 +83,13 @@ export default async (req) => {
         members: [{ email: ownerEmail, role: "owner" }],
         business: {
           name: businessName,
+          nameEn: businessName,
+          nameEs: "",
           contactName: cleanText(payload.contactName, 180),
           category: cleanText(payload.category, 180),
           description: "",
+          descriptionEn: "",
+          descriptionEs: "",
           phone: "",
           whatsapp: "",
           email: ownerEmail,
