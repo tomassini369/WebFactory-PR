@@ -179,6 +179,8 @@ export function sanitizeOrder(payload) {
       email: cleanText(b.email || customerEmail, 320),
       mapsUrl: cleanText(b.mapsUrl, 1500),
       instagram: cleanText(b.instagram, 300),
+      facebook: cleanText(b.facebook, 500),
+      x: cleanText(b.x, 500),
       logoAssetKey: assetRef(b.logoAssetKey, draftId),
       logoAssetName: cleanText(b.logoAssetName, 200),
       logoAssetType: cleanText(b.logoAssetType, 120),
