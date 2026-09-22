@@ -11,7 +11,7 @@ import { assertSameOrigin } from "../lib/client-auth.mjs";
 const PRODUCT_KEY = "webfactory-premium";
 const PRODUCT_LABEL = "WebFactory Premium Commerce Website";
 const OFFICIAL_PRICE_USD = 300;
-const DEMO_TEMPLATES = {
+const TEMPLATE_CATALOG = {
   "brisa-cocina": { category: "Restaurant", name: "Brisa Cocina" },
   "velocity-auto": { category: "Automotive", name: "Velocity Auto Care" },
   "northline-barber": { category: "Barber", name: "Northline Barber Studio" },
@@ -56,7 +56,7 @@ export function sanitizeOrder(payload) {
   const customerName = cleanText(client.name || b.contactName, 180);
   const businessName = cleanText(b.name, 180);
   const requestedTemplateSlug = cleanText(d.templateSlug, 80);
-  const template = DEMO_TEMPLATES[requestedTemplateSlug] || null;
+  const template = TEMPLATE_CATALOG[requestedTemplateSlug] || null;
 
   if (!businessName) throw new Error("Business name is required.");
   if (!customerName) throw new Error("Customer name is required.");
@@ -194,12 +194,12 @@ export function sanitizeOrder(payload) {
       logoAssetType: cleanText(b.logoAssetType, 120),
     },
     design: {
-      mode: template ? "demo_base" : "custom",
+      mode: template ? "template_base" : "custom",
       templateSlug: template ? requestedTemplateSlug : "",
       templateCategory: template?.category || "",
       templateName: template?.name || "",
-      templateRoute: template ? `/demos/${requestedTemplateSlug}` : "",
-      preserveDemoStructure: Boolean(template),
+      templateRoute: template ? `/templates/${requestedTemplateSlug}` : "",
+      preserveTemplateStructure: Boolean(template),
       customLayout: ["split","centered","editorial","showcase"].includes(d.customLayout) ? d.customLayout : "split",
       sectionOrder: Array.isArray(d.sectionOrder) ? d.sectionOrder.filter((section) => ["catalog","team","about","gallery","contact"].includes(section)).slice(0,5) : ["catalog","team","about","gallery","contact"],
       style: ["Modern","Luxury","Minimal","Bold"].includes(d.style) ? d.style : "Modern",
