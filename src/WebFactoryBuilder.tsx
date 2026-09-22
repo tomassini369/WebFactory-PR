@@ -506,6 +506,40 @@ function BusinessStep({state,setState,lang}:{state:BuilderState;setState:Dispatc
     }
   }
 
+  const uploadHero = async (file?:File) => {
+    if (!file) return
+    setUploadingLogo(true)
+    setUploadError('')
+    try {
+      const [preview,asset] = await Promise.all([readFile(file),uploadOrderAsset(file,'business-hero')])
+      setState((current)=>({...current,business:{...current.business,hero:preview,heroAssetKey:asset.assetKey,heroAssetName:asset.fileName,heroAssetType:asset.contentType}}))
+    } catch (error) {
+      setUploadError(error instanceof Error ? error.message : (lang==='es'?'No se pudo guardar la imagen principal.':'The hero image could not be saved.'))
+    } finally {
+      setUploadingLogo(false)
+    }
+  }
+
+  const uploadGallery = async (file?:File) => {
+    if (!file) return
+    const currentCount = state.business.galleryAssets?.length || 0
+    if (currentCount >= 4) return
+    setUploadingLogo(true)
+    setUploadError('')
+    try {
+      const [preview,asset] = await Promise.all([readFile(file),uploadOrderAsset(file,'business-gallery-'+String(currentCount+1))])
+      setState((current)=>({...current,business:{
+        ...current.business,
+        gallery:[...(current.business.gallery||[]),preview].slice(0,4),
+        galleryAssets:[...(current.business.galleryAssets||[]),{assetKey:asset.assetKey,fileName:asset.fileName,contentType:asset.contentType}].slice(0,4),
+      }}))
+    } catch (error) {
+      setUploadError(error instanceof Error ? error.message : (lang==='es'?'No se pudo guardar la imagen de galería.':'The gallery image could not be saved.'))
+    } finally {
+      setUploadingLogo(false)
+    }
+  }
+
   return (
     <div className="wf-step-content">
       <div className="wf-step-intro"><small>{lang==='es'?'PASO 1 · INFORMACIÓN':'STEP 1 · BUSINESS INFO'}</small><h3>{lang==='es'?'Cuéntanos sobre tu negocio.':'Tell us about your business.'}</h3><p>{lang==='es'?'Completa únicamente tus datos reales. Todo lo que escribas aquí se reflejará en tu website y portal administrativo.':'Enter only your real business information. Everything entered here will be reflected on your website and administrative portal.'}</p></div>
@@ -553,6 +587,18 @@ function BusinessStep({state,setState,lang}:{state:BuilderState;setState:Dispatc
         <span>{uploadingLogo?(lang==='es'?'Guardando logo…':'Saving logo…'):state.business.logoAssetKey?(lang==='es'?'✓ Logo guardado':'✓ Logo saved'):(lang==='es'?'Subir logo del cliente':'Upload customer logo')}</span>
         <small>{lang==='es'?'El archivo se guarda de forma segura para tu website y portal administrativo.':'The file is stored securely for your website and administrative portal.'}</small>
       </label>
+      <div className="wf-step-intro compact"><small>{lang==='es'?'FOTOS DE LA PLANTILLA':'TEMPLATE PHOTOS'}</small><h3>{lang==='es'?'Usa las fotos reales de tu negocio.':'Use your real business photos.'}</h3><p>{lang==='es'?'La composición del demo se conserva; solo reemplazamos las imágenes de muestra.':'The demo composition is preserved; only the sample photography is replaced.'}</p></div>
+      <label className="wf-upload">
+        <input type="file" accept="image/png,image/jpeg,image/webp,image/heic,image/heif" disabled={uploadingLogo} onChange={(event)=>uploadHero(event.target.files?.[0])} />
+        <span>{state.business.heroAssetKey?(lang==='es'?'✓ Imagen principal guardada':'✓ Hero image saved'):(lang==='es'?'Subir imagen principal / Hero':'Upload main / Hero image')}</span>
+        <small>{lang==='es'?'Mantendrá el encuadre y estilo visual del demo seleccionado.':'It will preserve the framing and visual style of the selected demo.'}</small>
+      </label>
+      <label className="wf-upload">
+        <input type="file" accept="image/png,image/jpeg,image/webp,image/heic,image/heif" disabled={uploadingLogo || (state.business.galleryAssets?.length||0)>=4} onChange={(event)=>uploadGallery(event.target.files?.[0])} />
+        <span>{lang==='es'?'Añadir foto de galería':'Add gallery photo'} ({state.business.galleryAssets?.length||0}/4)</span>
+        <small>{lang==='es'?'Estas fotos sustituyen la galería del demo sin alterar la estructura.':'These photos replace the demo gallery without changing its structure.'}</small>
+      </label>
+      {(state.business.gallery||[]).length>0&&<div className="wf-builder-photo-grid">{(state.business.gallery||[]).map((image,index)=><img key={index} src={image} alt="" />)}</div>}
       {uploadError && <small className="wf-upload-error">{uploadError}</small>}
     </div>
   )
