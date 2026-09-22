@@ -526,15 +526,14 @@ function BusinessStep({state,setState,lang}:{state:BuilderState;setState:Dispatc
   const uploadGallery = async (file?:File) => {
     if (!file) return
     const currentCount = state.business.galleryAssets?.length || 0
-    if (currentCount >= 4) return
     setUploadingLogo(true)
     setUploadError('')
     try {
       const [preview,asset] = await Promise.all([readFile(file),uploadOrderAsset(file,'business-gallery-'+String(currentCount+1))])
       setState((current)=>({...current,business:{
         ...current.business,
-        gallery:[...(current.business.gallery||[]),preview].slice(0,4),
-        galleryAssets:[...(current.business.galleryAssets||[]),{assetKey:asset.assetKey,fileName:asset.fileName,contentType:asset.contentType}].slice(0,4),
+        gallery:[...(current.business.gallery||[]),preview],
+        galleryAssets:[...(current.business.galleryAssets||[]),{assetKey:asset.assetKey,fileName:asset.fileName,contentType:asset.contentType}],
       }}))
     } catch (error) {
       setUploadError(error instanceof Error ? error.message : (lang==='es'?'No se pudo guardar la imagen de galería.':'The gallery image could not be saved.'))
@@ -597,9 +596,9 @@ function BusinessStep({state,setState,lang}:{state:BuilderState;setState:Dispatc
         <small>{lang==='es'?'Mantendrá el encuadre y estilo visual del demo seleccionado.':'It will preserve the framing and visual style of the selected demo.'}</small>
       </label>
       <label className="wf-upload">
-        <input type="file" accept="image/png,image/jpeg,image/webp,image/heic,image/heif" disabled={uploadingLogo || (state.business.galleryAssets?.length||0)>=4} onChange={(event)=>uploadGallery(event.target.files?.[0])} />
-        <span>{lang==='es'?'Añadir foto de galería':'Add gallery photo'} ({state.business.galleryAssets?.length||0}/4)</span>
-        <small>{lang==='es'?'Estas fotos sustituyen la galería del demo sin alterar la estructura.':'These photos replace the demo gallery without changing its structure.'}</small>
+        <input type="file" accept="image/png,image/jpeg,image/webp,image/heic,image/heif" disabled={uploadingLogo} onChange={(event)=>uploadGallery(event.target.files?.[0])} />
+        <span>{lang==='es'?'Añadir foto de galería':'Add gallery photo'} ({state.business.galleryAssets?.length||0})</span>
+        <small>{lang==='es'?'Puedes añadir tantas fotos de galería como necesites. No cuentan dentro del límite de 100 productos/servicios.':'Add as many gallery photos as you need. They do not count toward the 100 products/services limit.'}</small>
       </label>
       {(state.business.gallery||[]).length>0&&<div className="wf-builder-photo-grid">{(state.business.gallery||[]).map((image,index)=><img key={index} src={image} alt="" />)}</div>}
       {uploadError && <small className="wf-upload-error">{uploadError}</small>}
