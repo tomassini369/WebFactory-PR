@@ -3,8 +3,8 @@ import { demoBySlug } from './demoData'
 import './demo.css'
 import './client-storefront.css'
 
-type Item={id:string;type:'product'|'service';name:string;description:string;price:number;inventory:number|null;requiresAppointment:boolean;duration:number;imageUrl:string}
-type Employee={id:string;name:string;role:string;serviceIds:string[]}
+type Item={id:string;type:'product'|'service';name:string;nameEn?:string;nameEs?:string;description:string;descriptionEn?:string;descriptionEs?:string;price:number;inventory:number|null;requiresAppointment:boolean;duration:number;imageUrl:string}
+type Employee={id:string;name:string;role:string;roleEn?:string;roleEs?:string;serviceIds:string[]}
 type Site={siteId:string;slug:string;business:any;design:any;features:Record<string,boolean>;catalog:Item[];employees:Employee[];hours:any;paymentRules:any;settings:any}
 type CartLine={id:string;quantity:number}
 const money=(value:number)=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(value)
@@ -50,7 +50,7 @@ export default function ClientStorefront({slug}:{slug:string}){
       setError('')
       setSite(x.site)
       if(initial){setLang(x.site.settings?.locale==='es'?'es':'en');initial=false}
-      document.title=x.site.business.name
+      document.title=x.site.business.nameEn||x.site.business.name||x.site.business.nameEs||'WebFactory'
     }).catch(e=>{if(active)setError(e instanceof Error?e.message:'No se pudo actualizar la página.')})
     const refresh=()=>{if(document.visibilityState==='visible'&&Date.now()-loadedAt>60000)void load()}
     void load()
@@ -114,6 +114,11 @@ export default function ClientStorefront({slug}:{slug:string}){
     ?{catalog:'Catálogo',book:'Reservar',shop:'Comprar',cart:'Carrito',contact:'Contacto',available:'Productos y servicios',empty:'Todavía no hay artículos publicados.',team:'Selecciona un profesional',date:'Selecciona una fecha',times:'Horas disponibles',continue:'Continuar',customer:'Tus datos',pay:'Continuar al pago seguro',about:'Sobre nosotros',services:'Servicios',send:'Enviar mensaje'}
     :{catalog:'Catalog',book:'Book',shop:'Add to cart',cart:'Cart',contact:'Contact',available:'Products and services',empty:'No items have been published yet.',team:'Choose a professional',date:'Choose a date',times:'Available times',continue:'Continue',customer:'Your details',pay:'Continue to secure payment',about:'About',services:'Services',send:'Send message'}
 
+  const businessName=lang==='es'?(site.business.nameEs||site.business.nameEn||site.business.name):(site.business.nameEn||site.business.name||site.business.nameEs||'')
+  const businessDescription=lang==='es'?(site.business.descriptionEs||site.business.descriptionEn||site.business.description):(site.business.descriptionEn||site.business.description||site.business.descriptionEs||'')
+  const itemName=(item:Item)=>lang==='es'?(item.nameEs||item.nameEn||item.name):(item.nameEn||item.name||item.nameEs||'')
+  const itemDescription=(item:Item)=>lang==='es'?(item.descriptionEs||item.descriptionEn||item.description):(item.descriptionEn||item.description||item.descriptionEs||'')
+  const employeeRole=(employee:Employee)=>lang==='es'?(employee.roleEs||employee.roleEn||employee.role):(employee.roleEn||employee.role||employee.roleEs||'')
   const template=demoBySlug(site.design?.templateSlug||'')
   const whatsapp=digits(site.business.whatsapp)
   const instagram=socialUrl(site.business.instagram,'instagram')
@@ -143,7 +148,7 @@ export default function ClientStorefront({slug}:{slug:string}){
 
   return <div className={`demo-site client-template template-${site.design?.templateSlug||'custom'} custom-layout-${customLayout}`} style={styles}>
     <header className="demo-header">
-      <a className="demo-brand" href="#site-top">{site.business.logoUrl?<img className="cs-template-logo" src={site.business.logoUrl} alt={site.business.name}/>:site.business.name}</a>
+      <a className="demo-brand" href="#site-top">{site.business.logoUrl?<img className="cs-template-logo" src={site.business.logoUrl} alt={businessName}/>:businessName}</a>
       <nav>
         {(site.features.products!==false||site.features.services!==false)&&<a href="#services">{t.services}</a>}
         {site.employees.length>0&&site.features.bookings&&<a href="#team">{lang==='es'?'Equipo':'Team'}</a>}
@@ -163,8 +168,8 @@ export default function ClientStorefront({slug}:{slug:string}){
         <div className="demo-hero-overlay"/>
         <div className="demo-hero-content">
           <p>{site.business.category}</p>
-          <h1>{site.business.name}</h1>
-          <span>{site.business.description}</span>
+          <h1>{businessName}</h1>
+          <span>{businessDescription}</span>
           <div className="demo-hero-actions">
             {site.features.bookings&&visibleCatalog.some(x=>x.requiresAppointment)&&<button className="demo-solid large" onClick={()=>beginBooking(visibleCatalog.find(x=>x.requiresAppointment)!)}>{t.book}</button>}
             {(site.features.products!==false||site.features.services!==false)&&<button className="demo-glass large" onClick={()=>setCatalog(true)}>{t.catalog}</button>}
@@ -181,17 +186,17 @@ export default function ClientStorefront({slug}:{slug:string}){
       {activeFeatureLabels.length>0&&<section className="demo-feature-strip">{activeFeatureLabels.slice(0,6).map((feature,index)=><div key={feature}><span>{String(index+1).padStart(2,'0')}</span><strong>{feature}</strong></div>)}</section>}
 
       {(site.features.products!==false||site.features.services!==false)&&<section className="demo-section demo-catalog" id="services" style={{order:sectionPosition('catalog')}}>
-        <div className="demo-section-heading"><div><small>{site.business.category?.toUpperCase()}</small><h2>{t.available}</h2></div><p>{site.business.description}</p></div>
+        <div className="demo-section-heading"><div><small>{site.business.category?.toUpperCase()}</small><h2>{t.available}</h2></div><p>{businessDescription}</p></div>
         <div className="demo-catalog-gateway"><div><small>{lang==='es'?'CATÁLOGO DISPONIBLE':'CATALOG AVAILABLE'}</small><strong>{visibleCatalog.length} {lang==='es'?'productos y servicios':'products and services'}</strong><span>{lang==='es'?'Explora el catálogo completo cuando estés listo.':'Open the full catalog when you are ready.'}</span></div><button className="demo-solid" onClick={()=>setCatalog(true)}>{t.catalog}</button></div>
       </section>}
 
       {site.employees.length>0&&site.features.bookings&&<section className="demo-section demo-team-section" id="team" style={{order:sectionPosition('team')}}>
         <div className="demo-section-heading"><div><small>{lang==='es'?'EQUIPO':'TEAM'}</small><h2>{lang==='es'?'Profesionales disponibles':'Available professionals'}</h2></div><p>{lang==='es'?'Cada servicio se conecta con las personas autorizadas para ofrecerlo.':'Each service connects to the people authorized to provide it.'}</p></div>
-        <div className="demo-team-grid">{site.employees.map(employee=><article key={employee.id}><span>{initials(employee.name)}</span><small>{employee.role}</small><h3>{employee.name}</h3><div>{employee.serviceIds.map(id=>{const item=site.catalog.find(x=>x.id===id);return item?<b key={id}>{item.name}</b>:null})}</div></article>)}</div>
+        <div className="demo-team-grid">{site.employees.map(employee=><article key={employee.id}><span>{initials(employee.name)}</span><small>{employeeRole(employee)}</small><h3>{employee.name}</h3><div>{employee.serviceIds.map(id=>{const item=site.catalog.find(x=>x.id===id);return item?<b key={id}>{itemName(item)}</b>:null})}</div></article>)}</div>
       </section>}
 
       <section className="demo-section" id="about" style={{order:sectionPosition('about')}}>
-        <div className="demo-section-heading"><div><small>{site.business.category?.toUpperCase()}</small><h2>{site.business.name}</h2></div><p>{site.business.description}</p></div>
+        <div className="demo-section-heading"><div><small>{site.business.category?.toUpperCase()}</small><h2>{businessName}</h2></div><p>{businessDescription}</p></div>
       </section>
       {galleryImages.length>0&&<section className="demo-gallery" style={{order:sectionPosition('gallery')}}>{galleryImages.map((image,index)=><figure key={image} className={index===0?'wide':''}><img src={image} alt="" loading="lazy"/></figure>)}</section>}
 
@@ -219,7 +224,7 @@ export default function ClientStorefront({slug}:{slug:string}){
       </section>
     </main>
 
-    {catalog&&<div className="cs-modal" onMouseDown={()=>setCatalog(false)}><section onMouseDown={e=>e.stopPropagation()}><header><div><small>CATALOG</small><h2>{t.available}</h2></div><button onClick={()=>setCatalog(false)}>×</button></header>{visibleCatalog.length===0?<p>{t.empty}</p>:<div className="cs-catalog-grid">{visibleCatalog.map(item=><article key={item.id}>{item.imageUrl&&<img src={item.imageUrl}/>}<div><small>{item.type}</small><h3>{item.name}</h3><p>{item.description}</p><b>{money(item.price)}</b><button disabled={item.inventory===0} onClick={()=>item.requiresAppointment&&site.features.bookings?beginBooking(item):site.features.cart!==false?add(item):undefined}>{item.inventory===0?'Sold out':item.requiresAppointment&&site.features.bookings?t.book:site.features.cart!==false?t.shop:(lang==='es'?'Ver':'View')}</button></div></article>)}</div>}</section></div>}
+    {catalog&&<div className="cs-modal" onMouseDown={()=>setCatalog(false)}><section onMouseDown={e=>e.stopPropagation()}><header><div><small>CATALOG</small><h2>{t.available}</h2></div><button onClick={()=>setCatalog(false)}>×</button></header>{visibleCatalog.length===0?<p>{t.empty}</p>:<div className="cs-catalog-grid">{visibleCatalog.map(item=><article key={item.id}>{item.imageUrl&&<img src={item.imageUrl}/>}<div><small>{item.type}</small><h3>{itemName(item)}</h3><p>{itemDescription(item)}</p><b>{money(item.price)}</b><button disabled={item.inventory===0} onClick={()=>item.requiresAppointment&&site.features.bookings?beginBooking(item):site.features.cart!==false?add(item):undefined}>{item.inventory===0?(lang==='es'?'Agotado':'Sold out'):item.requiresAppointment&&site.features.bookings?t.book:site.features.cart!==false?t.shop:(lang==='es'?'Ver':'View')}</button></div></article>)}</div>}</section></div>}
 
     {booking&&<div className="cs-modal"><section><header><div><small>BOOKING</small><h2>{site.catalog.find(x=>x.id===booking.serviceId)?.name}</h2></div><button onClick={()=>setBooking(null)}>×</button></header><div className="cs-booking"><label>{t.team}<select value={booking.employeeId} onChange={e=>getSlots({...booking,employeeId:e.target.value,start:''})}><option value="">—</option>{employees.map(x=><option key={x.id} value={x.id}>{x.name} · {x.role}</option>)}</select></label><label>{t.date}<input type="date" min={new Date().toISOString().slice(0,10)} value={booking.date} onChange={e=>getSlots({...booking,date:e.target.value,start:''})}/></label><fieldset><legend>{t.times}</legend>{busy?<p>{lang==='es'?'Consultando…':'Checking…'}</p>:slots.map(slot=><button className={booking.start===slot.start?'active':''} key={slot.start} onClick={()=>setBooking({...booking,start:slot.start})}>{new Date(slot.start).toLocaleTimeString(lang==='es'?'es-PR':'en-US',{hour:'numeric',minute:'2-digit',timeZone:site.settings?.timezone||'America/Puerto_Rico'})}</button>)}</fieldset><button className="cs-primary" disabled={!booking.start} onClick={()=>setCheckoutOpen(true)}>{t.continue}</button></div></section></div>}
 
