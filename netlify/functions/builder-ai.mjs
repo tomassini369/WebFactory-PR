@@ -147,8 +147,19 @@ Use empty arrays when the prompt does not justify catalog or team generation.`;
           sectionOrder: Array.isArray(current?.design?.sectionOrder) ? current.design.sectionOrder.slice(0,5) : [],
         },
         features: current?.features || {},
-        catalogCount: Array.isArray(current?.catalog) ? current.catalog.length : 0,
-        teamCount: Array.isArray(current?.team) ? current.team.length : 0,
+        catalog: Array.isArray(current?.catalog) ? current.catalog.slice(0,20).map((item)=>({
+          type:item?.type==="service"?"service":"product",
+          nameEn:text(item?.nameEn||item?.name,220),
+          nameEs:text(item?.nameEs,220),
+          descriptionEn:text(item?.descriptionEn||item?.description,700),
+          descriptionEs:text(item?.descriptionEs,700),
+          price:number(item?.price,0,100000,0),
+          requiresAppointment:Boolean(item?.requiresAppointment),
+          duration:number(item?.duration,0,480,0),
+        })) : [],
+        team: Array.isArray(current?.team) ? current.team.slice(0,12).map((member)=>({
+          name:text(member?.name,180),roleEn:text(member?.roleEn||member?.role,180),roleEs:text(member?.roleEs,180),
+        })) : [],
       }
     };
 
@@ -182,6 +193,6 @@ export const config = {
   rateLimit: {
     windowLimit: 4,
     windowSize: 60,
-    aggregateBy: ["ip","domain"],
+    aggregateBy: ["ip"],
   },
 };
