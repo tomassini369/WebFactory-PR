@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type CSSProperties, type Dispatch, type SetStateAction } from 'react'
-import { demoConfigs } from './demoData'
+import { demoConfigs, templateGroups, templateGroupForCategory } from './demoData'
 import './builder.css'
 
 type Language = 'es' | 'en'
@@ -176,7 +176,7 @@ const initialState: BuilderState = {
   },
 }
 
-const categories = ['Restaurant','Automotive','Barber','Beauty','Wellness','Retail','Professional Services','Real Estate','Other']
+const categories = [...new Set([...demoConfigs.map((demo)=>demo.category),'Other'])].sort()
 const styles: BuilderStyle[] = ['Modern','Luxury','Minimal','Bold']
 
 const featureHelp: Record<Language,Record<string,string>> = {
@@ -597,7 +597,7 @@ function BusinessStep({state,setState,lang}:{state:BuilderState;setState:Dispatc
       <label className="wf-upload">
         <input type="file" accept="image/png,image/jpeg,image/webp,image/heic,image/heif" disabled={uploadingLogo} onChange={(event)=>uploadHero(event.target.files?.[0])} />
         <span>{state.business.heroAssetKey?(lang==='es'?'✓ Imagen principal guardada':'✓ Hero image saved'):(lang==='es'?'Subir imagen principal / Hero':'Upload main / Hero image')}</span>
-        <small>{lang==='es'?'Mantendrá el encuadre y estilo visual del demo seleccionado.':'It will preserve the framing and visual style of the selected demo.'}</small>
+        <small>{lang==='es'?'Mantendrá el encuadre y estilo visual del Template seleccionado.':'It will preserve the framing and visual style of the selected Template.'}</small>
       </label>
       <label className="wf-upload">
         <input type="file" accept="image/png,image/jpeg,image/webp,image/heic,image/heif" disabled={uploadingLogo} onChange={(event)=>uploadGallery(event.target.files?.[0])} />
@@ -614,6 +614,10 @@ function DesignStep({state,setState,lang}:{state:BuilderState;setState:Dispatch<
   const setDesign = <K extends keyof BuilderState['design']>(key:K, value:BuilderState['design'][K]) =>
     setState((current)=>({...current,design:{...current.design,[key]:value}}))
   const selectedTemplate = demoConfigs.find((demo)=>demo.slug===state.design.templateSlug)
+  const selectedTemplateGroup = selectedTemplate ? templateGroupForCategory(selectedTemplate.category) : undefined
+  const [templateGroupId,setTemplateGroupId] = useState(selectedTemplateGroup?.id || templateGroups[0]?.id || '')
+  useEffect(()=>{ if (selectedTemplateGroup?.id) setTemplateGroupId(selectedTemplateGroup.id) },[selectedTemplateGroup?.id])
+  const visibleTemplates = demoConfigs.filter((demo)=>templateGroups.find((group)=>group.id===templateGroupId)?.categories.includes(demo.category))
 
   const selectTemplate = (slug:string) => {
     const demo = demoConfigs.find((entry)=>entry.slug===slug)
@@ -641,8 +645,8 @@ function DesignStep({state,setState,lang}:{state:BuilderState;setState:Dispatch<
         <small>{lang==='es'?'PASO 2 · DISEÑO BASE':'STEP 2 · BASE DESIGN'}</small>
         <h3>{lang==='es'?'Elige cómo comenzará tu diseño.':'Choose how your design will begin.'}</h3>
         <p>{lang==='es'
-          ? 'Puedes mantener un diseño personalizado por WebFactory o escoger uno de los demos como diseño base. Si eliges un demo, conservaremos su estructura, navegación y experiencia mientras sustituimos la marca y el contenido.'
-          : 'You can keep a custom WebFactory design or choose one of the demos as your base design. If you choose a demo, we will preserve its structure, navigation, and experience while replacing its branding and content.'}</p>
+          ? 'Puedes mantener un diseño personalizado por WebFactory o escoger un Template como diseño base. Si eliges un demo, conservaremos su estructura, navegación y experiencia mientras sustituimos la marca y el contenido.'
+          : 'You can keep a custom WebFactory design or choose a Template as your base design. If you choose a demo, we will preserve its structure, navigation, and experience while replacing its branding and content.'}</p>
       </div>
       <div className="wf-template-grid">
         <article className={`wf-template-custom ${state.design.templateSlug===''?'selected':''}`}>
@@ -656,19 +660,25 @@ function DesignStep({state,setState,lang}:{state:BuilderState;setState:Dispatch<
           </button>
           <em>{lang==='es'?'Construido según tu configuración actual':'Built from your current configuration'}</em>
         </article>
-        {demoConfigs.map((demo)=>(
-          <article key={demo.slug} className={state.design.templateSlug===demo.slug?'selected':''}>
-          <button type="button" onClick={()=>selectTemplate(demo.slug)} aria-pressed={state.design.templateSlug===demo.slug}>
-              <span style={{backgroundImage:`linear-gradient(180deg,transparent,rgba(5,10,16,.78)),url(${demo.heroImage})`}}>
-                {state.design.templateSlug===demo.slug && <b>✓ {lang==='es'?'Seleccionado':'Selected'}</b>}
-              </span>
-              <small>{lang==='es'?'DISEÑO BASE':'BASE DESIGN'}</small>
-              <strong>{demo.category}</strong>
-              <em>{demo.name}</em>
-            </button>
-            <a href={`/demos/${demo.slug}`} target="_blank" rel="noreferrer">{lang==='es'?'Ver demo completo':'View full demo'} ↗</a>
-          </article>
-        ))}
+        {state.design.templateSlug!==''||templateGroupId?<>
+          <div className="wf-template-category-picker">
+            <small>{lang==='es'?'TEMPLATES POR CATEGORÍA':'TEMPLATES BY CATEGORY'}</small>
+            <div>{templateGroups.map((group)=><button type="button" key={group.id} className={templateGroupId===group.id?'active':''} onClick={()=>setTemplateGroupId(group.id)}>{lang==='es'?group.nameEs:group.nameEn}<b>{demoConfigs.filter((demo)=>group.categories.includes(demo.category)).length}</b></button>)}</div>
+          </div>
+          {visibleTemplates.map((demo)=>(
+            <article key={demo.slug} className={state.design.templateSlug===demo.slug?'selected':''}>
+              <button type="button" onClick={()=>selectTemplate(demo.slug)} aria-pressed={state.design.templateSlug===demo.slug}>
+                <span style={{backgroundImage:`linear-gradient(180deg,transparent,rgba(5,10,16,.78)),url(${demo.heroImage})`}}>
+                  {state.design.templateSlug===demo.slug && <b>✓ {lang==='es'?'Seleccionado':'Selected'}</b>}
+                </span>
+                <small>TEMPLATE</small>
+                <strong>{demo.category}</strong>
+                <em>{demo.name}</em>
+              </button>
+              <a href={`/templates/${demo.slug}`} target="_blank" rel="noreferrer">{lang==='es'?'Ver Template completo':'View full Template'} ↗</a>
+            </article>
+          ))}
+        </>:null}
       </div>
       {state.design.templateSlug===''&&<>
         <div className="wf-step-intro compact"><small>{lang==='es'?'CUSTOM LAYOUT':'CUSTOM LAYOUT'}</small><h3>{lang==='es'?'Escoge la composición inicial.':'Choose the starting composition.'}</h3><p>{lang==='es'?'Estas opciones cambian la presentación sin depender de ningún demo.':'These options change the presentation without depending on a demo.'}</p></div>
@@ -696,14 +706,14 @@ function DesignStep({state,setState,lang}:{state:BuilderState;setState:Dispatch<
       </>}
       <div className="wf-template-note">
         <strong>{state.design.templateSlug
-          ? (lang==='es'?'El demo seleccionado será la base exacta de producción.':'The selected demo will be the exact production base.')
+          ? (lang==='es'?'El Template seleccionado será la base exacta de producción.':'The selected Template will be the exact production base.')
           : (lang==='es'?'WebFactory creará un diseño personalizado.':'WebFactory will create a custom design.')}</strong>
         <span>{lang==='es'
           ? (state.design.templateSlug
-              ? 'El demo elegido se personaliza para tu negocio y mantiene su estructura y funciones compatibles.'
+              ? 'El Template elegido se personaliza para tu negocio y mantiene su estructura y funciones compatibles.'
               : 'Se utilizarán tu estilo, colores, contenido y funciones sin copiar obligatoriamente uno de los demos.')
           : (state.design.templateSlug
-              ? 'The chosen demo is customized for your business while preserving its structure and compatible features.'
+              ? 'The chosen Template is customized for your business while preserving its structure and compatible features.'
               : 'Your style, colors, content, and features will be used without requiring a copy of a demo.')}</span>
       </div>
       <div className="wf-step-intro compact"><small>{lang==='es'?'PERSONALIZACIÓN':'CUSTOMIZATION'}</small><h3>{lang==='es'?'Ajusta estilo y colores.':'Adjust style and colors.'}</h3><p>{lang==='es'?'Estos cambios aplican tu identidad sobre el diseño base seleccionado. Todos los colores permanecen editables.':'These changes apply your identity to the selected base design. Every color remains editable.'}</p></div>
@@ -722,7 +732,7 @@ function DesignStep({state,setState,lang}:{state:BuilderState;setState:Dispatch<
             ? (lang==='es'?`Colores originales de ${selectedTemplate.category} cargados. Puedes alterarlos libremente.`:`Original ${selectedTemplate.category} colors loaded. You can change them freely.`)
             : (lang==='es'?'Selecciona cualquier combinación para tu diseño personalizado.':'Choose any color combination for your custom design.')}</span>
         </div>
-        {selectedTemplate && <button type="button" onClick={restoreTemplateColors}>{lang==='es'?'Restaurar colores del demo':'Restore demo colors'}</button>}
+        {selectedTemplate && <button type="button" onClick={restoreTemplateColors}>{lang==='es'?'Restaurar colores del Template':'Restore Template colors'}</button>}
       </div>
       <div className="wf-color-grid">
         <label><span>{lang==='es'?'Color principal · editable':'Primary color · editable'}</span><div><input type="color" value={state.design.primary} onChange={(e)=>setDesign('primary',e.target.value)} /><input value={state.design.primary} onChange={(e)=>setDesign('primary',e.target.value)} /></div></label>
