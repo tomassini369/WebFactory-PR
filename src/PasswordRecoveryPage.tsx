@@ -74,7 +74,7 @@ export default function PasswordRecoveryPage(){
 
   return <main className="ca-page">
     <section className="ca-login">
-      <div className="portal-language"><button className={lang==='es'?'active':''} onClick={()=>setLang('es')}>ES</button><button className={lang==='en'?'active':''} onClick={()=>setLang('en')}>EN</button></div>
+      <div className="portal-language"><button className={lang==='en'?'active':''} onClick={()=>setLang('en')}>EN</button><button className={lang==='es'?'active':''} onClick={()=>setLang('es')}>ES</button></div>
       <img src="/webfactory-pr-logo.png" alt="WebFactory PR"/>
       <small>{t.eyebrow}</small><h1>{t.title}</h1><p>{t.text}</p>
       {!ready&&<div className="ca-loading">…</div>}
