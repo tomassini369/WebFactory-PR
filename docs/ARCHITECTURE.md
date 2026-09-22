@@ -95,6 +95,6 @@ Each tenant is keyed by `siteId`; membership indexes are keyed by a one-way norm
 ## Phase 1 rules
 - Reuse the existing WebFactory PR logo asset unchanged.
 - Brand colors: #0B1529, #3C86F6, #4D96F3, #F3F6FB, #FFFFFF and #DCE8F7.
-- Homepage order: Header, Hero, Value Proposition, Demos, What You Get, Commerce, Services, Booking, Employees, Google Calendar, WebFactory Builder, Payments, How It Works, Trust, FAQ, Final CTA, Footer.
+- Homepage order: Header, Hero, Value Proposition, Templates entry point, What You Get, Commerce, Services, Booking, Employees, Google Calendar, WebFactory Builder, Payments, How It Works, Trust, FAQ, Final CTA, Footer.
 - Builder shown in Phase 1 is visual scaffolding only. Functional Builder state begins in Phase 2.
 - Current production site remains unchanged until V2 is reviewed and deliberately deployed.
