@@ -101,6 +101,10 @@ function publicClient(site) {
     billingStatus: servicePlan.billingStatus || "paid",
     subscriptionStatus: servicePlan.subscriptionStatus || "not_started",
     updatedAt: site.updatedAt || site.createdAt || "",
+    templateMode: site.design?.mode === "demo_base" ? "template_base" : (site.design?.mode || (site.design?.templateSlug ? "template_base" : "custom")),
+    templateName: site.design?.templateName || (site.design?.templateSlug ? site.design.templateSlug : "Custom"),
+    templateCategory: site.design?.templateCategory || "",
+    templatePath: site.design?.templateSlug ? (site.design?.templateRoute || `/templates/${site.design.templateSlug}`).replace(/^\/demos\//, "/templates/") : "",
     publicPath: site.slug ? `/sites/${site.slug}` : "",
   };
 }
