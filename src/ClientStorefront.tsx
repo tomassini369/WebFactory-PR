@@ -139,7 +139,7 @@ export default function ClientStorefront({slug}:{slug:string}){
     site.features.calendar&&'Google Calendar',
   ].filter(Boolean) as string[]
   const heroImage=site.business.heroUrl||template?.heroImage||visibleCatalog.find(item=>item.imageUrl)?.imageUrl||''
-  const galleryImages=site.business.galleryUrls?.length?site.business.galleryUrls:(template?.gallery||[])
+  const galleryImages:string[]=site.business.galleryUrls?.length?site.business.galleryUrls:(template?.gallery||[])
   const sectionOrder=site.design?.templateSlug?['catalog','team','about','gallery','contact']:(site.design?.sectionOrder?.length?site.design.sectionOrder:['catalog','team','about','gallery','contact'])
   const sectionPosition=(key:string)=>sectionOrder.indexOf(key)>=0?sectionOrder.indexOf(key)+2:99
   const customLayout=site.design?.templateSlug?'demo':(site.design?.customLayout||'split')
