@@ -549,6 +549,32 @@ export const demoConfigs: DemoConfig[] = [
     aboutTitle: 'Evaluación visual antes de comenzar la reparación.',
     aboutText: 'Precision permite organizar inspecciones, estimados y servicios de hojalatería en un flujo claro.',
     trust: ['Damage inspection', 'Repair estimates', 'Paint scheduling']
+  },
+  {
+    slug: 'bella-vita-salon', category: 'Cosmetology', name: 'Bella Vita Salon', shortName: 'BELLA VITA',
+    kicker: 'HAIR · BEAUTY · STYLE', headline: 'Your look, your appointment, your stylist.',
+    description: 'Salón de belleza y cosmetología con servicios de cabello, color, maquillaje, uñas y estilistas con disponibilidad individual.',
+    heroImage: pexels(3992874), gallery: [pexels(3993449), pexels(7755226), pexels(853427)],
+    location: 'San Juan, Puerto Rico', phone: '(787) 555-0217', hours: 'Mar–Sáb · 9 AM–7 PM',
+    accent: '#D946A8', accent2: '#F4A8D8', dark: '#2B1623', cream: '#FFF6FB',
+    features: ['Salon booking', 'Stylist selection', 'Deposits', 'Beauty services'],
+    items: [
+      {id:'cosmo-1',type:'service',name:'Blower & Styling',price:45,description:'Lavado, blower y estilizado profesional.',image:pexels(3993449),appointment:true,duration:60,deposit:10,employees:['Camila','Andrea'],badge:'Popular'},
+      {id:'cosmo-2',type:'service',name:'Color completo',price:120,displayPrice:'Desde $120',description:'Servicio de color completo sujeto a largo y condición del cabello.',image:pexels(7755226),appointment:true,duration:150,deposit:35,employees:['Camila'],badge:'Color'},
+      {id:'cosmo-3',type:'service',name:'Keratina',price:175,displayPrice:'Desde $175',description:'Tratamiento de keratina para suavizar y manejar el cabello.',image:pexels(3992874),appointment:true,duration:180,deposit:50,employees:['Camila','Andrea']},
+      {id:'cosmo-4',type:'service',name:'Maquillaje profesional',price:85,description:'Maquillaje profesional para eventos y ocasiones especiales.',image:pexels(853427),appointment:true,duration:75,deposit:20,employees:['Valeria']},
+      {id:'cosmo-5',type:'service',name:'Manicure & Gel',price:55,description:'Manicure con acabado en gel y diseño básico.',image:pexels(7755653),appointment:true,duration:60,deposit:10,employees:['Valeria']},
+      {id:'cosmo-6',type:'service',name:'Consulta de transformación',price:0,displayPrice:'Consulta gratis',description:'Consulta para cambios de color, corte o transformación de imagen.',image:pexels(3764014),appointment:true,duration:30,employees:['Camila'],purchasable:false}
+    ],
+    employees: [
+      {id:'cosmo-camila',name:'Camila Rivera',role:'Master Cosmetologist',initials:'CR',services:['Blower & Styling','Color completo','Keratina','Consulta de transformación']},
+      {id:'cosmo-andrea',name:'Andrea López',role:'Hair Stylist',initials:'AL',services:['Blower & Styling','Keratina']},
+      {id:'cosmo-valeria',name:'Valeria Soto',role:'Beauty & Nail Artist',initials:'VS',services:['Maquillaje profesional','Manicure & Gel']}
+    ],
+    bookingLabel: 'Reservar cita', cartEnabled: false, bookingEnabled: true,
+    aboutTitle: 'Un salón completo con agenda por especialista.',
+    aboutText: 'Bella Vita demuestra cómo un salón de cosmetología puede conectar cada servicio con la profesional indicada, manejar duración y depósitos, y organizar reservas desde una sola página.',
+    trust: ['Stylist selection', 'Service duration', 'Beauty deposits']
   }
 ]
 
