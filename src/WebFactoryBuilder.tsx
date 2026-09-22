@@ -714,7 +714,7 @@ function DesignStep({state,setState,lang}:{state:BuilderState;setState:Dispatch<
               : 'Se utilizarán tu estilo, colores, contenido y funciones sin copiar obligatoriamente uno de los Templates.')
           : (state.design.templateSlug
               ? 'The chosen Template is customized for your business while preserving its structure and compatible features.'
-              : 'Your style, colors, content, and features will be used without requiring a copy of a demo.')}</span>
+              : 'Your style, colors, content, and features will be used without requiring a copy of a Template.')}</span>
       </div>
       <div className="wf-step-intro compact"><small>{lang==='es'?'PERSONALIZACIÓN':'CUSTOMIZATION'}</small><h3>{lang==='es'?'Ajusta estilo y colores.':'Adjust style and colors.'}</h3><p>{lang==='es'?'Estos cambios aplican tu identidad sobre el diseño base seleccionado. Todos los colores permanecen editables.':'These changes apply your identity to the selected base design. Every color remains editable.'}</p></div>
       <div className="wf-style-grid">
