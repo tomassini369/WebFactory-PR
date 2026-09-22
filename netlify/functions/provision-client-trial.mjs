@@ -8,7 +8,7 @@ import {
   slugify,
 } from "../lib/client-store.mjs";
 import { cleanText, validEmail } from "../lib/order-store.mjs";
-import { createTrialServicePlan } from "../lib/subscription-billing.mjs";
+import { createComplimentaryServicePlan, createTrialServicePlan } from "../lib/subscription-billing.mjs";
 
 const defaultHours = {
   Lunes: { enabled: true, open: "09:00", close: "17:00" },
@@ -55,11 +55,12 @@ export default async (req) => {
   }
   try {
     assertSameOrigin(req);
-    await requirePlatformAdmin();
+    const administrator = await requirePlatformAdmin();
     const payload = await req.json();
     const businessName = cleanText(payload.businessName, 180);
     const ownerEmail = normalizeEmail(payload.ownerEmail);
     const slug = slugify(cleanText(payload.slug || businessName, 64));
+    const accessType = payload.accessType === "complimentary" ? "complimentary" : "trial";
     if (businessName.length < 2) {
       throw Object.assign(new Error("Business name is required."), { status: 400 });
     }
@@ -76,7 +77,7 @@ export default async (req) => {
       site = await saveClientSite({
         siteId: `site-${crypto.randomUUID()}`,
         slug,
-        status: "trial",
+        status: accessType === "complimentary" ? "active" : "trial",
         createdAt: now,
         updatedAt: now,
         revision: 1,
@@ -119,7 +120,30 @@ export default async (req) => {
           timezone: "America/Puerto_Rico",
           currency: "usd",
         },
-        servicePlan: createTrialServicePlan(),
+        servicePlan: accessType === "complimentary"
+          ? createComplimentaryServicePlan({
+              grantedBy: administrator.email,
+              note: cleanText(payload.note, 500),
+            })
+          : createTrialServicePlan(),
+      });
+    } else if (accessType === "complimentary" && site.servicePlan?.billingModel !== "complimentary") {
+      const existingPlan = site.servicePlan || {};
+      if (existingPlan.billingModel === "one_time" && existingPlan.billingStatus === "paid") {
+        throw Object.assign(new Error("This website already has paid one-time access and does not need a complimentary grant."), { status: 409 });
+      }
+      if (["active", "trialing", "past_due"].includes(existingPlan.subscriptionStatus)) {
+        throw Object.assign(new Error("This website has an existing Stripe subscription lifecycle. Resolve it before granting complimentary access."), { status: 409 });
+      }
+      site = await saveClientSite({
+        ...site,
+        status: "active",
+        updatedAt: new Date().toISOString(),
+        revision: Number(site.revision || 0) + 1,
+        servicePlan: createComplimentaryServicePlan({
+          grantedBy: administrator.email,
+          note: cleanText(payload.note, 500),
+        }),
       });
     }
 
@@ -130,6 +154,7 @@ export default async (req) => {
       siteId: site.siteId,
       slug: site.slug,
       status: site.status,
+      accessType,
       trialEndsAt: site.servicePlan?.trialEndsAt || "",
       publicUrl: `${origin}/sites/${site.slug}`,
       portalUrl: `${origin}/client-admin`,

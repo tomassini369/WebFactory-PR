@@ -59,8 +59,50 @@ export function createTrialServicePlan(now = new Date()) {
   };
 }
 
+export function createComplimentaryServicePlan({ grantedBy = "", note = "" } = {}, now = new Date()) {
+  return {
+    code: "webfactory-complimentary",
+    name: "WebFactory Complimentary Access",
+    billingModel: "complimentary",
+    billingStatus: "complimentary",
+    subscriptionStatus: "complimentary",
+    migrationEligible: false,
+    trialStartedAt: "",
+    trialEndsAt: "",
+    currentPeriodEnd: "",
+    cancelAtPeriodEnd: false,
+    stripeCustomerId: "",
+    stripeSubscriptionId: "",
+    complimentaryGrantedAt: new Date(now).toISOString(),
+    complimentaryGrantedBy: String(grantedBy || "").trim().slice(0, 320),
+    complimentaryNote: String(note || "").trim().slice(0, 500),
+  };
+}
+
+export function createSubscriptionRequiredServicePlan({ revokedBy = "", previousPlan = {} } = {}, now = new Date()) {
+  return {
+    code: "webfactory-saas",
+    name: "WebFactory Commerce Platform",
+    billingModel: "subscription",
+    billingStatus: "payment_required",
+    subscriptionStatus: "subscription_required",
+    migrationEligible: false,
+    trialStartedAt: "",
+    trialEndsAt: "",
+    currentPeriodEnd: "",
+    cancelAtPeriodEnd: false,
+    stripeCustomerId: previousPlan.stripeCustomerId || "",
+    stripeSubscriptionId: "",
+    complimentaryRevokedAt: new Date(now).toISOString(),
+    complimentaryRevokedBy: String(revokedBy || "").trim().slice(0, 320),
+  };
+}
+
 export function siteEntitlement(site, now = new Date()) {
   const plan = site?.servicePlan || {};
+  if (plan.billingModel === "complimentary" || plan.subscriptionStatus === "complimentary") {
+    return { public: true, reason: "complimentary" };
+  }
   if (!plan.billingModel || plan.billingModel === "one_time") {
     return { public: plan.billingStatus !== "unpaid", reason: "one_time" };
   }

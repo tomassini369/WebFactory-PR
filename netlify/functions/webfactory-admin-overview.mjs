@@ -173,6 +173,7 @@ export default async (req) => {
     const completedOrders = orders.filter((order) => TERMINAL_ORDER_STATUSES.has(order.status)).length;
     const publishedSites = sites.filter((site) => ["active", "published", "live"].includes(site.status)).length;
     const activeSubscriptions = sites.filter((site) => ["active", "trialing"].includes(site.servicePlan?.subscriptionStatus)).length;
+    const complimentaryAccess = sites.filter((site) => site.servicePlan?.billingModel === "complimentary").length;
     const pastDueSubscriptions = sites.filter((site) => ["past_due", "unpaid"].includes(site.servicePlan?.subscriptionStatus)).length;
     const secretNames = [
       "STRIPE_SECRET_KEY",
@@ -218,6 +219,7 @@ export default async (req) => {
         connectedStripe,
         connectedCalendar,
         activeSubscriptions,
+        complimentaryAccess,
         pastDueSubscriptions,
         blockers,
       },

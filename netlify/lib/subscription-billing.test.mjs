@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { billingStateFor, createTrialServicePlan, siteEntitlement } from "./subscription-billing.mjs";
+import { billingStateFor, createComplimentaryServicePlan, createSubscriptionRequiredServicePlan, createTrialServicePlan, siteEntitlement } from "./subscription-billing.mjs";
 
 test("trial lasts exactly 48 hours", () => {
   const started = new Date("2026-09-21T12:00:00.000Z");
@@ -9,6 +9,27 @@ test("trial lasts exactly 48 hours", () => {
   assert.equal(plan.trialEndsAt, "2026-09-23T12:00:00.000Z");
   assert.equal(siteEntitlement({ servicePlan: plan }, new Date("2026-09-23T11:59:59.999Z")).public, true);
   assert.equal(siteEntitlement({ servicePlan: plan }, new Date("2026-09-23T12:00:00.000Z")).public, false);
+});
+
+test("complimentary access is active without an expiration or Stripe subscription", () => {
+  const plan = createComplimentaryServicePlan(
+    { grantedBy: "owner@webfactorypr.com", note: "Private invitation" },
+    new Date("2026-09-22T12:00:00.000Z"),
+  );
+  assert.equal(plan.billingModel, "complimentary");
+  assert.equal(plan.subscriptionStatus, "complimentary");
+  assert.equal(plan.trialEndsAt, "");
+  assert.deepEqual(siteEntitlement({ servicePlan: plan }), { public: true, reason: "complimentary" });
+});
+
+test("revoked complimentary access requires a paid subscription", () => {
+  const plan = createSubscriptionRequiredServicePlan(
+    { revokedBy: "owner@webfactorypr.com", previousPlan: {} },
+    new Date("2026-09-22T13:00:00.000Z"),
+  );
+  assert.equal(plan.billingModel, "subscription");
+  assert.equal(plan.subscriptionStatus, "subscription_required");
+  assert.deepEqual(siteEntitlement({ servicePlan: plan }), { public: false, reason: "subscription_required" });
 });
 
 test("builder-created setup stays private until the owner starts the trial", () => {
