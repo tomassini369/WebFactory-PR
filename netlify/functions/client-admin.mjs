@@ -139,7 +139,7 @@ export default async (req) => {
     if (section === "paymentRules") value = sanitizePaymentRules(payload.value, site.paymentRules);
     if (section === "settings") value = {
       ...site.settings,
-      locale: payload.value?.locale === "en" ? "en" : "es",
+      locale: payload.value?.locale === "es" ? "es" : "en",
       timezone: cleanText(payload.value?.timezone || site.settings?.timezone || "America/Puerto_Rico", 120),
       currency: "usd",
     };
