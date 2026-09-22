@@ -795,6 +795,7 @@ function FeaturesStep({state,setState,lang}:{state:BuilderState;setState:Dispatc
 }
 
 function CatalogStep({state,setState,lang}:{state:BuilderState;setState:Dispatch<SetStateAction<BuilderState>>;lang:Language}) {
+  const itemName = (item:CatalogItem) => lang==='es' ? (item.nameEs || item.nameEn || item.name) : (item.nameEn || item.name || item.nameEs || '')
   const [editingId,setEditingId] = useState<string | null>(null)
   const editingItem = state.catalog.find((item)=>item.id===editingId) ?? null
 
@@ -883,7 +884,7 @@ function CatalogStep({state,setState,lang}:{state:BuilderState;setState:Dispatch
         <div className="wf-builder-modal-backdrop" onMouseDown={()=>setEditingId(null)}>
           <section className="wf-builder-item-modal" onMouseDown={(event)=>event.stopPropagation()}>
             <header>
-              <div><small>{editingItem.type==='service'?(lang==='es'?'SERVICIO':'SERVICE'):(lang==='es'?'PRODUCTO':'PRODUCT')}</small><h4>{editingItem.name || (lang==='es'?'Sin nombre':'Untitled')}</h4></div>
+              <div><small>{editingItem.type==='service'?(lang==='es'?'SERVICIO':'SERVICE'):(lang==='es'?'PRODUCTO':'PRODUCT')}</small><h4>{itemName(editingItem) || (lang==='es'?'Sin nombre':'Untitled')}</h4></div>
               <button onClick={()=>setEditingId(null)}>×</button>
             </header>
             <div className="wf-item-editor modal">
@@ -919,6 +920,7 @@ function CatalogStep({state,setState,lang}:{state:BuilderState;setState:Dispatch
 }
 
 function TeamStep({state,setState,lang}:{state:BuilderState;setState:Dispatch<SetStateAction<BuilderState>>;lang:Language}) {
+  const serviceName = (service:CatalogItem) => lang==='es' ? (service.nameEs || service.nameEn || service.name) : (service.nameEn || service.name || service.nameEs || '')
   const services = state.catalog.filter((item)=>item.type==='service' && item.requiresAppointment)
   const addMember = () => setState((current)=>({...current,team:[...current.team,{id:createId('employee'),name:'New team member',role:'Professional',roleEn:'Professional',roleEs:'',serviceIds:[]}]}))
   const update = (id:string,patch:Partial<TeamMember>) => setState((current)=>({...current,team:current.team.map((member)=>member.id===id?{...member,...patch}:member)}))
@@ -946,7 +948,7 @@ function TeamStep({state,setState,lang}:{state:BuilderState;setState:Dispatch<Se
                     checked={member.serviceIds.includes(service.id)}
                     onChange={(e)=>update(member.id,{serviceIds:e.target.checked?[...member.serviceIds,service.id]:member.serviceIds.filter((id)=>id!==service.id)})}
                   />
-                  <b>{service.name}</b>
+                  <b>{serviceName(service)}</b>
                 </label>
               ))}
             </div>
