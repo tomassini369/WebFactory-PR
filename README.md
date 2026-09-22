@@ -72,6 +72,19 @@ Production branch: `main`
 
 The signed $300 checkout, Production Package and email workflow remain deployed only for legacy compatibility.
 
+## WebFactory AI
+
+WebFactory AI runs inside the existing multi-tenant Builder and uses Anthropic Claude through Netlify AI Gateway.
+
+- AI never creates a separate customer Netlify site, repository, deployment, branch, or domain.
+- Customer websites remain tenants rendered at `/sites/:slug` inside the same WebFactory runtime.
+- The browser calls the protected Netlify Function at `/api/builder-ai`; provider credentials are available only to Netlify compute.
+- Claude may propose Template/Custom selection, layout, palette, bilingual copy, features, starter catalog items, and team roles.
+- Payment configuration, authentication, webhooks, secrets, contact credentials, deployment infrastructure, and integrations are outside the AI write surface.
+- AI responses are server-validated JSON and require explicit **Apply to Builder** action before changing the local Builder draft.
+- The function is rate-limited per IP to reduce abuse and AI credit consumption.
+- Default model: `claude-sonnet-5`, overridable with `WEBFACTORY_AI_MODEL`.
+
 ## Client website runtime
 
 Every SaaS customer receives an isolated tenant in the shared multi-tenant runtime.
