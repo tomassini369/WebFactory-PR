@@ -110,3 +110,8 @@
 @media(max-width:700px){.wf-after-payment>div{grid-template-columns:1fr}}
 @media(max-width:560px){.wf-payment-rules,.wf-payment-extras{grid-template-columns:1fr}.wf-payment-rules .wf-field:last-child:nth-child(3){grid-column:auto}}
 .wf-field-help{display:block;margin:-8px 0 14px;color:#64748b}.wf-builder-access-link{display:inline-flex;align-items:center;justify-content:center;border-radius:12px;background:#0b1529;color:#fff;text-decoration:none;font-weight:900;padding:14px 18px}.wf-checkout-placeholder.success{border-color:#8fd4ac;background:#f1fbf5}
+
+.wf-setup-guidance{margin:-6px 0 16px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:12px;border:1px solid #d7e5f7;border-radius:12px;background:linear-gradient(135deg,#f8fbff,#eef5ff)}
+.wf-setup-guidance>div{display:grid;gap:2px}.wf-setup-guidance small{color:var(--blue);font-size:.57rem;font-weight:900;letter-spacing:.1em}.wf-setup-guidance strong{font-size:.8rem}.wf-setup-guidance>span{min-width:42px;padding:6px 8px;border-radius:999px;background:#fff;color:var(--blue);font-size:.64rem;font-weight:900;text-align:center}
+.wf-guidance{padding:12px 13px;display:grid;gap:4px;border-left:3px solid var(--blue);border-radius:9px;background:#f4f8fe}.wf-guidance b{font-size:.69rem}.wf-guidance span{color:#65758a;font-size:.65rem;line-height:1.5}
+.wf-toggle-copy{min-width:0;display:grid;gap:2px}.wf-toggle-copy b{font-size:.7rem}.wf-toggle-copy small{color:#7d8998;font-size:.56rem;line-height:1.35;font-weight:600}
