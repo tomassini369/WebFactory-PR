@@ -276,7 +276,7 @@ const localizedDemos: Record<string, Partial<Record<DemoLanguage, LocalizedDemo>
         {name:'Private creative workshop',description:'A creative session for a small group working with art materials around a table.'},
       ],
     },
-  },,
+  },
   'aqua-shine-carwash': { en: {
     category:'Car Wash', kicker:'WASH · DETAIL · PROTECT', headline:'Drive clean. Shine longer.',
     description:'A modern car wash with express packages, detailing, add-ons, and vehicle-based appointment scheduling.',
@@ -564,4 +564,3 @@ export const demoUi = {
 } as const
 
 export type DemoUi = typeof demoUi.es | typeof demoUi.en
-
