@@ -127,7 +127,8 @@ export default function ClientStorefront({slug}:{slug:string}){
     site.features.whatsapp&&'WhatsApp',
     site.features.calendar&&'Google Calendar',
   ].filter(Boolean) as string[]
-  const heroImage=template?.heroImage||visibleCatalog.find(item=>item.imageUrl)?.imageUrl||''
+  const heroImage=site.business.heroUrl||template?.heroImage||visibleCatalog.find(item=>item.imageUrl)?.imageUrl||''
+  const galleryImages=(site.business.galleryUrls?.length?site.business.galleryUrls:template?.gallery||[]).slice(0,4)
   const hours=formatHours(site.hours)
   const initials=(name:string)=>name.split(/\s+/).slice(0,2).map((part:string)=>part[0]||'').join('').toUpperCase()
   const styles={
@@ -189,6 +190,7 @@ export default function ClientStorefront({slug}:{slug:string}){
       <section className="demo-section" id="about">
         <div className="demo-section-heading"><div><small>{site.business.category?.toUpperCase()}</small><h2>{site.business.name}</h2></div><p>{site.business.description}</p></div>
       </section>
+      {galleryImages.length>0&&<section className="demo-gallery">{galleryImages.map((image,index)=><figure key={image} className={index===0?'wide':''}><img src={image} alt="" loading="lazy"/></figure>)}</section>}
 
       <section className="demo-section cs-template-contact" id="contact">
         <div className="demo-section-heading"><div><small>{lang==='es'?'CONTACTO':'CONTACT'}</small><h2>{lang==='es'?'Conecta con nosotros':'Get in touch'}</h2></div><p>{lang==='es'?'Usa cualquiera de las opciones activadas por el negocio.':'Use any contact option enabled by the business.'}</p></div>
