@@ -102,7 +102,7 @@ The dedicated WebFactory iOS app is deferred. Native Stripe Terminal/Tap to Pay 
 - [x] Remote POS checkout rejects zero-value totals.
 - [x] Remote POS checkout retries reuse a stable sale attempt ID and Stripe idempotency key.
 - [x] Future Terminal PaymentIntent creation rejects zero-value totals.
-- [ ] Direct in-person POS still relies on Netlify Blobs for stock mutation; full atomic inventory concurrency remains a scale-up item.
+- [x] Direct in-person POS now uses a stable sale attempt ID and an idempotent wrapper to prevent accidental duplicate submissions. Full atomic inventory concurrency across simultaneous independent sales remains a scale-up item.
 
 ### WebFactory POS
 - [x] Remote POS retry idempotency uses a stable sale attempt ID and Stripe idempotency key.
@@ -122,6 +122,10 @@ The dedicated WebFactory iOS app is deferred. Native Stripe Terminal/Tap to Pay 
 - [ ] Test POS on iPhone Safari/Home Screen.
 - [ ] Test POS on desktop/tablet viewport.
 - [x] Verified remote checkout creation only writes a `payment_pending` transaction; inventory mutation occurs only after a paid Stripe webhook, so abandoned checkout leaves stock unchanged.
+
+### Stripe Connect onboarding controls
+- [x] Incomplete Stripe onboarding can be removed from WebFactory and reset to `not_started` so the merchant can begin again.
+- [x] The removal action is hidden once Stripe capability is active/completed.
 
 ### Live Stripe webhook verification
 - [x] Subscription webhook endpoint is enabled with checkout, subscription created/updated/deleted, invoice paid and invoice payment failed events.
