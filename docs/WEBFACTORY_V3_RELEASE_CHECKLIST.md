@@ -63,7 +63,7 @@ The dedicated WebFactory iOS app is deferred. Native Stripe Terminal/Tap to Pay 
 - [x] Payment Link checkout calculates tax server-side.
 - [x] POS calculates tax server-side.
 - [x] Receipts store tax separately.
-- [ ] Verify configured default IVU values with current Puerto Rico requirements before final production enablement.
+- [x] Verified against Puerto Rico Hacienda sources: basic IVU is 11.5% total (10.5% state + 1% municipal); certain professional/B2B services may use the special 4% rate with no municipal IVU. Portal now exposes Basic 11.5%, Special 4%, Exempt, and manual/custom options.
 - [ ] Test tax-inclusive and tax-exclusive pricing with representative products.
 
 ### Inventory
