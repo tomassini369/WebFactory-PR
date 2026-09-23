@@ -42,13 +42,14 @@ export function subscriptionBillingReadiness() {
 
 export function createTrialServicePlan(now = new Date()) {
   const started = new Date(now);
-  const ends = new Date(started.getTime() + 48 * 60 * 60 * 1000);
+  const ends = new Date(started.getTime() + 7 * 24 * 60 * 60 * 1000);
   return {
     code: "webfactory-saas",
     name: "WebFactory Commerce Platform",
     billingModel: "subscription",
     billingStatus: "trial",
     subscriptionStatus: "trial",
+    trialPolicyVersion: "v3-7d",
     migrationEligible: false,
     trialStartedAt: started.toISOString(),
     trialEndsAt: ends.toISOString(),
