@@ -1,6 +1,8 @@
 import { assertSameOrigin, errorResponse, requireSiteAccess } from "../lib/client-auth.mjs";
 import { clientCommerceStore, commerceKey } from "../lib/client-store.mjs";
 import { deleteGoogleEvent } from "../lib/google-calendar.mjs";
+import { createInventoryMovement } from "../lib/webfactory-v3-domain.mjs";
+import { getV3Record, putV3Record } from "../lib/webfactory-v3-store.mjs";
 
 function env(name) { return globalThis.Netlify?.env?.get(name) || ""; }
 
@@ -51,7 +53,45 @@ export default async (req) => {
       });
       const refund = await response.json();
       if (!response.ok) throw new Error(refund?.error?.message || "Stripe refund failed.");
-      record = { ...record, status: amount === Number(record.amountTotal) ? "refunded" : "partially_refunded", refundedAmount: Number(record.refundedAmount || 0) + amount, stripeRefundId: refund.id, updatedAt: new Date().toISOString() };
+      const fullRefund = amount === Number(record.amountTotal);
+      record = { ...record, status: fullRefund ? "refunded" : "partially_refunded", refundedAmount: Number(record.refundedAmount || 0) + amount, stripeRefundId: refund.id, updatedAt: new Date().toISOString() };
+
+      if (fullRefund && record.kind === "order" && !record.inventoryRestoredAt) {
+        const catalog = (site.catalog || []).map((item) => {
+          const purchased = (record.items || []).find((entry) => entry.id === item.id);
+          return purchased && item.inventory !== null && item.inventory !== undefined
+            ? { ...item, inventory: Number(item.inventory || 0) + Number(purchased.quantity || 1) }
+            : item;
+        });
+        const { patchClientSite } = await import("../lib/client-store.mjs");
+        await patchClientSite(site.siteId, { catalog });
+        for (const item of record.items || []) {
+          const catalogItem = (site.catalog || []).find((entry) => entry.id === item.id);
+          if (catalogItem && catalogItem.inventory !== null && catalogItem.inventory !== undefined) {
+            const movement = createInventoryMovement({
+              siteId: site.siteId,
+              itemId: item.id,
+              quantityDelta: Math.max(1, Number(item.quantity || 1)),
+              reason: "refund",
+              referenceId: record.transactionId,
+            });
+            await putV3Record(site.siteId, "inventory-movements", movement.movementId, movement);
+          }
+        }
+        record.inventoryRestoredAt = new Date().toISOString();
+      }
+
+      if (record.receiptId) {
+        const receipt = await getV3Record(site.siteId, "receipts", record.receiptId);
+        if (receipt) {
+          await putV3Record(site.siteId, "receipts", receipt.receiptId, {
+            ...receipt,
+            paymentStatus: fullRefund ? "refunded" : "partially_refunded",
+            refundedAmount: Number(record.refundedAmount || 0),
+            updatedAt: new Date().toISOString(),
+          });
+        }
+      }
     } else {
       throw Object.assign(new Error("Unsupported transaction action."), { status: 400 });
     }
