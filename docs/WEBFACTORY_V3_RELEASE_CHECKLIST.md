@@ -23,8 +23,8 @@ The dedicated WebFactory iOS app is deferred. Native Stripe Terminal/Tap to Pay 
 - [x] Revoked complimentary access requires paid subscription.
 - [x] Legacy paid one-time customers remain grandfathered.
 - [x] Past-due Stripe subscriptions remain public only during Stripe retry lifecycle.
-- [ ] Confirm production Stripe monthly and annual Price IDs are configured.
-- [ ] Confirm subscription webhook secret is configured.
+- [x] Production Stripe monthly and annual Price IDs are present in Netlify configuration.
+- [x] Production subscription webhook secret is present in Netlify configuration.
 - [ ] Confirm `WEBFACTORY_SUBSCRIPTION_ENABLED=true` in production before enabling the new public policy.
 
 ### Client portal and permissions
@@ -80,7 +80,7 @@ The dedicated WebFactory iOS app is deferred. Native Stripe Terminal/Tap to Pay 
 - [x] Completed eligible transactions queue review requests.
 - [x] Hourly processor sends due review requests.
 - [x] POS completed sales can queue review requests.
-- [ ] Test actual transactional email delivery in production provider configuration.
+- [ ] Test actual transactional email delivery in production provider configuration. Gmail fallback is currently configured; Mailjet keys are not present under the expected names.
 - [ ] Add rate/duplicate safeguards if production testing reveals retries from external email failures.
 
 ### WebFactory POS
@@ -121,7 +121,7 @@ The dedicated WebFactory iOS app is deferred. Native Stripe Terminal/Tap to Pay 
 ## Recommended release sequence
 
 1. Finish all unchecked validation items that can be done in Deploy Preview/test mode.
-2. Verify production environment readiness without exposing secret values.
+2. Verify `/.netlify/functions/v3-release-readiness` reports production readiness without exposing secret values.
 3. Back up/export production tenant data.
 4. Mark PR #36 ready for review.
 5. Merge to `main`.
