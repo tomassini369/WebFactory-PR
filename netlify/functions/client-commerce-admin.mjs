@@ -1,4 +1,4 @@
-import { assertSameOrigin, errorResponse, requireSiteAccess } from "../lib/client-auth.mjs";
+import { assertSameOrigin, errorResponse, requireSiteAccess, requireSiteCapability } from "../lib/client-auth.mjs";
 import { clientCommerceStore, commerceKey } from "../lib/client-store.mjs";
 import { deleteGoogleEvent } from "../lib/google-calendar.mjs";
 import { createInventoryMovement } from "../lib/webfactory-v3-domain.mjs";
@@ -28,7 +28,8 @@ export default async (req) => {
     if (req.method !== "POST") return Response.json({ ok: false, message: "Method not allowed." }, { status: 405 });
     assertSameOrigin(req);
     const payload = await req.json();
-    const { site } = await requireSiteAccess(payload.siteId, ["owner", "manager"]);
+    const requestedCapability = payload.action === "refund" ? "refunds" : (payload.kind === "booking" ? "bookings" : "orders");
+    const { site } = await requireSiteCapability(payload.siteId, requestedCapability);
     const kind = payload.kind === "booking" ? "bookings" : "orders";
     const key = commerceKey(site.siteId, kind, payload.transactionId);
     let record = await clientCommerceStore().get(key, { type: "json" });
