@@ -15,4 +15,5 @@ jobs:
       - run: npm ci
       - run: npm test
       - run: npm run build
+      - run: npx netlify-cli link --id 1fa77856-faad-4f0f-8f7c-2671e772513f
       - run: npx netlify-cli build
