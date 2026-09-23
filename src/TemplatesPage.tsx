@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { demoConfigs, templateGroups } from './demoData'
+import { demoConfigs, templateGroups, templateVisualStyle } from './demoData'
 import './templates.css'
 
 type Language = 'es' | 'en'
@@ -42,7 +42,7 @@ export default function TemplatesPage({lang}:{lang:Language}) {
         </header>
         <div className="template-card-grid">
           {templates.map((demo)=>(
-            <article className="template-card" key={demo.slug}>
+            <article className={`template-card visual-${templateVisualStyle(demo.category)}`} key={demo.slug}>
               <a className="template-card-art" href={'/templates/'+demo.slug} style={{backgroundImage:`linear-gradient(180deg,rgba(5,10,16,.05),rgba(5,10,16,.55)),url(${demo.heroImage})`}}>
                 <span>{demo.category}</span>
               </a>
