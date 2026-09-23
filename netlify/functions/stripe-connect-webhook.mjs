@@ -39,7 +39,7 @@ async function finalizeTransaction(event) {
     if (record.kind === "order") {
       const catalog = (site.catalog || []).map((item) => {
         const purchased = record.items.find((entry) => entry.id === item.id);
-        return purchased && item.inventory !== null && item.inventory !== undefined
+        return purchased && item.type === "product" && item.trackInventory && item.inventory !== null && item.inventory !== undefined
           ? { ...item, inventory: Math.max(0, Number(item.inventory) - Number(purchased.quantity)) }
           : item;
       });
@@ -72,7 +72,7 @@ async function finalizeTransaction(event) {
     if (record.kind === "order") {
       for (const purchased of record.items || []) {
         const catalogItem = (site.catalog || []).find((item) => item.id === purchased.id);
-        if (catalogItem && catalogItem.inventory !== null && catalogItem.inventory !== undefined) {
+        if (catalogItem?.type === "product" && catalogItem.trackInventory && catalogItem.inventory !== null && catalogItem.inventory !== undefined) {
           const movement = createInventoryMovement({
             siteId,
             itemId: purchased.id,
