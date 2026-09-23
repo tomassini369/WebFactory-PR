@@ -104,3 +104,46 @@ export function ReviewAutomationPanel({site,lang,onSave,busy}:{site:any;lang:Lan
   useEffect(()=>setValue({enabled:Boolean(site.reviewSettings?.enabled),delayHours:Number(site.reviewSettings?.delayHours??2),reviewUrl:site.reviewSettings?.reviewUrl||'',includeOrders:site.reviewSettings?.includeOrders!==false,includeBookings:site.reviewSettings?.includeBookings!==false}),[site.siteId,site.revision])
   return <section className="ca-panel"><header><h2>{es?'Solicitudes de reseñas':'Review requests'}</h2><p>{es?'Configura cuándo WebFactory debe preparar una solicitud de reseña después de completar una venta o cita.':'Configure when WebFactory should prepare a review request after a completed sale or booking.'}</p></header><div className="ca-grid"><label className="check"><input type="checkbox" checked={value.enabled} onChange={e=>setValue({...value,enabled:e.target.checked})}/>{es?'Activar automatización':'Enable automation'}</label><label>{es?'Enviar después de (horas)':'Send after (hours)'}<input type="number" min="0" max="720" value={value.delayHours} onChange={e=>setValue({...value,delayHours:Number(e.target.value)})}/></label><label className="wide">{es?'Google review URL':'Google review URL'}<input value={value.reviewUrl} onChange={e=>setValue({...value,reviewUrl:e.target.value})} placeholder="https://..."/></label><label className="check"><input type="checkbox" checked={value.includeOrders} onChange={e=>setValue({...value,includeOrders:e.target.checked})}/>{es?'Incluir órdenes':'Include orders'}</label><label className="check"><input type="checkbox" checked={value.includeBookings} onChange={e=>setValue({...value,includeBookings:e.target.checked})}/>{es?'Incluir citas':'Include bookings'}</label></div><button className="ca-save" disabled={busy} onClick={()=>onSave('reviewSettings',value)}>{busy?(es?'Guardando…':'Saving…'):(es?'Guardar automatización':'Save automation')}</button></section>
 }
+
+
+export function PosPanel({site,lang,onSaleComplete}:{site:any;lang:Language;onSaleComplete?:()=>void}){
+  const es=lang==='es'
+  const available=(site.catalog||[]).filter((item:any)=>item.active!==false)
+  const [cart,setCart]=useState<Array<{id:string;quantity:number}>>([])
+  const [customer,setCustomer]=useState({name:'',email:'',phone:''})
+  const [discount,setDiscount]=useState('0')
+  const [tip,setTip]=useState('0')
+  const [paymentMethod,setPaymentMethod]=useState<'cash'|'manual_ath'|'other'>('cash')
+  const [busy,setBusy]=useState(false)
+  const [error,setError]=useState('')
+  const [receiptId,setReceiptId]=useState('')
+
+  const add=(id:string)=>setCart(current=>{const found=current.find(x=>x.id===id);return found?current.map(x=>x.id===id?{...x,quantity:Math.min(100,x.quantity+1)}:x):[...current,{id,quantity:1}]})
+  const change=(id:string,quantity:number)=>setCart(current=>quantity<=0?current.filter(x=>x.id!==id):current.map(x=>x.id===id?{...x,quantity:Math.max(1,Math.min(100,quantity))}:x))
+  const lines=cart.map(line=>({line,item:available.find((x:any)=>x.id===line.id)})).filter(x=>x.item)
+  const subtotal=lines.reduce((sum,x)=>sum+Number(x.item?.price||0)*x.line.quantity,0)
+  const discountValue=Math.max(0,Number(discount||0))
+  const tipValue=Math.max(0,Number(tip||0))
+  const estimatedTax=Math.max(0,(subtotal-discountValue)*(site.taxConfig?.enabled===false?0:(Number(site.taxConfig?.stateRate??10.5)+Number(site.taxConfig?.municipalRate??1))/100))
+  const estimatedTotal=Math.max(0,subtotal-discountValue+(site.taxConfig?.pricesIncludeTax?0:estimatedTax)+tipValue)
+
+  const complete=async()=>{
+    if(!cart.length)return setError(es?'Añade al menos un artículo.':'Add at least one item.')
+    setBusy(true);setError('');setReceiptId('')
+    try{
+      const result=await api('/.netlify/functions/client-pos-sale',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+        siteId:site.siteId,
+        items:cart,
+        customer,
+        discountCents:Math.round(discountValue*100),
+        tipCents:Math.round(tipValue*100),
+        paymentMethod,
+      })})
+      setReceiptId(result.receiptId||'')
+      setCart([]);setCustomer({name:'',email:'',phone:''});setDiscount('0');setTip('0')
+      onSaleComplete?.()
+    }catch(e){setError(e instanceof Error?e.message:'POS sale failed.')}finally{setBusy(false)}
+  }
+
+  return <section className="ca-panel"><header><h2>WebFactory POS</h2><p>{es?'Venta presencial usando el mismo catálogo, clientes, IVU, inventario, recibos y analítica del website.':'In-person sales using the same catalog, customers, tax, inventory, receipts and analytics as the website.'}</p></header>{error&&<div className="ca-error">{error}</div>}{receiptId&&<div className="ca-success">{es?'Venta completada. Recibo: ':'Sale completed. Receipt: '}{receiptId}</div>}<div className="ca-pos-layout"><div><h3>{es?'Catálogo':'Catalog'}</h3><div className="ca-pos-catalog">{available.map((item:any)=><button key={item.id} disabled={item.type==='product'&&item.trackInventory&&!item.allowBackorder&&Number(item.inventory??0)<=0} onClick={()=>add(item.id)}><span>{item.nameEn||item.name||item.nameEs}</span><b>{money(Math.round(Number(item.price||0)*100))}</b><small>{item.type==='product'&&item.trackInventory?`${Number(item.inventory??0)} ${es?'en stock':'in stock'}`:item.type}</small></button>)}</div></div><aside className="ca-pos-cart"><h3>{es?'Venta actual':'Current sale'}</h3>{lines.length===0?<p>{es?'Selecciona productos o servicios.':'Select products or services.'}</p>:lines.map(({line,item}:any)=><article key={line.id}><div><strong>{item.nameEn||item.name||item.nameEs}</strong><span>{money(Math.round(Number(item.price||0)*100))}</span></div><input type="number" min="0" max="100" value={line.quantity} onChange={e=>change(line.id,Number(e.target.value))}/></article>)}<div className="ca-grid"><label>{es?'Descuento $':'Discount $'}<input type="number" min="0" step="0.01" value={discount} onChange={e=>setDiscount(e.target.value)}/></label><label>{es?'Propina $':'Tip $'}<input type="number" min="0" step="0.01" value={tip} onChange={e=>setTip(e.target.value)}/></label><label>{es?'Método':'Method'}<select value={paymentMethod} onChange={e=>setPaymentMethod(e.target.value as any)}><option value="cash">{es?'Efectivo':'Cash'}</option><option value="manual_ath">ATH Móvil</option><option value="other">{es?'Otro':'Other'}</option></select></label></div><div className="ca-pos-totals"><span>{es?'Subtotal':'Subtotal'} <b>{money(Math.round(subtotal*100))}</b></span><span>{es?'IVU estimado':'Estimated tax'} <b>{money(Math.round(estimatedTax*100))}</b></span><strong>Total <b>{money(Math.round(estimatedTotal*100))}</b></strong></div><h3>{es?'Cliente opcional':'Optional customer'}</h3><div className="ca-grid"><label>{es?'Nombre':'Name'}<input value={customer.name} onChange={e=>setCustomer({...customer,name:e.target.value})}/></label><label>Email<input type="email" value={customer.email} onChange={e=>setCustomer({...customer,email:e.target.value})}/></label><label>{es?'Teléfono':'Phone'}<input value={customer.phone} onChange={e=>setCustomer({...customer,phone:e.target.value})}/></label></div><button className="ca-save" disabled={busy||!cart.length} onClick={complete}>{busy?(es?'Procesando…':'Processing…'):(es?'Completar venta':'Complete sale')}</button><p className="ca-note">{es?'El total definitivo y el IVU se recalculan en el servidor antes de guardar la venta.':'The final total and tax are recalculated on the server before the sale is saved.'}</p></aside></div></section>
+}
