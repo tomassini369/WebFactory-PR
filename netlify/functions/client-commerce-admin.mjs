@@ -91,7 +91,7 @@ export default async (req) => {
       if (fullRefund && record.kind === "order" && !record.inventoryRestoredAt) {
         const catalog = (site.catalog || []).map((item) => {
           const purchased = (record.items || []).find((entry) => entry.id === item.id);
-          return purchased && item.inventory !== null && item.inventory !== undefined
+          return purchased && item.type === "product" && item.trackInventory && item.inventory !== null && item.inventory !== undefined
             ? { ...item, inventory: Number(item.inventory || 0) + Number(purchased.quantity || 1) }
             : item;
         });
@@ -99,7 +99,7 @@ export default async (req) => {
         await patchClientSite(site.siteId, { catalog });
         for (const item of record.items || []) {
           const catalogItem = (site.catalog || []).find((entry) => entry.id === item.id);
-          if (catalogItem && catalogItem.inventory !== null && catalogItem.inventory !== undefined) {
+          if (catalogItem?.type === "product" && catalogItem.trackInventory && catalogItem.inventory !== null && catalogItem.inventory !== undefined) {
             const movement = createInventoryMovement({
               siteId: site.siteId,
               itemId: item.id,
