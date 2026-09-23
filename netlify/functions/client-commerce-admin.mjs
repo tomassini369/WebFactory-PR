@@ -4,6 +4,7 @@ import { deleteGoogleEvent } from "../lib/google-calendar.mjs";
 import { createInventoryMovement } from "../lib/webfactory-v3-domain.mjs";
 import { getV3Record, putV3Record } from "../lib/webfactory-v3-store.mjs";
 import crypto from "node:crypto";
+import { refundState } from "../lib/refund-policy.mjs";
 
 function env(name) { return globalThis.Netlify?.env?.get(name) || ""; }
 
@@ -75,12 +76,12 @@ export default async (req) => {
       }
     } else if (payload.action === "refund") {
       if (!record.stripePaymentIntentId || record.paymentStatus !== "paid") throw Object.assign(new Error("This transaction cannot be refunded through Stripe."), { status: 409 });
-      const amountTotal = Number(record.amountTotal || 0);
-      const existingRefunded = Math.max(0, Number(record.refundedAmount || 0));
-      const remainingRefundable = Math.max(0, amountTotal - existingRefunded);
-      if (remainingRefundable <= 0) throw Object.assign(new Error("This transaction is already fully refunded."), { status: 409 });
-      const amount = payload.amount ? Math.round(Number(payload.amount) * 100) : remainingRefundable;
-      if (!Number.isFinite(amount) || amount <= 0 || amount > remainingRefundable) throw Object.assign(new Error("Refund amount exceeds the remaining refundable balance."), { status: 400 });
+      const refundMath = refundState({
+        amountTotal: record.amountTotal,
+        refundedAmount: record.refundedAmount,
+        requestedAmount: payload.amount ? Math.round(Number(payload.amount) * 100) : null,
+      });
+      const { amount, existingRefunded, newRefundedAmount, fullRefund } = refundMath;
       const refundReason = String(payload.reason || "").trim().slice(0, 300);
       const params = new URLSearchParams({
         payment_intent: record.stripePaymentIntentId,
@@ -100,8 +101,6 @@ export default async (req) => {
       });
       const refund = await response.json();
       if (!response.ok) throw new Error(refund?.error?.message || "Stripe refund failed.");
-      const newRefundedAmount = existingRefunded + amount;
-      const fullRefund = newRefundedAmount >= amountTotal;
       record = {
         ...record,
         status: fullRefund ? "refunded" : "partially_refunded",
