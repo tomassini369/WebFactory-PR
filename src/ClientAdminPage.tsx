@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { acceptInvite, getUser, handleAuthCallback, login, logout, onAuthChange, requestPasswordRecovery, updateUser, type User } from '@netlify/identity'
 import './client-admin.css'
 import { withAuthRetry } from './auth-retry'
-import { AnalyticsPanel, CustomersPanel, MarketingPanel, PaymentLinksPanel, ReceiptsPanel, SettingsPanel, TransactionPanel, WebsitePanel } from './ClientAdminV3Panels'
+import { AnalyticsPanel, CustomersPanel, InventoryStatusPanel, MarketingPanel, PaymentLinksPanel, PayoutsPanel, ReceiptsPanel, SettingsPanel, TransactionPanel, WebsitePanel } from './ClientAdminV3Panels'
 
 type CatalogItem={id:string;type:'product'|'service';name:string;nameEn?:string;nameEs?:string;description:string;descriptionEn?:string;descriptionEs?:string;price:number;active:boolean;inventory:number|null;requiresAppointment:boolean;duration:number;bufferMinutes:number;imageAssetKey?:string}
 type Employee={id:string;name:string;role:string;roleEn?:string;roleEs?:string;active:boolean;serviceIds:string[];calendarId:string;dailyLimit:number;schedule:Record<string,DayHours>;timeOff:Array<{start:string;end:string;note:string}>}
@@ -68,9 +68,9 @@ export default function ClientAdminPage(){
       {tab==='orders'&&<TransactionPanel records={commerce.orders} kind="order" lang={lang} onAction={transactionAction} busy={busy}/>} 
       {tab==='bookings'&&<TransactionPanel records={commerce.bookings} kind="booking" lang={lang} onAction={transactionAction} busy={busy}/>} 
       {tab==='customers'&&<CustomersPanel siteId={site.siteId} lang={lang}/>} 
-      {tab==='catalog'&&<CatalogEditor site={site} setSite={setSite} lang={lang} onSave={()=>save('catalog',site.catalog)} busy={busy}/>} 
+      {tab==='catalog'&&<><CatalogEditor site={site} setSite={setSite} lang={lang} onSave={()=>save('catalog',site.catalog)} busy={busy}/><InventoryStatusPanel site={site} lang={lang}/></>} 
       {tab==='team'&&<TeamEditor site={site} setSite={setSite} lang={lang} onSave={()=>save('employees',site.employees)} busy={busy}/>} 
-      {tab==='payments'&&<><Payments site={site} setSite={setSite} lang={lang} onSave={()=>save('paymentRules',site.paymentRules)} busy={busy} setError={setError}/><PaymentLinksPanel siteId={site.siteId} siteSlug={site.slug} lang={lang}/><ReceiptsPanel siteId={site.siteId} lang={lang}/></>} 
+      {tab==='payments'&&<><Payments site={site} setSite={setSite} lang={lang} onSave={()=>save('paymentRules',site.paymentRules)} busy={busy} setError={setError}/><PaymentLinksPanel siteId={site.siteId} siteSlug={site.slug} lang={lang}/><PayoutsPanel siteId={site.siteId} lang={lang}/><ReceiptsPanel siteId={site.siteId} lang={lang}/></>} 
       {tab==='marketing'&&<MarketingPanel site={site} lang={lang}/>} 
       {tab==='analytics'&&<AnalyticsPanel commerce={commerce} lang={lang}/>} 
       {tab==='integrations'&&<CalendarPanel site={site} setSite={setSite} lang={lang} calendars={calendars} configured={googleConfigured} onSave={()=>save('employees',site.employees)} busy={busy}/>} 
