@@ -69,7 +69,7 @@ export default function ClientAdminPage(){
       {tab==='bookings'&&<TransactionPanel records={commerce.bookings} kind="booking" lang={lang} onAction={transactionAction} busy={busy}/>} 
       {tab==='customers'&&<CustomersPanel siteId={site.siteId} lang={lang}/>} 
       {tab==='catalog'&&<><CatalogEditor site={site} setSite={setSite} lang={lang} onSave={()=>save('catalog',site.catalog)} busy={busy}/><InventoryStatusPanel site={site} lang={lang}/><InventoryAdjustmentPanel site={site} setSite={setSite} lang={lang}/><InventoryMovementsPanel siteId={site.siteId} lang={lang}/></>} 
-      {tab==='team'&&<><TeamEditor site={site} setSite={setSite} lang={lang} onSave={()=>save('employees',site.employees)} busy={busy}/><MemberRolesPanel site={site} lang={lang} onSave={save} busy={busy} membership={membership}/></>} 
+      {tab==='team'&&<><TeamEditor site={site} setSite={setSite} lang={lang} onSave={()=>save('employees',site.employees)} busy={busy}/><MemberRolesPanel site={site} setSite={setSite} lang={lang} onSave={save} busy={busy} membership={membership}/></>} 
       {tab==='payments'&&<><Payments site={site} setSite={setSite} lang={lang} onSave={()=>save('paymentRules',site.paymentRules)} busy={busy} setError={setError}/><PaymentLinksPanel siteId={site.siteId} siteSlug={site.slug} lang={lang}/><PayoutsPanel siteId={site.siteId} lang={lang}/><ReceiptsPanel siteId={site.siteId} lang={lang}/></>} 
       {tab==='pos'&&<PosPanel site={site} lang={lang} onSaleComplete={()=>loadCommerce().catch(()=>{})}/>} 
       {tab==='marketing'&&<><MarketingPanel site={site} lang={lang}/><ReviewAutomationPanel site={site} lang={lang} onSave={save} busy={busy}/></>} 
