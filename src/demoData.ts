@@ -1,3 +1,13 @@
+
+export type TemplateVisualStyle = 'modern' | 'luxury' | 'minimal' | 'bold'
+
+export const templateVisualStyle = (category: string): TemplateVisualStyle => {
+  if (['Beauty','Real Estate'].includes(category)) return 'luxury'
+  if (['Wellness','Professional Services'].includes(category)) return 'minimal'
+  if (['Restaurant','Retail','Other'].includes(category)) return 'bold'
+  return 'modern'
+}
+
 export type DemoItem = {
   id: string
   type: 'product' | 'service' | 'listing' | 'class'
