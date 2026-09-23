@@ -3,6 +3,7 @@ import { createBookingHold } from "../lib/booking-engine.mjs";
 import { clientCommerceStore, commerceKey, getClientSite, getClientSiteBySlug } from "../lib/client-store.mjs";
 import { cleanText, publicBaseUrl, validEmail } from "../lib/order-store.mjs";
 import { siteEntitlement } from "../lib/subscription-billing.mjs";
+import { calculateTax } from "../lib/webfactory-v3-domain.mjs";
 
 function env(name) { return globalThis.Netlify?.env?.get(name) || ""; }
 
@@ -87,10 +88,34 @@ export default async (req) => {
     const inPerson = kind === "booking"
       ? site.paymentRules?.bookingPayment === "in_person"
       : site.paymentRules?.productPayment === "in_person";
+    const subtotal = items.reduce((sum, item) => sum + item.unitAmount * item.quantity, 0);
+    let taxCents = 0;
+    if (kind === "order") {
+      for (const item of items) {
+        const catalogItem = (site.catalog || []).find((entry) => entry.id === item.id);
+        const line = calculateTax({
+          amountCents: item.unitAmount * item.quantity,
+          taxable: catalogItem ? catalogItem.taxable !== false : site.taxConfig?.defaultTaxable !== false,
+          taxRateOverride: catalogItem?.taxRateOverride ?? null,
+          config: site.taxConfig || {},
+        });
+        taxCents += Number(line.taxCents || 0);
+      }
+    } else {
+      const service = (site.catalog || []).find((entry) => entry.id === items[0]?.id);
+      const line = calculateTax({
+        amountCents: subtotal,
+        taxable: service ? service.taxable !== false : site.taxConfig?.defaultTaxable !== false,
+        taxRateOverride: service?.taxRateOverride ?? null,
+        config: site.taxConfig || {},
+      });
+      taxCents = Number(line.taxCents || 0);
+    }
+
     const record = {
       transactionId, siteId: site.siteId, kind, customer, items, holdId: hold?.holdId || "",
       serviceId: hold?.serviceId || "", employeeId: hold?.employeeId || "", start: hold?.start || "", end: hold?.end || "",
-      amountTotal: items.reduce((sum, item) => sum + item.unitAmount * item.quantity, 0), currency: "usd",
+      subtotal, tax: taxCents, amountTotal: subtotal + (site.taxConfig?.pricesIncludeTax ? 0 : taxCents), currency: "usd",
       paymentStatus: inPerson ? "due" : "pending", status: inPerson ? "confirmed" : "payment_pending",
       createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
     };
@@ -118,6 +143,7 @@ export default async (req) => {
     if (hold?.holdId) params.set("metadata[hold_id]", hold.holdId);
     params.set("integration_identifier", `webfactory_${randomLetters(8)}`);
     items.forEach((item, index) => appendLine(params, index, item));
+    if (taxCents > 0 && !site.taxConfig?.pricesIncludeTax) appendLine(params, items.length, { name: "Puerto Rico IVU", description: "", unitAmount: taxCents, quantity: 1 });
 
     const response = await fetch("https://api.stripe.com/v1/checkout/sessions", {
       method: "POST",
