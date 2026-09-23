@@ -1,9 +1,9 @@
-import { assertSameOrigin, authorizedSites, errorResponse, requireSiteAccess } from "../lib/client-auth.mjs";
+import { assertSameOrigin, authorizedSites, errorResponse, requireSiteAccess, siteRoleCapabilities } from "../lib/client-auth.mjs";
 import { normalizeEmail, patchClientSite, publicClientSite } from "../lib/client-store.mjs";
 import { cleanText, validEmail } from "../lib/order-store.mjs";
 import { normalizeTaxConfig } from "../lib/webfactory-v3-domain.mjs";
 
-const allowedSections = new Set(["business", "design", "catalog", "employees", "hours", "paymentRules", "settings", "taxConfig"]);
+const allowedSections = new Set(["business", "design", "catalog", "employees", "hours", "paymentRules", "settings", "taxConfig", "members", "reviewSettings"]);
 
 function color(value, fallback) {
   const result = cleanText(value, 20);
@@ -131,7 +131,7 @@ export default async (req) => {
         })) }, { headers: { "Cache-Control": "no-store" } });
       }
       const { user, site, membership } = await requireSiteAccess(siteId);
-      return Response.json({ ok: true, user: { id: user.id, email: user.email, name: user.name }, membership, site }, { headers: { "Cache-Control": "no-store" } });
+      return Response.json({ ok: true, user: { id: user.id, email: user.email, name: user.name }, membership: { ...membership, capabilities: siteRoleCapabilities(membership?.role || "staff") }, site }, { headers: { "Cache-Control": "no-store" } });
     }
 
     if (req.method !== "PATCH") return Response.json({ ok: false, message: "Method not allowed." }, { status: 405 });
@@ -155,6 +155,26 @@ export default async (req) => {
     if (section === "hours") value = sanitizeHours(payload.value);
     if (section === "paymentRules") value = sanitizePaymentRules(payload.value, site.paymentRules);
     if (section === "taxConfig") value = normalizeTaxConfig(payload.value);
+    if (section === "members") {
+      if ((membership.role || "owner") !== "owner") throw Object.assign(new Error("Only the owner can change portal roles."), { status: 403 });
+      if (!Array.isArray(payload.value)) throw Object.assign(new Error("Members must be a list."), { status: 400 });
+      const ownerEmail = normalizeEmail((site.members || []).find((member) => member.role === "owner")?.email || user.email);
+      value = payload.value.slice(0, 50).map((member) => {
+        const email = normalizeEmail(member.email);
+        if (!email) throw Object.assign(new Error("Member email is required."), { status: 400 });
+        const role = email === ownerEmail ? "owner" : ["manager","employee","cashier","staff"].includes(member.role) ? member.role : "staff";
+        return { email, role };
+      });
+      if (!value.some((member) => member.email === ownerEmail && member.role === "owner")) value.unshift({ email: ownerEmail, role: "owner" });
+    }
+    if (section === "reviewSettings") value = {
+      enabled: Boolean(payload.value?.enabled),
+      delayHours: Math.max(0, Math.min(720, Number(payload.value?.delayHours ?? 2))),
+      reviewUrl: cleanText(payload.value?.reviewUrl, 1500),
+      includeOrders: payload.value?.includeOrders !== false,
+      includeBookings: payload.value?.includeBookings !== false,
+    };
+
     if (section === "settings") value = {
       ...site.settings,
       locale: payload.value?.locale === "es" ? "es" : "en",
