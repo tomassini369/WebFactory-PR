@@ -21,6 +21,7 @@ export default function PaymentSetupPage() {
   const [error,setError] = useState('')
   const [loading,setLoading] = useState(true)
   const [connecting,setConnecting] = useState(false)
+  const [removingStripe,setRemovingStripe] = useState(false)
   const es=lang==='es'
 
   const load = async () => {
@@ -52,6 +53,28 @@ export default function PaymentSetupPage() {
     robots.content='noindex,nofollow,noarchive'
     load()
   },[])
+
+  const removeIncompleteStripe = async () => {
+    if(!setup?.stripe?.accountCreated || stripeActive)return
+    const confirmed=window.confirm(es?'¿Eliminar esta conexión Stripe incompleta de WebFactory? Podrás iniciar un onboarding nuevo desde cero.':'Remove this incomplete Stripe connection from WebFactory? You can start a new onboarding from scratch.')
+    if(!confirmed)return
+    setRemovingStripe(true)
+    setError('')
+    try{
+      const response=await fetch('/.netlify/functions/reset-stripe-connect-onboarding',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({orderId,token}),
+      })
+      const result=await response.json()
+      if(!response.ok||!result.ok)throw new Error(result.message||(es?'No se pudo eliminar la conexión Stripe.':'The Stripe connection could not be removed.'))
+      await load()
+    }catch(removeError){
+      setError(removeError instanceof Error?removeError.message:(es?'No se pudo eliminar la conexión Stripe.':'The Stripe connection could not be removed.'))
+    }finally{
+      setRemovingStripe(false)
+    }
+  }
 
   const connectStripe = async () => {
     setConnecting(true)
@@ -90,7 +113,7 @@ export default function PaymentSetupPage() {
         {setup?.methods.stripe && <article className={stripeActive?'complete':''}>
           <div><b>stripe</b><span>{stripeActive?(es?'✓ Cuenta lista para cobrar':'✓ Account ready to accept payments'):setup.stripe?.accountCreated?(es?'Onboarding pendiente':'Onboarding pending'):(es?'Conexión pendiente':'Connection pending')}</span></div>
           <p>{es?'Stripe recopila directamente la identidad, información bancaria y datos fiscales. WebFactory no puede verlos.':'Stripe collects identity, banking, and tax information directly. WebFactory cannot view that information.'}</p>
-          {!stripeActive && <button onClick={connectStripe} disabled={connecting}>{connecting?(es?'Abriendo Stripe…':'Opening Stripe…'):setup.stripe?.accountCreated?(es?'Continuar configuración en Stripe':'Continue setup in Stripe'):(es?'Conectar o crear cuenta Stripe':'Connect or create Stripe account')}</button>}
+          {!stripeActive && <div className="payment-stripe-actions"><button onClick={connectStripe} disabled={connecting||removingStripe}>{connecting?(es?'Abriendo Stripe…':'Opening Stripe…'):setup.stripe?.accountCreated?(es?'Continuar configuración en Stripe':'Continue setup in Stripe'):(es?'Conectar o crear cuenta Stripe':'Connect or create Stripe account')}</button>{setup.stripe?.accountCreated&&<button className="danger" onClick={removeIncompleteStripe} disabled={connecting||removingStripe}>{removingStripe?(es?'Eliminando…':'Removing…'):(es?'Eliminar onboarding incompleto':'Remove incomplete onboarding')}</button>}</div>}
           {stripeActive && <a href="https://dashboard.stripe.com" target="_blank" rel="noreferrer">{es?'Abrir Stripe Dashboard':'Open Stripe Dashboard'} ↗</a>}
         </article>}
 
