@@ -30,7 +30,7 @@ The dedicated WebFactory iOS app is deferred. Native Stripe Terminal/Tap to Pay 
 - [x] Past-due Stripe subscriptions remain public only during Stripe retry lifecycle.
 - [x] Production Stripe monthly and annual Price IDs are present in Netlify configuration.
 - [x] Production subscription webhook secret is present in Netlify configuration.
-- [ ] Confirm `WEBFACTORY_SUBSCRIPTION_ENABLED=true` in production before enabling the new public policy.
+- [x] Confirmed `WEBFACTORY_SUBSCRIPTION_ENABLED=true` in dev, branch deploy, deploy preview and production.
 
 ### Complimentary access
 - [x] Email-only complimentary invitation flow is implemented.
