@@ -84,6 +84,20 @@ export async function purgeClientSite(siteId,{cancelSubscription=true}={}){
 
   try{await disconnectGoogle(site);}catch{}
 
+  const memberEmails=new Set((site.members||[]).map((member)=>normalizeEmail(member.email)).filter(Boolean));
+  try{
+    const users=await admin.listUsers({page:1,perPage:500});
+    for(const user of users||[]){
+      if(!memberEmails.has(normalizeEmail(user.email)))continue;
+      const previousSites=Array.isArray(user.appMetadata?.webfactory_site_ids)?user.appMetadata.webfactory_site_ids:[];
+      if(previousSites.includes(site.siteId)){
+        await admin.updateUser(user.id,{
+          app_metadata:{...(user.appMetadata||{}),webfactory_site_ids:previousSites.filter((id)=>id!==site.siteId)},
+        });
+      }
+    }
+  }catch{}
+
   for(const member of site.members||[]){
     const email=normalizeEmail(member.email);
     if(email) await clientSiteStore().delete(`members/${emailHash(email)}/${site.siteId}.json`).catch(()=>{});
