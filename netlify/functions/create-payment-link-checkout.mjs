@@ -48,7 +48,6 @@ export default async (req) => {
       phone: cleanText(payload.customer?.phone, 80),
     };
 
-export const config = { rateLimit: { windowLimit: 20, windowSize: 60, aggregateBy: ["ip"] } };
     if (!customer.name || !validEmail(customer.email)) throw Object.assign(new Error("Customer name and a valid email are required."), { status: 400 });
 
     const quantity = link.allowQuantity ? Math.max(1, Math.min(20, Math.floor(Number(payload.quantity || 1)))) : 1;
@@ -136,3 +135,5 @@ export const config = { rateLimit: { windowLimit: 20, windowSize: 60, aggregateB
     return Response.json({ ok: false, message: error?.message || "Payment link checkout could not be prepared." }, { status: Number(error?.status || 500), headers: { "Cache-Control": "no-store" } });
   }
 };
+
+export const config = { rateLimit: { windowLimit: 20, windowSize: 60, aggregateBy: ["ip"] } };
