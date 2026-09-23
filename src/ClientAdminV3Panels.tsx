@@ -123,6 +123,7 @@ export function PosPanel({site,lang,onSaleComplete}:{site:any;lang:Language;onSa
   const [receiptId,setReceiptId]=useState('')
   const [remoteCheckout,setRemoteCheckout]=useState<{transactionId:string;checkoutUrl:string}|null>(null)
   const [remoteStatus,setRemoteStatus]=useState<{paymentStatus:string;status:string;receiptId:string;amountTotal:number}|null>(null)
+  const [remoteAttemptId,setRemoteAttemptId]=useState('')
 
   const add=(id:string)=>setCart(current=>{const found=current.find(x=>x.id===id);return found?current.map(x=>x.id===id?{...x,quantity:Math.min(100,x.quantity+1)}:x):[...current,{id,quantity:1}]})
   const change=(id:string,quantity:number)=>setCart(current=>quantity<=0?current.filter(x=>x.id!==id):current.map(x=>x.id===id?{...x,quantity:Math.max(1,Math.min(100,quantity))}:x))
@@ -132,6 +133,8 @@ export function PosPanel({site,lang,onSaleComplete}:{site:any;lang:Language;onSa
   const tipValue=Math.max(0,Number(tip||0))
   const estimatedTax=Math.max(0,(subtotal-discountValue)*(site.taxConfig?.enabled===false?0:(Number(site.taxConfig?.stateRate??10.5)+Number(site.taxConfig?.municipalRate??1))/100))
   const estimatedTotal=Math.max(0,subtotal-discountValue+(site.taxConfig?.pricesIncludeTax?0:estimatedTax)+tipValue)
+
+  useEffect(()=>{setRemoteAttemptId('');setRemoteCheckout(null);setRemoteStatus(null)},[cart,customer,discount,tip])
 
   const checkRemoteStatus=async()=>{
     if(!remoteCheckout)return
@@ -148,7 +151,8 @@ export function PosPanel({site,lang,onSaleComplete}:{site:any;lang:Language;onSa
   const sendToCard=async()=>{
     if(!cart.length)return setError(es?'Añade al menos un artículo.':'Add at least one item.')
     if(!customer.name||!customer.email)return setError(es?'Para enviar el pago con tarjeta necesitas nombre y email.':'Name and email are required to send a card payment.')
-    setBusy(true);setError('');setReceiptId('');setRemoteCheckout(null)
+    setBusy(true);setError('');setReceiptId('');
+    const attemptId=remoteAttemptId||crypto.randomUUID();if(!remoteAttemptId)setRemoteAttemptId(attemptId)
     try{
       const result=await api('/.netlify/functions/client-pos-checkout',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
         siteId:site.siteId,
@@ -156,6 +160,7 @@ export function PosPanel({site,lang,onSaleComplete}:{site:any;lang:Language;onSa
         customer,
         discountCents:Math.round(discountValue*100),
         tipCents:Math.round(tipValue*100),
+        saleAttemptId:attemptId,
       })})
       setRemoteCheckout({transactionId:result.transactionId,checkoutUrl:result.checkoutUrl});setRemoteStatus(null)
     }catch(e){setError(e instanceof Error?e.message:'POS card checkout failed.')}finally{setBusy(false)}
