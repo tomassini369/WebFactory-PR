@@ -6,7 +6,7 @@ Official WebFactory PR product and production website.
 
 **WebFactory Commerce Platform — subscription SaaS**
 
-- 48-hour free trial with no card.
+- 7-day free trial with no card.
 - $30 USD monthly or $350 USD yearly.
 - Multi-tenant business website plus private administration portal.
 - Products/services, employees, bookings, Stripe Connect, ATH Móvil architecture, Google Calendar and live content updates.
@@ -48,7 +48,7 @@ DNS keeps the ImprovMX MX records, one combined SPF record for Mailjet and Impro
 
 The server creates Stripe Checkout Sessions. Payment confirmation must come from Stripe verification/webhooks, never from a success-page redirect alone.
 
-The Builder creates a hidden tenant and sends secure portal access. The owner starts the 48-hour trial from the portal; no card or charge is created by the Builder.
+The Builder creates a hidden tenant and sends secure portal access. The owner starts the 7-day trial from the portal; no card or charge is created by the Builder.
 
 Client storefront data is loaded once per visit and refreshed when a visitor returns to a visible tab after at least one minute. Public tenant responses use revision ETags and short Netlify CDN caching, so administrative changes become available quickly without continuous 20-second polling or unnecessary Function invocations.
 
@@ -96,7 +96,7 @@ Production branch: `main`
 1. Customer completes the Builder and chooses a preferred `/sites/:slug` link.
 2. The server validates the configuration, stores assets and creates a hidden tenant.
 3. Netlify Identity sends secure password setup access.
-4. The owner starts the exact 48-hour trial from `/client-admin`.
+4. The owner starts the exact 7-day trial from `/client-admin`.
 5. The website becomes public and remains editable through the portal.
 6. The owner selects $30 monthly or $350 annual.
 7. Stripe's signed webhook activates the subscription and preserves public entitlement.
