@@ -75,18 +75,49 @@ export default async (req) => {
       }
     } else if (payload.action === "refund") {
       if (!record.stripePaymentIntentId || record.paymentStatus !== "paid") throw Object.assign(new Error("This transaction cannot be refunded through Stripe."), { status: 409 });
-      const amount = payload.amount ? Math.round(Number(payload.amount) * 100) : Number(record.amountTotal);
-      if (!Number.isFinite(amount) || amount <= 0 || amount > Number(record.amountTotal)) throw Object.assign(new Error("Refund amount is invalid."), { status: 400 });
-      const params = new URLSearchParams({ payment_intent: record.stripePaymentIntentId, amount: String(amount), "metadata[webfactory_transaction_id]": record.transactionId });
+      const amountTotal = Number(record.amountTotal || 0);
+      const existingRefunded = Math.max(0, Number(record.refundedAmount || 0));
+      const remainingRefundable = Math.max(0, amountTotal - existingRefunded);
+      if (remainingRefundable <= 0) throw Object.assign(new Error("This transaction is already fully refunded."), { status: 409 });
+      const amount = payload.amount ? Math.round(Number(payload.amount) * 100) : remainingRefundable;
+      if (!Number.isFinite(amount) || amount <= 0 || amount > remainingRefundable) throw Object.assign(new Error("Refund amount exceeds the remaining refundable balance."), { status: 400 });
+      const refundReason = String(payload.reason || "").trim().slice(0, 300);
+      const params = new URLSearchParams({
+        payment_intent: record.stripePaymentIntentId,
+        amount: String(amount),
+        "metadata[webfactory_transaction_id]": record.transactionId,
+        "metadata[webfactory_refund_reason]": refundReason || "unspecified",
+      });
       const response = await fetch("https://api.stripe.com/v1/refunds", {
         method: "POST",
-        headers: { Authorization: `Bearer ${env("STRIPE_SECRET_KEY")}`, "Stripe-Account": record.stripeAccountId, "Content-Type": "application/x-www-form-urlencoded", "Idempotency-Key": `refund-${record.transactionId}-${amount}` },
+        headers: {
+          Authorization: `Bearer ${env("STRIPE_SECRET_KEY")}`,
+          "Stripe-Account": record.stripeAccountId,
+          "Content-Type": "application/x-www-form-urlencoded",
+          "Idempotency-Key": `refund-${record.transactionId}-${existingRefunded}-${amount}`,
+        },
         body: params,
       });
       const refund = await response.json();
       if (!response.ok) throw new Error(refund?.error?.message || "Stripe refund failed.");
-      const fullRefund = amount === Number(record.amountTotal);
-      record = { ...record, status: fullRefund ? "refunded" : "partially_refunded", refundedAmount: Number(record.refundedAmount || 0) + amount, stripeRefundId: refund.id, updatedAt: new Date().toISOString() };
+      const newRefundedAmount = existingRefunded + amount;
+      const fullRefund = newRefundedAmount >= amountTotal;
+      record = {
+        ...record,
+        status: fullRefund ? "refunded" : "partially_refunded",
+        refundedAmount: newRefundedAmount,
+        stripeRefundId: refund.id,
+        refundHistory: [
+          ...(Array.isArray(record.refundHistory) ? record.refundHistory : []),
+          {
+            refundId: refund.id,
+            amount,
+            reason: refundReason,
+            createdAt: new Date().toISOString(),
+          },
+        ],
+        updatedAt: new Date().toISOString(),
+      };
 
       if (fullRefund && record.kind === "order" && !record.inventoryRestoredAt) {
         const catalog = (site.catalog || []).map((item) => {
