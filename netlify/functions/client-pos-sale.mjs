@@ -4,6 +4,7 @@ import { clientCommerceStore, commerceKey, patchClientSite } from "../lib/client
 import { cleanText, validEmail } from "../lib/order-store.mjs";
 import { calculateTax, createCustomerRecord, createInventoryMovement, createReceiptRecord } from "../lib/webfactory-v3-domain.mjs";
 import { getV3Record, putV3Record } from "../lib/webfactory-v3-store.mjs";
+import { sendCustomerCommerceEmail, sendBusinessCommerceEmail } from "../lib/client-notifications.mjs";
 
 export default async (req) => {
   try {
@@ -135,6 +136,41 @@ export default async (req) => {
     const receipt = createReceiptRecord({ siteId: site.siteId, transaction: record });
     await putV3Record(site.siteId, "receipts", receipt.receiptId, receipt);
     record.receiptId = receipt.receiptId;
+
+    if (customer.email) {
+      try {
+        await sendCustomerCommerceEmail(site, record);
+        record.customerEmailSent = true;
+      } catch (error) {
+        console.error("pos-customer-email", transactionId, error?.message || error);
+      }
+    }
+    if (site.business?.email) {
+      try {
+        await sendBusinessCommerceEmail(site, record);
+        record.businessEmailSent = true;
+      } catch (error) {
+        console.error("pos-business-email", transactionId, error?.message || error);
+      }
+    }
+
+    const reviewSettings = site.reviewSettings || {};
+    if (reviewSettings.enabled && reviewSettings.reviewUrl && reviewSettings.includeOrders !== false && customer.email) {
+      const reviewRequestId = `review-${crypto.randomUUID()}`;
+      await putV3Record(site.siteId, "review-requests", reviewRequestId, {
+        reviewRequestId,
+        siteId: site.siteId,
+        transactionId,
+        kind: "order",
+        customer: { name: customer.name || "", email: customer.email },
+        reviewUrl: reviewSettings.reviewUrl,
+        status: "pending",
+        dueAt: new Date(Date.now() + Math.max(0, Number(reviewSettings.delayHours ?? 2)) * 3600000).toISOString(),
+        createdAt: now,
+        updatedAt: now,
+      });
+      record.reviewRequestId = reviewRequestId;
+    }
 
     await clientCommerceStore().setJSON(commerceKey(site.siteId, "orders", transactionId), record);
     await clientCommerceStore().setJSON(commerceKey(site.siteId, "transactions", transactionId), record);
