@@ -33,9 +33,11 @@ export function PaymentLinksPanel({siteId,siteSlug,lang}:{siteId:string;siteSlug
 }
 
 export function ReceiptsPanel({siteId,lang}:{siteId:string;lang:Language}){
-  const es=lang==='es';const [rows,setRows]=useState<Receipt[]>([])
-  useEffect(()=>{api(`/.netlify/functions/client-v3-admin?siteId=${encodeURIComponent(siteId)}&collection=receipts`).then(r=>setRows(r.records||[])).catch(()=>setRows([]))},[siteId])
-  return <section className="ca-panel"><header><h2>{es?'Recibos':'Receipts'}</h2><p>{es?'Registro normalizado de pagos confirmados.':'Normalized record of confirmed payments.'}</p></header><div className="ca-transactions">{rows.length===0?<p>{es?'No hay recibos todavía.':'No receipts yet.'}</p>:rows.map(r=><article key={r.receiptId}><div><strong>{r.customer?.name||r.customer?.email||r.receiptId}</strong><span>{r.receiptId}</span></div><div><b>{money(r.total)}</b><span>{r.paymentStatus}</span><time>{new Date(r.createdAt).toLocaleString(es?'es-PR':'en-US')}</time></div></article>)}</div></section>
+  const es=lang==='es';const [rows,setRows]=useState<Receipt[]>([]);const [busy,setBusy]=useState('');const [error,setError]=useState('')
+  const load=()=>api(`/.netlify/functions/client-v3-admin?siteId=${encodeURIComponent(siteId)}&collection=receipts`).then(r=>setRows(r.records||[])).catch(()=>setRows([]))
+  useEffect(()=>{load()},[siteId])
+  const resend=async(receiptId:string)=>{setBusy(receiptId);setError('');try{await api('/.netlify/functions/client-v3-admin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({siteId,action:'resend_receipt',receiptId})});await load()}catch(e){setError(e instanceof Error?e.message:'Error')}finally{setBusy('')}}
+  return <section className="ca-panel"><header><h2>{es?'Recibos':'Receipts'}</h2><p>{es?'Registro normalizado de pagos confirmados.':'Normalized record of confirmed payments.'}</p></header>{error&&<div className="ca-error">{error}</div>}<div className="ca-transactions">{rows.length===0?<p>{es?'No hay recibos todavía.':'No receipts yet.'}</p>:rows.map(r=><article key={r.receiptId}><div><strong>{r.customer?.name||r.customer?.email||r.receiptId}</strong><span>{r.receiptId}</span></div><div><b>{money(r.total)}</b><span>{r.paymentStatus}</span><time>{new Date(r.createdAt).toLocaleString(es?'es-PR':'en-US')}</time></div><nav><a className="ca-primary-link secondary" href={`/.netlify/functions/client-receipt-pdf?siteId=${encodeURIComponent(siteId)}&receiptId=${encodeURIComponent(r.receiptId)}`} target="_blank">{es?'Abrir PDF':'Open PDF'}</a>{r.customer?.email&&<button disabled={busy===r.receiptId} onClick={()=>resend(r.receiptId)}>{busy===r.receiptId?(es?'Enviando…':'Sending…'):(es?'Reenviar':'Resend')}</button>}</nav></article>)}</div></section>
 }
 
 export function AnalyticsPanel({commerce,lang}:{commerce:{orders:Transaction[];bookings:Transaction[]};lang:Language}){
