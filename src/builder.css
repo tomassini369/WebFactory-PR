@@ -169,3 +169,5 @@
 .wf-preview-catalog-gateway,.wf-preview-booking,.wf-preview-team article,.wf-preview-location{transition:transform .24s ease,box-shadow .24s ease}.wf-preview-catalog-gateway:hover,.wf-preview-booking:hover,.wf-preview-team article:hover,.wf-preview-location:hover{transform:translateY(-4px);box-shadow:0 20px 55px rgba(11,21,41,.09)}
 @media(max-width:820px){.wf-template-grid article:nth-of-type(even){transform:none}}
 @media(prefers-reduced-motion:reduce){.wf-builder *{animation:none!important;transition-duration:.01ms!important}}
+
+.wf-invite-banner{margin:0 0 18px;padding:14px 16px;display:grid;gap:4px;border:1px solid rgba(60,134,246,.28);border-radius:16px;background:linear-gradient(135deg,rgba(60,134,246,.10),rgba(77,150,243,.04));box-shadow:0 14px 35px rgba(60,134,246,.08)}.wf-invite-banner strong{color:#0b1529}.wf-invite-banner span{color:#5d6a7d;font-size:.78rem;line-height:1.5}
