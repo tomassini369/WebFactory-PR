@@ -10,11 +10,16 @@ The dedicated WebFactory iOS app is deferred. Native Stripe Terminal/Tap to Pay 
 ## Required before merge to main
 
 ### Build and deployment
-- [ ] Latest Netlify Deploy Preview is green on the final commit.
-- [ ] TypeScript build passes.
-- [ ] Netlify Function bundle completes without errors.
-- [ ] Secret scan reports no exposed credentials.
-- [ ] Scheduled functions are present where expected.
+- [x] Netlify Deploy Preview is green for the validated V3 branch state.
+- [x] TypeScript/Vite production build passes in GitHub Actions.
+- [x] Netlify Deploy Preview function bundle completes without errors.
+- [x] Netlify secret scan reports no exposed credentials.
+- [x] Scheduled functions are present where expected.
+
+### Automated verification
+- [x] `npm ci` passes in clean GitHub Actions runner.
+- [x] `npm test` passes.
+- [x] `npm run build` passes.
 
 ### Subscription and publishing
 - [x] New trials use 7 days with no card.
