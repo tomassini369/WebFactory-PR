@@ -72,12 +72,12 @@ export async function requireSiteAccess(siteId, roles = ["owner", "manager", "em
 
 
 export const SITE_ROLE_CAPABILITIES = {
-  owner: ["overview","website","orders","bookings","customers","catalog","employees","payments","marketing","analytics","integrations","settings","billing","refunds"],
-  manager: ["overview","website","orders","bookings","customers","catalog","employees","payments","marketing","analytics","integrations","settings","refunds"],
+  owner: ["overview","website","orders","bookings","customers","catalog","employees","payments","pos","marketing","analytics","integrations","settings","billing","refunds"],
+  manager: ["overview","website","orders","bookings","customers","catalog","employees","payments","pos","marketing","analytics","integrations","settings","refunds"],
   employee: ["overview","bookings","customers"],
-  cashier: ["overview","orders","customers","payments"],
+  cashier: ["overview","orders","customers","payments","pos"],
   staff: ["overview","bookings","customers"],
-  admin: ["overview","website","orders","bookings","customers","catalog","employees","payments","marketing","analytics","integrations","settings","billing","refunds"],
+  admin: ["overview","website","orders","bookings","customers","catalog","employees","payments","pos","marketing","analytics","integrations","settings","billing","refunds"],
 };
 
 export function siteRoleCapabilities(role = "staff") {
