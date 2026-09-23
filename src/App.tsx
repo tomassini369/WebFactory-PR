@@ -8,6 +8,7 @@ import ClientStorefront from './ClientStorefront'
 import WebFactoryAdminPage from './WebFactoryAdminPage'
 import PasswordRecoveryPage from './PasswordRecoveryPage'
 import LegalPage from './LegalPage'
+import PaymentLinkPage from './PaymentLinkPage'
 
 type Language = 'es' | 'en'
 
@@ -150,6 +151,7 @@ function App(){
   const identityInviteRoute = /^#invite_token=/.test(window.location.hash)
   const identityRecoveryRoute = /^#recovery_token=/.test(window.location.hash)
   const clientSiteMatch = window.location.pathname.match(/^\/sites\/([^/]+)\/?$/)
+  const paymentLinkMatch = window.location.pathname.match(/^\/pay\/([^/]+)\/([^/]+)\/?$/)
   const builderRoute = /^\/builder\/?$/.test(window.location.pathname)
   const privacyRoute = /^\/privacy\/?$/.test(window.location.pathname)
   const termsRoute = /^\/terms\/?$/.test(window.location.pathname)
@@ -162,6 +164,7 @@ function App(){
   if (webFactoryAdminRoute || identityInviteRoute) return <WebFactoryAdminPage />
   if (clientAdminRoute) return <ClientAdminPage />
   if (clientSiteMatch) return <ClientStorefront slug={decodeURIComponent(clientSiteMatch[1])} />
+  if (paymentLinkMatch) return <PaymentLinkPage slug={decodeURIComponent(paymentLinkMatch[1])} token={decodeURIComponent(paymentLinkMatch[2])} />
   if (paymentSetupRoute) return <PaymentSetupPage />
   if (legacyDemoMatch) {
     window.location.replace(`/templates/${legacyDemoMatch[1]}`)
