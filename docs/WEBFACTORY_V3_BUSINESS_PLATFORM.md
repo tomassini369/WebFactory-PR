@@ -409,3 +409,26 @@ V3 core is complete when a business can:
 12. View business analytics.
 13. Manage integrations from one portal.
 14. Operate without manually entering API secrets.
+
+
+## Current scope decision — iOS app deferred
+
+As of September 23, 2026, development of a dedicated **WebFactory iOS app** is intentionally deferred.
+
+The web/PWA Business Platform remains the active implementation target. Stripe Terminal/Tap to Pay server primitives may remain in the repository so a future native iOS client can reuse the same WebFactory POS transactions, catalog, tax, inventory, CRM, receipts and analytics pipeline.
+
+Current V3 scope therefore includes:
+- Web/PWA POS
+- cash/manual in-person sales
+- Stripe remote Checkout links
+- QR checkout
+- shared orders, CRM, receipts, inventory and analytics
+- Terminal-ready backend primitives
+
+Current V3 scope does **not** include:
+- native iOS UI
+- App Store packaging/distribution
+- native Stripe Terminal SDK integration
+- Tap to Pay NFC collection inside a WebFactory mobile app
+
+Native development must be treated as a separate future phase and must not block completion or release of the WebFactory web platform.
