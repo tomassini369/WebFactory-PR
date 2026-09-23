@@ -130,3 +130,18 @@ body{background:
 @media(max-width:760px){
   .hero:after{display:none}.feature-grid article:nth-child(3n+2),.steps article:nth-child(even),.employees article,.employees article:nth-child(2){transform:none}
 }
+
+/* V3 Spatial Payment Link */
+.wf-pay-page{background:
+  radial-gradient(circle at 82% 8%,rgba(60,134,246,.13),transparent 26%),
+  linear-gradient(180deg,#f8fbff,#f3f6fb)}
+.wf-pay-card{position:relative;overflow:hidden;background:rgba(255,255,255,.88);backdrop-filter:blur(18px);box-shadow:0 34px 100px rgba(11,21,41,.12)}
+.wf-pay-card:after{content:"";position:absolute;width:170px;height:170px;right:-72px;top:-78px;border-radius:50%;background:radial-gradient(circle,rgba(60,134,246,.18),transparent 70%);pointer-events:none}
+.wf-pay-card .portal-language{position:relative;z-index:2;display:flex;justify-content:flex-end;gap:6px;margin-bottom:14px}
+.wf-pay-card .portal-language button{border:1px solid #dce8f7;border-radius:999px;padding:6px 10px;background:#fff;font-weight:800;cursor:pointer}
+.wf-pay-card .portal-language button.active{background:#0b1529;color:#fff;border-color:#0b1529}
+.wf-pay-amount{background:linear-gradient(135deg,#f6faff,#eef5ff);box-shadow:inset 0 0 0 1px rgba(60,134,246,.08)}
+.wf-pay-card input:focus{outline:none;border-color:#3c86f6;box-shadow:0 0 0 4px rgba(60,134,246,.08)}
+.wf-pay-card form button,.wf-pay-card>button{transition:transform .22s ease,box-shadow .22s ease;background:linear-gradient(135deg,#3c86f6,#4d96f3);box-shadow:0 14px 32px rgba(60,134,246,.22)}
+.wf-pay-card form button:hover,.wf-pay-card>button:hover{transform:translateY(-2px)}
+@media(prefers-reduced-motion:reduce){.wf-pay-page *{animation:none!important;transition-duration:.01ms!important}}
