@@ -1,5 +1,5 @@
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
-import { errorResponse, requireSiteAccess } from "../lib/client-auth.mjs";
+import { errorResponse, requireSiteCapability } from "../lib/client-auth.mjs";
 import { cleanText } from "../lib/order-store.mjs";
 import { getV3Record } from "../lib/webfactory-v3-store.mjs";
 
@@ -13,7 +13,7 @@ export default async (req) => {
     const url = new URL(req.url);
     const siteId = cleanText(url.searchParams.get("siteId"), 120);
     const receiptId = cleanText(url.searchParams.get("receiptId"), 180);
-    const { site } = await requireSiteAccess(siteId);
+    const { site } = await requireSiteCapability(siteId, "payments");
     const receipt = await getV3Record(siteId, "receipts", receiptId);
     if (!receipt) throw Object.assign(new Error("Receipt not found."), { status: 404 });
 
