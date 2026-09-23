@@ -124,6 +124,7 @@ export function PosPanel({site,lang,onSaleComplete}:{site:any;lang:Language;onSa
   const [remoteCheckout,setRemoteCheckout]=useState<{transactionId:string;checkoutUrl:string}|null>(null)
   const [remoteStatus,setRemoteStatus]=useState<{paymentStatus:string;status:string;receiptId:string;amountTotal:number}|null>(null)
   const [remoteAttemptId,setRemoteAttemptId]=useState('')
+  const [directAttemptId,setDirectAttemptId]=useState('')
 
   const add=(id:string)=>setCart(current=>{const found=current.find(x=>x.id===id);return found?current.map(x=>x.id===id?{...x,quantity:Math.min(100,x.quantity+1)}:x):[...current,{id,quantity:1}]})
   const change=(id:string,quantity:number)=>setCart(current=>quantity<=0?current.filter(x=>x.id!==id):current.map(x=>x.id===id?{...x,quantity:Math.max(1,Math.min(100,quantity))}:x))
@@ -134,7 +135,7 @@ export function PosPanel({site,lang,onSaleComplete}:{site:any;lang:Language;onSa
   const estimatedTax=Math.max(0,(subtotal-discountValue)*(site.taxConfig?.enabled===false?0:(Number(site.taxConfig?.stateRate??10.5)+Number(site.taxConfig?.municipalRate??1))/100))
   const estimatedTotal=Math.max(0,subtotal-discountValue+(site.taxConfig?.pricesIncludeTax?0:estimatedTax)+tipValue)
 
-  useEffect(()=>{setRemoteAttemptId('');setRemoteCheckout(null);setRemoteStatus(null)},[cart,customer,discount,tip])
+  useEffect(()=>{setRemoteAttemptId('');setDirectAttemptId('');setRemoteCheckout(null);setRemoteStatus(null)},[cart,customer,discount,tip,paymentMethod])
 
   const checkRemoteStatus=async()=>{
     if(!remoteCheckout)return
@@ -169,14 +170,16 @@ export function PosPanel({site,lang,onSaleComplete}:{site:any;lang:Language;onSa
   const complete=async()=>{
     if(!cart.length)return setError(es?'Añade al menos un artículo.':'Add at least one item.')
     setBusy(true);setError('');setReceiptId('')
+    const attemptId=directAttemptId||crypto.randomUUID();if(!directAttemptId)setDirectAttemptId(attemptId)
     try{
-      const result=await api('/.netlify/functions/client-pos-sale',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+      const result=await api('/.netlify/functions/client-pos-sale-idempotent',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
         siteId:site.siteId,
         items:cart,
         customer,
         discountCents:Math.round(discountValue*100),
         tipCents:Math.round(tipValue*100),
         paymentMethod,
+        saleAttemptId:attemptId,
       })})
       setReceiptId(result.receiptId||'')
       setCart([]);setCustomer({name:'',email:'',phone:''});setDiscount('0');setTip('0')
