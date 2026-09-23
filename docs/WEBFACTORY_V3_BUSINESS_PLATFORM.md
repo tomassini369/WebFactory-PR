@@ -27,9 +27,9 @@ Public offer:
 
 Trial migration target:
 
-- Replace the current 48-hour trial with a 7-day no-card trial.
-- Existing already-started trials keep their original entitlement unless explicitly migrated.
-- New sites use the new policy once the migration is deployed.
+- New trials use a 7-day no-card trial.
+- Existing already-started trials keep their original `trialEndsAt` and are not extended or shortened automatically.
+- The V3 branch implements this policy through `createTrialServicePlan()` with `trialPolicyVersion: v3-7d`.
 
 ## Client portal information architecture
 
