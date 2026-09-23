@@ -144,11 +144,26 @@ export default async (req) => {
     if (previous?.completed) return Response.json({ received: true, duplicate: true });
     if (previous?.processing && Date.parse(previous.updatedAt || "") > Date.now() - 5 * 60_000) return Response.json({ received: true, processing: true });
     await clientEventStore().setJSON(key, { processing: true, updatedAt: new Date().toISOString(), type: event.type });
-    if (!["checkout.session.completed", "checkout.session.async_payment_succeeded"].includes(event.type) || event.data?.object?.metadata?.flow !== "webfactory_client_commerce") {
+    const object = event.data?.object || {};
+    const checkoutEvent = ["checkout.session.completed", "checkout.session.async_payment_succeeded"].includes(event.type) && object.metadata?.flow === "webfactory_client_commerce";
+    const terminalEvent = event.type === "payment_intent.succeeded" && object.metadata?.flow === "webfactory_terminal";
+    if (!checkoutEvent && !terminalEvent) {
       await clientEventStore().setJSON(key, { completed: true, ignored: true, type: event.type, updatedAt: new Date().toISOString() });
       return Response.json({ received: true, ignored: true });
     }
-    const result = await finalizeTransaction(event);
+    const normalizedEvent = terminalEvent ? {
+      ...event,
+      data: {
+        object: {
+          metadata: object.metadata,
+          payment_status: object.status === "succeeded" ? "paid" : "unpaid",
+          amount_total: Number(object.amount_received || object.amount || 0),
+          currency: object.currency,
+          payment_intent: object.id,
+        },
+      },
+    } : event;
+    const result = await finalizeTransaction(normalizedEvent);
     await clientEventStore().setJSON(key, { completed: !result.pending, pending: result.pending, transactionId: result.record.transactionId, updatedAt: new Date().toISOString() });
     return Response.json({ received: true, transactionId: result.record.transactionId, pending: result.pending });
   } catch (error) {
