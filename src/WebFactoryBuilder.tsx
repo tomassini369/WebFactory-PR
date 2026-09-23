@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type CSSProperties, type Dispatch, type SetStateAction } from 'react'
-import { demoConfigs, templateGroups, templateGroupForCategory } from './demoData'
+import { demoConfigs, templateGroups, templateGroupForCategory, templateVisualStyle } from './demoData'
 import BuilderAiAssistant from './BuilderAiAssistant'
 import './builder.css'
 
@@ -645,7 +645,7 @@ function DesignStep({state,setState,lang}:{state:BuilderState;setState:Dispatch<
       design:{
         ...current.design,
         templateSlug:slug,
-        ...(demo ? {primary:demo.dark,secondary:demo.accent} : {}),
+        ...(demo ? {primary:demo.dark,secondary:demo.accent,style:({modern:'Modern',luxury:'Luxury',minimal:'Minimal',bold:'Bold'} as const)[templateVisualStyle(demo.category)]} : {}),
       },
     }))
   }
@@ -1181,7 +1181,7 @@ export default function WebFactoryBuilder({lang}:{lang:Language}) {
     if (!demo) return
     setState((current)=>({
       ...current,
-      design:{...current.design,templateSlug:demo.slug,primary:demo.dark,secondary:demo.accent},
+      design:{...current.design,templateSlug:demo.slug,primary:demo.dark,secondary:demo.accent,style:({modern:'Modern',luxury:'Luxury',minimal:'Minimal',bold:'Bold'} as const)[templateVisualStyle(demo.category)]},
     }))
     setStep(1)
   },[])
