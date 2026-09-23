@@ -3,6 +3,7 @@ import { clientCommerceStore, commerceKey } from "../lib/client-store.mjs";
 import { deleteGoogleEvent } from "../lib/google-calendar.mjs";
 import { createInventoryMovement } from "../lib/webfactory-v3-domain.mjs";
 import { getV3Record, putV3Record } from "../lib/webfactory-v3-store.mjs";
+import crypto from "node:crypto";
 
 function env(name) { return globalThis.Netlify?.env?.get(name) || ""; }
 
@@ -41,6 +42,36 @@ export default async (req) => {
       record = { ...record, status: "cancelled", cancelledAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
     } else if (payload.action === "mark_paid" && record.paymentStatus === "due") {
       record = { ...record, paymentStatus: "paid_in_person", status: "confirmed", paidAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+    } else if (payload.action === "complete") {
+      if (!["paid","paid_in_person"].includes(record.paymentStatus)) throw Object.assign(new Error("Only paid transactions can be completed."), { status: 409 });
+      record = { ...record, status: "completed", completedAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+
+      const settings = site.reviewSettings || {};
+      const eligible = settings.enabled && settings.reviewUrl && (
+        (record.kind === "order" && settings.includeOrders !== false) ||
+        (record.kind === "booking" && settings.includeBookings !== false)
+      );
+      if (eligible && record.customer?.email && !record.reviewRequestId) {
+        const dueAt = new Date(Date.now() + Math.max(0, Number(settings.delayHours ?? 2)) * 3600000).toISOString();
+        const reviewRequestId = `review-${crypto.randomUUID()}`;
+        const request = {
+          reviewRequestId,
+          siteId: site.siteId,
+          transactionId: record.transactionId,
+          kind: record.kind,
+          customer: {
+            name: record.customer?.name || "",
+            email: record.customer?.email || "",
+          },
+          reviewUrl: settings.reviewUrl,
+          status: "pending",
+          dueAt,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+        await putV3Record(site.siteId, "review-requests", reviewRequestId, request);
+        record.reviewRequestId = reviewRequestId;
+      }
     } else if (payload.action === "refund") {
       if (!record.stripePaymentIntentId || record.paymentStatus !== "paid") throw Object.assign(new Error("This transaction cannot be refunded through Stripe."), { status: 409 });
       const amount = payload.amount ? Math.round(Number(payload.amount) * 100) : Number(record.amountTotal);
