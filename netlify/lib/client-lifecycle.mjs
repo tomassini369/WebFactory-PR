@@ -109,6 +109,6 @@ export async function removeUserFromSite(site,email){
 
 export async function deleteIdentityUser(user){
   if(!user?.id)return false;
-  await admin.deleteUser(user.id);
+  await admin.deleteUser({ id: user.id });
   return true;
 }
