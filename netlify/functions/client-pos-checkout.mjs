@@ -76,21 +76,7 @@ export default async(req)=>{
     params.set("metadata[transaction_id]",transactionId);
     params.set("metadata[kind]","order");
     params.set("metadata[source]","pos_remote");
-    items.forEach((item,index)=>appendLine(params,index,item));
-    let index=items.length;
-    if(tax>0&&!site.taxConfig?.pricesIncludeTax)appendLine(params,index++,{name:"Puerto Rico IVU",unitAmount:tax,quantity:1});
-    if(tip>0)appendLine(params,index++,{name:"Tip",unitAmount:tip,quantity:1});
-    if(discount>0){
-      const couponParams=new URLSearchParams();
-      couponParams.set("duration","once");
-      couponParams.set("amount_off",String(discount));
-      couponParams.set("currency","usd");
-      couponParams.set("name","WebFactory POS discount");
-      const couponResponse=await fetch("https://api.stripe.com/v1/coupons",{method:"POST",headers:{Authorization:`Bearer ${env("STRIPE_SECRET_KEY")}`,"Stripe-Account":accountId,"Content-Type":"application/x-www-form-urlencoded","Idempotency-Key":`pos-coupon-${transactionId}-${discount}`},body:couponParams});
-      const coupon=await couponResponse.json();
-      if(!couponResponse.ok)throw new Error(coupon?.error?.message||"POS discount could not be prepared.");
-      params.set("discounts[0][coupon]",coupon.id);
-    }
+    appendLine(params,0,{name:`WebFactory POS sale · ${items.length} item${items.length===1?"":"s"}`,unitAmount:total,quantity:1});
 
     const response=await fetch("https://api.stripe.com/v1/checkout/sessions",{method:"POST",headers:{Authorization:`Bearer ${env("STRIPE_SECRET_KEY")}`,"Stripe-Account":accountId,"Stripe-Version":"2026-07-29.dahlia","Content-Type":"application/x-www-form-urlencoded","Idempotency-Key":`pos-checkout-${transactionId}`},body:params});
     const session=await response.json();
