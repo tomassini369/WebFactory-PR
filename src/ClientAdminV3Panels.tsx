@@ -216,3 +216,59 @@ export function InventoryAdjustmentPanel({site,setSite,lang}:{site:any;setSite:(
 
   return <section className="ca-panel"><header><h2>{es?'Ajuste de inventario':'Inventory adjustment'}</h2><p>{es?'Suma o resta existencias manualmente. Cada cambio queda guardado en el historial.':'Add or subtract stock manually. Every change is saved in the movement history.'}</p></header>{message&&<div className="ca-success">{message}</div>}{error&&<div className="ca-error">{error}</div>}{tracked.length===0?<p>{es?'Activa Track inventory en un producto para usar esta herramienta.':'Enable Track inventory on a product to use this tool.'}</p>:<div className="ca-grid"><label>{es?'Producto':'Product'}<select value={itemId} onChange={e=>setItemId(e.target.value)}>{tracked.map((item:any)=><option key={item.id} value={item.id}>{item.nameEn||item.name||item.nameEs} · {Number(item.inventory??0)}</option>)}</select></label><label>{es?'Cambio de unidades':'Quantity change'}<input type="number" step="1" value={quantity} onChange={e=>setQuantity(e.target.value)} placeholder="+5 / -2"/></label><label>{es?'Motivo':'Reason'}<select value={reason} onChange={e=>setReason(e.target.value)}><option value="manual_adjustment">{es?'Ajuste manual':'Manual adjustment'}</option><option value="restock">{es?'Reposición':'Restock'}</option><option value="damage">{es?'Daño/pérdida':'Damage/loss'}</option><option value="correction">{es?'Corrección':'Correction'}</option></select></label></div>} {tracked.length>0&&<button className="ca-save" disabled={busy} onClick={adjust}>{busy?(es?'Guardando…':'Saving…'):(es?'Aplicar ajuste':'Apply adjustment')}</button>}</section>
 }
+
+
+export function IntegrationManagementPanel({site,setSite,lang,membership}:{site:any;setSite:(site:any)=>void;lang:Language;membership:any}){
+  const es=lang==='es'
+  const [busy,setBusy]=useState('')
+  const [message,setMessage]=useState('')
+  const [error,setError]=useState('')
+  const owner=(membership?.role||'owner')==='owner'||membership?.role==='admin'
+  const disconnect=async(action:string,label:string)=>{
+    if(!confirm(es?`¿Desconectar ${label} de este negocio?`:`Disconnect ${label} from this business?`))return
+    setBusy(action);setMessage('');setError('')
+    try{
+      const result=await api('/.netlify/functions/client-integration-management',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({siteId:site.siteId,action})})
+      if(result.site)setSite(result.site)
+      setMessage(es?`${label} fue desconectado.`:`${label} was disconnected.`)
+    }catch(e){setError(e instanceof Error?e.message:'Integration could not be disconnected.')}finally{setBusy('')}
+  }
+  const stripeConnected=Boolean(site.paymentRules?.stripeConnectedAccountId)
+  const athConnected=Boolean(site.paymentRules?.methods?.ath||site.paymentRules?.ath?.publicPath)
+  const googleConnected=Boolean(site.googleCalendar?.connected)
+  return <section className="ca-panel"><header><h2>{es?'Servicios conectados':'Connected services'}</h2><p>{es?'Desconecta servicios externos sin eliminar tu página ni tu cuenta de WebFactory.':'Disconnect external services without deleting your WebFactory page or account.'}</p></header>{message&&<div className="ca-success">{message}</div>}{error&&<div className="ca-error">{error}</div>}<div className="ca-v3-table">
+    <article><div><strong>Google Calendar</strong><span>{googleConnected?(es?'Conectado':'Connected'):(es?'No conectado':'Not connected')}</span></div><div>{googleConnected&&<button disabled={Boolean(busy)} onClick={()=>disconnect('disconnect_google','Google Calendar')}>{busy==='disconnect_google'?(es?'Desconectando…':'Disconnecting…'):(es?'Desconectar':'Disconnect')}</button>}</div></article>
+    <article><div><strong>Stripe</strong><span>{stripeConnected?(es?'Conectado a esta página':'Connected to this page'):(es?'No conectado':'Not connected')}</span></div><div>{stripeConnected&&owner&&<button disabled={Boolean(busy)} onClick={()=>disconnect('disconnect_stripe','Stripe')}>{busy==='disconnect_stripe'?(es?'Desconectando…':'Disconnecting…'):(es?'Desconectar':'Disconnect')}</button>}</div></article>
+    <article><div><strong>ATH Móvil</strong><span>{athConnected?(es?'Configurado':'Configured'):(es?'No configurado':'Not configured')}</span></div><div>{athConnected&&<button disabled={Boolean(busy)} onClick={()=>disconnect('disconnect_ath','ATH Móvil')}>{busy==='disconnect_ath'?(es?'Desconectando…':'Disconnecting…'):(es?'Desconectar':'Disconnect')}</button>}</div></article>
+  </div><p className="ca-note">{es?'Desconectar un servicio elimina su vínculo con esta página. No elimina la cuenta que tengas directamente con el proveedor.':'Disconnecting removes the service link from this page. It does not delete your account with the external provider.'}</p></section>
+}
+
+export function AccountLifecyclePanel({site,lang,membership,onPageDeleted,onAccountDeleted}:{site:any;lang:Language;membership:any;onPageDeleted:()=>Promise<void>|void;onAccountDeleted:()=>Promise<void>|void}){
+  const es=lang==='es'
+  const owner=(membership?.role||'owner')==='owner'||membership?.role==='admin'
+  const [busy,setBusy]=useState('')
+  const [error,setError]=useState('')
+  if(!owner)return null
+
+  const deletePage=async()=>{
+    const confirmation=prompt(es?'Escribe DELETE PAGE para eliminar permanentemente esta página y sus datos.':'Type DELETE PAGE to permanently delete this page and its data.','')
+    if(confirmation!=='DELETE PAGE')return
+    setBusy('page');setError('')
+    try{
+      await api('/.netlify/functions/client-delete-account',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'delete_site',siteId:site.siteId,confirmation})})
+      await onPageDeleted()
+    }catch(e){setError(e instanceof Error?e.message:'Page could not be deleted.');setBusy('')}
+  }
+
+  const deleteAccount=async()=>{
+    const confirmation=prompt(es?'Escribe DELETE ACCOUNT para eliminar tu cuenta WebFactory, todas las páginas que posees y tu acceso al portal.':'Type DELETE ACCOUNT to delete your WebFactory account, every page you own, and your portal access.','')
+    if(confirmation!=='DELETE ACCOUNT')return
+    setBusy('account');setError('')
+    try{
+      await api('/.netlify/functions/client-delete-account',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'delete_account',confirmation})})
+      await onAccountDeleted()
+    }catch(e){setError(e instanceof Error?e.message:'Account could not be deleted.');setBusy('')}
+  }
+
+  return <section className="ca-panel ca-danger-zone"><header><h2>{es?'Zona de peligro':'Danger zone'}</h2><p>{es?'Estas acciones son permanentes. WebFactory cancela la suscripción del site antes de eliminarlo cuando corresponde.':'These actions are permanent. WebFactory cancels the site subscription before deletion when applicable.'}</p></header>{error&&<div className="ca-error">{error}</div>}<div className="ca-danger-actions"><article><div><strong>{es?'Eliminar esta página':'Delete this page'}</strong><span>{es?'Borra este website, comercio, citas, clientes, recibos, assets e integraciones. Tu login permanece si tienes otras páginas.':'Deletes this website, commerce data, bookings, customers, receipts, assets, and integrations. Your login remains if you have other pages.'}</span></div><button disabled={Boolean(busy)} onClick={deletePage}>{busy==='page'?(es?'Eliminando…':'Deleting…'):(es?'Eliminar página':'Delete page')}</button></article><article><div><strong>{es?'Eliminar mi cuenta WebFactory':'Delete my WebFactory account'}</strong><span>{es?'Elimina todas las páginas que posees, remueve tus accesos a otros negocios y elimina tu login de WebFactory.':'Deletes every page you own, removes your access to other businesses, and deletes your WebFactory login.'}</span></div><button disabled={Boolean(busy)} onClick={deleteAccount}>{busy==='account'?(es?'Eliminando…':'Deleting…'):(es?'Eliminar cuenta':'Delete account')}</button></article></div></section>
+}
