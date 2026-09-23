@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type CSSProperties } from 'react'
-import { demoBySlug, type DemoItem } from './demoData'
+import { demoBySlug, templateVisualStyle, type DemoItem } from './demoData'
 import { demoUi, localizeDemo, type DemoLanguage, type DemoUi } from './demoI18n'
 import './demo.css'
 
@@ -191,7 +191,7 @@ function DemoSite({ slug }: { slug: string }) {
   }
 
   return (
-    <div className="demo-site" style={styles}>
+    <div className={`demo-site visual-${templateVisualStyle(config.category)}`} style={styles}>
       <DemoNotice ui={ui} />
 
       <header className="demo-header">
