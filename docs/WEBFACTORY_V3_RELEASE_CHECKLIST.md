@@ -32,6 +32,15 @@ The dedicated WebFactory iOS app is deferred. Native Stripe Terminal/Tap to Pay 
 - [x] Production subscription webhook secret is present in Netlify configuration.
 - [ ] Confirm `WEBFACTORY_SUBSCRIPTION_ENABLED=true` in production before enabling the new public policy.
 
+### Complimentary access
+- [x] Email-only complimentary invitation flow is implemented.
+- [x] Invitation opens a private Builder link instead of creating a placeholder business.
+- [x] Invitee creates the business, slug, design and content in the Builder.
+- [x] Backend validates and redeems the signed random token against the invited email.
+- [x] Created site receives complimentary entitlement automatically.
+- [x] Owner account/password setup is provisioned after the site is created.
+- [x] Complimentary access can still be revoked later without deleting site data.
+
 ### Client portal and permissions
 - [x] Role model supports Owner, Manager, Employee and Cashier.
 - [x] Legacy Staff remains compatible.
