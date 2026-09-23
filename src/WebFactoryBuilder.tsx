@@ -328,17 +328,18 @@ function Toggle({checked,onChange,label,help}:{checked:boolean;onChange:(value:b
   )
 }
 
-function Field({label,value,onChange,placeholder,type='text'}:{
+function Field({label,value,onChange,placeholder,type='text',disabled=false}:{
   label:string
   value:string
   onChange:(value:string)=>void
   placeholder?:string
   type?:string
+  disabled?:boolean
 }) {
   return (
     <label className="wf-field">
       <span>{label}</span>
-      <input type={type} value={value} placeholder={placeholder} onChange={(event)=>onChange(event.target.value)} />
+      <input type={type} value={value} placeholder={placeholder} disabled={disabled} onChange={(event)=>onChange(event.target.value)} />
     </label>
   )
 }
@@ -497,7 +498,7 @@ function Preview({state,device,lang}:{state:BuilderState;device:Device;lang:Lang
   )
 }
 
-function BusinessStep({state,setState,lang}:{state:BuilderState;setState:Dispatch<SetStateAction<BuilderState>>;lang:Language}) {
+function BusinessStep({state,setState,lang,lockedEmail}:{state:BuilderState;setState:Dispatch<SetStateAction<BuilderState>>;lang:Language;lockedEmail?:string}) {
   const [uploadingLogo,setUploadingLogo] = useState(false)
   const [uploadError,setUploadError] = useState('')
   const setBusiness = <K extends keyof BuilderState['business']>(key:K, value:BuilderState['business'][K]) =>
@@ -586,7 +587,7 @@ function BusinessStep({state,setState,lang}:{state:BuilderState;setState:Dispatc
       <div className="wf-field-grid">
         <Field label={lang==='es'?'Teléfono':'Phone'} value={state.business.phone} onChange={(v)=>setBusiness('phone',v)} />
         <Field label="WhatsApp" value={state.business.whatsapp} onChange={(v)=>setBusiness('whatsapp',v)} />
-        <Field label={lang==='es'?'Email del cliente':'Customer email'} type="email" value={state.business.email} onChange={(v)=>setBusiness('email',v)} />
+        <Field label={lang==='es'?'Email del cliente':'Customer email'} type="email" value={state.business.email} disabled={Boolean(lockedEmail)} onChange={(v)=>setBusiness('email',v)} />
         <Field label="Instagram" value={state.business.instagram} onChange={(v)=>setBusiness('instagram',v)} placeholder="https://instagram.com/..." />
         <Field label="Facebook" value={state.business.facebook} onChange={(v)=>setBusiness('facebook',v)} placeholder="https://facebook.com/..." />
         <Field label="X" value={state.business.x} onChange={(v)=>setBusiness('x',v)} placeholder="https://x.com/..." />
@@ -1227,7 +1228,7 @@ export default function WebFactoryBuilder({lang}:{lang:Language}) {
   }
 
   const stepContent = [
-    <BusinessStep key="business" state={state} setState={setState} lang={lang}/>,
+    <BusinessStep key="business" state={state} setState={setState} lang={lang} lockedEmail={complimentaryInviteToken?state.business.email:undefined}/>,
     <DesignStep key="design" state={state} setState={setState} lang={lang}/>,
     <FeaturesStep key="features" state={state} setState={setState} lang={lang}/>,
     <CatalogStep key="catalog" state={state} setState={setState} lang={lang}/>,
