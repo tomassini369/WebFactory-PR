@@ -8,3 +8,7 @@
 .payment-setup-card:after{content:"";position:absolute;width:150px;height:150px;right:-65px;top:-70px;border-radius:50%;background:radial-gradient(circle,rgba(60,134,246,.18),transparent 70%);pointer-events:none}
 .payment-setup-list article{transition:transform .24s ease,box-shadow .24s ease,border-color .24s ease}.payment-setup-list article:hover{transform:translateY(-4px);box-shadow:0 20px 55px rgba(11,21,41,.08);border-color:rgba(60,134,246,.3)}
 .payment-rules-summary{background:linear-gradient(135deg,#081222,#0b1529 58%,#173763);box-shadow:0 22px 60px rgba(11,21,41,.18)}
+
+.payment-stripe-actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.payment-stripe-actions .danger{background:#fff;color:#b42318;border:1px solid rgba(180,35,24,.25);box-shadow:none}
+.payment-stripe-actions .danger:hover{background:#fff5f4;border-color:rgba(180,35,24,.4);transform:translateY(-1px)}
