@@ -104,6 +104,11 @@ The dedicated WebFactory iOS app is deferred. Native Stripe Terminal/Tap to Pay 
 - [ ] Test POS on desktop/tablet viewport.
 - [ ] Test abandoned remote checkout to ensure inventory remains unchanged.
 
+### Live Stripe webhook verification
+- [x] Subscription webhook endpoint is enabled with checkout, subscription created/updated/deleted, invoice paid and invoice payment failed events.
+- [x] Stripe Connect webhook is enabled with `checkout.session.completed` and `checkout.session.async_payment_succeeded` for current web commerce.
+- [ ] `payment_intent.succeeded` is not currently subscribed on the Connect webhook; this is deferred with native iOS/Tap to Pay and is not a V3 web release blocker.
+
 ### Stripe Terminal / Tap to Pay
 - [x] Backend connection-token endpoint prepared.
 - [x] Backend card-present PaymentIntent endpoint prepared.
