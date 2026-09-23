@@ -1,6 +1,6 @@
 import { assertSameOrigin, errorResponse, requireSiteAccess, requireSiteCapability } from "../lib/client-auth.mjs";
 import { cleanText } from "../lib/order-store.mjs";
-import { createCustomerRecord, createPaymentLinkRecord } from "../lib/webfactory-v3-domain.mjs";
+import { createCustomerRecord, createInventoryMovement, createPaymentLinkRecord } from "../lib/webfactory-v3-domain.mjs";
 import { sendEmail } from "../lib/email.mjs";
 import { getV3Record, listV3Records, putV3Record } from "../lib/webfactory-v3-store.mjs";
 
@@ -79,6 +79,32 @@ export default async (req) => {
       const record = { ...receipt, lastSentAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
       await putV3Record(site.siteId, "receipts", receipt.receiptId, record);
       return Response.json({ ok: true, record }, { headers: { "Cache-Control": "no-store" } });
+    }
+
+    if (action === "adjust_inventory") {
+      const { site: inventorySite } = await requireSiteCapability(payload.siteId, "catalog");
+      const itemId = cleanText(payload.itemId, 120);
+      const delta = Number(payload.quantityDelta);
+      if (!Number.isInteger(delta) || delta === 0) throw Object.assign(new Error("Inventory adjustment must be a non-zero whole number."), { status: 400 });
+      const item = (inventorySite.catalog || []).find((entry) => entry.id === itemId && entry.type === "product");
+      if (!item) throw Object.assign(new Error("Product not found."), { status: 404 });
+      if (!item.trackInventory) throw Object.assign(new Error("Enable inventory tracking before making adjustments."), { status: 409 });
+      const current = Number(item.inventory ?? 0);
+      const next = current + delta;
+      if (next < 0 && !item.allowBackorder) throw Object.assign(new Error("Inventory cannot go below zero while backorder is disabled."), { status: 409 });
+
+      const catalog = (inventorySite.catalog || []).map((entry) => entry.id === itemId ? { ...entry, inventory: next } : entry);
+      const { patchClientSite } = await import("../lib/client-store.mjs");
+      const updatedSite = await patchClientSite(inventorySite.siteId, { catalog });
+      const movement = createInventoryMovement({
+        siteId: inventorySite.siteId,
+        itemId,
+        quantityDelta: delta,
+        reason: cleanText(payload.reason || "manual_adjustment", 80),
+        referenceId: cleanText(payload.referenceId || user.email || user.id, 160),
+      });
+      await putV3Record(inventorySite.siteId, "inventory-movements", movement.movementId, movement);
+      return Response.json({ ok: true, site: updatedSite, movement }, { headers: { "Cache-Control": "no-store" } });
     }
 
     if (action === "upsert_customer") {
