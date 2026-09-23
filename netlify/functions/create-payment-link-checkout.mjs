@@ -48,11 +48,19 @@ export default async (req) => {
       email: cleanText(payload.customer?.email, 320).toLowerCase(),
       phone: cleanText(payload.customer?.phone, 80),
     };
+
+export const config = { rateLimit: { windowLimit: 20, windowSize: 60, aggregateBy: ["ip"] } };
     if (!customer.name || !validEmail(customer.email)) throw Object.assign(new Error("Customer name and a valid email are required."), { status: 400 });
 
     const quantity = link.allowQuantity ? Math.max(1, Math.min(20, Math.floor(Number(payload.quantity || 1)))) : 1;
+    const checkoutAttemptId = cleanText(payload.checkoutAttemptId, 120).replace(/[^a-zA-Z0-9_-]/g, "");
+    if (checkoutAttemptId.length < 8) throw Object.assign(new Error("A valid checkout attempt ID is required."), { status: 400 });
     const baseAmount = Math.max(1, Number(link.amount || 0)) * quantity;
     const catalogItem = link.catalogItemId ? (site.catalog || []).find((item) => item.id === link.catalogItemId) : null;
+    if (link.catalogItemId && !catalogItem) throw Object.assign(new Error("This payment link item is no longer available."), { status: 409 });
+    if (catalogItem?.type === "product" && catalogItem.trackInventory && catalogItem.inventory !== null && catalogItem.inventory !== undefined && !catalogItem.allowBackorder && quantity > Number(catalogItem.inventory || 0)) {
+      throw Object.assign(new Error(`${catalogItem.name || "Item"} does not have enough inventory.`), { status: 409 });
+    }
     const taxable = catalogItem ? catalogItem.taxable !== false : site.taxConfig?.defaultTaxable !== false;
     const tax = calculateTax({
       amountCents: baseAmount,
@@ -65,7 +73,11 @@ export default async (req) => {
     if (!accountId || !site.paymentRules?.methods?.stripe) throw Object.assign(new Error("Online payments are not connected for this business."), { status: 409 });
     if (await verifyMerchantCapability(accountId) !== "active") throw Object.assign(new Error("This business must finish Stripe verification before accepting payments."), { status: 409 });
 
-    const transactionId = `txn_${crypto.randomUUID()}`;
+    const transactionId = `txn_pl_${checkoutAttemptId}`;
+    const existing = await clientCommerceStore().get(commerceKey(site.siteId, "transactions", transactionId), { type: "json" });
+    if (existing?.checkoutUrl && existing?.source === "payment_link") {
+      return Response.json({ ok: true, checkoutUrl: existing.checkoutUrl, transactionId, reused: true }, { headers: { "Cache-Control": "no-store" } });
+    }
     const title = cleanText(link.title || "Payment", 220);
     const record = {
       transactionId,
@@ -108,7 +120,7 @@ export default async (req) => {
         "Stripe-Account": accountId,
         "Stripe-Version": "2026-07-29.dahlia",
         "Content-Type": "application/x-www-form-urlencoded",
-        "Idempotency-Key": `payment-link-${link.paymentLinkId}-${transactionId}`,
+        "Idempotency-Key": `payment-link-${link.paymentLinkId}-${checkoutAttemptId}`,
       },
       body: params,
     });
@@ -117,6 +129,7 @@ export default async (req) => {
 
     record.stripeAccountId = accountId;
     record.stripeSessionId = session.id;
+    record.checkoutUrl = session.url;
     await clientCommerceStore().setJSON(commerceKey(site.siteId, "transactions", transactionId), record);
 
     return Response.json({ ok: true, checkoutUrl: session.url, transactionId }, { headers: { "Cache-Control": "no-store" } });
