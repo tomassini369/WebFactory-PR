@@ -64,13 +64,18 @@ export default function ClientAdminPage(){
     <aside className="ca-sidebar"><img src="/webfactory-pr-logo.png" alt="WebFactory PR"/><div><small>{lang==='es'?'NEGOCIO':'BUSINESS'}</small><strong>{displayBusinessName}</strong><span>{user.email}</span></div><div className="portal-language sidebar"><button className={lang==='en'?'active':''} onClick={()=>setLang('en')}>EN</button><button className={lang==='es'?'active':''} onClick={()=>setLang('es')}>ES</button></div><nav>{([['overview',t.overview],['website',t.website],['orders',t.orders],['bookings',t.bookings],['customers',t.customers],['catalog',t.catalog],['team',t.team],['payments',t.payments],['marketing',t.marketing],['analytics',t.analytics],['integrations',t.integrations],['settings',t.settings],['billing',t.billing]] as Array<[Tab,string]>).map(([id,label])=><button key={id} className={tab===id?'active':''} onClick={()=>{setTab(id);setMessage('');setError('')}}>{label}</button>)}</nav><a href={publicUrl} target="_blank">{t.view}</a><button className="ca-signout" onClick={signOut}>{t.logout}</button></aside>
     <section className="ca-work"><header><div><small>{t.admin}</small><h1>{displayBusinessName}</h1></div><div><span className={`ca-status ${site.status}`}>{site.status.replace('_',' ')}</span><b>Rev. {site.revision}</b></div></header>{message&&<div className="ca-success">{message}</div>}{error&&<div className="ca-error">{error}</div>}
       {tab==='overview'&&<Overview site={site} commerce={commerce} lang={lang} onSave={value=>save('business',value)} busy={busy}/>} 
-      {tab==='billing'&&<BillingPanel site={site} billing={billing} lang={lang} busy={busy} setBusy={setBusy} setError={setError}/>}
+      {tab==='website'&&<><WebsitePanel site={site} lang={lang}/><HoursEditor site={site} setSite={setSite} lang={lang} onSave={()=>save('hours',site.hours)} busy={busy}/></>} 
+      {tab==='orders'&&<TransactionPanel records={commerce.orders} kind="order" lang={lang} onAction={transactionAction} busy={busy}/>} 
+      {tab==='bookings'&&<TransactionPanel records={commerce.bookings} kind="booking" lang={lang} onAction={transactionAction} busy={busy}/>} 
+      {tab==='customers'&&<CustomersPanel siteId={site.siteId} lang={lang}/>} 
       {tab==='catalog'&&<CatalogEditor site={site} setSite={setSite} lang={lang} onSave={()=>save('catalog',site.catalog)} busy={busy}/>} 
       {tab==='team'&&<TeamEditor site={site} setSite={setSite} lang={lang} onSave={()=>save('employees',site.employees)} busy={busy}/>} 
-      {tab==='hours'&&<HoursEditor site={site} setSite={setSite} lang={lang} onSave={()=>save('hours',site.hours)} busy={busy}/>} 
-      {tab==='payments'&&<Payments site={site} setSite={setSite} lang={lang} onSave={()=>save('paymentRules',site.paymentRules)} busy={busy} setError={setError}/>} 
-      {tab==='calendar'&&<CalendarPanel site={site} setSite={setSite} lang={lang} calendars={calendars} configured={googleConfigured} onSave={()=>save('employees',site.employees)} busy={busy}/>} 
-      {tab==='commerce'&&<Commerce records={commerce} lang={lang} onAction={transactionAction} busy={busy}/>} 
+      {tab==='payments'&&<><Payments site={site} setSite={setSite} lang={lang} onSave={()=>save('paymentRules',site.paymentRules)} busy={busy} setError={setError}/><PaymentLinksPanel siteId={site.siteId} siteSlug={site.slug} lang={lang}/><ReceiptsPanel siteId={site.siteId} lang={lang}/></>} 
+      {tab==='marketing'&&<MarketingPanel site={site} lang={lang}/>} 
+      {tab==='analytics'&&<AnalyticsPanel commerce={commerce} lang={lang}/>} 
+      {tab==='integrations'&&<CalendarPanel site={site} setSite={setSite} lang={lang} calendars={calendars} configured={googleConfigured} onSave={()=>save('employees',site.employees)} busy={busy}/>} 
+      {tab==='settings'&&<SettingsPanel site={site} lang={lang} onSave={save} busy={busy}/>} 
+      {tab==='billing'&&<BillingPanel site={site} billing={billing} lang={lang} busy={busy} setBusy={setBusy} setError={setError}/>} 
     </section>
   </main>
 }
