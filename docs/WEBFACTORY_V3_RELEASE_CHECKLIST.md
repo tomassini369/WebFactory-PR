@@ -49,7 +49,7 @@ The dedicated WebFactory iOS app is deferred. Native Stripe Terminal/Tap to Pay 
 - [x] Owner can invite portal members.
 - [x] Owner can change member roles.
 - [x] Owner can revoke one business without deleting the user account.
-- [ ] Manually test one account for each role in Deploy Preview.
+- [ ] Manually test one account for each role in Deploy Preview. Automated role-capability boundary tests now cover Owner, Manager, Employee, Cashier and unknown-role fallback.
 
 ### Commerce
 - [x] Orders and Bookings are separated.
@@ -62,8 +62,8 @@ The dedicated WebFactory iOS app is deferred. Native Stripe Terminal/Tap to Pay 
 - [x] Full refunds reconcile receipt and inventory.
 - [ ] Manually test a Stripe test-mode storefront purchase end-to-end.
 - [ ] Manually test a Payment Link purchase end-to-end.
-- [ ] Manually test a full refund against a tracked product.
-- [ ] Manually test a partial refund and confirm inventory is not auto-restocked.
+- [ ] Manually test a full refund against a tracked product. Backend cumulative refund math and tracked-inventory restore logic are covered by automated tests/build validation.
+- [ ] Manually test a partial refund and confirm inventory is not auto-restocked. Portal now supports refund amount + reason and repeated partial refunds up to the remaining balance.
 
 ### Puerto Rico IVU
 - [x] Site tax configuration exists.
@@ -96,6 +96,12 @@ The dedicated WebFactory iOS app is deferred. Native Stripe Terminal/Tap to Pay 
 - [x] POS completed sales can queue review requests.
 - [ ] Test actual transactional email delivery in production provider configuration. Gmail fallback is currently configured; Mailjet keys are not present under the expected names.
 - [ ] Add rate/duplicate safeguards if production testing reveals retries from external email failures.
+
+### POS reliability
+- [x] Remote POS checkout rejects zero-value totals.
+- [x] Remote POS checkout retries reuse a stable sale attempt ID and Stripe idempotency key.
+- [x] Future Terminal PaymentIntent creation rejects zero-value totals.
+- [ ] Direct in-person POS still relies on Netlify Blobs for stock mutation; full atomic inventory concurrency remains a scale-up item.
 
 ### WebFactory POS
 - [x] Browser/PWA POS exists.
