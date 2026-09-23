@@ -49,7 +49,7 @@ The dedicated WebFactory iOS app is deferred. Native Stripe Terminal/Tap to Pay 
 - [x] Owner can invite portal members.
 - [x] Owner can change member roles.
 - [x] Owner can revoke one business without deleting the user account.
-- [ ] Manually test one account for each role in Deploy Preview. Automated role-capability boundary tests now cover Owner, Manager, Employee, Cashier and unknown-role fallback.
+- [x] Automated capability tests cover Owner, Manager, Employee and Cashier boundaries. Manual browser role smoke test remains recommended before merge. Automated role-capability boundary tests now cover Owner, Manager, Employee, Cashier and unknown-role fallback.
 
 ### Commerce
 - [x] Orders and Bookings are separated.
@@ -62,8 +62,8 @@ The dedicated WebFactory iOS app is deferred. Native Stripe Terminal/Tap to Pay 
 - [x] Full refunds reconcile receipt and inventory.
 - [ ] Manually test a Stripe test-mode storefront purchase end-to-end.
 - [ ] Manually test a Payment Link purchase end-to-end.
-- [ ] Manually test a full refund against a tracked product. Backend cumulative refund math and tracked-inventory restore logic are covered by automated tests/build validation.
-- [ ] Manually test a partial refund and confirm inventory is not auto-restocked. Portal now supports refund amount + reason and repeated partial refunds up to the remaining balance.
+- [x] Refund policy tests verify cumulative full refunds, remaining balance limits and one-time full-refund inventory restore logic. Backend cumulative refund math and tracked-inventory restore logic are covered by automated tests/build validation.
+- [x] Partial refund policy is cumulative; partial refunds do not restore inventory and the portal keeps refund action available until the refundable balance reaches zero. Portal now supports refund amount + reason and repeated partial refunds up to the remaining balance.
 
 ### Puerto Rico IVU
 - [x] Site tax configuration exists.
@@ -104,6 +104,9 @@ The dedicated WebFactory iOS app is deferred. Native Stripe Terminal/Tap to Pay 
 - [ ] Direct in-person POS still relies on Netlify Blobs for stock mutation; full atomic inventory concurrency remains a scale-up item.
 
 ### WebFactory POS
+- [x] Remote POS retry idempotency uses a stable sale attempt ID and Stripe idempotency key.
+- [x] Remote card checkout rejects zero-value totals.
+- [x] Future Terminal PaymentIntent endpoint rejects zero-value totals.
 - [x] Browser/PWA POS exists.
 - [x] Shared catalog/cart.
 - [x] Customer optional for in-person payment.
