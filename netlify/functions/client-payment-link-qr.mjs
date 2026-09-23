@@ -1,4 +1,4 @@
-import { errorResponse, requireSiteAccess } from "../lib/client-auth.mjs";
+import { errorResponse, requireSiteCapability } from "../lib/client-auth.mjs";
 import { cleanText, publicBaseUrl } from "../lib/order-store.mjs";
 import { getV3Record } from "../lib/webfactory-v3-store.mjs";
 
@@ -8,7 +8,7 @@ export default async (req) => {
     const url = new URL(req.url);
     const siteId = cleanText(url.searchParams.get("siteId"), 120);
     const paymentLinkId = cleanText(url.searchParams.get("paymentLinkId"), 180);
-    const { site } = await requireSiteAccess(siteId);
+    const { site } = await requireSiteCapability(siteId, "payments");
     const link = await getV3Record(siteId, "payment-links", paymentLinkId);
     if (!link || link.siteId !== site.siteId) throw Object.assign(new Error("Payment link not found."), { status: 404 });
 
