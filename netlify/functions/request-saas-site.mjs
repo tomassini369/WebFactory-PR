@@ -10,7 +10,7 @@ import {
   sitesForEmail,
   slugify,
 } from "../lib/client-store.mjs";
-import { assetStore, safeFileName } from "../lib/order-store.mjs";
+import { assetStore, cleanText, safeFileName } from "../lib/order-store.mjs";
 import { sanitizeOrder } from "./create-checkout-session.mjs";
 import { createComplimentaryServicePlan } from "../lib/subscription-billing.mjs";
 
