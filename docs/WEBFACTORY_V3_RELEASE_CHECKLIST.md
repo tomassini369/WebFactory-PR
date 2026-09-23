@@ -41,6 +41,19 @@ The dedicated WebFactory iOS app is deferred. Native Stripe Terminal/Tap to Pay 
 - [x] Owner account/password setup is provisioned after the site is created.
 - [x] Complimentary access can still be revoked later without deleting site data.
 
+### Client integration disconnect controls
+- [x] Clients can disconnect Google Calendar from the portal; OAuth token is revoked/deleted and employee calendar mappings are cleared.
+- [x] Owners can disconnect Stripe from a site without deleting the external Stripe account.
+- [x] Clients can disconnect ATH Móvil configuration from a site.
+- [x] Disconnecting an integration does not delete the WebFactory site or account.
+
+### Client account lifecycle
+- [x] Owners can permanently delete a single page after typing `DELETE PAGE`.
+- [x] Site deletion cancels the WebFactory Stripe subscription when one exists, revokes Google Calendar, deletes site commerce/V3 records/assets/member pointers/slug pointer, and removes the tenant.
+- [x] Owners can permanently delete their WebFactory account after typing `DELETE ACCOUNT`.
+- [x] Account deletion deletes sites owned by the user, removes memberships from other businesses, then deletes the Netlify Identity user.
+- [x] Destructive actions are isolated in a portal Danger Zone and are not available to non-owner roles.
+
 ### Client portal and permissions
 - [x] Role model supports Owner, Manager, Employee and Cashier.
 - [x] Legacy Staff remains compatible.
