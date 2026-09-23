@@ -1,4 +1,4 @@
-import { errorResponse, requireSiteAccess } from "../lib/client-auth.mjs";
+import { errorResponse, requireSiteCapability } from "../lib/client-auth.mjs";
 import { cleanText } from "../lib/order-store.mjs";
 
 function env(name) { return globalThis.Netlify?.env?.get(name) || ""; }
@@ -7,7 +7,7 @@ export default async (req) => {
   try {
     if (req.method !== "GET") return Response.json({ ok: false, message: "Method not allowed." }, { status: 405 });
     const siteId = cleanText(new URL(req.url).searchParams.get("siteId"), 120);
-    const { site } = await requireSiteAccess(siteId);
+    const { site } = await requireSiteCapability(siteId, "payments");
     const accountId = cleanText(site.paymentRules?.stripeConnectedAccountId, 180);
     if (!accountId) return Response.json({ ok: true, connected: false, payouts: [] }, { headers: { "Cache-Control": "no-store" } });
 
