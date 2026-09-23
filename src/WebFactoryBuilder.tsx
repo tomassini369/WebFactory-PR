@@ -790,7 +790,7 @@ function FeaturesStep({state,setState,lang}:{state:BuilderState;setState:Dispatc
           />
         ))}
       </div>
-      <div className="wf-fixed-price"><span>WEBFACTORY COMMERCE PLATFORM</span><strong>{PRICE} / {lang==='es'?'mes':'month'}</strong><b>{lang==='es'?'o $350 / año · 48 horas gratis · sin comisión':'or $350 / year · 48 hours free · no sales commission'}</b></div>
+      <div className="wf-fixed-price"><span>WEBFACTORY COMMERCE PLATFORM</span><strong>{PRICE} / {lang==='es'?'mes':'month'}</strong><b>{lang==='es'?'o $350 / año · 7 días gratis · sin comisión':'or $350 / year · 7 days free · no sales commission'}</b></div>
     </div>
   )
 }
@@ -1045,7 +1045,7 @@ function PaymentsStep({state,setState,lang}:{state:BuilderState;setState:Dispatc
   )
 }
 
-function FinalStep({state,setStep,lang}:{state:BuilderState;setStep:(step:number)=>void;lang:Language}) {
+function FinalStep({state,setStep,lang,complimentaryInviteToken}:{state:BuilderState;setStep:(step:number)=>void;lang:Language;complimentaryInviteToken:string}) {
   const [checkoutError,setCheckoutError] = useState('')
   const [checkingOut,setCheckingOut] = useState(false)
   const [created,setCreated] = useState<{portalUrl:string;publicUrl:string}|null>(null)
@@ -1073,6 +1073,7 @@ function FinalStep({state,setStep,lang}:{state:BuilderState;setStep:(step:number
           draftId:getDraftId(),
           slug:state.business.slug,
           locale:lang,
+          complimentaryInviteToken,
           orderData:{
             client:{
               name:state.business.contactName,
@@ -1102,7 +1103,7 @@ function FinalStep({state,setStep,lang}:{state:BuilderState;setStep:(step:number
 
   return (
     <div className="wf-step-content">
-      <div className="wf-step-intro"><small>{lang==='es'?'PASO 8':'STEP 8'}</small><h3>{lang==='es'?'Tu configuración está lista para activar.':'Your setup is ready to activate.'}</h3><p>{lang==='es'?'Recibirás acceso privado para iniciar tu prueba gratuita de 48 horas. No se solicita tarjeta.':'You will receive private access to start your free 48-hour trial. No card is required.'}</p></div>
+      <div className="wf-step-intro"><small>{lang==='es'?'PASO 8':'STEP 8'}</small><h3>{lang==='es'?'Tu configuración está lista para activar.':'Your setup is ready to activate.'}</h3><p>{complimentaryInviteToken?(lang==='es'?'Tu invitación gratuita está activa. Completa el Builder para crear tu website con acceso complimentary.':'Your complimentary invitation is active. Complete the Builder to create your website with complimentary access.'):(lang==='es'?'Recibirás acceso privado para iniciar tu prueba gratuita de 7 días. No se solicita tarjeta.':'You will receive private access to start your free 7-day trial. No card is required.')}</p></div>
       <div className="wf-review-grid">
         <article><span>{lang==='es'?'Negocio':'Business'}</span><strong>{state.business.name}</strong><small>{state.business.category}</small><button onClick={()=>setStep(0)}>{lang==='es'?'Editar':'Edit'}</button></article>
         <article><span>{lang==='es'?'Diseño':'Design'}</span><strong>{selectedTemplate ? `${selectedTemplate.category} — ${selectedTemplate.name}` : (lang==='es'?'Personalizado por WebFactory':'Custom by WebFactory')}</strong><small>{state.design.style}</small><div><i style={{background:state.design.primary}}/><i style={{background:state.design.secondary}}/></div><button onClick={()=>setStep(1)}>{lang==='es'?'Editar':'Edit'}</button></article>
@@ -1120,7 +1121,7 @@ function FinalStep({state,setStep,lang}:{state:BuilderState;setStep:(step:number
         <header>
           <small>{lang==='es'?'INCLUIDO CON TU CUENTA':'INCLUDED WITH YOUR ACCOUNT'}</small>
           <h4 id="wf-after-payment-title">{lang==='es'?'Tu portal y las integraciones están incluidos.':'Your portal and integrations are included.'}</h4>
-          <p>{lang==='es'?'El trial comienza solamente cuando entras a tu portal y lo activas.':'Your trial starts only when you enter your portal and activate it.'}</p>
+          <p>{complimentaryInviteToken?(lang==='es'?'El acceso complimentary se activa automáticamente cuando terminas de crear tu website.':'Complimentary access is activated automatically when you finish creating your website.'):(lang==='es'?'El trial comienza solamente cuando entras a tu portal y lo activas.':'Your trial starts only when you enter your portal and activate it.')}</p>
         </header>
         <div>
           <article><em>01</em><strong>{lang==='es'?'Acceso seguro':'Secure access'}</strong><span>{lang==='es'?'Recibirás por email el enlace privado para establecer tu contraseña.':'You will receive a private email link to set your password.'}</span></article>
@@ -1129,8 +1130,8 @@ function FinalStep({state,setStep,lang}:{state:BuilderState;setStep:(step:number
         </div>
         <p className="wf-after-payment-security">{lang==='es'?'WebFactory nunca te pedirá contraseñas, códigos de seguridad, datos bancarios ni llaves secretas.':'WebFactory will never ask for passwords, security codes, bank details, or secret keys.'}</p>
       </section>
-      {created ? <div className="wf-checkout-placeholder success"><div><small>{lang==='es'?'ACCESO ENVIADO':'ACCESS SENT'}</small><strong>{lang==='es'?'Revisa tu email':'Check your email'}</strong><span>{lang==='es'?'Establece tu contraseña, entra al portal y activa las 48 horas gratis cuando estés listo.':'Set your password, enter the portal, and activate the free 48 hours when you are ready.'}</span></div><a className="wf-builder-access-link" href={created.portalUrl}>{lang==='es'?'Abrir portal administrativo':'Open administrative portal'}</a></div> : <div className="wf-checkout-placeholder">
-        <div><small>{lang==='es'?'SIGUIENTE ETAPA':'NEXT STEP'}</small><strong>{lang==='es'?'Crear acceso · 48 horas gratis':'Create access · 48 hours free'}</strong><span>{lang==='es'?'Después escoge $30 mensual o $350 anual. Sin comisión sobre tus ventas.':'Then choose $30 monthly or $350 yearly. No commission on your sales.'}</span></div>
+      {created ? <div className="wf-checkout-placeholder success"><div><small>{lang==='es'?'ACCESO ENVIADO':'ACCESS SENT'}</small><strong>{lang==='es'?'Revisa tu email':'Check your email'}</strong><span>{lang==='es'?'Establece tu contraseña, entra al portal y activa las 7 días gratis cuando estés listo.':'Set your password, enter the portal, and activate the free 7 days when you are ready.'}</span></div><a className="wf-builder-access-link" href={created.portalUrl}>{lang==='es'?'Abrir portal administrativo':'Open administrative portal'}</a></div> : <div className="wf-checkout-placeholder">
+        <div><small>{lang==='es'?'SIGUIENTE ETAPA':'NEXT STEP'}</small><strong>{complimentaryInviteToken?(lang==='es'?'Crear website con acceso gratuito':'Create website with complimentary access'):(lang==='es'?'Crear acceso · 7 días gratis':'Create access · 7 days free')}</strong><span>{complimentaryInviteToken?(lang==='es'?'No se requiere suscripción mientras el acceso complimentary permanezca activo.':'No subscription is required while complimentary access remains active.'):(lang==='es'?'Después escoge $30 mensual o $350 anual. Sin comisión sobre tus ventas.':'Then choose $30 monthly or $350 yearly. No commission on your sales.')}</span></div>
         <button disabled={!canCheckout} onClick={startCheckout}>{checkingOut?(lang==='es'?'Preparando acceso…':'Preparing access…'):(lang==='es'?'Crear mi cuenta':'Create my account')}</button>
       </div>}
       {checkoutError && <div className="wf-checkout-warning error">{checkoutError}</div>}
@@ -1174,16 +1175,25 @@ export default function WebFactoryBuilder({lang}:{lang:Language}) {
   const [step,setStep] = useState(0)
   const [device,setDevice] = useState<Device>('desktop')
   const [saved,setSaved] = useState(false)
+  const [complimentaryInviteToken,setComplimentaryInviteToken] = useState('')
+  const [complimentaryInviteError,setComplimentaryInviteError] = useState('')
 
   useEffect(()=>{
-    const templateSlug = new URLSearchParams(window.location.search).get('template') || ''
+    const params = new URLSearchParams(window.location.search)
+    const templateSlug = params.get('template') || ''
     const demo = demoConfigs.find((entry)=>entry.slug===templateSlug)
-    if (!demo) return
-    setState((current)=>({
-      ...current,
-      design:{...current.design,templateSlug:demo.slug,primary:demo.dark,secondary:demo.accent,style:({modern:'Modern',luxury:'Luxury',minimal:'Minimal',bold:'Bold'} as const)[templateVisualStyle(demo.category)]},
-    }))
-    setStep(1)
+    if (demo) {
+      setState((current)=>({
+        ...current,
+        design:{...current.design,templateSlug:demo.slug,primary:demo.dark,secondary:demo.accent,style:({modern:'Modern',luxury:'Luxury',minimal:'Minimal',bold:'Bold'} as const)[templateVisualStyle(demo.category)]},
+      }))
+      setStep(1)
+    }
+    const inviteToken = params.get('complimentary_invite') || ''
+    if (!inviteToken) return
+    fetch('/.netlify/functions/complimentary-invite-status?token='+encodeURIComponent(inviteToken),{cache:'no-store'})
+      .then(async(response)=>{const result=await response.json();if(!response.ok||!result.valid)throw new Error(lang==='es'?'La invitación gratuita es inválida o expiró.':'The complimentary invitation is invalid or expired.');setComplimentaryInviteToken(inviteToken);setState((current)=>({...current,business:{...current.business,email:result.email}}))})
+      .catch((error)=>setComplimentaryInviteError(error instanceof Error?error.message:String(error)))
   },[])
 
   useEffect(()=>{
@@ -1224,7 +1234,7 @@ export default function WebFactoryBuilder({lang}:{lang:Language}) {
     <TeamStep key="team" state={state} setState={setState} lang={lang}/>,
     <HoursStep key="hours" state={state} setState={setState} lang={lang}/>,
     <PaymentsStep key="payments" state={state} setState={setState} lang={lang}/>,
-    <FinalStep key="preview" state={state} setStep={setStep} lang={lang}/>,
+    <FinalStep key="preview" state={state} setStep={setStep} lang={lang} complimentaryInviteToken={complimentaryInviteToken}/>,
   ][step]
 
   return (
@@ -1256,7 +1266,7 @@ export default function WebFactoryBuilder({lang}:{lang:Language}) {
             <div><small>{lang==='es'?'CONFIGURACIÓN GUIADA':'GUIDED SETUP'}</small><strong>{labels[step]}</strong></div>
             <span>{completion}%</span>
           </div>
-          <BuilderAiAssistant state={state} setState={setState} lang={lang}/>
+          {complimentaryInviteToken&&<div className="wf-invite-banner"><strong>{lang==='es'?'Acceso complimentary activo':'Complimentary access active'}</strong><span>{lang==='es'?'Completa el Builder usando el email invitado. No se cobrará suscripción mientras este acceso permanezca activo.':'Complete the Builder using the invited email. No subscription will be charged while this access remains active.'}</span></div>}{complimentaryInviteError&&<div className="wf-checkout-warning error">{complimentaryInviteError}</div>}<BuilderAiAssistant state={state} setState={setState} lang={lang}/>
           {stepContent}
           <div className="wf-builder-navigation">
             <button className="secondary" disabled={step===0} onClick={()=>setStep((current)=>Math.max(0,current-1))}>← {lang==='es'?'Atrás':'Back'}</button>
