@@ -1,8 +1,9 @@
 import { assertSameOrigin, authorizedSites, errorResponse, requireSiteAccess } from "../lib/client-auth.mjs";
 import { normalizeEmail, patchClientSite, publicClientSite } from "../lib/client-store.mjs";
 import { cleanText, validEmail } from "../lib/order-store.mjs";
+import { normalizeTaxConfig } from "../lib/webfactory-v3-domain.mjs";
 
-const allowedSections = new Set(["business", "design", "catalog", "employees", "hours", "paymentRules", "settings"]);
+const allowedSections = new Set(["business", "design", "catalog", "employees", "hours", "paymentRules", "settings", "taxConfig"]);
 
 function color(value, fallback) {
   const result = cleanText(value, 20);
@@ -55,6 +56,12 @@ function sanitizeCatalog(value) {
       duration: item.type === "service" ? Math.max(5, Math.min(1440, Number(item.duration || 30))) : 0,
       bufferMinutes: item.type === "service" ? Math.max(0, Math.min(240, Number(item.bufferMinutes || 0))) : 0,
       imageAssetKey: cleanText(item.imageAssetKey, 700),
+      taxable: item.taxable !== false,
+      taxRateOverride: item.taxRateOverride === null || item.taxRateOverride === "" || item.taxRateOverride === undefined ? null : Math.max(0, Math.min(100, Number(item.taxRateOverride))),
+      sku: cleanText(item.sku, 120),
+      trackInventory: item.type === "product" && Boolean(item.trackInventory),
+      lowStockThreshold: item.type === "product" ? Math.max(0, Math.floor(Number(item.lowStockThreshold || 0))) : 0,
+      allowBackorder: item.type === "product" && Boolean(item.allowBackorder),
     };
   });
 }
@@ -147,6 +154,7 @@ export default async (req) => {
     if (section === "employees") value = sanitizeEmployees(payload.value, site.catalog);
     if (section === "hours") value = sanitizeHours(payload.value);
     if (section === "paymentRules") value = sanitizePaymentRules(payload.value, site.paymentRules);
+    if (section === "taxConfig") value = normalizeTaxConfig(payload.value);
     if (section === "settings") value = {
       ...site.settings,
       locale: payload.value?.locale === "es" ? "es" : "en",
