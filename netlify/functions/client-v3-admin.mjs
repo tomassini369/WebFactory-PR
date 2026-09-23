@@ -1,10 +1,11 @@
-import { assertSameOrigin, errorResponse, requireSiteAccess } from "../lib/client-auth.mjs";
+import { assertSameOrigin, errorResponse, requireSiteAccess, requireSiteCapability } from "../lib/client-auth.mjs";
 import { cleanText } from "../lib/order-store.mjs";
 import { createCustomerRecord, createPaymentLinkRecord } from "../lib/webfactory-v3-domain.mjs";
 import { sendEmail } from "../lib/email.mjs";
 import { getV3Record, listV3Records, putV3Record } from "../lib/webfactory-v3-store.mjs";
 
-const allowedCollections = new Set(["customers", "payment-links", "receipts", "inventory-movements"]);
+const allowedCollections = new Set(["customers", "payment-links", "receipts", "inventory-movements", "review-requests"]);
+const collectionCapability = { customers: "customers", "payment-links": "payments", receipts: "payments", "inventory-movements": "catalog", "review-requests": "marketing" };
 
 export default async (req) => {
   try {
@@ -13,10 +14,10 @@ export default async (req) => {
     const collection = cleanText(url.searchParams.get("collection"), 80);
 
     if (req.method === "GET") {
-      await requireSiteAccess(siteId);
       if (!allowedCollections.has(collection)) {
         throw Object.assign(new Error("Invalid V3 collection."), { status: 400 });
       }
+      await requireSiteCapability(siteId, collectionCapability[collection] || "overview");
       const records = await listV3Records(siteId, collection, { limit: Number(url.searchParams.get("limit") || 250) });
       return Response.json({ ok: true, records }, { headers: { "Cache-Control": "no-store" } });
     }
