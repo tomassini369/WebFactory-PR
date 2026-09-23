@@ -73,7 +73,7 @@ The dedicated WebFactory iOS app is deferred. Native Stripe Terminal/Tap to Pay 
 - [x] POS calculates tax server-side.
 - [x] Receipts store tax separately.
 - [x] Verified against Puerto Rico Hacienda sources: basic IVU is 11.5% total (10.5% state + 1% municipal); certain professional/B2B services may use the special 4% rate with no municipal IVU. Portal now exposes Basic 11.5%, Special 4%, Exempt, and manual/custom options.
-- [ ] Test tax-inclusive and tax-exclusive pricing with representative products.
+- [x] Automated tax tests cover standard 11.5% tax-exclusive pricing and tax-inclusive pricing preserving the customer total.
 
 ### Inventory
 - [x] SKU fields supported.
@@ -144,7 +144,7 @@ The dedicated WebFactory iOS app is deferred. Native Stripe Terminal/Tap to Pay 
 - [x] Existing Google Calendar mappings remain compatible.
 - [x] Factory AI boundaries remain unchanged.
 - [ ] Backup/export current production tenant data before final V3 merge.
-- [ ] Confirm no migration script rewrites existing trial end dates.
+- [x] Subscription tests confirm legacy trials preserve their stored `trialEndsAt`; only newly created V3 trials receive the 7-day policy.
 
 ## Recommended release sequence
 
