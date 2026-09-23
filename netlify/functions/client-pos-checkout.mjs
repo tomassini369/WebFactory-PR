@@ -59,12 +59,17 @@ export default async(req)=>{
       tax+=Number(calculateTax({amountCents:lineAfterDiscount,taxable:item.taxable,taxRateOverride:item.taxRateOverride,config:site.taxConfig||{}}).taxCents||0);
     }
     const total=Math.max(0,discountedBase+(site.taxConfig?.pricesIncludeTax?0:tax)+tip);
+    if(total<=0)throw Object.assign(new Error("Card checkout total must be greater than $0."),{status:400});
+    const saleAttemptId=cleanText(payload.saleAttemptId,120).replace(/[^a-zA-Z0-9_-]/g,"");
+    if(saleAttemptId.length<8)throw Object.assign(new Error("A valid sale attempt ID is required."),{status:400});
 
     const accountId=cleanText(site.paymentRules?.stripeConnectedAccountId,180);
     if(!accountId||!site.paymentRules?.methods?.stripe)throw Object.assign(new Error("Stripe is not connected for this business."),{status:409});
     if(await verifyMerchantCapability(accountId)!=="active")throw Object.assign(new Error("Finish Stripe verification before accepting card payments."),{status:409});
 
-    const transactionId=`txn_${crypto.randomUUID()}`;
+    const transactionId=`txn_pos_${saleAttemptId}`;
+    const existing=await clientCommerceStore().get(commerceKey(site.siteId,"transactions",transactionId),{type:"json"});
+    if(existing?.checkoutUrl&&existing?.source==="pos_remote")return Response.json({ok:true,transactionId,checkoutUrl:existing.checkoutUrl,reused:true},{headers:{"Cache-Control":"no-store"}});
     const params=new URLSearchParams();
     params.set("mode","payment");
     params.set("success_url",`${publicBaseUrl()}/client-admin?pos=success&session_id={CHECKOUT_SESSION_ID}`);
@@ -78,7 +83,7 @@ export default async(req)=>{
     params.set("metadata[source]","pos_remote");
     appendLine(params,0,{name:`WebFactory POS sale · ${items.length} item${items.length===1?"":"s"}`,unitAmount:total,quantity:1});
 
-    const response=await fetch("https://api.stripe.com/v1/checkout/sessions",{method:"POST",headers:{Authorization:`Bearer ${env("STRIPE_SECRET_KEY")}`,"Stripe-Account":accountId,"Stripe-Version":"2026-07-29.dahlia","Content-Type":"application/x-www-form-urlencoded","Idempotency-Key":`pos-checkout-${transactionId}`},body:params});
+    const response=await fetch("https://api.stripe.com/v1/checkout/sessions",{method:"POST",headers:{Authorization:`Bearer ${env("STRIPE_SECRET_KEY")}`,"Stripe-Account":accountId,"Stripe-Version":"2026-07-29.dahlia","Content-Type":"application/x-www-form-urlencoded","Idempotency-Key":`pos-checkout-${site.siteId}-${saleAttemptId}`},body:params});
     const session=await response.json();
     if(!response.ok)throw new Error(session?.error?.message||"POS checkout could not be created.");
 
