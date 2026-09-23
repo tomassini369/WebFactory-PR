@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { acceptInvite, getUser, handleAuthCallback, login, logout, onAuthChange, requestPasswordRecovery, updateUser, type User } from '@netlify/identity'
 import './client-admin.css'
 import { withAuthRetry } from './auth-retry'
-import { AnalyticsPanel, CustomersPanel, InventoryAdjustmentPanel, InventoryMovementsPanel, InventoryStatusPanel, MarketingPanel, MemberRolesPanel, PaymentLinksPanel, PayoutsPanel, PosPanel, ReceiptsPanel, ReviewAutomationPanel, SettingsPanel, TransactionPanel, WebsitePanel } from './ClientAdminV3Panels'
+import { AccountLifecyclePanel, AnalyticsPanel, CustomersPanel, IntegrationManagementPanel, InventoryAdjustmentPanel, InventoryMovementsPanel, InventoryStatusPanel, MarketingPanel, MemberRolesPanel, PaymentLinksPanel, PayoutsPanel, PosPanel, ReceiptsPanel, ReviewAutomationPanel, SettingsPanel, TransactionPanel, WebsitePanel } from './ClientAdminV3Panels'
 
 type CatalogItem={id:string;type:'product'|'service';name:string;nameEn?:string;nameEs?:string;description:string;descriptionEn?:string;descriptionEs?:string;price:number;active:boolean;inventory:number|null;requiresAppointment:boolean;duration:number;bufferMinutes:number;imageAssetKey?:string}
 type Employee={id:string;name:string;role:string;roleEn?:string;roleEs?:string;active:boolean;serviceIds:string[];calendarId:string;dailyLimit:number;schedule:Record<string,DayHours>;timeOff:Array<{start:string;end:string;note:string}>}
@@ -74,8 +74,8 @@ export default function ClientAdminPage(){
       {tab==='pos'&&<PosPanel site={site} lang={lang} onSaleComplete={()=>loadCommerce().catch(()=>{})}/>} 
       {tab==='marketing'&&<><MarketingPanel site={site} lang={lang}/><ReviewAutomationPanel site={site} lang={lang} onSave={save} busy={busy}/></>} 
       {tab==='analytics'&&<AnalyticsPanel commerce={commerce} lang={lang}/>} 
-      {tab==='integrations'&&<CalendarPanel site={site} setSite={setSite} lang={lang} calendars={calendars} configured={googleConfigured} onSave={()=>save('employees',site.employees)} busy={busy}/>} 
-      {tab==='settings'&&<SettingsPanel site={site} lang={lang} onSave={save} busy={busy}/>} 
+      {tab==='integrations'&&<><CalendarPanel site={site} setSite={setSite} lang={lang} calendars={calendars} configured={googleConfigured} onSave={()=>save('employees',site.employees)} busy={busy}/><IntegrationManagementPanel site={site} setSite={setSite} lang={lang} membership={membership}/></>} 
+      {tab==='settings'&&<><SettingsPanel site={site} lang={lang} onSave={save} busy={busy}/><AccountLifecyclePanel site={site} lang={lang} membership={membership} onPageDeleted={async()=>{setSite(null);setSites([]);await loadSites()}} onAccountDeleted={async()=>{await logout();setUser(null);setSite(null);setSites([])}}/></>} 
       {tab==='billing'&&<BillingPanel site={site} billing={billing} lang={lang} busy={busy} setBusy={setBusy} setError={setError}/>} 
     </section>
   </main>
