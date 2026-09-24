@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type CSSProperties, type FormEvent } from 'react'
-import { templateBySlug } from './demoData'
+import { templateBySlug, templateVisualStyle } from './templateData'
 import './template-preview.css'
 import './client-storefront.css'
 
