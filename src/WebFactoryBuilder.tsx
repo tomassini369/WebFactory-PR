@@ -291,7 +291,7 @@ const uploadOrderAsset = async (file:File,itemId:string) => {
   form.append('draftId',getDraftId())
   form.append('itemId',itemId)
   form.append('file',file)
-  const response = await fetch('/.netlify/functions/upload-order-asset',{
+  const response = await fetch('/.netlify/functions/upload-builder-asset',{
     method:'POST',
     body:form,
   })
