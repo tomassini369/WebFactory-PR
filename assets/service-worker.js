@@ -1,4 +1,4 @@
-const CACHE_NAME = "webfactory-pr-v5";
+const CACHE_NAME = "webfactory-pr-v3";
 
 const ADMIN_SHELLS = {
   "/webfactory-admin": "./webfactory-admin/index.html",
@@ -8,7 +8,7 @@ const ADMIN_SHELLS = {
 const STATIC_ASSETS = [
   "./",
   "./index.html",
-  "./manifest-v2.webmanifest",
+  "./manifest.webmanifest",
   "./manifest-webfactory-admin.webmanifest",
   "./manifest-client-admin.webmanifest",
   "./webfactory-admin/index.html",
