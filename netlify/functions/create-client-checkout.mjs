@@ -128,7 +128,7 @@ export default async (req) => {
 
     const accountId = site.paymentRules?.stripeConnectedAccountId;
     if (!accountId || !site.paymentRules?.methods?.stripe) throw Object.assign(new Error("Online payments are not connected for this business."), { status: 409 });
-    assertStripeWriteAllowed();
+    assertStripeWriteAllowed({ requestUrl: req.url });
     const capability = await verifyMerchantCapability(accountId);
     if (capability !== "active") throw Object.assign(new Error("This business must finish Stripe verification before accepting payments."), { status: 409 });
 
