@@ -1,6 +1,6 @@
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import { errorResponse, requireSiteCapability } from "../lib/client-auth.mjs";
-import { cleanText } from "../lib/order-store.mjs";
+import { cleanText } from "../lib/platform-utils.mjs";
 import { getV3Record } from "../lib/webfactory-v3-store.mjs";
 
 function money(cents) {
