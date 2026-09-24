@@ -172,7 +172,7 @@ The dedicated WebFactory iOS app is deferred. Native Stripe Terminal/Tap to Pay 
 - [x] Existing Stripe Connect account references remain compatible.
 - [x] Existing Google Calendar mappings remain compatible.
 - [x] Factory AI boundaries remain unchanged.
-- [ ] Backup/export current production tenant data before final V3 merge.
+- [ ] Backup/export current production tenant data before final V3 merge. Production-safe admin exporters are now published on `main` (full tenant backup + per-tenant backup); final completion requires downloading the authenticated production export before merge.
 - [x] Subscription tests confirm legacy trials preserve their stored `trialEndsAt`; only newly created V3 trials receive the 7-day policy.
 
 ## Recommended release sequence
