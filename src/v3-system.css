@@ -29,6 +29,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 /* Public shell, templates library and shared conversion surfaces */
 .header{border-color:rgba(220,232,247,.82);background:rgba(255,255,255,.88);box-shadow:0 16px 42px rgba(11,21,41,.085);backdrop-filter:blur(22px) saturate(145%)}
 .header nav a{min-height:42px;display:inline-flex;align-items:center}
+.header nav .mobile-portal-link{display:none}
 .header nav a:hover{transform:translateY(-1px)}
 .btn{min-height:48px;border-radius:14px;transition:transform .22s var(--wf-ease),box-shadow .22s ease,border-color .22s ease,background .22s ease}
 .btn:active{transform:translateY(1px) scale(.985)}
@@ -138,11 +139,13 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
   .ca-pos-layout{grid-template-columns:1fr}
   .ca-pos-cart{position:static}
 }
+@media(min-width:821px){.hero h1{font-size:clamp(3.05rem,5.2vw,5.2rem)}}
 @media(max-width:820px){
   html{scroll-padding-top:78px}
   .section{padding:78px 0}
   .header{top:7px;width:calc(100% - 16px);margin-top:7px;min-height:62px;padding:8px 10px 8px 14px;border-radius:17px}
   .header nav{box-shadow:0 24px 55px rgba(11,21,41,.16)}
+  .header nav.open .mobile-portal-link{display:flex}
   .header-actions{gap:6px}
   .header .desktop-cta{display:none}
   .hero{min-height:auto;padding-block:76px 64px}
