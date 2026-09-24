@@ -1,6 +1,6 @@
 import { clientOAuthStore, patchClientSite } from "../lib/client-store.mjs";
 import { encryptToken, exchangeGoogleCode } from "../lib/google-calendar.mjs";
-import { publicBaseUrl } from "../lib/order-store.mjs";
+import { publicBaseUrl } from "../lib/platform-utils.mjs";
 
 export default async (req) => {
   const url = new URL(req.url);

@@ -66,16 +66,15 @@ jobs:
             curl -fLsS --retry 4 --retry-delay 2 --max-time 30 -o /dev/null "$PREVIEW_URL$path"
           done
 
-          payload="$(curl -fLsS --retry 4 --retry-delay 2 --max-time 30 "$PREVIEW_URL/.netlify/functions/v3-release-readiness")"
+          payload="$(curl -fLsS --retry 4 --retry-delay 2 --max-time 30 "$PREVIEW_URL/.netlify/functions/client-runtime-readiness")"
           echo "$payload" | jq
           echo "$payload" | jq -e '
             .ok == true and
-            (.readyForV3Web | type == "boolean") and
-            .subscription.enabled == true and
-            .subscription.monthlyPriceConfigured == true and
-            .subscription.annualPriceConfigured == true and
-            .commerce.stripeApi == true and
-            .integrations.googleCalendar == true and
-            .nativeIos.deferred == true and
-            .nativeIos.releaseBlocker == false
+            (.clientPaymentsReady | type == "boolean") and
+            (.googleCalendarReady | type == "boolean") and
+            (.checks.stripeApi | type == "boolean") and
+            (.checks.connectedAccountWebhook | type == "boolean") and
+            (.checks.transactionalEmail | type == "boolean") and
+            (.checks.googleOAuth | type == "boolean") and
+            (.checks.tokenEncryption | type == "boolean")
           '
