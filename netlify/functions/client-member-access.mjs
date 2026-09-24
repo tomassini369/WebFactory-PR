@@ -2,7 +2,7 @@ import crypto from "node:crypto";
 import { admin, requestPasswordRecovery } from "@netlify/identity";
 import { assertSameOrigin, errorResponse, requireSiteAccess } from "../lib/client-auth.mjs";
 import { normalizeEmail, saveClientSite } from "../lib/client-store.mjs";
-import { cleanText, validEmail } from "../lib/order-store.mjs";
+import { cleanText, validEmail } from "../lib/platform-utils.mjs";
 
 async function findIdentityUserByEmail(email){
   const target=normalizeEmail(email);
