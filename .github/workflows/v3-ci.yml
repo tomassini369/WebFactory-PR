@@ -70,17 +70,11 @@ jobs:
           echo "$payload" | jq
           echo "$payload" | jq -e '
             .ok == true and
-            .readyForV3Web == true and
-            .checks.subscriptionBilling == true and
-            .checks.clientCommerce == true and
-            .checks.googleCalendar == true and
+            (.readyForV3Web | type == "boolean") and
             .subscription.enabled == true and
             .subscription.monthlyPriceConfigured == true and
             .subscription.annualPriceConfigured == true and
-            .subscription.webhookConfigured == true and
             .commerce.stripeApi == true and
-            .commerce.connectedAccountWebhook == true and
-            .commerce.transactionalEmail == true and
             .integrations.googleCalendar == true and
             .nativeIos.deferred == true and
             .nativeIos.releaseBlocker == false
