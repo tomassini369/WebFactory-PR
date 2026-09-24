@@ -38,7 +38,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 .btn.secondary{background:rgba(255,255,255,.82);border-color:rgba(194,211,233,.9);box-shadow:0 5px 16px rgba(11,21,41,.035)}
 .btn.secondary:hover{border-color:rgba(60,134,246,.45);box-shadow:0 12px 28px rgba(60,134,246,.11)}
 .hero{position:relative;isolation:isolate}
-.hero:before{position:absolute;z-index:-1;content:"";width:min(48vw,620px);height:min(48vw,620px);right:-9%;top:8%;border-radius:50%;background:radial-gradient(circle,rgba(60,134,246,.12),rgba(77,150,243,.04) 42%,transparent 70%);filter:blur(7px);pointer-events:none}
+.hero:before{position:absolute;z-index:-1;content:"";width:min(48vw,620px);height:min(48vw,620px);right:6%;top:8%;border-radius:50%;background:radial-gradient(circle,rgba(60,134,246,.12),rgba(77,150,243,.04) 42%,transparent 70%);filter:blur(7px);pointer-events:none}
 .hero h1{text-wrap:balance}
 .hero h3{color:#367eea}
 .price{align-items:center;padding:15px 18px;border:1px solid rgba(201,218,239,.9);border-radius:18px;background:rgba(255,255,255,.7);box-shadow:var(--wf-shadow-sm);backdrop-filter:blur(12px);width:max-content;max-width:100%}
