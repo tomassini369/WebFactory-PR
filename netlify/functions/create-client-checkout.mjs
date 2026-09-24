@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
 import { createBookingHold } from "../lib/booking-engine.mjs";
 import { clientCommerceStore, commerceKey, getClientSite, getClientSiteBySlug } from "../lib/client-store.mjs";
-import { cleanText, publicBaseUrl, validEmail } from "../lib/order-store.mjs";
+import { cleanText, publicBaseUrl, validEmail } from "../lib/platform-utils.mjs";
 import { siteEntitlement } from "../lib/subscription-billing.mjs";
 
 function env(name) { return globalThis.Netlify?.env?.get(name) || ""; }
