@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import './legal.css'
+import { AdaptiveLogo } from './theme'
 
 type Language='en'|'es'
 type LegalKind='privacy'|'terms'|'refund'
@@ -354,7 +355,7 @@ export default function LegalPage({kind}:{kind:LegalKind}){
   const page=copy[lang][kind]
   useEffect(()=>{document.documentElement.lang=lang;document.title=`${page.title} | WebFactory PR`},[lang,page.title])
   return <main className="legal-page">
-    <header className="legal-top"><a href="/" className="legal-logo"><img src="/webfactory-pr-logo.png" alt="WebFactory PR"/></a><nav><a href="/templates">Templates</a><a href="/builder">Builder</a><a href="/client-admin">Log In</a><div className="legal-lang"><button className={lang==='en'?'active':''} onClick={()=>setLang('en')}>EN</button><button className={lang==='es'?'active':''} onClick={()=>setLang('es')}>ES</button></div></nav></header>
+    <header className="legal-top"><a href="/" className="legal-logo"><AdaptiveLogo alt="WebFactory PR"/></a><nav><a href="/templates">Templates</a><a href="/builder">Builder</a><a href="/client-admin">Log In</a><div className="legal-lang"><button className={lang==='en'?'active':''} onClick={()=>setLang('en')}>EN</button><button className={lang==='es'?'active':''} onClick={()=>setLang('es')}>ES</button></div></nav></header>
     <section className="legal-hero"><div><p>WEBFACTORY PR · LEGAL</p><h1>{page.title}</h1><span>{updated[lang]}</span><p>{page.intro}</p></div></section>
     <article className="legal-content">
       {page.sections.map(([title,paragraphs])=><section key={title}><h2>{title}</h2>{paragraphs.map((paragraph,index)=><p key={index}>{paragraph}</p>)}</section>)}

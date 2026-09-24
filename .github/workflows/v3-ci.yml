@@ -35,23 +35,31 @@ jobs:
     timeout-minutes: 10
     permissions:
       contents: read
-    env:
-      PREVIEW_URL: https://deploy-preview-${{ github.event.pull_request.number }}--webfactorypr.netlify.app
+      statuses: read
     steps:
-      - name: Wait for Netlify Deploy Preview HTTPS
+      - name: Wait for matching Netlify Deploy Preview
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
+          state=""
           for attempt in {1..36}; do
-            code="$(curl -LsS --max-time 20 -o /dev/null -w '%{http_code}' "$PREVIEW_URL/" || true)"
-            echo "Netlify preview HTTP: ${code:-unreachable} (attempt $attempt/36)"
-            if [ "$code" = "200" ]; then
+            state="$(curl -fsS               -H "Authorization: Bearer $GH_TOKEN"               -H "Accept: application/vnd.github+json"               "https://api.github.com/repos/$GITHUB_REPOSITORY/commits/$HEAD_SHA/status"               | jq -r '[.statuses[] | select(.context=="netlify/webfactorypr/deploy-preview")][0].state // ""')"
+            echo "Netlify preview status: ${state:-not-reported} (attempt $attempt/36)"
+            if [ "$state" = "success" ]; then
               exit 0
+            fi
+            if [ "$state" = "failure" ] || [ "$state" = "error" ]; then
+              exit 1
             fi
             sleep 10
           done
-          echo "Timed out waiting for Netlify Deploy Preview HTTPS."
+          echo "Timed out waiting for Netlify Deploy Preview."
           exit 1
 
       - name: Smoke public V3 routes and readiness
+        env:
+          PREVIEW_URL: https://deploy-preview-${{ github.event.pull_request.number }}--webfactorypr.netlify.app
         run: |
           for path in / /templates /builder /client-admin; do
             echo "Checking $PREVIEW_URL$path"
