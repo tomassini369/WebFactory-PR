@@ -31,7 +31,7 @@ The dedicated WebFactory iOS app is deferred. Native Stripe Terminal/Tap to Pay 
 - [x] Unsupported entitlement models are not treated as public access.
 - [x] Past-due Stripe subscriptions remain public only during Stripe retry lifecycle.
 - [x] Production Stripe monthly and annual Price IDs are present in Netlify configuration.
-- [x] Stripe live catalog cleanup completed: the active WebFactory product is now **WebFactory Business Platform** with current 7-day trial copy; the old $300 one-time Payment Link, one-time price and product are archived. The only active live prices are $30/month and $350/year.
+- [x] Stripe live catalog verified: the active WebFactory product is **WebFactory Business Platform** with current 7-day trial copy. The active live recurring prices are $30/month and $350/year.
 - [x] Verified against the connected live WebFactory PR Stripe account on 2026-09-24: the configured monthly price matches the active $30/month price (ID suffix `ept2`) and the configured annual price matches the active $350/year price (ID suffix `vnVh`).
 - [x] Production subscription webhook secret is present in Netlify configuration.
 - [x] Confirmed `WEBFACTORY_SUBSCRIPTION_ENABLED=true` in dev, branch deploy, deploy preview and production.\n- [x] Stripe runtime safety added: live Stripe writes are permitted only in Netlify `production`; Deploy Preview/branch/dev must use a Stripe test key for Checkout, Payment Links, POS card checkout, refunds, Connect onboarding/account links and Terminal mutations.
@@ -49,7 +49,7 @@ The dedicated WebFactory iOS app is deferred. Native Stripe Terminal/Tap to Pay 
 ### Client integration disconnect controls
 - [x] Clients can disconnect Google Calendar from the portal; OAuth token is revoked/deleted and employee calendar mappings are cleared.
 - [x] Owners can disconnect Stripe from a site without deleting the external Stripe account.
-- [x] Stripe can be reconnected directly from the Client Portal after disconnection, including creation of a new Accounts v2 onboarding when no account is attached.
+- [x] Stripe can be reconnected directly from the Client Portal after disconnection, including creation of a new current Stripe Accounts onboarding when no account is attached.
 - [x] Clients can disconnect ATH Móvil configuration from a site.
 - [x] Disconnecting an integration does not delete the WebFactory site or account.
 
@@ -159,7 +159,7 @@ The dedicated WebFactory iOS app is deferred. Native Stripe Terminal/Tap to Pay 
 ### Live Stripe webhook verification
 - [x] Subscription webhook endpoint is enabled with checkout, subscription created/updated/deleted, invoice paid and invoice payment failed events.
 - [x] Stripe Connect webhook is enabled with `checkout.session.completed` and `checkout.session.async_payment_succeeded` for current web commerce.
-- [x] Active live Stripe webhook endpoints now use the official `https://webfactorypr.com` domain. The subscription webhook description/events are V3-only, and old disabled webhook entries no longer carry V2 descriptions.
+- [x] Active live Stripe webhook endpoints use the official `https://webfactorypr.com` domain and current WebFactory Business Platform descriptions/events.
 - [x] `payment_intent.succeeded` is intentionally deferred with native iOS/Tap to Pay and is not a V3 web release blocker.
 
 ### Stripe Terminal / Tap to Pay
