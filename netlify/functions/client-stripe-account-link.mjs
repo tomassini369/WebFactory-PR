@@ -1,5 +1,5 @@
 import { assertSameOrigin, errorResponse, requireSiteAccess } from "../lib/client-auth.mjs";
-import { publicBaseUrl } from "../lib/order-store.mjs";
+import { publicBaseUrl } from "../lib/platform-utils.mjs";
 
 function env(name) { return globalThis.Netlify?.env?.get(name) || ""; }
 
