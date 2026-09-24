@@ -9,7 +9,7 @@ import {
   sitesForEmail,
   slugify,
 } from "../lib/client-store.mjs";
-import { assetStore, safeFileName } from "../lib/order-store.mjs";
+import { builderDraftAssetStore, safeFileName } from "../lib/builder-assets.mjs";
 import { sanitizeOrder } from "./create-checkout-session.mjs";
 
 async function findIdentityUser(email) {
@@ -53,8 +53,8 @@ async function ensureClientIdentity(email, siteId, businessName) {
 async function copyDraftAsset(assetKey, siteId, label) {
   if (!assetKey) return "";
   const [bytes, metadata] = await Promise.all([
-    assetStore().get(assetKey, { type: "arrayBuffer" }),
-    assetStore().getMetadata(assetKey),
+    builderDraftAssetStore().get(assetKey, { type: "arrayBuffer" }),
+    builderDraftAssetStore().getMetadata(assetKey),
   ]);
   if (!bytes) return "";
   const destination = `sites/${siteId}/${safeFileName(label, "asset")}-${crypto.randomUUID()}`;
