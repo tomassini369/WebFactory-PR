@@ -37,7 +37,7 @@ export default async (req) => {
       throw Object.assign(new Error("This website already has an active subscription."), { status: 409 });
     }
 
-    assertStripeWriteAllowed();
+    assertStripeWriteAllowed({ requestUrl: req.url });
     const price = interval === "annual"
       ? env("STRIPE_PRICE_WEBFACTORY_ANNUAL")
       : env("STRIPE_PRICE_WEBFACTORY_MONTHLY");
