@@ -60,6 +60,7 @@ html[data-wf-platform-theme="true"][data-wf-theme="light"] .wf-home-header .lang
 html[data-wf-platform-theme="true"][data-wf-theme="light"] .wf-home-header .langs button{color:#6e7786}
 html[data-wf-platform-theme="true"][data-wf-theme="light"] .wf-home-header .langs button.active{background:#0b1529;color:#fff}
 html[data-wf-platform-theme="true"][data-wf-theme="light"] .wf-home-header .desktop-cta{color:#0b1529}
+html[data-wf-platform-theme="true"][data-wf-theme="light"] .wf-home-header .hamburger i{background:#3F4A5C}
 html[data-wf-platform-theme="true"][data-wf-theme="dark"] .wf-home-header{background:#04132a;border-color:rgba(255,255,255,.12)}
 html[data-wf-platform-theme="true"][data-wf-theme="dark"] .header nav a{color:#B8C5D7}
 html[data-wf-platform-theme="true"][data-wf-theme="dark"] .header nav a:hover{background:#152138;color:#fff}
