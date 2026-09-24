@@ -13,9 +13,10 @@ export default async (req) => {
       servicePlan: site.servicePlan || {
         code: "webfactory-saas",
         name: "WebFactory Commerce Platform",
-        billingModel: "one_time",
-        billingStatus: "paid",
-        subscriptionStatus: "not_started",
+        billingModel: "subscription",
+        billingStatus: "payment_required",
+        subscriptionStatus: "subscription_required",
+        migrationEligible: false,
       },
     }, { headers: { "Cache-Control": "no-store", "X-Robots-Tag": "noindex, nofollow" } });
   } catch (error) {
