@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type CSSProperties, type FormEvent } from 'react'
-import { demoBySlug, templateVisualStyle } from './demoData'
-import './demo.css'
+import { templateBySlug, templateVisualStyle } from './templateData'
+import './template-preview.css'
 import './client-storefront.css'
 
 type Item={id:string;type:'product'|'service';name:string;nameEn?:string;nameEs?:string;description:string;descriptionEn?:string;descriptionEs?:string;price:number;inventory:number|null;requiresAppointment:boolean;duration:number;imageUrl:string}
@@ -125,7 +125,7 @@ export default function ClientStorefront({slug}:{slug:string}){
   const itemName=(item:Item)=>lang==='es'?(item.nameEs||item.nameEn||item.name):(item.nameEn||item.name||item.nameEs||'')
   const itemDescription=(item:Item)=>lang==='es'?(item.descriptionEs||item.descriptionEn||item.description):(item.descriptionEn||item.description||item.descriptionEs||'')
   const employeeRole=(employee:Employee)=>lang==='es'?(employee.roleEs||employee.roleEn||employee.role):(employee.roleEn||employee.role||employee.roleEs||'')
-  const template=demoBySlug(site.design?.templateSlug||'')
+  const template=templateBySlug(site.design?.templateSlug||'')
   const whatsapp=digits(site.business.whatsapp)
   const instagram=socialUrl(site.business.instagram,'instagram')
   const facebook=socialUrl(site.business.facebook,'facebook')
