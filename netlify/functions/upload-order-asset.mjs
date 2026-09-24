@@ -1,6 +1,6 @@
 import crypto from "node:crypto";
 import { assertSameOrigin } from "../lib/client-auth.mjs";
-import { assetStore, safeFileName } from "../lib/order-store.mjs";
+import { builderDraftAssetStore, safeFileName } from "../lib/builder-assets.mjs";
 
 const MAX_FILE_SIZE = 8 * 1024 * 1024;
 const ALLOWED_TYPES = new Set(["image/png","image/jpeg","image/webp","image/heic","image/heif"]);
@@ -30,7 +30,7 @@ export default async (req) => {
 
     const key = `drafts/${draftId}/${itemId}-${crypto.randomUUID()}-${safeFileName(file.name,"image")}`;
     const bytes = await file.arrayBuffer();
-    await assetStore().set(key, bytes, { metadata: {
+    await builderDraftAssetStore().set(key, bytes, { metadata: {
       contentType: file.type,
       originalName: safeFileName(file.name, "image"),
       size: file.size,
