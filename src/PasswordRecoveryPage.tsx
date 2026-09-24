@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { getUser, handleAuthCallback, updateUser, type User } from '@netlify/identity'
 import './client-admin.css'
+import { AdaptiveLogo } from './theme'
 
 type Language='es'|'en'
 
@@ -75,7 +76,7 @@ export default function PasswordRecoveryPage(){
   return <main className="ca-page">
     <section className="ca-login">
       <div className="portal-language"><button className={lang==='en'?'active':''} onClick={()=>setLang('en')}>EN</button><button className={lang==='es'?'active':''} onClick={()=>setLang('es')}>ES</button></div>
-      <img src="/webfactory-pr-logo.png" alt="WebFactory PR"/>
+      <AdaptiveLogo alt="WebFactory PR"/>
       <small>{t.eyebrow}</small><h1>{t.title}</h1><p>{t.text}</p>
       {!ready&&<div className="ca-loading">…</div>}
       {ready&&!done&&user&&<><label>{t.password}<input type="password" autoComplete="new-password" value={password} onChange={e=>setPassword(e.target.value)}/></label><label>{t.confirm}<input type="password" autoComplete="new-password" value={confirm} onChange={e=>setConfirm(e.target.value)}/></label><button onClick={save} disabled={busy}>{busy?t.saving:t.save}</button></>}
