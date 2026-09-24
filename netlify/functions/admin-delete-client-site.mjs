@@ -1,5 +1,5 @@
 import { assertSameOrigin, errorResponse, requirePlatformAdmin } from "../lib/client-auth.mjs";
-import { cleanText } from "../lib/order-store.mjs";
+import { cleanText } from "../lib/platform-utils.mjs";
 import { getClientSite } from "../lib/client-store.mjs";
 import { purgeClientSite } from "../lib/client-lifecycle.mjs";
 
