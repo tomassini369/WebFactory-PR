@@ -278,60 +278,8 @@ async function createStripeSession(order) {
 
 export default async (req) => {
   if (req.method !== "POST") return Response.json({ ok:false,message:"Method not allowed." }, { status:405 });
-
-  if (globalThis.Netlify?.context?.deploy?.context !== "production") {
-    return Response.json(
-      { ok:false,message:"Live checkout is available only on the production site." },
-      { status:409 },
-    );
-  }
-
-  try {
-    assertSameOrigin(req);
-    if (env("WEBFACTORY_LEGACY_CHECKOUT_ENABLED") !== "true") {
-      return Response.json(
-        { ok:false,message:"The legacy one-time checkout is closed to new orders." },
-        { status:410,headers:{ "Cache-Control":"no-store" } },
-      );
-    }
-    const payload = await req.json();
-    const order = sanitizeOrder(payload);
-    const existing = await getOrder(order.orderId);
-
-    if (existing?.status === "PAID" || existing?.status === "EMAIL_SENT" || existing?.status === "IN_PRODUCTION") {
-      return Response.json({ ok:false,message:"This order has already been paid.",orderId:order.orderId }, { status:409 });
-    }
-
-    const now = new Date().toISOString();
-    await saveOrder({
-      ...(existing || {}),
-      ...order,
-      status: "AWAITING_PAYMENT",
-      createdAt: existing?.createdAt || now,
-      updatedAt: now,
-      productionPackageSent: Boolean(existing?.productionPackageSent),
-      customerConfirmationSent: Boolean(existing?.customerConfirmationSent),
-    });
-
-    const session = await createStripeSession(order);
-    await patchOrder(order.orderId, {
-      status: "PAYMENT_PROCESSING",
-      stripeSessionId: session.id,
-      checkoutCreatedAt: now,
-    });
-
-    return Response.json({
-      ok:true,
-      checkoutUrl:session.url,
-      sessionId:session.id,
-      orderId:order.orderId,
-      productName:PRODUCT_LABEL,
-      officialPriceUsd:OFFICIAL_PRICE_USD,
-    }, { headers:{ "Cache-Control":"no-store" } });
-  } catch (error) {
-    return Response.json(
-      { ok:false,message:error?.message || "Could not prepare checkout." },
-      { status:500,headers:{ "Cache-Control":"no-store" } },
-    );
-  }
+  return Response.json(
+    { ok:false,message:"Legacy one-time WebFactory checkout has been permanently retired. Use the SaaS subscription flow." },
+    { status:410,headers:{ "Cache-Control":"no-store" } },
+  );
 };
