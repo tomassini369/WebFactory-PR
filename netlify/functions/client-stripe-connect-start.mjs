@@ -1,6 +1,7 @@
 import { assertSameOrigin, errorResponse, requireSiteAccess } from "../lib/client-auth.mjs";
 import { patchClientSite, normalizeEmail } from "../lib/client-store.mjs";
 import { publicBaseUrl } from "../lib/platform-utils.mjs";
+import { assertStripeWriteAllowed } from "../lib/stripe-runtime.mjs";
 
 const STRIPE_VERSION="2026-08-26.preview";
 function env(name){return globalThis.Netlify?.env?.get(name)||"";}
@@ -30,6 +31,7 @@ export default async(req)=>{
     const payload=await req.json();
     const {user,site,membership}=await requireSiteAccess(payload.siteId,["owner"]);
     if(!["owner","admin"].includes(membership.role||""))throw Object.assign(new Error("Only the owner can connect Stripe."),{status:403});
+    assertStripeWriteAllowed();
 
     let accountId=String(site.paymentRules?.stripeConnectedAccountId||"").trim();
     let updated=site;
