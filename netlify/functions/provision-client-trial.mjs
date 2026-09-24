@@ -129,9 +129,6 @@ export default async (req) => {
       });
     } else if (accessType === "complimentary" && site.servicePlan?.billingModel !== "complimentary") {
       const existingPlan = site.servicePlan || {};
-      if (existingPlan.billingModel === "one_time" && existingPlan.billingStatus === "paid") {
-        throw Object.assign(new Error("This website already has paid one-time access and does not need a complimentary grant."), { status: 409 });
-      }
       if (["active", "trialing", "past_due"].includes(existingPlan.subscriptionStatus)) {
         throw Object.assign(new Error("This website has an existing Stripe subscription lifecycle. Resolve it before granting complimentary access."), { status: 409 });
       }
