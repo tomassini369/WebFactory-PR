@@ -7,7 +7,7 @@ import {
   saveClientSite,
   slugify,
 } from "../lib/client-store.mjs";
-import { cleanText, validEmail } from "../lib/order-store.mjs";
+import { cleanText, validEmail } from "../lib/platform-utils.mjs";
 import { createComplimentaryServicePlan, createTrialServicePlan } from "../lib/subscription-billing.mjs";
 
 const defaultHours = {
