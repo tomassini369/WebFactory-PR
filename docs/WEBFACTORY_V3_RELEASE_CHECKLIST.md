@@ -30,6 +30,8 @@ The dedicated WebFactory iOS app is deferred. Native Stripe Terminal/Tap to Pay 
 - [x] Unsupported entitlement models are not treated as public access.
 - [x] Past-due Stripe subscriptions remain public only during Stripe retry lifecycle.
 - [x] Production Stripe monthly and annual Price IDs are present in Netlify configuration.
+- [x] Stripe live catalog cleanup completed: the active WebFactory product is now **WebFactory Business Platform** with current 7-day trial copy; the old $300 one-time Payment Link, one-time price and product are archived. The only active live prices are $30/month and $350/year.
+- [ ] Before accepting live WebFactory subscriptions, verify the production Netlify Stripe key is live-mode and atomically point `STRIPE_PRICE_WEBFACTORY_MONTHLY` / `STRIPE_PRICE_WEBFACTORY_ANNUAL` to the two active live recurring prices. The currently configured Netlify Price IDs do not resolve in the connected live WebFactory PR Stripe account, so they must not be changed independently of the key-mode verification.
 - [x] Production subscription webhook secret is present in Netlify configuration.
 - [x] Confirmed `WEBFACTORY_SUBSCRIPTION_ENABLED=true` in dev, branch deploy, deploy preview and production.
 
