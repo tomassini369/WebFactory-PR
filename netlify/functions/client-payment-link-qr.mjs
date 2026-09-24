@@ -1,5 +1,5 @@
 import { errorResponse, requireSiteCapability } from "../lib/client-auth.mjs";
-import { cleanText, publicBaseUrl } from "../lib/order-store.mjs";
+import { cleanText, publicBaseUrl } from "../lib/platform-utils.mjs";
 import { getV3Record } from "../lib/webfactory-v3-store.mjs";
 
 export default async (req) => {
