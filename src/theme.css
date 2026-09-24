@@ -70,6 +70,8 @@ html[data-wf-platform-theme="true"][data-wf-theme="dark"] .hamburger,
 html[data-wf-platform-theme="true"][data-wf-theme="dark"] .secondary{
   background:var(--wf-theme-dark-surface-2);border-color:var(--wf-theme-dark-line);color:#F7FAFF;
 }
+html[data-wf-platform-theme="true"][data-wf-theme="dark"] .hamburger{border-color:#3C86F6;box-shadow:0 3px 12px rgba(60,134,246,.2)}
+html[data-wf-platform-theme="true"][data-wf-theme="dark"] .hamburger:hover{background:#192B46;border-color:#6EAEFF}
 html[data-wf-platform-theme="true"][data-wf-theme="dark"] .hamburger i{background:#F7FAFF}
 html[data-wf-platform-theme="true"][data-wf-theme="dark"] .badges span{
   background:rgba(18,28,46,.88);border-color:var(--wf-theme-dark-line);color:#B8C5D7;
