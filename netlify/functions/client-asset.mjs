@@ -2,7 +2,7 @@ import crypto from "node:crypto";
 import { assertSameOrigin, errorResponse, requireSiteAccess } from "../lib/client-auth.mjs";
 import { clientAssetStore, getClientSite } from "../lib/client-store.mjs";
 import { siteEntitlement } from "../lib/subscription-billing.mjs";
-import { cleanText, safeFileName } from "../lib/order-store.mjs";
+import { cleanText, safeFileName } from "../lib/platform-utils.mjs";
 
 const ALLOWED_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
 const MAX_SIZE = 8 * 1024 * 1024;
