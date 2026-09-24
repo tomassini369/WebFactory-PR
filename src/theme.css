@@ -131,6 +131,10 @@ html[data-wf-platform-theme="true"][data-wf-theme="dark"] .wf-builder-nav button
 html[data-wf-platform-theme="true"][data-wf-theme="dark"] .wf-builder-nav button b{background:#17243A}
 html[data-wf-platform-theme="true"][data-wf-theme="dark"] .wf-builder-nav button.selected{background:#14233A;color:#72A9F7}
 html[data-wf-platform-theme="true"][data-wf-theme="dark"] .wf-builder-status button,
+html[data-wf-platform-theme="true"][data-wf-theme="dark"] .wf-setup-guidance,
+html[data-wf-platform-theme="true"][data-wf-theme="dark"] .wf-setup-guidance>span,
+html[data-wf-platform-theme="true"][data-wf-theme="dark"] .wf-ai-assistant,
+html[data-wf-platform-theme="true"][data-wf-theme="dark"] .wf-guidance,
 html[data-wf-platform-theme="true"][data-wf-theme="dark"] .wf-template-grid article,
 html[data-wf-platform-theme="true"][data-wf-theme="dark"] .wf-template-grid article>button,
 html[data-wf-platform-theme="true"][data-wf-theme="dark"] .wf-color-preferences,
@@ -148,6 +152,14 @@ html[data-wf-platform-theme="true"][data-wf-theme="dark"] .wf-review-grid articl
 html[data-wf-platform-theme="true"][data-wf-theme="dark"] .wf-builder-navigation button.secondary{
   background:#111B2D;border-color:var(--wf-theme-dark-line);color:var(--wf-theme-dark-text);
 }
+html[data-wf-platform-theme="true"][data-wf-theme="dark"] .wf-setup-guidance,
+html[data-wf-platform-theme="true"][data-wf-theme="dark"] .wf-ai-assistant{
+  background:linear-gradient(135deg,#111B2D,#14233A);border-color:var(--wf-theme-dark-line);
+}
+html[data-wf-platform-theme="true"][data-wf-theme="dark"] .wf-setup-guidance>span{background:#0D1422}
+html[data-wf-platform-theme="true"][data-wf-theme="dark"] .wf-ai-toggle{color:var(--wf-theme-dark-text)}
+html[data-wf-platform-theme="true"][data-wf-theme="dark"] .wf-guidance{border-left-color:#3C86F6}
+html[data-wf-platform-theme="true"][data-wf-theme="dark"] .wf-guidance span{color:var(--wf-theme-dark-muted)}
 html[data-wf-platform-theme="true"][data-wf-theme="dark"] .wf-field>span,
 html[data-wf-platform-theme="true"][data-wf-theme="dark"] .wf-color-grid label>span,
 html[data-wf-platform-theme="true"][data-wf-theme="dark"] .wf-service-assignment>span,

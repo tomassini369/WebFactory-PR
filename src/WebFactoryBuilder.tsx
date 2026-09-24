@@ -1102,7 +1102,7 @@ function FinalStep({state,setStep,lang}:{state:BuilderState;setStep:(step:number
 
   return (
     <div className="wf-step-content">
-      <div className="wf-step-intro"><small>{lang==='es'?'PASO 8':'STEP 8'}</small><h3>{lang==='es'?'Tu configuración está lista para activar.':'Your setup is ready to activate.'}</h3><p>{lang==='es'?'Recibirás acceso privado para iniciar tu prueba gratuita de 7 días. No se solicita tarjeta.':'You will receive private access to start your free 48-hour trial. No card is required.'}</p></div>
+      <div className="wf-step-intro"><small>{lang==='es'?'PASO 8':'STEP 8'}</small><h3>{lang==='es'?'Tu configuración está lista para activar.':'Your setup is ready to activate.'}</h3><p>{lang==='es'?'Recibirás acceso privado para iniciar tu prueba gratuita de 7 días. No se solicita tarjeta.':'You will receive private access to start your free 7-day trial. No card is required.'}</p></div>
       <div className="wf-review-grid">
         <article><span>{lang==='es'?'Negocio':'Business'}</span><strong>{state.business.name}</strong><small>{state.business.category}</small><button onClick={()=>setStep(0)}>{lang==='es'?'Editar':'Edit'}</button></article>
         <article><span>{lang==='es'?'Diseño':'Design'}</span><strong>{selectedTemplate ? `${selectedTemplate.category} — ${selectedTemplate.name}` : (lang==='es'?'Personalizado por WebFactory':'Custom by WebFactory')}</strong><small>{state.design.style}</small><div><i style={{background:state.design.primary}}/><i style={{background:state.design.secondary}}/></div><button onClick={()=>setStep(1)}>{lang==='es'?'Editar':'Edit'}</button></article>
