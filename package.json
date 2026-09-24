@@ -4,11 +4,12 @@
   "version": "3.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "npm run cache:template-images && npm run generate:pwa-icons && tsc --noEmit -p tsconfig.app.json && vite build && node scripts/generate-admin-pwa-shells.mjs",
+    "dev": "npm run generate:theme-logo && vite",
+    "build": "npm run cache:template-images && npm run generate:pwa-icons && npm run generate:theme-logo && tsc --noEmit -p tsconfig.app.json && vite build && node scripts/generate-admin-pwa-shells.mjs",
     "test": "node --test netlify/**/*.test.mjs",
     "preview": "vite preview",
     "generate:pwa-icons": "node scripts/generate-pwa-icons.mjs",
+    "generate:theme-logo": "node scripts/generate-theme-logo.mjs",
     "cache:template-images": "node scripts/cache-template-images.mjs"
   },
   "dependencies": {
