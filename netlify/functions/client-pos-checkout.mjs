@@ -66,7 +66,7 @@ export default async(req)=>{
 
     const accountId=cleanText(site.paymentRules?.stripeConnectedAccountId,180);
     if(!accountId||!site.paymentRules?.methods?.stripe)throw Object.assign(new Error("Stripe is not connected for this business."),{status:409});
-    assertStripeWriteAllowed();
+    assertStripeWriteAllowed({ requestUrl: req.url });
     if(await verifyMerchantCapability(accountId)!=="active")throw Object.assign(new Error("Finish Stripe verification before accepting card payments."),{status:409});
 
     const transactionId=`txn_pos_${saleAttemptId}`;
