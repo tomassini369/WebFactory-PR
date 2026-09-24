@@ -10,7 +10,7 @@ import {
   slugify,
 } from "../lib/client-store.mjs";
 import { builderDraftAssetStore, safeFileName } from "../lib/builder-assets.mjs";
-import { sanitizeOrder } from "./create-checkout-session.mjs";
+import { sanitizeBuilderRequest } from "../lib/builder-request.mjs";
 
 async function findIdentityUser(email) {
   for (let page = 1; page <= 20; page += 1) {
@@ -90,7 +90,7 @@ export default async (req) => {
     });
     let order;
     try {
-      order = sanitizeOrder(payload);
+      order = sanitizeBuilderRequest(payload);
     } catch (error) {
       throw Object.assign(error, { status: 400 });
     }
