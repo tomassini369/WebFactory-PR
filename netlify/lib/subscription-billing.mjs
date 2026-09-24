@@ -22,12 +22,7 @@ export function subscriptionBillingReadiness() {
   const monthlyPriceConfigured = env("STRIPE_PRICE_WEBFACTORY_MONTHLY").startsWith("price_");
   const annualPriceConfigured = env("STRIPE_PRICE_WEBFACTORY_ANNUAL").startsWith("price_");
   const webhookConfigured = env("STRIPE_WEBHOOK_SECRET").startsWith("whsec_");
-  const checks = {
-    stripeSecretConfigured,
-    monthlyPriceConfigured,
-    annualPriceConfigured,
-    webhookConfigured,
-  };
+  const checks = { stripeSecretConfigured, monthlyPriceConfigured, annualPriceConfigured, webhookConfigured };
   const missing = Object.entries(checks)
     .filter(([, configured]) => !configured)
     .map(([name]) => name);
@@ -104,15 +99,9 @@ export function siteEntitlement(site, now = new Date()) {
   if (plan.billingModel === "complimentary" || plan.subscriptionStatus === "complimentary") {
     return { public: true, reason: "complimentary" };
   }
-  if (!plan.billingModel || plan.billingModel === "one_time") {
-    return { public: plan.billingStatus !== "unpaid", reason: "one_time" };
-  }
   if (["active", "trialing"].includes(plan.subscriptionStatus)) {
     return { public: true, reason: "subscription" };
   }
-  // Stripe can keep retrying a failed renewal while a subscription is past_due.
-  // Keep the paid service available until Stripe makes the subscription unpaid,
-  // paused, or canceled instead of inventing a separate WebFactory grace period.
   if (plan.subscriptionStatus === "past_due") {
     return { public: true, reason: "payment_retry" };
   }
@@ -170,11 +159,12 @@ export function billingStateFor(event, current = {}) {
 
   return {
     ...current,
-    code: current.code || "webfactory-saas",
-    name: current.name || "WebFactory Commerce Platform",
+    code: "webfactory-saas",
+    name: "WebFactory Commerce Platform",
     billingModel: "subscription",
     billingStatus,
     subscriptionStatus,
+    migrationEligible: false,
     stripeCustomerId: object.customer || current.stripeCustomerId || "",
     stripeSubscriptionId: subscriptionIdFor(event) || current.stripeSubscriptionId || "",
     currentPeriodEnd: object.current_period_end ? new Date(object.current_period_end * 1000).toISOString() : (current.currentPeriodEnd || ""),
