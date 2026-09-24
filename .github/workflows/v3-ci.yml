@@ -28,36 +28,6 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Package deploy source
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        run: tar --exclude=.git --exclude=node_modules --exclude=dist -czf /tmp/webfactory-main-source.tgz .
-
-      - name: Upload deploy source
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        uses: actions/upload-artifact@v4
-        with:
-          name: webfactory-main-source
-          path: /tmp/webfactory-main-source.tgz
-          if-no-files-found: error
-          retention-days: 1
-
-      - name: Install temporary Netlify deploy runtime
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        run: npm install --no-save --package-lock=false @netlify/mcp@latest
-
-      - name: Package Netlify deploy runtime
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        run: tar -czf /tmp/webfactory-netlify-runtime.tgz node_modules
-
-      - name: Upload Netlify deploy runtime
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        uses: actions/upload-artifact@v4
-        with:
-          name: webfactory-netlify-runtime
-          path: /tmp/webfactory-netlify-runtime.tgz
-          if-no-files-found: error
-          retention-days: 1
-
   deploy-preview-smoke:
     if: github.event_name == 'pull_request'
     needs: verify
