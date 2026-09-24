@@ -1146,8 +1146,7 @@ export default function WebFactoryBuilder({lang}:{lang:Language}) {
       const saved = localStorage.getItem(STORAGE_KEY)
       if (!saved) return initialState
       const parsed = JSON.parse(saved) as Partial<BuilderState> & { business?: Partial<BuilderState['business']> & { address?: string } }
-      const legacyMapsUrl = parsed.business?.address && isGoogleMapsUrl(parsed.business.address)
-        ? parsed.business.address
+              ? parsed.business.address
         : undefined
       return {
         ...initialState,
@@ -1155,7 +1154,7 @@ export default function WebFactoryBuilder({lang}:{lang:Language}) {
         business: {
           ...initialState.business,
           ...parsed.business,
-          mapsUrl: parsed.business?.mapsUrl || legacyMapsUrl || initialState.business.mapsUrl,
+          mapsUrl: parsed.business?.mapsUrl || initialState.business.mapsUrl,
         },
         design: {...initialState.design,...parsed.design},
         features: {...initialState.features,...parsed.features},
