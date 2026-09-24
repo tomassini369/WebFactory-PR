@@ -37,11 +37,13 @@ export async function disconnectGoogle(site){
 }
 
 export async function disconnectStripe(site){
+  const previousAccountId=String(site.paymentRules?.stripeConnectedAccountId||"").trim();
   return saveClientSite({
     ...site,
     paymentRules:{
       ...(site.paymentRules||{}),
       methods:{...(site.paymentRules?.methods||{}),stripe:false},
+      stripePreviousDisconnectedAccountId:previousAccountId,
       stripeConnectedAccountId:"",
       stripeCapabilityStatus:"not_started",
       stripeDisconnectedAt:new Date().toISOString(),
@@ -74,6 +76,29 @@ export async function cancelWebFactorySubscription(site){
   }catch(error){
     if(error?.code==="resource_missing") return {canceled:false,missing:true};
     throw error;
+  }
+}
+
+
+async function removeSiteFromIdentityMembers(site){
+  const memberEmails=new Set((site.members||[]).map((member)=>normalizeEmail(member.email)).filter(Boolean));
+  if(!memberEmails.size)return;
+  const perPage=100;
+  for(let page=1;page<=20;page+=1){
+    const users=await admin.listUsers({page,perPage});
+    if(!Array.isArray(users)||users.length===0)break;
+    for(const user of users){
+      if(!memberEmails.has(normalizeEmail(user.email)))continue;
+      const previousSites=Array.isArray(user.appMetadata?.webfactory_site_ids)?user.appMetadata.webfactory_site_ids:[];
+      if(!previousSites.includes(site.siteId))continue;
+      await admin.updateUser(user.id,{
+        app_metadata:{
+          ...(user.appMetadata||{}),
+          webfactory_site_ids:previousSites.filter((id)=>id!==site.siteId),
+        },
+      });
+    }
+    if(users.length<perPage)break;
   }
 }
 
