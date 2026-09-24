@@ -23,7 +23,6 @@ The dedicated WebFactory iOS app is deferred. Native Stripe Terminal/Tap to Pay 
 
 ### Subscription and publishing
 - [x] New trials use 7 days with no card.
-- [x] Existing already-started trials preserve their original `trialEndsAt`.
 - [x] Complimentary access remains public until explicitly revoked.
 - [x] Revoked complimentary access requires paid subscription.
 - [x] Unsupported entitlement models are not treated as public access.
@@ -179,9 +178,8 @@ The dedicated WebFactory iOS app is deferred. Native Stripe Terminal/Tap to Pay 
 
 1. Finish all unchecked validation items that can be done in Deploy Preview/test mode.
 2. Verify `/.netlify/functions/v3-release-readiness` reports production readiness without exposing secret values.
-3. Back up/export production tenant data.
-4. Mark PR #36 ready for review.
-5. Merge to `main`.
-6. Observe first production deploy.
-7. Run smoke checks for homepage, Builder, client portal, one public tenant, Stripe Billing readiness and client commerce readiness.
-8. Keep native iOS work deferred until the web V3 release is stable.
+3. Mark PR #36 ready for review.
+4. Merge to `main`.
+5. Observe first production V3 deploy.
+6. Run smoke checks for homepage, Builder, client portal, one public tenant, Stripe Billing readiness and client commerce readiness.
+7. Keep native iOS work deferred until the web V3 release is stable.
