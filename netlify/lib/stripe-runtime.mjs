@@ -2,6 +2,14 @@ function env(name) {
   return globalThis.Netlify?.env?.get(name) || "";
 }
 
+function hostFor(value = "") {
+  try {
+    return new URL(String(value || "")).hostname.toLowerCase();
+  } catch {
+    return "";
+  }
+}
+
 export function detectStripeKeyMode(secretKey = "") {
   const key = String(secretKey || "").trim();
   if (!key) return "missing";
@@ -10,8 +18,23 @@ export function detectStripeKeyMode(secretKey = "") {
   return "unknown";
 }
 
-export function stripeRuntimeState({ context = "", secretKey = "" } = {}) {
-  const resolvedContext = String(context || env("CONTEXT") || "unknown").trim().toLowerCase() || "unknown";
+export function detectDeployContext({ context = "", requestUrl = "", productionUrl = "" } = {}) {
+  const explicit = String(context || "").trim().toLowerCase();
+  if (explicit) return explicit;
+
+  const requestHost = hostFor(requestUrl);
+  if (!requestHost) return "unknown";
+  if (/^deploy-preview-\d+--/.test(requestHost)) return "deploy-preview";
+
+  const productionHost = hostFor(productionUrl || env("URL"));
+  if (productionHost && requestHost === productionHost) return "production";
+
+  if (requestHost.endsWith(".netlify.app") && requestHost.includes("--")) return "branch-deploy";
+  return "unknown";
+}
+
+export function stripeRuntimeState({ context = "", requestUrl = "", productionUrl = "", secretKey = "" } = {}) {
+  const resolvedContext = detectDeployContext({ context, requestUrl, productionUrl });
   const resolvedKey = String(secretKey || env("STRIPE_SECRET_KEY") || "").trim();
   const keyMode = detectStripeKeyMode(resolvedKey);
   const production = resolvedContext === "production";
