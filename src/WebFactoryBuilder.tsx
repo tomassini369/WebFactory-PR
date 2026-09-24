@@ -790,7 +790,7 @@ function FeaturesStep({state,setState,lang}:{state:BuilderState;setState:Dispatc
           />
         ))}
       </div>
-      <div className="wf-fixed-price"><span>WEBFACTORY COMMERCE PLATFORM</span><strong>{PRICE} / {lang==='es'?'mes':'month'}</strong><b>{lang==='es'?'o $350 / año · 48 horas gratis · sin comisión':'or $350 / year · 48 hours free · no sales commission'}</b></div>
+      <div className="wf-fixed-price"><span>WEBFACTORY COMMERCE PLATFORM</span><strong>{PRICE} / {lang==='es'?'mes':'month'}</strong><b>{lang==='es'?'o $350 / año · 7 días gratis · sin comisión':'or $350 / year · 7 days free · no sales commission'}</b></div>
     </div>
   )
 }
@@ -1102,7 +1102,7 @@ function FinalStep({state,setStep,lang}:{state:BuilderState;setStep:(step:number
 
   return (
     <div className="wf-step-content">
-      <div className="wf-step-intro"><small>{lang==='es'?'PASO 8':'STEP 8'}</small><h3>{lang==='es'?'Tu configuración está lista para activar.':'Your setup is ready to activate.'}</h3><p>{lang==='es'?'Recibirás acceso privado para iniciar tu prueba gratuita de 48 horas. No se solicita tarjeta.':'You will receive private access to start your free 48-hour trial. No card is required.'}</p></div>
+      <div className="wf-step-intro"><small>{lang==='es'?'PASO 8':'STEP 8'}</small><h3>{lang==='es'?'Tu configuración está lista para activar.':'Your setup is ready to activate.'}</h3><p>{lang==='es'?'Recibirás acceso privado para iniciar tu prueba gratuita de 7 días. No se solicita tarjeta.':'You will receive private access to start your free 48-hour trial. No card is required.'}</p></div>
       <div className="wf-review-grid">
         <article><span>{lang==='es'?'Negocio':'Business'}</span><strong>{state.business.name}</strong><small>{state.business.category}</small><button onClick={()=>setStep(0)}>{lang==='es'?'Editar':'Edit'}</button></article>
         <article><span>{lang==='es'?'Diseño':'Design'}</span><strong>{selectedTemplate ? `${selectedTemplate.category} — ${selectedTemplate.name}` : (lang==='es'?'Personalizado por WebFactory':'Custom by WebFactory')}</strong><small>{state.design.style}</small><div><i style={{background:state.design.primary}}/><i style={{background:state.design.secondary}}/></div><button onClick={()=>setStep(1)}>{lang==='es'?'Editar':'Edit'}</button></article>
@@ -1129,8 +1129,8 @@ function FinalStep({state,setStep,lang}:{state:BuilderState;setStep:(step:number
         </div>
         <p className="wf-after-payment-security">{lang==='es'?'WebFactory nunca te pedirá contraseñas, códigos de seguridad, datos bancarios ni llaves secretas.':'WebFactory will never ask for passwords, security codes, bank details, or secret keys.'}</p>
       </section>
-      {created ? <div className="wf-checkout-placeholder success"><div><small>{lang==='es'?'ACCESO ENVIADO':'ACCESS SENT'}</small><strong>{lang==='es'?'Revisa tu email':'Check your email'}</strong><span>{lang==='es'?'Establece tu contraseña, entra al portal y activa las 48 horas gratis cuando estés listo.':'Set your password, enter the portal, and activate the free 48 hours when you are ready.'}</span></div><a className="wf-builder-access-link" href={created.portalUrl}>{lang==='es'?'Abrir portal administrativo':'Open administrative portal'}</a></div> : <div className="wf-checkout-placeholder">
-        <div><small>{lang==='es'?'SIGUIENTE ETAPA':'NEXT STEP'}</small><strong>{lang==='es'?'Crear acceso · 48 horas gratis':'Create access · 48 hours free'}</strong><span>{lang==='es'?'Después escoge $30 mensual o $350 anual. Sin comisión sobre tus ventas.':'Then choose $30 monthly or $350 yearly. No commission on your sales.'}</span></div>
+      {created ? <div className="wf-checkout-placeholder success"><div><small>{lang==='es'?'ACCESO ENVIADO':'ACCESS SENT'}</small><strong>{lang==='es'?'Revisa tu email':'Check your email'}</strong><span>{lang==='es'?'Establece tu contraseña, entra al portal y activa las 7 días gratis cuando estés listo.':'Set your password, enter the portal, and activate the free 7 days when you are ready.'}</span></div><a className="wf-builder-access-link" href={created.portalUrl}>{lang==='es'?'Abrir portal administrativo':'Open administrative portal'}</a></div> : <div className="wf-checkout-placeholder">
+        <div><small>{lang==='es'?'SIGUIENTE ETAPA':'NEXT STEP'}</small><strong>{lang==='es'?'Crear acceso · 7 días gratis':'Create access · 7 days free'}</strong><span>{lang==='es'?'Después escoge $30 mensual o $350 anual. Sin comisión sobre tus ventas.':'Then choose $30 monthly or $350 yearly. No commission on your sales.'}</span></div>
         <button disabled={!canCheckout} onClick={startCheckout}>{checkingOut?(lang==='es'?'Preparando acceso…':'Preparing access…'):(lang==='es'?'Crear mi cuenta':'Create my account')}</button>
       </div>}
       {checkoutError && <div className="wf-checkout-warning error">{checkoutError}</div>}
@@ -1144,8 +1144,7 @@ export default function WebFactoryBuilder({lang}:{lang:Language}) {
       const saved = localStorage.getItem(STORAGE_KEY)
       if (!saved) return initialState
       const parsed = JSON.parse(saved) as Partial<BuilderState> & { business?: Partial<BuilderState['business']> & { address?: string } }
-      const legacyMapsUrl = parsed.business?.address && isGoogleMapsUrl(parsed.business.address)
-        ? parsed.business.address
+              ? parsed.business.address
         : undefined
       return {
         ...initialState,
@@ -1153,7 +1152,7 @@ export default function WebFactoryBuilder({lang}:{lang:Language}) {
         business: {
           ...initialState.business,
           ...parsed.business,
-          mapsUrl: parsed.business?.mapsUrl || legacyMapsUrl || initialState.business.mapsUrl,
+          mapsUrl: parsed.business?.mapsUrl || initialState.business.mapsUrl,
         },
         design: {...initialState.design,...parsed.design},
         features: {...initialState.features,...parsed.features},
