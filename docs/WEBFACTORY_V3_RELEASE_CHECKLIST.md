@@ -102,7 +102,8 @@ The dedicated WebFactory iOS app is deferred. Native Stripe Terminal/Tap to Pay 
 - [x] POS cash/manual sales decrement tracked inventory.
 - [x] Remote card sales decrement only after verified payment.
 - [ ] Test simultaneous checkout behavior before high-volume rollout.
-- [ ] Decide whether atomic inventory should move from Netlify Blobs to PostgreSQL/Supabase before larger client scale.
+- [x] Netlify Blobs is not being treated as an atomic inventory database; current idempotency and server-side stock validation are release safeguards, while true transactional concurrency is deferred to the PostgreSQL/Supabase scale-up phase.
+- [x] Architecture decision: keep Netlify Blobs for the initial V3 release. Move inventory/order mutation to PostgreSQL/Supabase before high-volume rollout, multiple simultaneous checkout lanes, or merchants whose operations require strict transactional stock guarantees.
 
 ### Reviews automation
 - [x] Business can enable/disable review automation.
