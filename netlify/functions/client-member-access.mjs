@@ -4,6 +4,18 @@ import { assertSameOrigin, errorResponse, requireSiteAccess } from "../lib/clien
 import { normalizeEmail, saveClientSite } from "../lib/client-store.mjs";
 import { cleanText, validEmail } from "../lib/order-store.mjs";
 
+async function findIdentityUserByEmail(email){
+  const target=normalizeEmail(email);
+  const perPage=100;
+  for(let page=1;page<=50;page+=1){
+    const users=await admin.listUsers({page,perPage});
+    const found=(users||[]).find((candidate)=>normalizeEmail(candidate.email)===target);
+    if(found)return found;
+    if(!Array.isArray(users)||users.length<perPage)break;
+  }
+  return null;
+}
+
 export default async(req)=>{
   try{
     if(req.method!=="POST")return Response.json({ok:false,message:"Method not allowed."},{status:405});
@@ -23,8 +35,7 @@ export default async(req)=>{
       const members=[...(site.members||[]).filter((member)=>normalizeEmail(member.email)!==email),{email,role}];
       const updated=await saveClientSite({...site,members,revision:Number(site.revision||0)+1,updatedAt:new Date().toISOString()});
 
-      const users=await admin.listUsers({page:1,perPage:500});
-      let user=users.find((candidate)=>normalizeEmail(candidate.email)===email);
+      let user=await findIdentityUserByEmail(email);
       if(!user){
         user=await admin.createUser({
           email,
@@ -58,8 +69,7 @@ export default async(req)=>{
       const members=(site.members||[]).filter((member)=>normalizeEmail(member.email)!==email);
       const updated=await saveClientSite({...site,members,revision:Number(site.revision||0)+1,updatedAt:new Date().toISOString()});
 
-      const users=await admin.listUsers({page:1,perPage:500});
-      const user=users.find((candidate)=>normalizeEmail(candidate.email)===email);
+      const user=await findIdentityUserByEmail(email);
       if(user){
         const previousSites=Array.isArray(user.appMetadata?.webfactory_site_ids)?user.appMetadata.webfactory_site_ids:[];
         await admin.updateUser(user.id,{
