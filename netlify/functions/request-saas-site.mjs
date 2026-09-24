@@ -11,7 +11,7 @@ import {
   slugify,
 } from "../lib/client-store.mjs";
 import { assetStore, cleanText, safeFileName } from "../lib/order-store.mjs";
-import { sanitizeOrder } from "./create-checkout-session.mjs";
+import { sanitizeBuilderRequest } from "../lib/builder-request.mjs";
 import { createComplimentaryServicePlan } from "../lib/subscription-billing.mjs";
 
 async function findIdentityUser(email) {
@@ -55,8 +55,8 @@ async function ensureClientIdentity(email, siteId, businessName) {
 async function copyDraftAsset(assetKey, siteId, label) {
   if (!assetKey) return "";
   const [bytes, metadata] = await Promise.all([
-    assetStore().get(assetKey, { type: "arrayBuffer" }),
-    assetStore().getMetadata(assetKey),
+    builderDraftAssetStore().get(assetKey, { type: "arrayBuffer" }),
+    builderDraftAssetStore().getMetadata(assetKey),
   ]);
   if (!bytes) return "";
   const destination = `sites/${siteId}/${safeFileName(label, "asset")}-${crypto.randomUUID()}`;
@@ -94,7 +94,7 @@ export default async (req) => {
     });
     let order;
     try {
-      order = sanitizeOrder(payload);
+      order = sanitizeBuilderRequest(payload);
     } catch (error) {
       throw Object.assign(error, { status: 400 });
     }
