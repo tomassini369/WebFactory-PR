@@ -26,7 +26,7 @@ The dedicated WebFactory iOS app is deferred. Native Stripe Terminal/Tap to Pay 
 - [x] Existing already-started trials preserve their original `trialEndsAt`.
 - [x] Complimentary access remains public until explicitly revoked.
 - [x] Revoked complimentary access requires paid subscription.
-- [x] Legacy paid one-time customers remain grandfathered.
+- [x] Legacy one-time $300 checkout is permanently retired; no real production customers depend on it.
 - [x] Past-due Stripe subscriptions remain public only during Stripe retry lifecycle.
 - [x] Production Stripe monthly and annual Price IDs are present in Netlify configuration.
 - [x] Production subscription webhook secret is present in Netlify configuration.
