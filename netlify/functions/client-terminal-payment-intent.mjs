@@ -49,7 +49,7 @@ export default async(req)=>{
 
     const accountId=cleanText(site.paymentRules?.stripeConnectedAccountId,180);
     if(!accountId||!site.paymentRules?.methods?.stripe)throw Object.assign(new Error("Stripe is not connected for this business."),{status:409});
-    assertStripeWriteAllowed();
+    assertStripeWriteAllowed({ requestUrl: req.url });
 
     const transactionId=`txn_${crypto.randomUUID()}`;
     const params=new URLSearchParams();
