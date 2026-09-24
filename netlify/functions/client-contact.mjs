@@ -1,6 +1,6 @@
 import { emailConfigured, sendEmail } from "../lib/email.mjs";
 import { getClientSiteBySlug } from "../lib/client-store.mjs";
-import { cleanText, validEmail } from "../lib/order-store.mjs";
+import { cleanText, validEmail } from "../lib/platform-utils.mjs";
 
 function sameOrigin(req) {
   const origin = req.headers.get("origin") || "";
