@@ -76,7 +76,7 @@ export default async (req) => {
         record.reviewRequestId = reviewRequestId;
       }
     } else if (payload.action === "refund") {
-      assertStripeWriteAllowed();
+      assertStripeWriteAllowed({ requestUrl: req.url });
       if (!record.stripePaymentIntentId || record.paymentStatus !== "paid") throw Object.assign(new Error("This transaction cannot be refunded through Stripe."), { status: 409 });
       const refundMath = refundState({
         amountTotal: record.amountTotal,
