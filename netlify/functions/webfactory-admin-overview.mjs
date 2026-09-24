@@ -5,11 +5,8 @@ import {
   clientEventStore,
   clientSiteStore,
 } from "../lib/client-store.mjs";
-import { assetStore, eventStore, orderStore, packageStore } from "../lib/order-store.mjs";
+import { eventStore } from "../lib/order-store.mjs";
 import { subscriptionBillingReadiness } from "../lib/subscription-billing.mjs";
-
-const TERMINAL_ORDER_STATUSES = new Set(["IN_PRODUCTION", "PREVIEW_READY", "COMPLETED"]);
-const RECOVERABLE_ORDER_STATUSES = new Set(["PAID", "PACKAGE_GENERATING", "PACKAGE_READY", "EMAIL_SENT"]);
 
 function env(name) {
   return globalThis.Netlify?.env?.get(name) || "";
@@ -97,8 +94,8 @@ function publicClient(site) {
     stripeStatus: site.paymentRules?.stripeCapabilityStatus || "not_started",
     calendarConnected: Boolean(site.googleCalendar?.connected),
     planName: servicePlan.name || "WebFactory Premium Commerce Website",
-    billingModel: servicePlan.billingModel || "one_time",
-    billingStatus: servicePlan.billingStatus || "paid",
+    billingModel: servicePlan.billingModel || "subscription",
+    billingStatus: servicePlan.billingStatus || "subscription_required",
     subscriptionStatus: servicePlan.subscriptionStatus || "not_started",
     updatedAt: site.updatedAt || site.createdAt || "",
     templateMode: site.design?.mode === "demo_base" ? "template_base" : (site.design?.mode || (site.design?.templateSlug ? "template_base" : "custom")),
@@ -106,20 +103,6 @@ function publicClient(site) {
     templateCategory: site.design?.templateCategory || "",
     templatePath: site.design?.templateSlug ? (site.design?.templateRoute || `/templates/${site.design.templateSlug}`).replace(/^\/demos\//, "/templates/") : "",
     publicPath: site.slug ? `/sites/${site.slug}` : "",
-  };
-}
-
-function publicOrder(order) {
-  return {
-    orderId: order.orderId,
-    businessName: order.business?.name || "Negocio sin nombre",
-    customerEmail: order.client?.email || "",
-    status: order.status || "unknown",
-    amount: Number(order.amountTotal || order.amount || 0),
-    updatedAt: latestDate(order),
-    packageReady: Boolean(order.productionPackageKey || order.productionPackageReadyAt),
-    adminEmailSent: Boolean(order.adminEmailMessageId || order.productionPackageSent),
-    customerEmailSent: Boolean(order.customerConfirmationSent),
   };
 }
 
@@ -148,36 +131,26 @@ export default async (req) => {
       return Response.json({ ok: false, message: "Method not allowed." }, { status: 405 });
     }
     const user = await requirePlatformAdmin();
-    const [sites, orders, commerce, stripeEvents, clientEvents, clientAssets, orderAssets, packages, netlifyUsage] = await Promise.all([
+    const [sites, commerce, stripeEvents, clientEvents, clientAssets, netlifyUsage] = await Promise.all([
       records(clientSiteStore(), "sites/"),
-      records(orderStore(), "orders/"),
       records(clientCommerceStore()),
       records(eventStore(), "events/"),
       records(clientEventStore()),
       list(clientAssetStore()),
-      list(assetStore()),
-      list(packageStore()),
       netlifyResourceUsage(),
     ]);
 
-    const now = Date.now();
-    const stuckOrders = orders.filter((order) => RECOVERABLE_ORDER_STATUSES.has(order.status) && (
-      now - Date.parse(latestDate(order) || 0) > 30 * 60 * 1000
-    ));
     const pendingTransactions = commerce.filter((record) => ["pending", "payment_pending", "held"].includes(record.status));
-    const blockers = stuckOrders.length + pendingTransactions.length;
+    const blockers = pendingTransactions.length;
     const clientRows = sites.map(publicClient).sort((a, b) => Date.parse(b.updatedAt || 0) - Date.parse(a.updatedAt || 0));
-    const orderRows = orders.map(publicOrder).sort((a, b) => Date.parse(b.updatedAt || 0) - Date.parse(a.updatedAt || 0));
     const connectedStripe = sites.filter((site) => site.paymentRules?.stripeCapabilityStatus === "active").length;
     const connectedCalendar = sites.filter((site) => site.googleCalendar?.connected).length;
-    const completedOrders = orders.filter((order) => TERMINAL_ORDER_STATUSES.has(order.status)).length;
     const publishedSites = sites.filter((site) => ["active", "published", "live"].includes(site.status)).length;
     const activeSubscriptions = sites.filter((site) => ["active", "trialing"].includes(site.servicePlan?.subscriptionStatus)).length;
     const complimentaryAccess = sites.filter((site) => site.servicePlan?.billingModel === "complimentary").length;
     const pastDueSubscriptions = sites.filter((site) => ["past_due", "unpaid"].includes(site.servicePlan?.subscriptionStatus)).length;
     const secretNames = [
       "STRIPE_SECRET_KEY",
-      "STRIPE_PRICE_WEBFACTORY_PREMIUM",
       "STRIPE_PRICE_WEBFACTORY_MONTHLY",
       "STRIPE_PRICE_WEBFACTORY_ANNUAL",
       "STRIPE_WEBHOOK_SECRET",
@@ -213,8 +186,6 @@ export default async (req) => {
         clients: sites.length,
         publishedSites,
         setupPending: sites.length - publishedSites,
-        productionOrders: orders.length,
-        completedOrders,
         commerceRecords: commerce.length,
         connectedStripe,
         connectedCalendar,
@@ -240,9 +211,7 @@ export default async (req) => {
         },
         storage: {
           clientAssets: clientAssets.length,
-          orderAssets: orderAssets.length,
-          productionPackages: packages.length,
-          trackedObjects: clientAssets.length + orderAssets.length + packages.length,
+          trackedObjects: clientAssets.length,
           bytesKnown: false,
         },
         runtime: {
@@ -261,11 +230,9 @@ export default async (req) => {
       },
       subscriptionBilling: subscriptionBillingReadiness(),
       operations: {
-        orderStatuses: countBy(orders, "status"),
         transactionStatuses: countBy(commerce, "status"),
         stripeWebhookEvents: stripeEvents.length,
         clientWebhookEvents: clientEvents.length,
-        stuckOrders: stuckOrders.map(publicOrder).slice(0, 25),
         pendingTransactions: pendingTransactions.slice(0, 25).map((record) => ({
           transactionId: record.transactionId || "",
           siteId: record.siteId || "",
@@ -275,7 +242,6 @@ export default async (req) => {
         })),
       },
       clients: clientRows.slice(0, 200),
-      orders: orderRows.slice(0, 100),
     }, { headers: { "Cache-Control": "no-store", "X-Robots-Tag": "noindex, nofollow" } });
   } catch (error) {
     return errorResponse(error);
