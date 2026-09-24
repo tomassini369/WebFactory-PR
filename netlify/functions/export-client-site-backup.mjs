@@ -1,6 +1,6 @@
 import { requirePlatformAdmin, errorResponse } from "../lib/client-auth.mjs";
 import { clientAssetStore, clientCommerceStore, clientSiteStore, getClientSite } from "../lib/client-store.mjs";
-import { cleanText } from "../lib/order-store.mjs";
+import { cleanText } from "../lib/platform-utils.mjs";
 
 async function readJsonPrefix(store, prefix) {
   const listed = await store.list({ prefix });
