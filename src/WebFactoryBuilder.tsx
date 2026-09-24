@@ -1143,9 +1143,7 @@ export default function WebFactoryBuilder({lang}:{lang:Language}) {
     try {
       const saved = localStorage.getItem(STORAGE_KEY)
       if (!saved) return initialState
-      const parsed = JSON.parse(saved) as Partial<BuilderState> & { business?: Partial<BuilderState['business']> & { address?: string } }
-              ? parsed.business.address
-        : undefined
+      const parsed = JSON.parse(saved) as Partial<BuilderState> & { business?: Partial<BuilderState['business']> }
       return {
         ...initialState,
         ...parsed,
