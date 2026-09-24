@@ -1,6 +1,6 @@
 import crypto from "node:crypto";
 import { clientOAuthStore } from "./client-store.mjs";
-import { publicBaseUrl } from "./order-store.mjs";
+import { publicBaseUrl } from "./platform-utils.mjs";
 
 function env(name) {
   return globalThis.Netlify?.env?.get(name) || "";
