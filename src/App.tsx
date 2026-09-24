@@ -184,7 +184,7 @@ function App(){
   if (builderRoute) return <><header className="header"><a href="/" className="logo"><img src={LOGO} alt="WebFactory PR"/></a><div className="header-actions"><a className="btn secondary desktop-cta" href="/client-admin">Log In</a><a className="btn secondary desktop-cta" href="/">{lang==='es'?'Volver al inicio':'Back to home'}</a><div className="langs"><button className={lang==='en'?'active':''} onClick={()=>setLang('en')}>EN</button><button className={lang==='es'?'active':''} onClick={()=>setLang('es')}>ES</button></div></div></header><main className="standalone-builder"><section className="section white builder"><div className="shell"><div className="builder-head"><Heading data={t.builder}/><div className="builder-price"><strong>7 días</strong><span>{lang==='es'?'gratis · sin tarjeta':'free · no card'}</span></div></div><RouteView><WebFactoryBuilder lang={lang}/></RouteView></div></section></main></>
 
   return <>
-    <header className="header">
+    <header className="header wf-home-header">
       <a href="#top" className="logo"><img src={LOGO} alt="WebFactory PR"/></a>
       <nav className={menu?'open':''}>{t.nav.map((n,i)=><a key={n} href={anchors[i]} onClick={()=>setMenu(false)}>{n}</a>)}<a className="mobile-portal-link" href="/client-admin" onClick={()=>setMenu(false)}>Log In</a></nav>
       <div className="header-actions">
@@ -195,7 +195,7 @@ function App(){
       </div>
     </header>
 
-    <main id="top">
+    <main id="top" className="wf-home">
       <section className="hero shell">
         <div>
           <p className="eyebrow">{t.hero.eyebrow}</p>

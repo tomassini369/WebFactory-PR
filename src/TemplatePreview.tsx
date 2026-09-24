@@ -260,20 +260,6 @@ function TemplateSite({ slug }: { slug: string }) {
             <div><small>{ui.catalogAvailable}</small><strong>{config.items.length} {ui.productsServices}</strong><span>{ui.catalogHint}</span></div>
             <button className="template-solid" onClick={() => setCatalogOpen(true)}>{ui.viewCatalog}</button>
           </div>
-          <div className="template-catalog-mobile-grid" aria-label={ui.catalogTitle}>
-            {config.items.map((item) => (
-              <CatalogCard
-                key={`mobile-${item.id}`}
-                item={item}
-                accent={config.accent}
-                onView={() => setSelectedItem(item)}
-                onAdd={() => addToCart(item)}
-                onBook={() => startBooking(item)}
-                language={language}
-                ui={ui}
-              />
-            ))}
-          </div>
         </section>
 
         {config.employees.length > 0 && (
