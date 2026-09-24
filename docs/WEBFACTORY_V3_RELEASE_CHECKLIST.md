@@ -1,7 +1,7 @@
 # WebFactory V3 — Release Checklist
 
 Status: pre-production checklist for PR #36  
-Latest validated head: `38cdc921d2fa84fe924433cbaa9708693b99a548` — CI green, Deploy Preview green, smoke test green, 0 commits behind `main`, PR mergeable and Ready for Review.  
+Validation rule: merge only from the current PR head after CI, Netlify Deploy Preview and smoke checks are green.  
 Branch: `feature/webfactory-v3-business-platform`
 
 ## Scope decision
@@ -17,7 +17,7 @@ The dedicated WebFactory iOS app is deferred. Native Stripe Terminal/Tap to Pay 
 - [x] Netlify secret scan reports no exposed credentials.
 - [x] Scheduled functions are present where expected.
 - [x] Deploy Preview smoke test verifies homepage, Templates, Builder, Client Portal and the V3 readiness endpoint over real HTTPS.
-- [ ] Publish the merged/current V3 build to Netlify production and verify `/.netlify/functions/v3-release-readiness` returns `readyForV3Web=true`. Production webhook/email secrets are intentionally not copied into Deploy Preview. The normal chat runtime cannot reach the Netlify upload proxy, so the final production publish requires Netlify UI/Work or another authenticated deploy environment.
+- [ ] After merge, publish the current V3 `main` build to Netlify production and verify `/.netlify/functions/v3-release-readiness` returns `readyForV3Web=true`.
 
 ### Automated verification
 - [x] `npm ci` passes in clean GitHub Actions runner.
@@ -32,9 +32,9 @@ The dedicated WebFactory iOS app is deferred. Native Stripe Terminal/Tap to Pay 
 - [x] Past-due Stripe subscriptions remain public only during Stripe retry lifecycle.
 - [x] Production Stripe monthly and annual Price IDs are present in Netlify configuration.
 - [x] Stripe live catalog cleanup completed: the active WebFactory product is now **WebFactory Business Platform** with current 7-day trial copy; the old $300 one-time Payment Link, one-time price and product are archived. The only active live prices are $30/month and $350/year.
-- [ ] Before accepting live WebFactory subscriptions, verify the production Netlify Stripe key is live-mode and atomically point `STRIPE_PRICE_WEBFACTORY_MONTHLY` / `STRIPE_PRICE_WEBFACTORY_ANNUAL` to the two active live recurring prices. The currently configured Netlify Price IDs do not resolve in the connected live WebFactory PR Stripe account, so they must not be changed independently of the key-mode verification.
+- [x] Verified against the connected live WebFactory PR Stripe account on 2026-09-24: `STRIPE_PRICE_WEBFACTORY_MONTHLY` resolves to the active $30/month price (`price_1UI5Df23p9ZYrJeALe0Xept2`) and `STRIPE_PRICE_WEBFACTORY_ANNUAL` resolves to the active $350/year price (`price_1UI5Dg23p9ZYrJeAnZpdvnVh`).
 - [x] Production subscription webhook secret is present in Netlify configuration.
-- [x] Confirmed `WEBFACTORY_SUBSCRIPTION_ENABLED=true` in dev, branch deploy, deploy preview and production.
+- [x] Confirmed `WEBFACTORY_SUBSCRIPTION_ENABLED=true` in dev, branch deploy, deploy preview and production.\n- [x] Stripe runtime safety added: live Stripe writes are permitted only in Netlify `production`; Deploy Preview/branch/dev must use a Stripe test key for Checkout, Payment Links, POS card checkout, refunds, Connect onboarding/account links and Terminal mutations.\n- [ ] Configure an isolated Stripe test key and compatible test Connect account/webhook setup for Deploy Preview before running payment E2E tests. The current Deploy Preview inherits the production live key, but write operations are now blocked by the V3 runtime guard.
 
 ### Complimentary access
 - [x] Email-only complimentary invitation flow is implemented.
