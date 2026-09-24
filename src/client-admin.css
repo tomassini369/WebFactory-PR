@@ -78,3 +78,5 @@
 .ca-danger-actions button{flex:0 0 auto;background:#fff;color:#b42318;border:1px solid rgba(180,35,24,.34);border-radius:12px;padding:10px 13px;font-weight:800}
 .ca-danger-actions button:hover{background:#fff2f0;border-color:#b42318}
 @media(max-width:680px){.ca-danger-actions article{align-items:stretch;flex-direction:column}.ca-danger-actions button{width:100%}}
+
+.ca-site-switcher{display:grid;gap:5px;margin-top:12px}.ca-site-switcher>span{font-size:.66rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.58)}.ca-site-switcher select{width:100%;border:1px solid rgba(255,255,255,.14);border-radius:12px;background:rgba(255,255,255,.08);color:#fff;padding:9px 10px;font:inherit}.ca-site-switcher select option{color:#0b1529;background:#fff}
