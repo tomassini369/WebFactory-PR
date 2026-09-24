@@ -3,6 +3,7 @@ import Stripe from "stripe";
 import { assertSameOrigin, errorResponse, requireSiteAccess } from "../lib/client-auth.mjs";
 import { publicBaseUrl } from "../lib/platform-utils.mjs";
 import { subscriptionBillingReadiness } from "../lib/subscription-billing.mjs";
+import { assertStripeWriteAllowed } from "../lib/stripe-runtime.mjs";
 
 function env(name) {
   return globalThis.Netlify?.env?.get(name) || "";
@@ -36,6 +37,7 @@ export default async (req) => {
       throw Object.assign(new Error("This website already has an active subscription."), { status: 409 });
     }
 
+    assertStripeWriteAllowed();
     const price = interval === "annual"
       ? env("STRIPE_PRICE_WEBFACTORY_ANNUAL")
       : env("STRIPE_PRICE_WEBFACTORY_MONTHLY");
