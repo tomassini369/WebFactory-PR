@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react'
 import DemoSite from './DemoSite'
 import TemplatesPage from './TemplatesPage'
 import WebFactoryBuilder from './WebFactoryBuilder'
-import PaymentSetupPage from './PaymentSetupPage'
 import ClientAdminPage from './ClientAdminPage'
 import ClientStorefront from './ClientStorefront'
 import WebFactoryAdminPage from './WebFactoryAdminPage'
@@ -21,7 +20,7 @@ const content = {
       eyebrow:'WEBSITE + COMMERCE + BOOKINGS',
       title:['Tu negocio.','Tu website.','Todo en un solo lugar.'],
       highlight:'Vende. Recibe citas. Cobra online.',
-      text:'Crea, publica y administra tu website comercial desde un portal privado. Usa Factory AI para construir o modificar contenido y estructura dentro del mismo Builder. Comienza con 48 horas gratis y sin tarjeta.',
+      text:'Crea, publica y administra tu website comercial desde un portal privado. Usa Factory AI para construir o modificar contenido y estructura dentro del mismo Builder. Comienza con 7 días gratis y sin tarjeta.',
       primary:'Crear mi website',
       secondary:'Ver Templates',
       once:'al mes'
@@ -39,7 +38,7 @@ const content = {
     how:['HOW IT WORKS','De configuración a publicación en cinco pasos.'],
     trust:['TRUST','Construido para una experiencia clara, segura y profesional.'],
     faq:['FAQ','Preguntas frecuentes.'],
-    final:['Build. Sell. Book. Grow.','Website profesional, commerce, pagos y reservaciones en una sola solución.'],
+    final:['Build. Sell. Book. Manage. Get Paid.','Website profesional, commerce, pagos y reservaciones en una sola solución.'],
     footer:'Todos los derechos reservados.'
   },
   en: {
@@ -48,7 +47,7 @@ const content = {
       eyebrow:'WEBSITE + COMMERCE + BOOKINGS',
       title:['Your business.','Your website.','Everything in one place.'],
       highlight:'Sell. Book. Get paid online.',
-      text:'Create, publish and manage your commerce website from a private portal. Use Factory AI to build or modify content and structure inside the same Builder. Start with 48 hours free and no card.',
+      text:'Create, publish and manage your commerce website from a private portal. Use Factory AI to build or modify content and structure inside the same Builder. Start with 7 days free and no card.',
       primary:'Create my website',
       secondary:'View Templates',
       once:'per month'
@@ -66,7 +65,7 @@ const content = {
     how:['HOW IT WORKS','From setup to publishing in five steps.'],
     trust:['TRUST','Built for a clear, secure and professional experience.'],
     faq:['FAQ','Frequently asked questions.'],
-    final:['Build. Sell. Book. Grow.','Professional website, commerce, payments and bookings in one solution.'],
+    final:['Build. Sell. Book. Manage. Get Paid.','Professional website, commerce, payments and bookings in one solution.'],
     footer:'All rights reserved.'
   }
 }
@@ -93,7 +92,7 @@ const features = {
 }
 
 const faqEs = [
-  ['¿Cuánto cuesta WebFactory?','$30 al mes o $350 al año. Puedes probarlo por 48 horas sin tarjeta y no cobramos comisión sobre tus ventas.'],
+  ['¿Cuánto cuesta WebFactory?','$30 al mes o $350 al año. Puedes probarlo por 7 días sin tarjeta y no cobramos comisión sobre tus ventas.'],
   ['¿WebFactory recibe el dinero de mis ventas?','No. Stripe y ATH Móvil se conectan a las cuentas del negocio.'],
   ['¿Puedo vender productos y también recibir citas?','Sí. El mismo website puede manejar productos, servicios, carrito y reservaciones.'],
   ['¿Mi página será igual a uno de los Templates?','Tú decides. Puedes comenzar con un diseño personalizado o escoger un Template como base. El Builder aplica tu marca, colores, textos, catálogo y configuraciones.'],
@@ -104,7 +103,7 @@ const faqEs = [
 ]
 
 const faqEn = [
-  ['How much does WebFactory cost?','$30 per month or $350 per year. Try it free for 48 hours with no card, and we charge no commission on your sales.'],
+  ['How much does WebFactory cost?','$30 per month or $350 per year. Try it free for 7 days with no card, and we charge no commission on your sales.'],
   ['Does WebFactory receive money from my sales?','No. Stripe and ATH Móvil connect to the business accounts.'],
   ['Can I sell products and also accept appointments?','Yes. The same website can handle products, services, cart and bookings.'],
   ['Will my website look exactly like one of the Templates?','You decide. Start with a custom design or choose a Template as your base. The Builder applies your brand, colors, copy, catalog and settings.'],
@@ -137,15 +136,13 @@ function App(){
   const t=content[lang]
   const faqs=lang==='es'?faqEs:faqEn
   useEffect(()=>{
-    if (!/^\/(demos|templates)\//.test(window.location.pathname)) document.documentElement.lang=lang
+    if (!/^\/templates\//.test(window.location.pathname)) document.documentElement.lang=lang
   },[lang])
 
   const anchors=['/templates','#incluye','/builder','#como-funciona','#faq']
   const templateMatch = window.location.pathname.match(/^\/templates\/([^/]+)\/?$/)
-  const legacyDemoMatch = window.location.pathname.match(/^\/demos\/([^/]+)\/?$/)
-  const templatesRoute = /^\/templates\/?$/.test(window.location.pathname)
-  const paymentSetupRoute = /^\/payment-setup\/?$/.test(window.location.pathname)
-  const clientAdminRoute = /^\/client-admin\/?$/.test(window.location.pathname)
+    const templatesRoute = /^\/templates\/?$/.test(window.location.pathname)
+    const clientAdminRoute = /^\/client-admin\/?$/.test(window.location.pathname)
   const webFactoryAdminRoute = /^\/webfactory-admin\/?$/.test(window.location.pathname)
   const identityInviteRoute = /^#invite_token=/.test(window.location.hash)
   const identityRecoveryRoute = /^#recovery_token=/.test(window.location.hash)
@@ -162,14 +159,9 @@ function App(){
   if (webFactoryAdminRoute || identityInviteRoute) return <WebFactoryAdminPage />
   if (clientAdminRoute) return <ClientAdminPage />
   if (clientSiteMatch) return <ClientStorefront slug={decodeURIComponent(clientSiteMatch[1])} />
-  if (paymentSetupRoute) return <PaymentSetupPage />
-  if (legacyDemoMatch) {
-    window.location.replace(`/templates/${legacyDemoMatch[1]}`)
-    return null
-  }
   if (templateMatch) return <DemoSite slug={templateMatch[1]} />
   if (templatesRoute) return <><header className="header"><a href="/" className="logo"><img src={LOGO} alt="WebFactory PR"/></a><div className="header-actions"><a className="btn secondary desktop-cta" href="/client-admin">{lang==='es'?'Portal de clientes':'Client portal'}</a><a className="btn secondary desktop-cta" href="/">{lang==='es'?'Volver al inicio':'Back to home'}</a><div className="langs"><button className={lang==='en'?'active':''} onClick={()=>setLang('en')}>EN</button><button className={lang==='es'?'active':''} onClick={()=>setLang('es')}>ES</button></div></div></header><TemplatesPage lang={lang}/></>
-  if (builderRoute) return <><header className="header"><a href="/" className="logo"><img src={LOGO} alt="WebFactory PR"/></a><div className="header-actions"><a className="btn secondary desktop-cta" href="/client-admin">{lang==='es'?'Sign In · Portal':'Sign In · Portal'}</a><a className="btn secondary desktop-cta" href="/">{lang==='es'?'Volver al inicio':'Back to home'}</a><div className="langs"><button className={lang==='en'?'active':''} onClick={()=>setLang('en')}>EN</button><button className={lang==='es'?'active':''} onClick={()=>setLang('es')}>ES</button></div></div></header><main className="standalone-builder"><section className="section white builder"><div className="shell"><div className="builder-head"><Heading data={t.builder}/><div className="builder-price"><strong>48h</strong><span>{lang==='es'?'gratis · sin tarjeta':'free · no card'}</span></div></div><WebFactoryBuilder lang={lang}/></div></section></main></>
+  if (builderRoute) return <><header className="header"><a href="/" className="logo"><img src={LOGO} alt="WebFactory PR"/></a><div className="header-actions"><a className="btn secondary desktop-cta" href="/client-admin">{lang==='es'?'Sign In · Portal':'Sign In · Portal'}</a><a className="btn secondary desktop-cta" href="/">{lang==='es'?'Volver al inicio':'Back to home'}</a><div className="langs"><button className={lang==='en'?'active':''} onClick={()=>setLang('en')}>EN</button><button className={lang==='es'?'active':''} onClick={()=>setLang('es')}>ES</button></div></div></header><main className="standalone-builder"><section className="section white builder"><div className="shell"><div className="builder-head"><Heading data={t.builder}/><div className="builder-price"><strong>7 días</strong><span>{lang==='es'?'gratis · sin tarjeta':'free · no card'}</span></div></div><WebFactoryBuilder lang={lang}/></div></section></main></>
 
   return <>
     <header className="header">
@@ -190,7 +182,7 @@ function App(){
           <h1>{t.hero.title.map(x=><span key={x}>{x}</span>)}</h1>
           <h3>{t.hero.highlight}</h3>
           <p className="lead">{t.hero.text}</p>
-          <div className="price"><strong>{PRICE}</strong><span>{t.hero.once} · 48h {lang==='es'?'gratis':'free'}</span></div>
+          <div className="price"><strong>{PRICE}</strong><span>{t.hero.once} · 7 días {lang==='es'?'gratis':'free'}</span></div>
           <div className="actions"><a className="btn primary" href="/builder">{t.hero.primary} <b>↗</b></a><a className="btn secondary" href="/templates">{t.hero.secondary}</a></div>
           <div className="badges">{(lang==='es'?['Responsive','Carrito','Stripe','ATH Móvil','Reservaciones','Google Calendar']:['Responsive','Cart','Stripe','ATH Móvil','Bookings','Google Calendar']).map(x=><span key={x}>{x}</span>)}</div>
         </div>
@@ -230,16 +222,16 @@ function App(){
 
       <section className="section soft"><div className="shell split reverse"><div className="payments"><article className="stripe"><b>stripe</b><strong>$74.99</strong><small>Secure checkout</small></article><article className="ath"><b>ATH Móvil</b><strong>$35.00</strong><small>Business payment</small></article><span>✓ {lang==='es'?'Fondos directos al negocio':'Funds go directly to the business'}</span></div><Heading data={t.payments}/></div></section>
 
-      <section className="section white" id="como-funciona"><div className="shell"><Heading data={t.how}/><div className="steps">{(lang==='es'?[['Describe o personaliza','Configura manualmente o usa Factory AI para proponer Template/Custom, contenido bilingüe y estructura.'],['Revisa','Mira el preview y decide si aplicar o descartar la propuesta de IA antes de guardar cambios.'],['Verifica','Recibe el acceso privado por email y establece tu contraseña.'],['Prueba','Activa 48 horas gratis sin tarjeta y publica tu website dentro de WebFactory.'],['Conecta y continúa','Vincula Stripe Connect y Google Calendar cuando los necesites y luego escoge $30 mensual o $350 anual.']]:[['Describe or customize','Configure manually or use Factory AI to propose Template/Custom, bilingual content and structure.'],['Review','Preview the result and choose whether to apply or discard the AI proposal before saving changes.'],['Verify','Receive private access by email and set your password.'],['Try it','Activate 48 hours free with no card and publish your website inside WebFactory.'],['Connect and continue','Link Stripe Connect and Google Calendar when needed, then choose $30 monthly or $350 yearly.']]).map(([a,b],i)=><article key={a}><em>0{i+1}</em><h3>{a}</h3><p>{b}</p></article>)}</div></div></section>
+      <section className="section white" id="como-funciona"><div className="shell"><Heading data={t.how}/><div className="steps">{(lang==='es'?[['Describe o personaliza','Configura manualmente o usa Factory AI para proponer Template/Custom, contenido bilingüe y estructura.'],['Revisa','Mira el preview y decide si aplicar o descartar la propuesta de IA antes de guardar cambios.'],['Verifica','Recibe el acceso privado por email y establece tu contraseña.'],['Prueba','Activa 7 días gratis sin tarjeta y publica tu website dentro de WebFactory.'],['Conecta y continúa','Vincula Stripe Connect y Google Calendar cuando los necesites y luego escoge $30 mensual o $350 anual.']]:[['Describe or customize','Configure manually or use Factory AI to propose Template/Custom, bilingual content and structure.'],['Review','Preview the result and choose whether to apply or discard the AI proposal before saving changes.'],['Verify','Receive private access by email and set your password.'],['Try it','Activate 7 days free with no card and publish your website inside WebFactory.'],['Connect and continue','Link Stripe Connect and Google Calendar when needed, then choose $30 monthly or $350 yearly.']]).map(([a,b],i)=><article key={a}><em>0{i+1}</em><h3>{a}</h3><p>{b}</p></article>)}</div></div></section>
 
       <section className="section soft"><div className="shell"><Heading data={t.trust}/><div className="trust">{['Responsive','Secure Payments','Employee Booking','Google Calendar','Direct Payments','Factory AI'].map((x,i)=><div key={x}><span>{['↔','✓','◉','▦','$','✦'][i]}</span><b>{x}</b></div>)}</div></div></section>
 
       <section className="section white" id="faq"><div className="shell faq"><Heading data={t.faq}/><div>{faqs.map(([q,a])=><details key={q}><summary>{q}<span>+</span></summary><p>{a}</p></details>)}</div></div></section>
 
-      <section className="final"><div className="shell"><div><p className="eyebrow">WEBFACTORY PR</p><h2>{t.final[0]}</h2><p>{t.final[1]}</p></div><aside><strong>48h</strong><span>{lang==='es'?'gratis · luego $30/mes o $350/año':'free · then $30/month or $350/year'}</span><a href="/builder" className="btn light">{t.hero.primary} ↗</a></aside></div></section>
+      <section className="final"><div className="shell"><div><p className="eyebrow">WEBFACTORY PR</p><h2>{t.final[0]}</h2><p>{t.final[1]}</p></div><aside><strong>7 días</strong><span>{lang==='es'?'gratis · luego $30/mes o $350/año':'free · then $30/month or $350/year'}</span><a href="/builder" className="btn light">{t.hero.primary} ↗</a></aside></div></section>
     </main>
 
-    <footer className="footer"><div className="shell"><div><img src={LOGO} alt="WebFactory PR"/><p>Build. Sell. Book. Grow.</p></div><nav>{(lang==='es'?['Producto','Templates','Funciones','Builder','FAQ','Contacto','Privacidad','Términos','Política de Reembolsos']:['Product','Templates','Features','Builder','FAQ','Contact','Privacy','Terms','Refund Policy']).map((x,i)=>{const href=i===1?'/templates':i===2?'#incluye':i===3?'/builder':i===4?'#faq':i===5?'mailto:info@webfactorypr.com':i===6?'/privacy':i===7?'/terms':i===8?'/refund-policy':'#top';const legal=i>=6;return <a key={x} href={href} target={legal?'_blank':undefined} rel={legal?'noreferrer':undefined}>{x}</a>})}</nav><p className="copyright">info@webfactorypr.com · © 2026 WebFactory PR. {t.footer}</p></div></footer>
+    <footer className="footer"><div className="shell"><div><img src={LOGO} alt="WebFactory PR"/><p>Build. Sell. Book. Manage. Get Paid.</p></div><nav>{(lang==='es'?['Producto','Templates','Funciones','Builder','FAQ','Contacto','Privacidad','Términos','Política de Reembolsos']:['Product','Templates','Features','Builder','FAQ','Contact','Privacy','Terms','Refund Policy']).map((x,i)=>{const href=i===1?'/templates':i===2?'#incluye':i===3?'/builder':i===4?'#faq':i===5?'mailto:info@webfactorypr.com':i===6?'/privacy':i===7?'/terms':i===8?'/refund-policy':'#top';const legal=i>=6;return <a key={x} href={href} target={legal?'_blank':undefined} rel={legal?'noreferrer':undefined}>{x}</a>})}</nav><p className="copyright">info@webfactorypr.com · © 2026 WebFactory PR. {t.footer}</p></div></footer>
   </>
 }
 
