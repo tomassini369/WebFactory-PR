@@ -15,6 +15,8 @@ The dedicated WebFactory iOS app is deferred. Native Stripe Terminal/Tap to Pay 
 - [x] Netlify Deploy Preview function bundle completes without errors.
 - [x] Netlify secret scan reports no exposed credentials.
 - [x] Scheduled functions are present where expected.
+- [x] Deploy Preview smoke test verifies homepage, Templates, Builder, Client Portal and the V3 readiness endpoint over real HTTPS.
+- [ ] After merge, verify the production `/.netlify/functions/v3-release-readiness` response returns `readyForV3Web=true`. Production webhook/email secrets are intentionally not copied into Deploy Preview.
 
 ### Automated verification
 - [x] `npm ci` passes in clean GitHub Actions runner.
