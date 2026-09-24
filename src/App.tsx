@@ -1,13 +1,22 @@
-import { useEffect, useState } from 'react'
-import TemplatePreview from './TemplatePreview'
-import TemplatesPage from './TemplatesPage'
-import WebFactoryBuilder from './WebFactoryBuilder'
-import ClientAdminPage from './ClientAdminPage'
-import ClientStorefront from './ClientStorefront'
-import WebFactoryAdminPage from './WebFactoryAdminPage'
-import PasswordRecoveryPage from './PasswordRecoveryPage'
-import LegalPage from './LegalPage'
-import PaymentLinkPage from './PaymentLinkPage'
+import { Suspense, lazy, useEffect, useState, type ReactNode } from 'react'
+
+const TemplatePreview = lazy(() => import('./TemplatePreview'))
+const TemplatesPage = lazy(() => import('./TemplatesPage'))
+const WebFactoryBuilder = lazy(() => import('./WebFactoryBuilder'))
+const ClientAdminPage = lazy(() => import('./ClientAdminPage'))
+const ClientStorefront = lazy(() => import('./ClientStorefront'))
+const WebFactoryAdminPage = lazy(() => import('./WebFactoryAdminPage'))
+const PasswordRecoveryPage = lazy(() => import('./PasswordRecoveryPage'))
+const LegalPage = lazy(() => import('./LegalPage'))
+const PaymentLinkPage = lazy(() => import('./PaymentLinkPage'))
+
+function RouteLoading(){
+  return <main className="route-loading" role="status" aria-live="polite"><span/><b>Loading WebFactory…</b></main>
+}
+
+function RouteView({children}:{children:ReactNode}){
+  return <Suspense fallback={<RouteLoading/>}>{children}</Suspense>
+}
 
 type Language = 'es' | 'en'
 
@@ -19,9 +28,9 @@ const content = {
     nav: ['Templates','Qué incluye','Builder','Cómo funciona','FAQ'],
     hero: {
       eyebrow:'WEBSITE + COMMERCE + BOOKINGS',
-      title:['Tu negocio.','Tu website.','Todo en un solo lugar.'],
-      highlight:'Vende. Recibe citas. Cobra online.',
-      text:'Crea, publica y administra tu website comercial desde un portal privado. Usa Factory AI para construir o modificar contenido y estructura dentro del mismo Builder. Comienza con 7 días gratis y sin tarjeta.',
+      title:['Tu negocio.','Tu plataforma.','Todo en un solo lugar.'],
+      highlight:'Build. Sell. Book. Manage. Grow.',
+      text:'Crea, publica y administra tu negocio online desde una sola plataforma. WebFactory combina website builder, comercio, pagos, reservaciones, equipo y herramientas de administración. Prueba por 7 días sin tarjeta.',
       primary:'Crear mi website',
       secondary:'Ver Templates',
       once:'al mes'
@@ -46,9 +55,9 @@ const content = {
     nav: ['Templates','What’s included','Builder','How it works','FAQ'],
     hero: {
       eyebrow:'WEBSITE + COMMERCE + BOOKINGS',
-      title:['Your business.','Your website.','Everything in one place.'],
-      highlight:'Sell. Book. Get paid online.',
-      text:'Create, publish and manage your commerce website from a private portal. Use Factory AI to build or modify content and structure inside the same Builder. Start with 7 days free and no card.',
+      title:['Your business.','Your platform.','Everything in one place.'],
+      highlight:'Build. Sell. Book. Manage. Grow.',
+      text:'Create, publish and run your online business from one platform. WebFactory brings together a website builder, commerce, payments, bookings, employees and business tools. Try it free for 7 days with no card required.',
       primary:'Create my website',
       secondary:'View Templates',
       once:'per month'
@@ -73,22 +82,30 @@ const content = {
 
 const features = {
   es: [
-    ['Responsive','Diseño unificado para computadora, tableta y móvil.'],
-    ['Commerce','Productos, servicios, vistas individuales, carrito y checkout.'],
-    ['Reservaciones','Disponibilidad por empleado con duración, buffer y depósitos.'],
-    ['Pagos','Stripe + ATH Móvil preparados para verificación segura en el servidor.'],
-    ['Equipo','Servicios, horarios, descansos, vacaciones y límites por empleado.'],
-    ['Portal','Publica cambios de catálogo, equipo, horarios e integraciones en tiempo real.'],
-    ['Factory AI','Factory AI puede proponer Templates, layouts, colores, contenido bilingüe, catálogo y equipo sin crear deployments separados.'],
+    ['Website Builder','Diseña, previsualiza y publica tu website desde un Builder visual.'],
+    ['Comercio','Administra productos, servicios, catálogo, carrito y pedidos.'],
+    ['Pagos','Conecta Stripe y ATH Móvil, comparte Payment Links y revisa transacciones.'],
+    ['Reservaciones','Disponibilidad por empleado con horarios, descansos y depósitos.'],
+    ['POS','Completa ventas presenciales con carrito, IVU y recibos.'],
+    ['CRM','Organiza clientes y actividad de ventas y reservaciones.'],
+    ['Inventario','Controla existencias, ajustes y productos con poco inventario.'],
+    ['Analítica','Consulta ventas, reservaciones y rendimiento del negocio.'],
+    ['Equipo','Asigna servicios, empleados, horarios y permisos.'],
+    ['Integraciones','Administra Stripe, Google Calendar y otros servicios conectados.'],
+    ['Factory AI','Prepara contenido y estructura bilingüe dentro del mismo Builder.'],
   ],
   en: [
-    ['Responsive','Desktop, tablet and mobile layouts designed as one experience.'],
-    ['Commerce','Products, services, item views, cart and checkout architecture.'],
-    ['Bookings','Employee-aware scheduling with duration, buffer and deposits.'],
-    ['Payments','Stripe + ATH Móvil prepared for secure backend verification.'],
-    ['Employees','Service mapping, schedules, breaks, vacations and limits.'],
-    ['Portal','Publish changes to your catalog, team, hours and integrations in real time.'],
-    ['Factory AI','Factory AI can propose Templates, layouts, colors, bilingual content, catalog and team without creating separate deployments.'],
+    ['Website Builder','Design, preview and publish your website from a visual Builder.'],
+    ['Commerce','Manage products, services, catalog, cart and orders.'],
+    ['Payments','Connect Stripe and ATH Móvil, share Payment Links and track transactions.'],
+    ['Bookings','Employee-aware scheduling with hours, breaks and deposits.'],
+    ['POS','Complete in-person sales with cart, tax and receipts.'],
+    ['CRM','Organize customers and sales and booking activity.'],
+    ['Inventory','Track stock, adjustments and low inventory.'],
+    ['Analytics','Review sales, bookings and business performance.'],
+    ['Employees','Assign services, schedules and portal roles.'],
+    ['Integrations','Manage Stripe, Google Calendar and connected services.'],
+    ['Factory AI','Prepare bilingual copy and page structure inside the Builder.'],
   ],
 }
 
@@ -154,24 +171,24 @@ function App(){
   const termsRoute = /^\/terms\/?$/.test(window.location.pathname)
   const refundRoute = /^\/refund-policy\/?$/.test(window.location.pathname)
 
-  if (identityRecoveryRoute) return <PasswordRecoveryPage />
-  if (privacyRoute) return <LegalPage kind="privacy" />
-  if (termsRoute) return <LegalPage kind="terms" />
-  if (refundRoute) return <LegalPage kind="refund" />
-  if (webFactoryAdminRoute || identityInviteRoute) return <WebFactoryAdminPage />
-  if (clientAdminRoute) return <ClientAdminPage />
-  if (clientSiteMatch) return <ClientStorefront slug={decodeURIComponent(clientSiteMatch[1])} />
-  if (paymentLinkMatch) return <PaymentLinkPage slug={decodeURIComponent(paymentLinkMatch[1])} token={decodeURIComponent(paymentLinkMatch[2])} />
-  if (templateMatch) return <TemplatePreview slug={templateMatch[1]} />
-  if (templatesRoute) return <><header className="header"><a href="/" className="logo"><img src={LOGO} alt="WebFactory PR"/></a><div className="header-actions"><a className="btn secondary desktop-cta" href="/client-admin">{lang==='es'?'Portal de clientes':'Client portal'}</a><a className="btn secondary desktop-cta" href="/">{lang==='es'?'Volver al inicio':'Back to home'}</a><div className="langs"><button className={lang==='en'?'active':''} onClick={()=>setLang('en')}>EN</button><button className={lang==='es'?'active':''} onClick={()=>setLang('es')}>ES</button></div></div></header><TemplatesPage lang={lang}/></>
-  if (builderRoute) return <><header className="header"><a href="/" className="logo"><img src={LOGO} alt="WebFactory PR"/></a><div className="header-actions"><a className="btn secondary desktop-cta" href="/client-admin">{lang==='es'?'Sign In · Portal':'Sign In · Portal'}</a><a className="btn secondary desktop-cta" href="/">{lang==='es'?'Volver al inicio':'Back to home'}</a><div className="langs"><button className={lang==='en'?'active':''} onClick={()=>setLang('en')}>EN</button><button className={lang==='es'?'active':''} onClick={()=>setLang('es')}>ES</button></div></div></header><main className="standalone-builder"><section className="section white builder"><div className="shell"><div className="builder-head"><Heading data={t.builder}/><div className="builder-price"><strong>7 días</strong><span>{lang==='es'?'gratis · sin tarjeta':'free · no card'}</span></div></div><WebFactoryBuilder lang={lang}/></div></section></main></>
+  if (identityRecoveryRoute) return <RouteView><PasswordRecoveryPage /></RouteView>
+  if (privacyRoute) return <RouteView><LegalPage kind="privacy" /></RouteView>
+  if (termsRoute) return <RouteView><LegalPage kind="terms" /></RouteView>
+  if (refundRoute) return <RouteView><LegalPage kind="refund" /></RouteView>
+  if (webFactoryAdminRoute || identityInviteRoute) return <RouteView><WebFactoryAdminPage /></RouteView>
+  if (clientAdminRoute) return <RouteView><ClientAdminPage /></RouteView>
+  if (clientSiteMatch) return <RouteView><ClientStorefront slug={decodeURIComponent(clientSiteMatch[1])} /></RouteView>
+  if (paymentLinkMatch) return <RouteView><PaymentLinkPage slug={decodeURIComponent(paymentLinkMatch[1])} token={decodeURIComponent(paymentLinkMatch[2])} /></RouteView>
+  if (templateMatch) return <RouteView><TemplatePreview slug={templateMatch[1]} /></RouteView>
+  if (templatesRoute) return <><header className="header"><a href="/" className="logo"><img src={LOGO} alt="WebFactory PR"/></a><div className="header-actions"><a className="btn secondary desktop-cta" href="/client-admin">Log In</a><a className="btn secondary desktop-cta" href="/">{lang==='es'?'Volver al inicio':'Back to home'}</a><div className="langs"><button className={lang==='en'?'active':''} onClick={()=>setLang('en')}>EN</button><button className={lang==='es'?'active':''} onClick={()=>setLang('es')}>ES</button></div></div></header><RouteView><TemplatesPage lang={lang}/></RouteView></>
+  if (builderRoute) return <><header className="header"><a href="/" className="logo"><img src={LOGO} alt="WebFactory PR"/></a><div className="header-actions"><a className="btn secondary desktop-cta" href="/client-admin">Log In</a><a className="btn secondary desktop-cta" href="/">{lang==='es'?'Volver al inicio':'Back to home'}</a><div className="langs"><button className={lang==='en'?'active':''} onClick={()=>setLang('en')}>EN</button><button className={lang==='es'?'active':''} onClick={()=>setLang('es')}>ES</button></div></div></header><main className="standalone-builder"><section className="section white builder"><div className="shell"><div className="builder-head"><Heading data={t.builder}/><div className="builder-price"><strong>7 días</strong><span>{lang==='es'?'gratis · sin tarjeta':'free · no card'}</span></div></div><RouteView><WebFactoryBuilder lang={lang}/></RouteView></div></section></main></>
 
   return <>
     <header className="header">
       <a href="#top" className="logo"><img src={LOGO} alt="WebFactory PR"/></a>
-      <nav className={menu?'open':''}>{t.nav.map((n,i)=><a key={n} href={anchors[i]} onClick={()=>setMenu(false)}>{n}</a>)}<a className="mobile-portal-link" href="/client-admin" onClick={()=>setMenu(false)}>{lang==='es'?'Sign In · Portal de clientes':'Sign In · Client Portal'}</a></nav>
+      <nav className={menu?'open':''}>{t.nav.map((n,i)=><a key={n} href={anchors[i]} onClick={()=>setMenu(false)}>{n}</a>)}<a className="mobile-portal-link" href="/client-admin" onClick={()=>setMenu(false)}>Log In</a></nav>
       <div className="header-actions">
-        <a href="/client-admin" className="btn secondary desktop-cta">{lang==='es'?'Portal de clientes':'Client portal'}</a>
+        <a href="/client-admin" className="btn secondary desktop-cta">Log In</a>
         <div className="langs"><button className={lang==='en'?'active':''} onClick={()=>setLang('en')}>EN</button><button className={lang==='es'?'active':''} onClick={()=>setLang('es')}>ES</button></div>
         <a href="/builder" className="btn primary desktop-cta">{t.hero.primary}</a>
         <button className="hamburger" aria-expanded={menu} onClick={()=>setMenu(v=>!v)}><i/><i/><i/></button>
@@ -185,7 +202,7 @@ function App(){
           <h1>{t.hero.title.map(x=><span key={x}>{x}</span>)}</h1>
           <h3>{t.hero.highlight}</h3>
           <p className="lead">{t.hero.text}</p>
-          <div className="price"><strong>{PRICE}</strong><span>{t.hero.once} · 7 días {lang==='es'?'gratis':'free'}</span></div>
+          <div className="price"><strong>{PRICE}<small>{lang==='es'?'/mes':'/month'}</small></strong><span>{lang==='es'?'Prueba gratis por 7 días · No requiere tarjeta':'7-day free trial · No card required'}<br/>{lang==='es'?'o $350 al año':'or $350/year'}</span></div>
           <div className="actions"><a className="btn primary" href="/builder">{t.hero.primary} <b>↗</b></a><a className="btn secondary" href="/templates">{t.hero.secondary}</a></div>
           <div className="badges">{(lang==='es'?['Responsive','Carrito','Stripe','ATH Móvil','Reservaciones','Google Calendar']:['Responsive','Cart','Stripe','ATH Móvil','Bookings','Google Calendar']).map(x=><span key={x}>{x}</span>)}</div>
         </div>
