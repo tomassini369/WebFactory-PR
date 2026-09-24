@@ -1,6 +1,6 @@
 import { requirePlatformAdmin, errorResponse } from "../lib/client-auth.mjs";
 import { clientAssetStore, clientCommerceStore, clientSiteStore, getClientSite } from "../lib/client-store.mjs";
-import { cleanText } from "../lib/order-store.mjs";
+import { cleanText } from "../lib/platform-utils.mjs";
 import { listV3Records } from "../lib/webfactory-v3-store.mjs";
 
 async function readPrefix(store, prefix) {
