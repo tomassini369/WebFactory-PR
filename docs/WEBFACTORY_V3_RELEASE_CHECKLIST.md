@@ -26,7 +26,7 @@ The dedicated WebFactory iOS app is deferred. Native Stripe Terminal/Tap to Pay 
 - [x] Existing already-started trials preserve their original `trialEndsAt`.
 - [x] Complimentary access remains public until explicitly revoked.
 - [x] Revoked complimentary access requires paid subscription.
-- [x] Legacy one-time $300 checkout is permanently retired; no real production customers depend on it.
+- [x] Unsupported entitlement models are not treated as public access.
 - [x] Past-due Stripe subscriptions remain public only during Stripe retry lifecycle.
 - [x] Production Stripe monthly and annual Price IDs are present in Netlify configuration.
 - [x] Production subscription webhook secret is present in Netlify configuration.
@@ -63,7 +63,7 @@ The dedicated WebFactory iOS app is deferred. Native Stripe Terminal/Tap to Pay 
 - [x] Multi-site clients can switch between assigned pages/businesses in the portal before editing or deleting a site.
 - [x] Identity member lookup is paginated instead of being limited to the first 500 users.
 - [x] Role model supports Owner, Manager, Employee and Cashier.
-- [x] Legacy Staff remains compatible.
+- [x] Portal roles use Owner, Manager, Employee and Cashier capability sets.
 - [x] Navigation is filtered by capabilities.
 - [x] Sensitive backend actions enforce capabilities.
 - [x] Owner can invite portal members.
@@ -83,7 +83,7 @@ The dedicated WebFactory iOS app is deferred. Native Stripe Terminal/Tap to Pay 
 - [ ] Manually test a Stripe test-mode storefront purchase end-to-end.
 - [ ] Current live Connect account was re-verified on 2026-09-24 and remains not charge-enabled (`charges_enabled=false`, `payouts_enabled=false`, `details_submitted=false`). Complete merchant onboarding before any live end-to-end payment test.
 - [ ] Manually test a Payment Link purchase end-to-end.
-- [x] Refund policy tests verify cumulative full refunds, remaining balance limits and one-time full-refund inventory restore logic. Backend cumulative refund math and tracked-inventory restore logic are covered by automated tests/build validation.
+- [x] Refund policy tests verify cumulative full refunds, remaining balance limits and single full-refund inventory restore logic. Backend cumulative refund math and tracked-inventory restore logic are covered by automated tests/build validation.
 - [x] Partial refund policy is cumulative; partial refunds do not restore inventory and the portal keeps refund action available until the refundable balance reaches zero. Portal now supports refund amount + reason and repeated partial refunds up to the remaining balance.
 
 ### Puerto Rico IVU
@@ -173,7 +173,7 @@ The dedicated WebFactory iOS app is deferred. Native Stripe Terminal/Tap to Pay 
 - [x] Existing Google Calendar mappings remain compatible.
 - [x] Factory AI boundaries remain unchanged.
 - [x] Backup/export current production tenant data before final V3 merge. Production-safe admin exporters are published on `main`, and the authenticated full production export was successfully downloaded and verified on iPhone on 2026-09-23.
-- [x] Subscription tests confirm legacy trials preserve their stored `trialEndsAt`; only newly created V3 trials receive the 7-day policy.
+- [x] Subscription tests confirm the current trial policy is exactly 7 days with `trialPolicyVersion: v3-7d`.
 
 ## Recommended release sequence
 
