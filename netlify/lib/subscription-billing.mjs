@@ -191,7 +191,7 @@ export async function processSubscriptionBillingEvent(event) {
   const siteId = String(metadataFor(event).webfactory_site_id || "").trim();
   if (!siteId) return { enabled: true, ignored: true, reason: "missing_site_id" };
   const site = await getClientSite(siteId);
-  if (!site) throw new Error(`Subscription site ${siteId} was not found.`);
+  if (!site) return { enabled: true, ignored: true, reason: "site_not_found", siteId };
   const servicePlan = billingStateFor(event, site.servicePlan || {});
   const entitlement = siteEntitlement({ ...site, servicePlan });
   const updated = await patchClientSite(siteId, {
