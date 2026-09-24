@@ -109,6 +109,9 @@ html[data-wf-platform-theme="true"][data-wf-theme="dark"] .faq>div:last-child{bo
 
 /* Template library */
 html[data-wf-platform-theme="true"][data-wf-theme="dark"] .templates-page{background:var(--wf-theme-dark-bg);color:var(--wf-theme-dark-text)}
+html[data-wf-platform-theme="true"][data-wf-theme="dark"] .template-groups{
+  background:rgba(13,20,34,.94);border-color:var(--wf-theme-dark-line);box-shadow:0 24px 60px rgba(0,0,0,.28);
+}
 html[data-wf-platform-theme="true"][data-wf-theme="dark"] .template-group-list button,
 html[data-wf-platform-theme="true"][data-wf-theme="dark"] .template-card{
   background:var(--wf-theme-dark-surface);border-color:var(--wf-theme-dark-line);color:var(--wf-theme-dark-text);
