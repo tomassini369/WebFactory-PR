@@ -5,7 +5,7 @@ import {
   clientEventStore,
   clientSiteStore,
 } from "../lib/client-store.mjs";
-import { eventStore } from "../lib/order-store.mjs";
+import { platformStripeEventStore } from "../lib/platform-utils.mjs";
 import { subscriptionBillingReadiness } from "../lib/subscription-billing.mjs";
 
 function env(name) {
@@ -134,7 +134,7 @@ export default async (req) => {
     const [sites, commerce, stripeEvents, clientEvents, clientAssets, netlifyUsage] = await Promise.all([
       records(clientSiteStore(), "sites/"),
       records(clientCommerceStore()),
-      records(eventStore(), "events/"),
+      records(platformStripeEventStore(), "events/"),
       records(clientEventStore()),
       list(clientAssetStore()),
       netlifyResourceUsage(),
