@@ -116,7 +116,7 @@ The dedicated WebFactory iOS app is deferred. Native Stripe Terminal/Tap to Pay 
 - [x] Completed eligible transactions queue review requests.
 - [x] Hourly processor sends due review requests.
 - [x] POS completed sales can queue review requests.
-- [ ] Test actual transactional email delivery in production provider configuration. Gmail fallback is currently configured; Mailjet keys are not present under the expected names. Admin-only transactional email test button is implemented under Resources.
+- [x] Transactional email delivery was successfully tested in production on 2026-09-24 using the configured Gmail fallback. The message was received by the platform administrator; Mailjet remains optional/not configured.
 - [x] Webhook retry guards prevent duplicate inventory/receipt/email side effects: `paymentStatus`, `v3ArtifactsCreatedAt`, `customerEmailSent`, `businessEmailSent`, plus Stripe event dedupe.
 
 ### POS reliability
