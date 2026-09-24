@@ -130,11 +130,13 @@ export function ThemeToggle({ floating = false }: { floating?: boolean }) {
 type AdaptiveLogoProps = Omit<ImgHTMLAttributes<HTMLImageElement>, 'src'> & {
   lightSrc?: string
   darkSrc?: string
+  variant?: 'auto' | 'light' | 'dark'
 }
 
 export function AdaptiveLogo({
   lightSrc = '/webfactory-pr-logo.png',
   darkSrc = '/webfactory-pr-logo-dark.png',
+  variant = 'auto',
   className = '',
   alt = 'WebFactory PR',
   onError,
@@ -147,7 +149,7 @@ export function AdaptiveLogo({
     setDarkFailed(false)
   }, [darkSrc])
 
-  const useDarkLogo = isPlatformSurface && theme === 'dark' && !darkFailed
+  const useDarkLogo = !darkFailed && (variant === 'dark' || (variant === 'auto' && isPlatformSurface && theme === 'dark'))
 
   return (
     <img
