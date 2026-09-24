@@ -22,6 +22,7 @@ html[data-wf-platform-theme="true"][data-wf-theme="dark"] .wf-theme-toggle{
   box-shadow:0 18px 48px rgba(0,0,0,.38);
 }
 .wf-adaptive-logo{display:block;max-width:100%;height:auto;object-fit:contain;image-rendering:auto;transition:opacity .18s ease}
+.wf-adaptive-logo[data-logo-theme="dark"]{aspect-ratio:1086 / 652;object-fit:contain}
 @media(max-width:820px){
   .wf-theme-toggle{width:52px;height:52px;border-radius:17px}
   .wf-theme-toggle.floating{top:calc(env(safe-area-inset-top,0px) + 82px);right:12px}
@@ -59,6 +60,8 @@ html[data-wf-platform-theme="true"][data-wf-theme="light"] .wf-home-header nav a
 html[data-wf-platform-theme="true"][data-wf-theme="light"] .wf-home-header .langs{background:#f3f6fb;border-color:#dce8f7}
 html[data-wf-platform-theme="true"][data-wf-theme="light"] .wf-home-header .langs button{color:#6e7786}
 html[data-wf-platform-theme="true"][data-wf-theme="light"] .wf-home-header .langs button.active{background:#0b1529;color:#fff}
+html[data-wf-platform-theme="true"][data-wf-theme="light"] .wf-home-header .desktop-cta{color:#0b1529}
+html[data-wf-platform-theme="true"][data-wf-theme="dark"] .wf-home-header{background:#04132a;border-color:rgba(255,255,255,.12)}
 html[data-wf-platform-theme="true"][data-wf-theme="dark"] .header nav a{color:#B8C5D7}
 html[data-wf-platform-theme="true"][data-wf-theme="dark"] .header nav a:hover{background:#152138;color:#fff}
 html[data-wf-platform-theme="true"][data-wf-theme="dark"] .langs{background:#0A101C;border-color:var(--wf-theme-dark-line)}
