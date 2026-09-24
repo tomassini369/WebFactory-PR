@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
 import Stripe from "stripe";
 import { assertSameOrigin, errorResponse, requireSiteAccess } from "../lib/client-auth.mjs";
-import { publicBaseUrl } from "../lib/order-store.mjs";
+import { publicBaseUrl } from "../lib/platform-utils.mjs";
 import { subscriptionBillingReadiness } from "../lib/subscription-billing.mjs";
 
 function env(name) {
