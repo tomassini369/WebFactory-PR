@@ -1,5 +1,5 @@
 import crypto from "node:crypto";
-import { eventStore } from "../lib/order-store.mjs";
+import { platformStripeEventStore } from "../lib/platform-utils.mjs";
 import { isSubscriptionBillingEvent, processSubscriptionBillingEvent } from "../lib/subscription-billing.mjs";
 
 function env(name) {
@@ -49,14 +49,14 @@ export default async (req) => {
 
     const event = JSON.parse(rawBody);
     const processedKey = `events/${event.id}.json`;
-    const processed = await eventStore().get(processedKey, { type:"json" });
+    const processed = await platformStripeEventStore().get(processedKey, { type:"json" });
     if (processed?.completed) {
       return Response.json({ received:true,duplicate:true });
     }
 
     if (isSubscriptionBillingEvent(event)) {
       const billing = await processSubscriptionBillingEvent(event);
-      await eventStore().setJSON(processedKey, {
+      await platformStripeEventStore().setJSON(processedKey, {
         completed:true,
         eventType:event.type,
         billing,
@@ -65,7 +65,7 @@ export default async (req) => {
       return Response.json({ received:true,billing });
     }
 
-    await eventStore().setJSON(processedKey, {
+    await platformStripeEventStore().setJSON(processedKey, {
       completed:true,
       ignored:true,
       retiredLegacyFlow:true,
