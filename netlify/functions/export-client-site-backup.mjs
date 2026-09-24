@@ -1,5 +1,5 @@
 import { requirePlatformAdmin, errorResponse } from "../lib/client-auth.mjs";
-import { clientCommerceStore, clientSiteStore, getClientSite } from "../lib/client-store.mjs";
+import { clientAssetStore, clientCommerceStore, clientSiteStore, getClientSite } from "../lib/client-store.mjs";
 import { cleanText } from "../lib/order-store.mjs";
 import { listV3Records } from "../lib/webfactory-v3-store.mjs";
 
@@ -11,6 +11,16 @@ async function readPrefix(store, prefix) {
     if (value) records.push({ key: blob.key, value });
   }
   return records;
+}
+
+async function assetManifest(siteId) {
+  const listed = await clientAssetStore().list({ prefix: `sites/${siteId}/` });
+  const assets = [];
+  for (const blob of listed.blobs || []) {
+    const meta = await clientAssetStore().getMetadata(blob.key);
+    assets.push({ key: blob.key, etag: blob.etag || "", metadata: meta?.metadata || {} });
+  }
+  return assets;
 }
 
 export default async (req) => {
@@ -28,6 +38,7 @@ export default async (req) => {
     for (const collection of ["customers","receipts","payment-links","inventory-movements","review-requests"]) {
       v3Collections[collection] = await listV3Records(siteId, collection, { limit: 1000 });
     }
+    const assets = await assetManifest(siteId);
 
     const payload = {
       exportVersion: "webfactory-v3-site-backup-1",
@@ -37,6 +48,7 @@ export default async (req) => {
       site,
       commerce,
       v3Collections,
+      assets,
     };
 
     return new Response(JSON.stringify(payload, null, 2), {
