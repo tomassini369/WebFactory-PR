@@ -1,5 +1,5 @@
 import { useState, type Dispatch, type SetStateAction } from 'react'
-import { demoConfigs } from './demoData'
+import { templateConfigs } from './templateData'
 
 type Language='es'|'en'
 type ItemType='product'|'service'
@@ -13,7 +13,7 @@ type Proposal={
   team:Array<{name:string;roleEn:string;roleEs:string;serviceIndexes:number[]}>
 }
 
-const categories=[...new Set([...demoConfigs.map((demo)=>demo.category),'Other'])]
+const categories=[...new Set([...templateConfigs.map((template)=>template.category),'Other'])]
 const createId=(prefix:string)=>`${prefix}-${Date.now()}-${Math.random().toString(36).slice(2,7)}`
 
 export default function BuilderAiAssistant({state,setState,lang}:{state:any;setState:Dispatch<SetStateAction<any>>;lang:Language}){
@@ -71,7 +71,7 @@ export default function BuilderAiAssistant({state,setState,lang}:{state:any;setS
       id:createId('employee'),name:member.name,role:member.roleEn||member.roleEs,roleEn:member.roleEn,roleEs:member.roleEs,
       serviceIds:member.serviceIndexes.map((index)=>generatedCatalog[index]?.id).filter(Boolean),
     }))
-    const template=demoConfigs.find((entry)=>entry.slug===proposal.design.templateSlug)
+    const template=templateConfigs.find((entry)=>entry.slug===proposal.design.templateSlug)
     setState((current:any)=>({
       ...current,
       business:{
@@ -113,7 +113,7 @@ export default function BuilderAiAssistant({state,setState,lang}:{state:any;setS
         <small>{lang==='es'?'PROPUESTA DE FACTORY AI':'FACTORY AI PROPOSAL'}</small>
         <strong>{lang==='es'?(proposal.summaryEs||proposal.summaryEn):(proposal.summaryEn||proposal.summaryEs)}</strong>
         <div>
-          <span>{proposal.design.templateSlug?'Template · '+(demoConfigs.find(x=>x.slug===proposal.design.templateSlug)?.name||proposal.design.templateSlug):'Custom'}</span>
+          <span>{proposal.design.templateSlug?'Template · '+(templateConfigs.find(x=>x.slug===proposal.design.templateSlug)?.name||proposal.design.templateSlug):'Custom'}</span>
           <span>{proposal.catalog.length} {lang==='es'?'artículos':'items'}</span>
           <span>{proposal.team.length} {lang==='es'?'miembros de equipo':'team members'}</span>
         </div>
