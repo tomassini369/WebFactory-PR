@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useState, type ImgHTMLAttributes, type ReactNode } from 'react'
+import { createContext, useContext, useEffect, useLayoutEffect, useMemo, useState, type ImgHTMLAttributes, type ReactNode } from 'react'
 
 type Theme = 'light' | 'dark'
 
@@ -59,7 +59,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     [],
   )
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     applyDocumentTheme(theme, isPlatformSurface)
   }, [theme, isPlatformSurface])
 
