@@ -78,9 +78,8 @@ const copy={
           'Features may depend on third-party availability, account approval, configuration, browser/device support, or the selected business settings.'
         ]],
         ['3. Trial and subscription pricing',[
-          'The current public offering includes a 48-hour free trial with no card required. After the trial, continued public availability requires an active WebFactory subscription.',
+          'The current public offering includes a 7-day free trial with no card required. After the trial, continued public availability requires an active WebFactory subscription.',
           'Current standard pricing is $30 USD per month or $350 USD per year unless a different written offer is shown at checkout. WebFactory currently charges no commission on the sales processed by a client business through its website.',
-          'Grandfathered legacy accounts may remain subject to earlier one-time-payment terms. Those legacy terms do not change the current public subscription offer.'
         ]],
         ['4. Billing and renewals',[
           'Subscription checkout and recurring billing are processed by Stripe. A paid subscription renews according to the billing interval selected unless it is canceled before the next renewal.',
@@ -146,8 +145,8 @@ const copy={
       title:'Refund Policy',
       intro:'This policy explains refunds for WebFactory subscription fees and separately explains how refunds work for purchases made from businesses that use the WebFactory platform.',
       sections:[
-        ['1. 48-hour free trial',[
-          'The current WebFactory subscription offering begins with a 48-hour free trial and does not require a payment card to start. The trial is intended to let the business evaluate its website and portal before purchasing a subscription.'
+        ['1. 7-day free trial',[
+          'The current WebFactory subscription offering begins with a 7-day free trial and does not require a payment card to start. The trial is intended to let the business evaluate its website and portal before purchasing a subscription.'
         ]],
         ['2. WebFactory monthly and annual subscription fees',[
           'After the free trial, standard WebFactory pricing is $30 USD per month or $350 USD per year. Subscription payments are processed through Stripe.',
@@ -169,13 +168,10 @@ const copy={
         ['6. Booking deposits and appointment payments',[
           'Whether a booking deposit or appointment payment is refundable is determined by the client business’s own cancellation and refund policy unless applicable law requires otherwise. WebFactory provides the booking and payment infrastructure but does not independently decide whether the end customer is entitled to a refund.'
         ]],
-        ['7. Legacy accounts',[
-          'Grandfathered WebFactory accounts purchased under an earlier one-time-payment arrangement remain subject to the written terms that applied to that purchase, together with any non-waivable rights under applicable law.'
-        ]],
-        ['8. How to request a WebFactory billing review',[
+        ['7. How to request a WebFactory billing review',[
           'For a WebFactory subscription billing issue, email billing@webfactorypr.com from the email associated with the account and include the business name, approximate charge date, amount, and a brief explanation. Do not send full card numbers, banking passwords, secret keys, or 2FA codes by email.'
         ]],
-        ['9. Policy changes',[
+        ['8. Policy changes',[
           'WebFactory may update this Refund Policy as billing features or service plans change. Changes apply prospectively unless applicable law requires otherwise.'
         ]]
       ]
@@ -252,9 +248,8 @@ const copy={
           'Algunas funciones dependen de servicios de terceros, aprobación de cuentas, configuración, navegador/dispositivo y ajustes seleccionados por el negocio.'
         ]],
         ['3. Prueba y precios de suscripción',[
-          'La oferta pública actual incluye una prueba gratis de 48 horas sin tarjeta. Luego de la prueba, mantener el website públicamente disponible requiere una suscripción activa.',
+          'La oferta pública actual incluye una prueba gratis de 7 días sin tarjeta. Luego de la prueba, mantener el website públicamente disponible requiere una suscripción activa.',
           'El precio estándar actual es $30 USD al mes o $350 USD al año, salvo que se muestre otra oferta escrita en checkout. Actualmente WebFactory no cobra comisión sobre las ventas procesadas por el negocio cliente.',
-          'Las cuentas legacy previamente pagadas pueden continuar sujetas a condiciones anteriores de pago único. Esas condiciones legacy no modifican la oferta pública actual.'
         ]],
         ['4. Facturación y renovaciones',[
           'El checkout de suscripción y la facturación recurrente se procesan mediante Stripe. La suscripción pagada se renueva según el intervalo seleccionado a menos que se cancele antes de la próxima renovación.',
@@ -320,8 +315,8 @@ const copy={
       title:'Política de Reembolsos',
       intro:'Esta política explica los reembolsos de cargos de suscripción de WebFactory y, por separado, cómo funcionan los reembolsos de compras realizadas a negocios que utilizan la plataforma WebFactory.',
       sections:[
-        ['1. Prueba gratis de 48 horas',[
-          'La oferta actual de suscripción comienza con una prueba gratis de 48 horas y no requiere tarjeta para comenzar. La prueba permite al negocio evaluar su website y portal antes de adquirir una suscripción.'
+        ['1. Prueba gratis de 7 días',[
+          'La oferta actual de suscripción comienza con una prueba gratis de 7 días y no requiere tarjeta para comenzar. La prueba permite al negocio evaluar su website y portal antes de adquirir una suscripción.'
         ]],
         ['2. Suscripción mensual y anual de WebFactory',[
           'Luego de la prueba, el precio estándar es $30 USD al mes o $350 USD al año. Los pagos de suscripción se procesan mediante Stripe.',
@@ -343,13 +338,10 @@ const copy={
         ['6. Depósitos y pagos de citas',[
           'La devolución de un depósito o pago de cita depende de la política propia del negocio cliente, salvo que la ley aplicable exija otra cosa. WebFactory brinda la infraestructura de reservación y pago, pero no decide independientemente si el comprador final tiene derecho a reembolso.'
         ]],
-        ['7. Cuentas legacy',[
-          'Las cuentas grandfathered adquiridas bajo un acuerdo anterior de pago único continúan sujetas a las condiciones escritas aplicables a esa compra, junto con derechos que la ley no permita renunciar.'
-        ]],
-        ['8. Cómo solicitar revisión de un cargo WebFactory',[
+        ['7. Cómo solicitar revisión de un cargo WebFactory',[
           'Para un problema de facturación de una suscripción WebFactory, escribe a billing@webfactorypr.com desde el email asociado a la cuenta e incluye nombre del negocio, fecha aproximada del cargo, cantidad y una explicación breve. No envíes números completos de tarjeta, contraseñas bancarias, llaves secretas ni códigos 2FA por email.'
         ]],
-        ['9. Cambios a esta política',[
+        ['8. Cambios a esta política',[
           'WebFactory puede actualizar esta Política de Reembolsos cuando cambien las funciones de facturación o planes. Los cambios aplican prospectivamente salvo que la ley exija otra cosa.'
         ]]
       ]
