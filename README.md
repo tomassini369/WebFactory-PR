@@ -4,6 +4,8 @@ Official WebFactory PR business platform.
 
 ## Current product
 
+Repository audit: current source and production model use WebFactory V3 only — 7-day trial, subscription billing, complimentary access, Templates, current portals and V3 commerce/operations. Pre-V3 order, package and demo compatibility code has been removed.
+
 **WebFactory Business Platform — subscription SaaS**
 
 - 7-day free trial with no card.
