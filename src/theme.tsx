@@ -134,7 +134,7 @@ type AdaptiveLogoProps = Omit<ImgHTMLAttributes<HTMLImageElement>, 'src'> & {
 
 export function AdaptiveLogo({
   lightSrc = '/webfactory-pr-logo.png',
-  darkSrc = '/webfactory-pr-logo-dark.png',
+  darkSrc = '/webfactory-pr-logo-dark.svg',
   className = '',
   alt = 'WebFactory PR',
   onError,
