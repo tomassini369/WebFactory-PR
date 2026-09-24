@@ -31,7 +31,7 @@ export default async(req)=>{
     const payload=await req.json();
     const {user,site,membership}=await requireSiteAccess(payload.siteId,["owner"]);
     if(!["owner","admin"].includes(membership.role||""))throw Object.assign(new Error("Only the owner can connect Stripe."),{status:403});
-    assertStripeWriteAllowed();
+    assertStripeWriteAllowed({ requestUrl: req.url });
 
     let accountId=String(site.paymentRules?.stripeConnectedAccountId||"").trim();
     let updated=site;
