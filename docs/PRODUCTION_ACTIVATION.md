@@ -1,52 +1,50 @@
-# WebFactory Production Activation Handoff
-
-This document is the final production activation checklist for the WebFactory subscription runtime.
+# WebFactory V3 — Production Activation
 
 ## Current commercial model
 
-- Existing/grandfathered clients keep the original one-time $300 model.
-- New SaaS clients receive a 48-hour free trial.
-- Monthly plan: $30 USD.
-- Annual plan: $350 USD.
-- Annual savings versus 12 monthly payments: $10 USD.
-- A trial that expires without an active subscription must no longer be publicly accessible until billing is activated.
+- 7-day free trial with no card.
+- $30 USD monthly.
+- $350 USD annual.
+- $10 annual savings versus 12 monthly payments.
+- Complimentary access is supported when granted by the WebFactory administrator.
+- A site without an active trial, active subscription or complimentary entitlement is not publicly available.
 
-## Required Netlify environment variables
+## Required Netlify configuration
 
-The subscription runtime must remain disabled until all of these are configured in production:
+### Stripe Billing
 
 - `STRIPE_SECRET_KEY`
-- `STRIPE_PRICE_WEBFACTORY_MONTHLY` — Stripe Price ID for $30/month.
-- `STRIPE_PRICE_WEBFACTORY_ANNUAL` — Stripe Price ID for $350/year.
-- `STRIPE_WEBHOOK_SECRET` — signing secret for the production webhook.
-- `WEBFACTORY_SUBSCRIPTION_ENABLED=true` — set this only after the items above are confirmed.
+- `STRIPE_PRICE_WEBFACTORY_MONTHLY`
+- `STRIPE_PRICE_WEBFACTORY_ANNUAL`
+- `STRIPE_WEBHOOK_SECRET`
+- `WEBFACTORY_SUBSCRIPTION_ENABLED=true`
 
-Control Center resource telemetry can additionally use:
+### Stripe Connect
 
-- `NETLIFY_API_TOKEN` — private Netlify personal access token, Functions/runtime scope only.
-- `NETLIFY_SITE_ID` — production site ID.
-- `NETLIFY_ACCOUNT_ID` — owning Netlify team/account ID.
+- `STRIPE_CONNECT_WEBHOOK_SECRET`
 
-The API integration reports the real plan and production deploy count. Exact credit balance remains labeled separately because Netlify does not expose the official Usage & Billing meter through the project endpoint; never present estimated deploy credits as the official balance.
+### Google Calendar
 
-The existing one-time checkout also continues to use:
+- `GOOGLE_OAUTH_CLIENT_ID`
+- `GOOGLE_OAUTH_CLIENT_SECRET`
+- `WEBFACTORY_TOKEN_ENCRYPTION_KEY`
 
-- `STRIPE_PRICE_WEBFACTORY_PREMIUM` — existing $300 one-time price.
+### Optional Control Center telemetry
 
-Do not replace or reuse the one-time Price ID for either subscription plan.
+- `NETLIFY_API_TOKEN`
+- `NETLIFY_SITE_ID`
+- `NETLIFY_ACCOUNT_ID`
 
-## Stripe product/price setup
+Never expose secret values in frontend code, logs or screenshots.
 
-Create or confirm recurring Stripe prices that exactly match:
+## Stripe recurring prices
 
-- Monthly: USD 30.00, recurring monthly.
-- Annual: USD 350.00, recurring yearly.
+- Monthly: USD 30.00 recurring monthly.
+- Annual: USD 350.00 recurring yearly.
 
-Copy the resulting `price_...` IDs into the corresponding Netlify environment variables.
+## Subscription webhook events
 
-## Production webhook
-
-Use the existing WebFactory Stripe webhook endpoint and subscribe it to at least:
+At minimum:
 
 - `checkout.session.completed`
 - `customer.subscription.created`
@@ -55,79 +53,57 @@ Use the existing WebFactory Stripe webhook endpoint and subscribe it to at least
 - `invoice.paid`
 - `invoice.payment_failed`
 
-Copy the production webhook signing secret (`whsec_...`) into `STRIPE_WEBHOOK_SECRET`.
+## Acceptance tests
 
-## Activation order
+### 7-day trial
 
-1. Configure monthly and annual Stripe prices.
-2. Configure the production webhook and signing secret.
-3. Confirm `STRIPE_SECRET_KEY` is present in production.
-4. Deploy the current `main` branch.
-5. Open WebFactory Control Center and verify all Billing readiness checks are green.
-6. Only then set `WEBFACTORY_SUBSCRIPTION_ENABLED=true`.
-7. Trigger a new production deploy if Netlify requires it for the environment change.
-
-## End-to-end acceptance tests
-
-Run all tests with a dedicated test client/site before accepting live SaaS customers.
-
-### Trial
-
-- Start a new 48-hour trial.
-- Confirm the client site is public during the trial.
-- Confirm no card is requested to start the trial.
+- Start a new trial.
+- Confirm no card is required.
+- Confirm the site becomes public.
+- Confirm `trialEndsAt` is exactly seven days after `trialStartedAt`.
+- Confirm expiration hides the site when no subscription exists.
 
 ### Monthly subscription
 
 - Select $30/month.
-- Complete Stripe Checkout.
-- Confirm the webhook updates the site to an active subscription.
+- Complete Stripe Checkout in the intended environment.
+- Confirm the signed webhook activates the correct site.
 - Confirm the site remains public.
-- Confirm Control Center reflects the active subscription.
 
 ### Annual subscription
 
 - Select $350/year.
-- Complete Stripe Checkout.
-- Confirm the same activation behavior as monthly.
-- Confirm the UI displays the $10 annual saving accurately.
+- Confirm the same activation behavior.
+- Confirm the UI shows the $10 annual saving accurately.
 
-### Expired trial
-
-- Use a controlled test record with an expired trial.
-- Run/confirm the scheduled trial enforcement function.
-- Confirm the site becomes unavailable to the public.
-- Confirm the private client portal still allows the owner to select a paid plan.
-- Complete payment and confirm the site becomes public again.
-
-### Payment failure
+### Failed payment
 
 - Test `invoice.payment_failed`.
-- Confirm the site/service enters the expected past-due state.
-- Confirm Control Center reports the billing problem.
+- Confirm the site enters the expected Stripe retry/past-due state.
+- Confirm Control Center reports the billing issue.
 
 ### Cancellation
 
 - Cancel a test subscription.
-- Confirm `customer.subscription.deleted` updates the WebFactory site state.
-- Confirm public entitlement follows the configured cancellation behavior.
+- Confirm Stripe lifecycle events update WebFactory.
+- Confirm entitlement follows the current cancellation state.
 
-## Do not change during activation
+### Client commerce
 
-- Existing $300 one-time product and checkout.
-- Existing grandfathered client records.
-- WebFactory logo/brand assets.
-- Production Package flow for one-time purchases.
-- Stripe Connect logic used by client businesses to receive their own customer payments.
+- Complete Storefront and Payment Link tests through a properly onboarded Stripe Connect account.
+- Confirm receipt, CRM, inventory and analytics updates.
+- Validate POS on iPhone Safari/Home Screen and desktop/tablet.
 
 ## Final success criteria
 
-WebFactory SaaS is production-ready only when:
+WebFactory V3 is production-ready when:
 
-- Control Center reports subscription Billing as ready.
-- Both recurring Price IDs are production values.
-- The signed production webhook is receiving events successfully.
-- Trial expiration hides unpaid sites.
-- Monthly and annual Checkout both activate the correct site.
-- Failed/canceled subscriptions update site entitlement correctly.
-- Existing $300 customers remain unaffected.
+- build and Deploy Preview are green
+- no secrets are exposed
+- subscription Billing readiness is green
+- 7-day trial behavior is verified
+- monthly and annual subscription flows are verified
+- transactional email delivery is verified
+- Stripe Connect merchant onboarding is complete for live payment testing
+- Storefront, Payment Link and POS E2E checks are complete
+- production backup is current
