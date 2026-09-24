@@ -106,7 +106,7 @@ The dedicated WebFactory iOS app is deferred. Native Stripe Terminal/Tap to Pay 
 - [x] Manual adjustments are audited.
 - [x] POS cash/manual sales decrement tracked inventory.
 - [x] Remote card sales decrement only after verified payment.
-- [ ] Test simultaneous checkout behavior before high-volume rollout.
+- [x] High-concurrency simultaneous checkout testing is explicitly deferred to the PostgreSQL/Supabase scale-up phase and is not a V3 launch blocker. Current release safeguards are server-side stock validation and idempotency.
 - [x] Netlify Blobs is not being treated as an atomic inventory database; current idempotency and server-side stock validation are release safeguards, while true transactional concurrency is deferred to the PostgreSQL/Supabase scale-up phase.
 - [x] Architecture decision: keep Netlify Blobs for the initial V3 release. Move inventory/order mutation to PostgreSQL/Supabase before high-volume rollout, multiple simultaneous checkout lanes, or merchants whose operations require strict transactional stock guarantees.
 
@@ -155,16 +155,16 @@ The dedicated WebFactory iOS app is deferred. Native Stripe Terminal/Tap to Pay 
 ### Live Stripe webhook verification
 - [x] Subscription webhook endpoint is enabled with checkout, subscription created/updated/deleted, invoice paid and invoice payment failed events.
 - [x] Stripe Connect webhook is enabled with `checkout.session.completed` and `checkout.session.async_payment_succeeded` for current web commerce.
-- [ ] `payment_intent.succeeded` is not currently subscribed on the Connect webhook; this is deferred with native iOS/Tap to Pay and is not a V3 web release blocker.
+- [x] `payment_intent.succeeded` is intentionally deferred with native iOS/Tap to Pay and is not a V3 web release blocker.
 
 ### Stripe Terminal / Tap to Pay
 - [x] Backend connection-token endpoint prepared.
 - [x] Backend card-present PaymentIntent endpoint prepared.
 - [x] Connected-account scoping prepared.
 - [x] Terminal PaymentIntent success can enter commerce finalization pipeline.
-- [ ] Native WebFactory iOS app — DEFERRED.
-- [ ] Native Stripe Terminal SDK integration — DEFERRED.
-- [ ] Tap to Pay NFC collection — DEFERRED.
+- [x] Native WebFactory iOS app — DEFERRED and not a V3 web release blocker.
+- [x] Native Stripe Terminal SDK integration — DEFERRED and not a V3 web release blocker.
+- [x] Tap to Pay NFC collection — DEFERRED and not a V3 web release blocker.
 
 ### Data compatibility
 - [x] Shared multi-tenant runtime preserved.
@@ -175,6 +175,15 @@ The dedicated WebFactory iOS app is deferred. Native Stripe Terminal/Tap to Pay 
 - [x] Factory AI boundaries remain unchanged.
 - [x] Backup/export current production tenant data before final V3 merge. Production-safe admin exporters are published on `main`, and the authenticated full production export was successfully downloaded and verified on iPhone on 2026-09-23.
 - [x] Subscription tests confirm the current trial policy is exactly 7 days with `trialPolicyVersion: v3-7d`.
+
+## Remaining merge blockers
+
+- Stripe test-mode storefront purchase end-to-end.
+- Payment Link purchase end-to-end.
+- POS smoke test on iPhone Safari/Home Screen.
+- POS smoke test on desktop/tablet viewport.
+- Complete live Stripe Connect merchant onboarding before any live payment test.
+- Publish the current `main`/merged V3 build to production and verify production `v3-release-readiness` returns `readyForV3Web=true`.
 
 ## Recommended release sequence
 
