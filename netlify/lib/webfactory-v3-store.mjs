@@ -1,5 +1,5 @@
 import { clientCommerceStore } from "./client-store.mjs";
-import { cleanText } from "./order-store.mjs";
+import { cleanText } from "./platform-utils.mjs";
 
 function safeSiteId(siteId) {
   const value = cleanText(siteId, 120);
