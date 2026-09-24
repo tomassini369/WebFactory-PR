@@ -1,6 +1,3 @@
-Warning: truncated output (original token count: 11015)
-Total output lines: 365
-
 import { useEffect, useState } from 'react'
 import './legal.css'
 
@@ -166,7 +163,42 @@ const copy={
         ['5. Purchases from a WebFactory client business',[
           'WebFactory does not set the refund policy for products, services, deposits, appointments, or other purchases sold by a business using WebFactory. The client business is the merchant and is responsible for its own customer refund, cancellation, return, and no-show rules.',
           'For eligible Stripe transactions, authorized users of a client business may use WebFactory administrative tools to request a full or partial Stripe refund. The refund is processed against the business’s connected Stripe account and remains subject to Stripe rules and the business’s own policy.',
-          'ATH Móvil Business payments and in-person payments are handled directly by the client business. Refunds for those payment…1015 tokens truncated…procesan mediante Stripe. Los negocios clientes también pueden conectar Stripe para aceptar pagos de sus propios clientes. Los datos sensibles de tarjeta y banca son recopilados directamente por Stripe mediante interfaces oficiales o alojadas por Stripe y WebFactory no almacena credenciales completas de pago.',
+          'ATH Móvil Business payments and in-person payments are handled directly by the client business. Refunds for those payment methods must be arranged with that business using the method it supports.'
+        ]],
+        ['6. Booking deposits and appointment payments',[
+          'Whether a booking deposit or appointment payment is refundable is determined by the client business’s own cancellation and refund policy unless applicable law requires otherwise. WebFactory provides the booking and payment infrastructure but does not independently decide whether the end customer is entitled to a refund.'
+        ]],
+        ['7. How to request a WebFactory billing review',[
+          'For a WebFactory subscription billing issue, email billing@webfactorypr.com from the email associated with the account and include the business name, approximate charge date, amount, and a brief explanation. Do not send full card numbers, banking passwords, secret keys, or 2FA codes by email.'
+        ]],
+        ['8. Policy changes',[
+          'WebFactory may update this Refund Policy as billing features or service plans change. Changes apply prospectively unless applicable law requires otherwise.'
+        ]]
+      ]
+    }
+  },
+  es:{
+    privacy:{
+      title:'Política de Privacidad',
+      intro:'Esta Política de Privacidad explica cómo WebFactory PR recopila, utiliza, almacena y comparte información cuando utilizas webfactorypr.com, el Builder, Templates, portales de clientes, herramientas administrativas y websites comerciales operados mediante la plataforma WebFactory.',
+      sections:[
+        ['1. Alcance y funciones',[
+          'WebFactory PR ofrece una plataforma multi-tenant para websites, comercio, reservaciones y administración. Esta política aplica a la información manejada mediante los servicios de WebFactory.',
+          'Los negocios que utilizan WebFactory continúan siendo responsables de sus productos, servicios, citas, relaciones con clientes y contenido comercial. Cuando un visitante envía información a un website de un negocio cliente, WebFactory procesa esa información para operar la plataforma mientras el negocio cliente determina el propósito comercial para el cual se utiliza.'
+        ]],
+        ['2. Información que recopilamos',[
+          'Información de cuenta e identidad, como nombre, email, identificadores de autenticación, nombre del negocio, rol de cuenta e información de acceso al portal.',
+          'Información de configuración comercial, incluyendo datos de contacto, contenido del website, contenido bilingüe, catálogo, precios, equipo, horarios, reservaciones, enlaces sociales, Google Maps, configuraciones de pago, logos, fotografías y archivos subidos.',
+          'Información de comercio y reservaciones, incluyendo nombre, email y teléfono del comprador, productos o servicios seleccionados, cantidades, fecha y hora de cita, empleado asignado, estado del pago, identificadores de transacción, reembolsos y registros operacionales relacionados.',
+          'Información técnica y de seguridad generada durante el uso del servicio, como metadatos de solicitudes, información de sesión/autenticación, errores, revisiones, eventos de seguridad y estado de las integraciones.',
+          'Información de integración necesaria para operar servicios como Stripe y Google Calendar. WebFactory no solicita que introduzcas números completos de tarjeta, llaves secretas de Stripe, contraseñas bancarias o códigos 2FA en los formularios de WebFactory.'
+        ]],
+        ['3. Cómo utilizamos la información',[
+          'Para crear y alojar websites, autenticar usuarios, guardar y publicar cambios, operar catálogo y reservaciones, evitar conflictos de horario, apoyar pagos, enviar comunicaciones transaccionales, administrar pruebas y suscripciones, brindar soporte y proteger el servicio.',
+          'Para mantener la confiabilidad de la plataforma, diagnosticar errores, aplicar límites de cuenta, verificar integraciones y mejorar funciones y experiencia de uso.'
+        ]],
+        ['4. Pagos e información financiera',[
+          'Los pagos de suscripción de WebFactory se procesan mediante Stripe. Los negocios clientes también pueden conectar Stripe para aceptar pagos de sus propios clientes. Los datos sensibles de tarjeta y banca son recopilados directamente por Stripe mediante interfaces oficiales o alojadas por Stripe y WebFactory no almacena credenciales completas de pago.',
           'Cuando un negocio activa ATH Móvil Business o pagos presenciales, el negocio es responsable de su propia cuenta comercial y relación de pago. WebFactory puede guardar la configuración necesaria para presentar o dirigir esa opción, pero no se convierte en el comerciante que recibe los ingresos de las ventas del negocio.',
           'Bajo la oferta de suscripción actual, WebFactory no cobra comisión sobre las ventas del negocio cliente.'
         ]],
