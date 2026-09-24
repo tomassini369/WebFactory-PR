@@ -51,7 +51,7 @@ export async function authorizedSites() {
   return { user, sites };
 }
 
-export async function requireSiteAccess(siteId, roles = ["owner", "manager", "employee", "cashier", "staff"]) {
+export async function requireSiteAccess(siteId, roles = ["owner", "manager", "employee", "cashier"]) {
   const user = await requireClientUser();
   const site = await getClientSite(siteId);
   if (!site) {
@@ -76,20 +76,19 @@ export const SITE_ROLE_CAPABILITIES = {
   manager: ["overview","website","orders","bookings","customers","catalog","employees","payments","pos","marketing","analytics","integrations","settings","refunds"],
   employee: ["overview","bookings","customers"],
   cashier: ["overview","orders","customers","payments","pos"],
-  staff: ["overview","bookings","customers"],
   admin: ["overview","website","orders","bookings","customers","catalog","employees","payments","pos","marketing","analytics","integrations","settings","billing","refunds"],
 };
 
-export function siteRoleCapabilities(role = "staff") {
-  return SITE_ROLE_CAPABILITIES[role] || SITE_ROLE_CAPABILITIES.staff;
+export function siteRoleCapabilities(role = "employee") {
+  return SITE_ROLE_CAPABILITIES[role] || SITE_ROLE_CAPABILITIES.employee;
 }
 
 export function membershipHasCapability(membership, capability) {
-  return siteRoleCapabilities(membership?.role || "staff").includes(capability);
+  return siteRoleCapabilities(membership?.role || "employee").includes(capability);
 }
 
 export async function requireSiteCapability(siteId, capability) {
-  const result = await requireSiteAccess(siteId, ["owner","manager","employee","cashier","staff"]);
+  const result = await requireSiteAccess(siteId, ["owner","manager","employee","cashier"]);
   if (!membershipHasCapability(result.membership, capability)) {
     const error = new Error("This role does not have permission for this action.");
     error.status = 403;
