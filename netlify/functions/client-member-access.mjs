@@ -27,7 +27,7 @@ export default async(req)=>{
 
     if(action==="invite"){
       const email=normalizeEmail(payload.email);
-      const role=["manager","employee","cashier","staff"].includes(payload.role)?payload.role:"employee";
+      const role=["manager","employee","cashier"].includes(payload.role)?payload.role:"employee";
       if(!validEmail(email))throw Object.assign(new Error("A valid email is required."),{status:400});
       const ownerEmail=normalizeEmail((site.members||[]).find((member)=>member.role==="owner")?.email);
       if(email===ownerEmail)throw Object.assign(new Error("The owner already has access."),{status:409});
