@@ -40,10 +40,11 @@ jobs:
       - name: Wait for matching Netlify Deploy Preview
         env:
           GH_TOKEN: ${{ github.token }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
           state=""
           for attempt in {1..36}; do
-            state="$(curl -fsS               -H "Authorization: Bearer $GH_TOKEN"               -H "Accept: application/vnd.github+json"               "https://api.github.com/repos/$GITHUB_REPOSITORY/commits/$GITHUB_SHA/status"               | jq -r '[.statuses[] | select(.context=="netlify/webfactorypr/deploy-preview")][0].state // ""')"
+            state="$(curl -fsS               -H "Authorization: Bearer $GH_TOKEN"               -H "Accept: application/vnd.github+json"               "https://api.github.com/repos/$GITHUB_REPOSITORY/commits/$HEAD_SHA/status"               | jq -r '[.statuses[] | select(.context=="netlify/webfactorypr/deploy-preview")][0].state // ""')"
             echo "Netlify preview status: ${state:-not-reported} (attempt $attempt/36)"
             if [ "$state" = "success" ]; then
               exit 0
