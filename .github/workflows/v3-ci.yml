@@ -75,6 +75,11 @@ jobs:
             .subscription.monthlyPriceConfigured == true and
             .subscription.annualPriceConfigured == true and
             .commerce.stripeApi == true and
+            .commerce.deployContext == "deploy-preview" and
+            (
+              .commerce.stripeKeyMode == "test" or
+              (.commerce.stripeKeyMode == "live" and .commerce.stripeWriteSafe == false)
+            ) and
             .integrations.googleCalendar == true and
             .nativeIos.deferred == true and
             .nativeIos.releaseBlocker == false
