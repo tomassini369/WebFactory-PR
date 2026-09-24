@@ -22,7 +22,7 @@ Public offer:
 - Monthly: $30 USD.
 - Annual: $350 USD.
 - No WebFactory percentage commission on client commerce sales in the core plan.
-- Legacy one-time $300 customers remain grandfathered.
+- The retired one-time $300 order system has no real production customers and is removed from active V3 scope.
 - Complimentary access remains supported from the WebFactory admin portal.
 
 Trial migration target:
@@ -344,7 +344,6 @@ V3 must preserve:
 - current URLs
 - current customer data
 - complimentary access
-- legacy $300 entitlements
 - current monthly/annual subscriptions
 - current Stripe Connect accounts
 - current orders/bookings
