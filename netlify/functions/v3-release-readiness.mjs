@@ -7,7 +7,7 @@ function env(name){return globalThis.Netlify?.env?.get(name)||"";}
 export default async(req)=>{
   if(req.method!=="GET")return Response.json({ok:false,message:"Method not allowed."},{status:405});
   const subscription=subscriptionBillingReadiness();
-  const stripeRuntime=stripeRuntimeState();
+  const stripeRuntime=stripeRuntimeState({ requestUrl: req.url });
   const commerce={
     stripeApi:Boolean(env("STRIPE_SECRET_KEY")),
     stripeKeyMode:stripeRuntime.keyMode,
