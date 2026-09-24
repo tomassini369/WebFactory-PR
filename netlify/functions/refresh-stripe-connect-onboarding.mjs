@@ -1,4 +1,4 @@
-import { publicBaseUrl } from "../lib/order-store.mjs";
+import { publicBaseUrl } from "../lib/platform-utils.mjs";
 
 export default async (req) => {
   if (req.method !== "GET") return new Response("Method not allowed.", { status:405 });
