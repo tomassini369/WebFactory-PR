@@ -1,5 +1,5 @@
 import { getClientSiteBySlug } from "../lib/client-store.mjs";
-import { cleanText } from "../lib/order-store.mjs";
+import { cleanText } from "../lib/platform-utils.mjs";
 import { siteEntitlement } from "../lib/subscription-billing.mjs";
 import { listV3Records } from "../lib/webfactory-v3-store.mjs";
 
