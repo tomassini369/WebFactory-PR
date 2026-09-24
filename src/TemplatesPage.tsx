@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { demoConfigs, templateGroups, templateVisualStyle } from './demoData'
+import { templateConfigs, templateGroups, templateVisualStyle } from './templateData'
 import './templates.css'
 
 type Language = 'es' | 'en'
@@ -8,7 +8,7 @@ export default function TemplatesPage({lang}:{lang:Language}) {
   const [groupId,setGroupId] = useState(templateGroups[0]?.id || '')
   const group = templateGroups.find((entry)=>entry.id===groupId)
   const templates = useMemo(
-    ()=>demoConfigs.filter((demo)=>group?.categories.includes(demo.category)),
+    ()=>templateConfigs.filter((template)=>group?.categories.includes(template.category)),
     [group]
   )
 
@@ -28,7 +28,7 @@ export default function TemplatesPage({lang}:{lang:Language}) {
         </div>
         <div className="template-group-list">
           {templateGroups.map((entry)=>{
-            const count=demoConfigs.filter((demo)=>entry.categories.includes(demo.category)).length
+            const count=templateConfigs.filter((template)=>entry.categories.includes(template.category)).length
             return <button key={entry.id} className={entry.id===groupId?'active':''} onClick={()=>setGroupId(entry.id)}>
               <span>{lang==='es'?entry.nameEs:entry.nameEn}</span><b>{count}</b>
             </button>
@@ -41,18 +41,18 @@ export default function TemplatesPage({lang}:{lang:Language}) {
           <span>{templates.length} {lang==='es'?'templates':'templates'}</span>
         </header>
         <div className="template-card-grid">
-          {templates.map((demo)=>(
-            <article className={`template-card visual-${templateVisualStyle(demo.category)}`} key={demo.slug}>
-              <a className="template-card-art" href={'/templates/'+demo.slug} style={{backgroundImage:`linear-gradient(180deg,rgba(5,10,16,.05),rgba(5,10,16,.55)),url(${demo.heroImage})`}}>
-                <span>{demo.category}</span>
+          {templates.map((template)=>(
+            <article className={`template-card visual-${templateVisualStyle(template.category)}`} key={template.slug}>
+              <a className="template-card-art" href={'/templates/'+template.slug} style={{backgroundImage:`linear-gradient(180deg,rgba(5,10,16,.05),rgba(5,10,16,.55)),url(${template.heroImage})`}}>
+                <span>{template.category}</span>
               </a>
               <div>
-                <small>{demo.category}</small>
-                <h3>{demo.name}</h3>
-                <p>{demo.description}</p>
+                <small>{template.category}</small>
+                <h3>{template.name}</h3>
+                <p>{template.description}</p>
                 <div className="template-card-actions">
-                  <a href={'/templates/'+demo.slug}>{lang==='es'?'Ver Template':'View Template'} ↗</a>
-                  <a className="primary" href={'/builder?template='+demo.slug}>{lang==='es'?'Usar este Template':'Use this Template'} →</a>
+                  <a href={'/templates/'+template.slug}>{lang==='es'?'Ver Template':'View Template'} ↗</a>
+                  <a className="primary" href={'/builder?template='+template.slug}>{lang==='es'?'Usar este Template':'Use this Template'} →</a>
                 </div>
               </div>
             </article>
