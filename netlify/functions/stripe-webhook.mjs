@@ -1,6 +1,5 @@
 import crypto from "node:crypto";
 import { eventStore } from "../lib/order-store.mjs";
-import { processPaidOrder } from "../lib/process-paid-order.mjs";
 import { isSubscriptionBillingEvent, processSubscriptionBillingEvent } from "../lib/subscription-billing.mjs";
 
 function env(name) {
@@ -66,35 +65,14 @@ export default async (req) => {
       return Response.json({ received:true,billing });
     }
 
-    if (!["checkout.session.completed","checkout.session.async_payment_succeeded"].includes(event.type)) {
-      await eventStore().setJSON(processedKey, {
-        completed:true,
-        ignored:true,
-        eventType:event.type,
-        processedAt:new Date().toISOString(),
-      });
-      return Response.json({ received:true,ignored:true });
-    }
-
-    const session = event.data?.object || {};
-    if (session.payment_status !== "paid") {
-      return Response.json({ received:true,pending:true });
-    }
-
-    const orderId = session.client_reference_id || session.metadata?.order_id;
-    if (!orderId) throw new Error("Stripe event is missing order_id.");
-
-    const order = await processPaidOrder(orderId, session);
-
     await eventStore().setJSON(processedKey, {
       completed:true,
+      ignored:true,
+      retiredLegacyFlow:true,
       eventType:event.type,
-      orderId,
-      orderStatus:order.status,
       processedAt:new Date().toISOString(),
     });
-
-    return Response.json({ received:true,orderId,status:order.status });
+    return Response.json({ received:true,ignored:true,retiredLegacyFlow:true });
   } catch (error) {
     console.error("stripe-webhook", error);
     return Response.json(
