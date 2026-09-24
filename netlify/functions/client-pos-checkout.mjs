@@ -3,6 +3,7 @@ import { assertSameOrigin, errorResponse, requireSiteCapability } from "../lib/c
 import { clientCommerceStore, commerceKey } from "../lib/client-store.mjs";
 import { cleanText, publicBaseUrl, validEmail } from "../lib/platform-utils.mjs";
 import { calculateTax } from "../lib/webfactory-v3-domain.mjs";
+import { assertStripeWriteAllowed } from "../lib/stripe-runtime.mjs";
 
 function env(name){return globalThis.Netlify?.env?.get(name)||"";}
 
@@ -65,6 +66,7 @@ export default async(req)=>{
 
     const accountId=cleanText(site.paymentRules?.stripeConnectedAccountId,180);
     if(!accountId||!site.paymentRules?.methods?.stripe)throw Object.assign(new Error("Stripe is not connected for this business."),{status:409});
+    assertStripeWriteAllowed();
     if(await verifyMerchantCapability(accountId)!=="active")throw Object.assign(new Error("Finish Stripe verification before accepting card payments."),{status:409});
 
     const transactionId=`txn_pos_${saleAttemptId}`;
