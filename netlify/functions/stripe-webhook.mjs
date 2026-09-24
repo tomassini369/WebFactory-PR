@@ -68,11 +68,11 @@ export default async (req) => {
     await platformStripeEventStore().setJSON(processedKey, {
       completed:true,
       ignored:true,
-      retiredLegacyFlow:true,
+      unsupportedEvent:true,
       eventType:event.type,
       processedAt:new Date().toISOString(),
     });
-    return Response.json({ received:true,ignored:true,retiredLegacyFlow:true });
+    return Response.json({ received:true,ignored:true,unsupportedEvent:true });
   } catch (error) {
     console.error("stripe-webhook", error);
     return Response.json(
