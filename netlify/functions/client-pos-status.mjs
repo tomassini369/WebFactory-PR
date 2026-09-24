@@ -1,6 +1,6 @@
 import { errorResponse, requireSiteCapability } from "../lib/client-auth.mjs";
 import { clientCommerceStore, commerceKey } from "../lib/client-store.mjs";
-import { cleanText } from "../lib/order-store.mjs";
+import { cleanText } from "../lib/platform-utils.mjs";
 
 export default async(req)=>{
   try{
