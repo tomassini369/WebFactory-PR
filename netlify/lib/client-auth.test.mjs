@@ -28,6 +28,6 @@ test("cashier can use POS but cannot refund or edit catalog", () => {
   assert.equal(membershipHasCapability({ role: "cashier" }, "catalog"), false);
 });
 
-test("unknown roles fall back to staff capabilities", () => {
+test("unknown roles fall back to employee capabilities", () => {
   assert.deepEqual(siteRoleCapabilities("unknown"), ["overview","bookings","customers"]);
 });
