@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
 import { assertSameOrigin, errorResponse, requireSiteCapability } from "../lib/client-auth.mjs";
 import { clientCommerceStore, commerceKey } from "../lib/client-store.mjs";
-import { cleanText, validEmail } from "../lib/order-store.mjs";
+import { cleanText, validEmail } from "../lib/platform-utils.mjs";
 import { calculateTax } from "../lib/webfactory-v3-domain.mjs";
 
 function env(name){return globalThis.Netlify?.env?.get(name)||"";}
