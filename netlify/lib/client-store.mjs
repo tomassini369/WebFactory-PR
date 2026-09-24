@@ -1,6 +1,6 @@
 import crypto from "node:crypto";
 import { getDeployStore, getStore } from "@netlify/blobs";
-import { assetStore, cleanText, safeFileName } from "./order-store.mjs";
+import { cleanText } from "./platform-utils.mjs";
 
 function isProduction() {
   return globalThis.Netlify?.context?.deploy?.context === "production";
@@ -19,19 +19,17 @@ export const clientEventStore = () => scopedStore("webfactory-client-events");
 export const clientOAuthStore = () => scopedStore("webfactory-client-oauth");
 
 export function normalizeSiteDesign(design = {}) {
-  const legacyTemplateMode = design.mode === "demo_base";
   const templateSlug = cleanText(design.templateSlug, 80);
   return {
     ...design,
-    mode: legacyTemplateMode ? "template_base" : (design.mode || (templateSlug ? "template_base" : "custom")),
+    mode: design.mode || (templateSlug ? "template_base" : "custom"),
     templateSlug,
     templateCategory: cleanText(design.templateCategory, 180),
     templateName: cleanText(design.templateName, 220),
     templateRoute: templateSlug
-      ? cleanText(design.templateRoute, 500).replace(/^\/demos\//, "/templates/") || `/templates/${templateSlug}`
+      ? cleanText(design.templateRoute, 500) || `/templates/${templateSlug}`
       : "",
-    preserveTemplateStructure: Boolean(design.preserveTemplateStructure ?? design.preserveDemoStructure ?? templateSlug),
-    preserveDemoStructure: undefined,
+    preserveTemplateStructure: Boolean(design.preserveTemplateStructure ?? templateSlug),
   };
 }
 
@@ -108,109 +106,6 @@ export async function sitesForEmail(email) {
     if (site) sites.push(site);
   }
   return sites;
-}
-
-function uniqueSlug(order) {
-  const suffix = String(order.orderId || "").replace(/[^a-zA-Z0-9]/g, "").slice(-6).toLowerCase();
-  return `${slugify(order.business?.name)}-${suffix}`;
-}
-
-export async function ensureClientSiteForOrder(order) {
-  const siteId = order.clientSiteId || `site-${String(order.orderId || "").toLowerCase()}`;
-  const existing = await getClientSite(siteId);
-  if (existing) return existing;
-  const now = new Date().toISOString();
-  const catalog = [];
-  for (const item of (Array.isArray(order.catalog) ? order.catalog : []).slice(0, 100)) {
-    let imageAssetKey = "";
-    if (item.imageAssetKey) {
-      const [data, metadata] = await Promise.all([
-        assetStore().get(item.imageAssetKey, { type: "arrayBuffer" }),
-        assetStore().getMetadata(item.imageAssetKey),
-      ]);
-      if (data) {
-        imageAssetKey = `sites/${siteId}/seed-${safeFileName(item.id)}-${safeFileName(item.imageName || "image")}`;
-        await clientAssetStore().set(imageAssetKey, data, { metadata: metadata?.metadata || {} });
-      }
-    }
-    catalog.push({
-      id: cleanText(item.id, 120),
-      type: item.type === "service" ? "service" : "product",
-      name: cleanText(item.nameEn || item.name || item.nameEs, 220),
-      nameEn: cleanText(item.nameEn || item.name, 220),
-      nameEs: cleanText(item.nameEs, 220),
-      description: cleanText(item.descriptionEn || item.description || item.descriptionEs, 6000),
-      descriptionEn: cleanText(item.descriptionEn || item.description, 6000),
-      descriptionEs: cleanText(item.descriptionEs, 6000),
-      price: Math.max(0, Number(item.price || 0)),
-      active: true,
-      inventory: item.type === "product" ? null : undefined,
-      requiresAppointment: Boolean(item.requiresAppointment),
-      duration: Math.max(0, Number(item.duration || 0)),
-      bufferMinutes: 0,
-      imageAssetKey,
-    });
-  }
-  const business = { ...(order.business || {}) };
-  if (order.business?.logoAssetKey) {
-    const [data, metadata] = await Promise.all([
-      assetStore().get(order.business.logoAssetKey, { type: "arrayBuffer" }),
-      assetStore().getMetadata(order.business.logoAssetKey),
-    ]);
-    if (data) {
-      business.logoAssetKey = `sites/${siteId}/seed-logo-${safeFileName(order.business.logoAssetName || "logo")}`;
-      await clientAssetStore().set(business.logoAssetKey, data, { metadata: metadata?.metadata || {} });
-    }
-  }
-  const employees = (Array.isArray(order.team) ? order.team : []).slice(0, 100).map((member) => ({
-    id: cleanText(member.id, 120),
-    name: cleanText(member.name, 180),
-    role: cleanText(member.roleEn || member.role || member.roleEs, 180),
-    roleEn: cleanText(member.roleEn || member.role, 180),
-    roleEs: cleanText(member.roleEs, 180),
-    active: true,
-    serviceIds: Array.isArray(member.serviceIds) ? member.serviceIds.slice(0, 100) : [],
-    calendarId: "",
-    dailyLimit: 8,
-    schedule: order.hours || {},
-    timeOff: [],
-  }));
-  const ownerEmail = normalizeEmail(order.client?.email);
-  return saveClientSite({
-    siteId,
-    orderId: order.orderId,
-    slug: uniqueSlug(order),
-    status: "setup_pending",
-    createdAt: now,
-    updatedAt: now,
-    revision: 1,
-    members: [{ email: ownerEmail, role: "owner" }],
-    business,
-    design: normalizeSiteDesign(order.design || {}),
-    features: { ...(order.features || {}) },
-    catalog,
-    employees,
-    hours: order.hours || {},
-    paymentRules: {
-      ...(order.payments || {}),
-      stripeConnectedAccountId: order.stripeConnectedAccountId || "",
-      stripeCapabilityStatus: order.stripeConnectCapabilityStatus || "not_started",
-    },
-    googleCalendar: { connected: false, calendarEmail: "", connectedAt: "", employeeCalendars: {} },
-    settings: { locale: "en", timezone: "America/Puerto_Rico", currency: "usd" },
-    servicePlan: {
-      code: "webfactory-premium-commerce",
-      name: "WebFactory Premium Commerce Website",
-      billingModel: "one_time",
-      billingStatus: "paid",
-      subscriptionStatus: "not_started",
-      migrationEligible: true,
-      sourceOrderId: order.orderId,
-      activatedAt: order.paidAt || now,
-      currentPeriodEnd: "",
-      cancelAtPeriodEnd: false,
-    },
-  });
 }
 
 export function publicClientSite(site) {
