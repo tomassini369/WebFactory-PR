@@ -7,11 +7,11 @@ import ClientStorefront from './ClientStorefront'
 import WebFactoryAdminPage from './WebFactoryAdminPage'
 import PasswordRecoveryPage from './PasswordRecoveryPage'
 import LegalPage from './LegalPage'
+import { AdaptiveLogo } from './theme'
 
 type Language = 'es' | 'en'
 
 const PRICE = '$30'
-const LOGO = '/webfactory-pr-logo.png'
 
 const content = {
   es: {
@@ -160,12 +160,12 @@ function App(){
   if (clientAdminRoute) return <ClientAdminPage />
   if (clientSiteMatch) return <ClientStorefront slug={decodeURIComponent(clientSiteMatch[1])} />
   if (templateMatch) return <TemplatePreview slug={templateMatch[1]} />
-  if (templatesRoute) return <><header className="header"><a href="/" className="logo"><img src={LOGO} alt="WebFactory PR"/></a><div className="header-actions"><a className="btn secondary desktop-cta" href="/client-admin">{lang==='es'?'Portal de clientes':'Client portal'}</a><a className="btn secondary desktop-cta" href="/">{lang==='es'?'Volver al inicio':'Back to home'}</a><div className="langs"><button className={lang==='en'?'active':''} onClick={()=>setLang('en')}>EN</button><button className={lang==='es'?'active':''} onClick={()=>setLang('es')}>ES</button></div></div></header><TemplatesPage lang={lang}/></>
-  if (builderRoute) return <><header className="header"><a href="/" className="logo"><img src={LOGO} alt="WebFactory PR"/></a><div className="header-actions"><a className="btn secondary desktop-cta" href="/client-admin">{lang==='es'?'Sign In · Portal':'Sign In · Portal'}</a><a className="btn secondary desktop-cta" href="/">{lang==='es'?'Volver al inicio':'Back to home'}</a><div className="langs"><button className={lang==='en'?'active':''} onClick={()=>setLang('en')}>EN</button><button className={lang==='es'?'active':''} onClick={()=>setLang('es')}>ES</button></div></div></header><main className="standalone-builder"><section className="section white builder"><div className="shell"><div className="builder-head"><Heading data={t.builder}/><div className="builder-price"><strong>7 días</strong><span>{lang==='es'?'gratis · sin tarjeta':'free · no card'}</span></div></div><WebFactoryBuilder lang={lang}/></div></section></main></>
+  if (templatesRoute) return <><header className="header"><a href="/" className="logo"><AdaptiveLogo alt="WebFactory PR"/></a><div className="header-actions"><a className="btn secondary desktop-cta" href="/client-admin">{lang==='es'?'Portal de clientes':'Client portal'}</a><a className="btn secondary desktop-cta" href="/">{lang==='es'?'Volver al inicio':'Back to home'}</a><div className="langs"><button className={lang==='en'?'active':''} onClick={()=>setLang('en')}>EN</button><button className={lang==='es'?'active':''} onClick={()=>setLang('es')}>ES</button></div></div></header><TemplatesPage lang={lang}/></>
+  if (builderRoute) return <><header className="header"><a href="/" className="logo"><AdaptiveLogo alt="WebFactory PR"/></a><div className="header-actions"><a className="btn secondary desktop-cta" href="/client-admin">{lang==='es'?'Sign In · Portal':'Sign In · Portal'}</a><a className="btn secondary desktop-cta" href="/">{lang==='es'?'Volver al inicio':'Back to home'}</a><div className="langs"><button className={lang==='en'?'active':''} onClick={()=>setLang('en')}>EN</button><button className={lang==='es'?'active':''} onClick={()=>setLang('es')}>ES</button></div></div></header><main className="standalone-builder"><section className="section white builder"><div className="shell"><div className="builder-head"><Heading data={t.builder}/><div className="builder-price"><strong>7 días</strong><span>{lang==='es'?'gratis · sin tarjeta':'free · no card'}</span></div></div><WebFactoryBuilder lang={lang}/></div></section></main></>
 
   return <>
     <header className="header">
-      <a href="#top" className="logo"><img src={LOGO} alt="WebFactory PR"/></a>
+      <a href="#top" className="logo"><AdaptiveLogo alt="WebFactory PR"/></a>
       <nav className={menu?'open':''}>{t.nav.map((n,i)=><a key={n} href={anchors[i]} onClick={()=>setMenu(false)}>{n}</a>)}<a className="mobile-portal-link" href="/client-admin" onClick={()=>setMenu(false)}>{lang==='es'?'Sign In · Portal de clientes':'Sign In · Client Portal'}</a></nav>
       <div className="header-actions">
         <a href="/client-admin" className="btn secondary desktop-cta">{lang==='es'?'Portal de clientes':'Client portal'}</a>
@@ -231,7 +231,7 @@ function App(){
       <section className="final"><div className="shell"><div><p className="eyebrow">WEBFACTORY PR</p><h2>{t.final[0]}</h2><p>{t.final[1]}</p></div><aside><strong>7 días</strong><span>{lang==='es'?'gratis · luego $30/mes o $350/año':'free · then $30/month or $350/year'}</span><a href="/builder" className="btn light">{t.hero.primary} ↗</a></aside></div></section>
     </main>
 
-    <footer className="footer"><div className="shell"><div><img src={LOGO} alt="WebFactory PR"/><p>Build. Sell. Book. Manage. Get Paid.</p></div><nav>{(lang==='es'?['Producto','Templates','Funciones','Builder','FAQ','Contacto','Privacidad','Términos','Política de Reembolsos']:['Product','Templates','Features','Builder','FAQ','Contact','Privacy','Terms','Refund Policy']).map((x,i)=>{const href=i===1?'/templates':i===2?'#incluye':i===3?'/builder':i===4?'#faq':i===5?'mailto:info@webfactorypr.com':i===6?'/privacy':i===7?'/terms':i===8?'/refund-policy':'#top';const legal=i>=6;return <a key={x} href={href} target={legal?'_blank':undefined} rel={legal?'noreferrer':undefined}>{x}</a>})}</nav><p className="copyright">info@webfactorypr.com · © 2026 WebFactory PR. {t.footer}</p></div></footer>
+    <footer className="footer"><div className="shell"><div><AdaptiveLogo alt="WebFactory PR"/><p>Build. Sell. Book. Manage. Get Paid.</p></div><nav>{(lang==='es'?['Producto','Templates','Funciones','Builder','FAQ','Contacto','Privacidad','Términos','Política de Reembolsos']:['Product','Templates','Features','Builder','FAQ','Contact','Privacy','Terms','Refund Policy']).map((x,i)=>{const href=i===1?'/templates':i===2?'#incluye':i===3?'/builder':i===4?'#faq':i===5?'mailto:info@webfactorypr.com':i===6?'/privacy':i===7?'/terms':i===8?'/refund-policy':'#top';const legal=i>=6;return <a key={x} href={href} target={legal?'_blank':undefined} rel={legal?'noreferrer':undefined}>{x}</a>})}</nav><p className="copyright">info@webfactorypr.com · © 2026 WebFactory PR. {t.footer}</p></div></footer>
   </>
 }
 
