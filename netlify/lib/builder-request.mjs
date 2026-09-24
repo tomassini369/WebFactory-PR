@@ -1,4 +1,4 @@
-import { cleanText, validEmail } from "./order-store.mjs";
+import { cleanText, validEmail } from "./platform-utils.mjs";
 
 const TEMPLATE_CATALOG = {
   "brisa-cocina": { category: "Restaurant", name: "Brisa Cocina" },
