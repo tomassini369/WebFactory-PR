@@ -38,7 +38,7 @@ function makeAdminShell(manifest) {
   )
   html = replaceRequired(
     html,
-    '<link id="app-manifest" rel="manifest" href="/manifest-v2.webmanifest" />',
+    '<link id="app-manifest" rel="manifest" href="/manifest.webmanifest" />',
     `<link id="app-manifest" rel="manifest" href="${manifest}" />`,
   )
   html = replaceRequired(
