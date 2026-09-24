@@ -21,6 +21,8 @@ export default async(req)=>{
     if(action==="delete_account"){
       if(confirmation!=="DELETE ACCOUNT")throw Object.assign(new Error('Type "DELETE ACCOUNT" to confirm.'),{status:400});
       const user=await requireClientUser();
+      const roleSet=new Set([...(Array.isArray(user.roles)?user.roles:[]),...(Array.isArray(user.app_metadata?.roles)?user.app_metadata.roles:[]),user.role].filter(Boolean));
+      if(roleSet.has("admin")||roleSet.has("webfactory_owner"))throw Object.assign(new Error("Platform administrator accounts cannot be deleted from the client portal."),{status:403});
       const email=normalizeEmail(user.email);
       const sites=await sitesForEmail(email);
       const deletedSites=[];
