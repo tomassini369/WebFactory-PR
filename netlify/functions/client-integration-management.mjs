@@ -1,5 +1,5 @@
 import { assertSameOrigin, errorResponse, requireSiteAccess } from "../lib/client-auth.mjs";
-import { cleanText } from "../lib/order-store.mjs";
+import { cleanText } from "../lib/platform-utils.mjs";
 import { disconnectAth, disconnectGoogle, disconnectStripe } from "../lib/client-lifecycle.mjs";
 
 export default async(req)=>{
