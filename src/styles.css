@@ -90,9 +90,9 @@ body{background:
   linear-gradient(180deg,#f6f9fd 0,#f3f6fb 44%,#f7faff 100%);
 }
 .header{background:rgba(255,255,255,.78);border-color:rgba(220,232,247,.72);box-shadow:0 16px 50px rgba(11,21,41,.09);backdrop-filter:saturate(155%) blur(22px)}
-.header nav a{transition:transform .16s var(--wf-ease),background-color .16s ease,color .16s ease}
-.btn{transition:transform .16s var(--wf-ease),box-shadow .16s ease,background-color .16s ease,border-color .16s ease,color .16s ease}
-.langs button{transition:background-color .16s ease,color .16s ease,border-color .16s ease}
+.header nav a{transition:transform .08s var(--wf-ease),background-color .08s ease,color .08s ease}
+.btn{transition:transform .08s var(--wf-ease),box-shadow .08s ease,background-color .08s ease,border-color .08s ease,color .08s ease}
+.langs button{transition:background-color .08s ease,color .08s ease,border-color .08s ease}
 .header nav a:hover{transform:translateY(-1px);background:rgba(60,134,246,.08)}
 .primary{background:linear-gradient(135deg,#3C86F6 0%,#4D96F3 55%,#6EAEFF 100%);box-shadow:0 16px 35px rgba(60,134,246,.26),0 0 40px rgba(60,134,246,.10)}
 .hero{position:relative;isolation:isolate}

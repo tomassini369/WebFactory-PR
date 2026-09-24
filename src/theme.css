@@ -11,7 +11,7 @@
   width:58px;height:58px;padding:0;display:inline-flex;align-items:center;justify-content:center;
   border:1px solid rgba(11,21,41,.12);border-radius:19px;background:rgba(255,255,255,.88);
   color:#5D5F64;box-shadow:0 12px 30px rgba(11,21,41,.13);cursor:pointer;
-  transition:background-color .12s ease,border-color .12s ease,color .12s ease,transform .12s ease,box-shadow .12s ease;
+  transition:background-color .07s ease,border-color .07s ease,color .07s ease,transform .07s ease,box-shadow .07s ease;
 }
 .wf-theme-toggle:hover{transform:translateY(-2px)}
 .wf-theme-toggle:focus-visible{outline:3px solid rgba(60,134,246,.34);outline-offset:4px}
