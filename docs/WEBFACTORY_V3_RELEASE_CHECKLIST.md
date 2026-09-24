@@ -58,6 +58,8 @@ The dedicated WebFactory iOS app is deferred. Native Stripe Terminal/Tap to Pay 
 - [x] Destructive actions are isolated in a portal Danger Zone and are not available to non-owner roles.
 
 ### Client portal and permissions
+- [x] Multi-site clients can switch between assigned pages/businesses in the portal before editing or deleting a site.
+- [x] Identity member lookup is paginated instead of being limited to the first 500 users.
 - [x] Role model supports Owner, Manager, Employee and Cashier.
 - [x] Legacy Staff remains compatible.
 - [x] Navigation is filtered by capabilities.
@@ -120,6 +122,9 @@ The dedicated WebFactory iOS app is deferred. Native Stripe Terminal/Tap to Pay 
 - [x] Remote POS checkout retries reuse a stable sale attempt ID and Stripe idempotency key.
 - [x] Future Terminal PaymentIntent creation rejects zero-value totals.
 - [x] Direct in-person POS now uses a stable sale attempt ID and an idempotent wrapper to prevent accidental duplicate submissions. Full atomic inventory concurrency across simultaneous independent sales remains a scale-up item.
+
+### Review automation
+- [x] Review request emails follow the site language (ES/EN) and use localized subject/body copy.
 
 ### WebFactory POS
 - [x] Remote POS retry idempotency uses a stable sale attempt ID and Stripe idempotency key.
