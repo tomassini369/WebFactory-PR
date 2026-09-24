@@ -22,7 +22,7 @@ Public offer:
 - Monthly: $30 USD.
 - Annual: $350 USD.
 - No WebFactory percentage commission on client commerce sales in the core plan.
-- The retired one-time $300 order system has no real production customers and is removed from active V3 scope.
+- Supported commercial entitlements are the 7-day trial, active subscription, and complimentary access.
 - Complimentary access remains supported from the WebFactory admin portal.
 
 Trial migration target:
@@ -300,7 +300,6 @@ Publishing requires one of:
 - active trial
 - active paid subscription
 - valid complimentary entitlement
-- grandfathered legacy entitlement
 
 ## Data architecture
 
@@ -357,7 +356,7 @@ V3 must preserve:
 - introduce V3 domain types and storage helpers
 - add customer, receipt, payment-link and tax models
 - extend transaction normalization
-- preserve old API contracts
+- preserve current API contracts
 
 ### Phase B — client portal
 - reorganize navigation
