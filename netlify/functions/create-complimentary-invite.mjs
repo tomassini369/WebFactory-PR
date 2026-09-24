@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
 import { assertSameOrigin, errorResponse, requirePlatformAdmin } from "../lib/client-auth.mjs";
 import { clientSiteStore, emailHash, normalizeEmail } from "../lib/client-store.mjs";
-import { cleanText, validEmail } from "../lib/order-store.mjs";
+import { cleanText, validEmail } from "../lib/platform-utils.mjs";
 import { sendEmail } from "../lib/email.mjs";
 
 const hashToken=(token)=>crypto.createHash("sha256").update(String(token||"")).digest("hex");
