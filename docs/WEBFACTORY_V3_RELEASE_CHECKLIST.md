@@ -44,13 +44,16 @@ The dedicated WebFactory iOS app is deferred. Native Stripe Terminal/Tap to Pay 
 ### Client integration disconnect controls
 - [x] Clients can disconnect Google Calendar from the portal; OAuth token is revoked/deleted and employee calendar mappings are cleared.
 - [x] Owners can disconnect Stripe from a site without deleting the external Stripe account.
+- [x] Stripe can be reconnected directly from the Client Portal after disconnection, including creation of a new Accounts v2 onboarding when no account is attached.
 - [x] Clients can disconnect ATH Móvil configuration from a site.
 - [x] Disconnecting an integration does not delete the WebFactory site or account.
 
 ### Client account lifecycle
 - [x] Owners can permanently delete a single page after typing `DELETE PAGE`.
 - [x] Site deletion cancels the WebFactory Stripe subscription when one exists, revokes Google Calendar, deletes site commerce/V3 records/assets/member pointers/slug pointer, and removes the tenant.
+- [x] Identity site membership references are removed from remaining portal users when a page is deleted.
 - [x] Owners can permanently delete their WebFactory account after typing `DELETE ACCOUNT`.
+- [x] Billing webhooks arriving after site deletion are safely ignored instead of generating retry failures.
 - [x] Account deletion deletes sites owned by the user, removes memberships from other businesses, then deletes the Netlify Identity user.
 - [x] Destructive actions are isolated in a portal Danger Zone and are not available to non-owner roles.
 
