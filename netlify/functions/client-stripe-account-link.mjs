@@ -12,7 +12,7 @@ export default async (req) => {
     const { site } = await requireSiteAccess(siteId, ["owner", "manager"]);
     const accountId = site.paymentRules?.stripeConnectedAccountId;
     if (!accountId) throw Object.assign(new Error("Stripe has not been connected for this business."), { status: 409 });
-    assertStripeWriteAllowed();
+    assertStripeWriteAllowed({ requestUrl: req.url });
     const response = await fetch("https://api.stripe.com/v2/core/account_links", {
       method: "POST",
       headers: { Authorization: `Bearer ${env("STRIPE_SECRET_KEY")}`, "Stripe-Version": "2026-08-26.preview", "Content-Type": "application/json", "Idempotency-Key": `client-portal-link-${site.siteId}-${Date.now()}` },
