@@ -157,6 +157,7 @@ The dedicated WebFactory iOS app is deferred. Native Stripe Terminal/Tap to Pay 
 ### Live Stripe webhook verification
 - [x] Subscription webhook endpoint is enabled with checkout, subscription created/updated/deleted, invoice paid and invoice payment failed events.
 - [x] Stripe Connect webhook is enabled with `checkout.session.completed` and `checkout.session.async_payment_succeeded` for current web commerce.
+- [x] Active live Stripe webhook endpoints now use the official `https://webfactorypr.com` domain. The subscription webhook description/events are V3-only, and old disabled webhook entries no longer carry V2 descriptions.
 - [x] `payment_intent.succeeded` is intentionally deferred with native iOS/Tap to Pay and is not a V3 web release blocker.
 
 ### Stripe Terminal / Tap to Pay
