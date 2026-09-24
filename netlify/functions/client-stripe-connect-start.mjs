@@ -1,6 +1,6 @@
 import { assertSameOrigin, errorResponse, requireSiteAccess } from "../lib/client-auth.mjs";
 import { patchClientSite, normalizeEmail } from "../lib/client-store.mjs";
-import { publicBaseUrl } from "../lib/order-store.mjs";
+import { publicBaseUrl } from "../lib/platform-utils.mjs";
 
 const STRIPE_VERSION="2026-08-26.preview";
 function env(name){return globalThis.Netlify?.env?.get(name)||"";}
