@@ -27,28 +27,55 @@ jobs:
         run: npm test
       - name: Build
         run: npm run build
-      - name: Package deploy source
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        run: tar --exclude=.git --exclude=node_modules --exclude=dist -czf /tmp/webfactory-main-source.tgz .
-      - name: Upload deploy source
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        uses: actions/upload-artifact@v4
-        with:
-          name: webfactory-main-source
-          path: /tmp/webfactory-main-source.tgz
-          if-no-files-found: error
-          retention-days: 1
-      - name: Install temporary Netlify deploy runtime
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        run: npm install --no-save --package-lock=false @netlify/mcp@latest
-      - name: Package Netlify deploy runtime
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        run: tar -czf /tmp/webfactory-netlify-runtime.tgz node_modules
-      - name: Upload Netlify deploy runtime
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        uses: actions/upload-artifact@v4
-        with:
-          name: webfactory-netlify-runtime
-          path: /tmp/webfactory-netlify-runtime.tgz
-          if-no-files-found: error
-          retention-days: 1
+
+  deploy-preview-smoke:
+    if: github.event_name == 'pull_request'
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      statuses: read
+    steps:
+      - name: Wait for matching Netlify Deploy Preview
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          state=""
+          for attempt in {1..36}; do
+            state="$(curl -fsS               -H "Authorization: Bearer $GH_TOKEN"               -H "Accept: application/vnd.github+json"               "https://api.github.com/repos/$GITHUB_REPOSITORY/commits/$HEAD_SHA/status"               | jq -r '[.statuses[] | select(.context=="netlify/webfactorypr/deploy-preview")][0].state // ""')"
+            echo "Netlify preview status: ${state:-not-reported} (attempt $attempt/36)"
+            if [ "$state" = "success" ]; then
+              exit 0
+            fi
+            if [ "$state" = "failure" ] || [ "$state" = "error" ]; then
+              exit 1
+            fi
+            sleep 10
+          done
+          echo "Timed out waiting for Netlify Deploy Preview."
+          exit 1
+
+      - name: Smoke public V3 routes and readiness
+        env:
+          PREVIEW_URL: https://deploy-preview-${{ github.event.pull_request.number }}--webfactorypr.netlify.app
+        run: |
+          for path in / /templates /builder /client-admin; do
+            echo "Checking $PREVIEW_URL$path"
+            curl -fLsS --retry 4 --retry-delay 2 --max-time 30 -o /dev/null "$PREVIEW_URL$path"
+          done
+
+          payload="$(curl -fLsS --retry 4 --retry-delay 2 --max-time 30 "$PREVIEW_URL/.netlify/functions/v3-release-readiness")"
+          echo "$payload" | jq
+          echo "$payload" | jq -e '
+            .ok == true and
+            (.readyForV3Web | type == "boolean") and
+            .subscription.enabled == true and
+            .subscription.monthlyPriceConfigured == true and
+            .subscription.annualPriceConfigured == true and
+            .commerce.stripeApi == true and
+            .integrations.googleCalendar == true and
+            .nativeIos.deferred == true and
+            .nativeIos.releaseBlocker == false
+          '
