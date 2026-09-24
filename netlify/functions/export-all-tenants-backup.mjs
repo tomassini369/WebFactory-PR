@@ -1,5 +1,5 @@
 import { requirePlatformAdmin, errorResponse } from "../lib/client-auth.mjs";
-import { clientCommerceStore, clientSiteStore } from "../lib/client-store.mjs";
+import { clientAssetStore, clientCommerceStore, clientSiteStore } from "../lib/client-store.mjs";
 import { listV3Records } from "../lib/webfactory-v3-store.mjs";
 
 async function readPrefix(store, prefix) {
@@ -12,9 +12,19 @@ async function readPrefix(store, prefix) {
   return records;
 }
 
-async function listSites(limit = 300) {
+async function assetManifest(siteId) {
+  const listed = await clientAssetStore().list({ prefix: `sites/${siteId}/` });
+  const assets = [];
+  for (const blob of listed.blobs || []) {
+    const meta = await clientAssetStore().getMetadata(blob.key);
+    assets.push({ key: blob.key, etag: blob.etag || "", metadata: meta?.metadata || {} });
+  }
+  return assets;
+}
+
+async function listSites() {
   const listed = await clientSiteStore().list({ prefix: "sites/" });
-  const blobs = (listed.blobs || []).filter((blob)=>/sites\/[^/]+\.json$/.test(blob.key)).slice(0, limit);
+  const blobs = (listed.blobs || []).filter((blob)=>/sites\/[^/]+\.json$/.test(blob.key));
   const sites = [];
   for (const blob of blobs) {
     const site = await clientSiteStore().get(blob.key, { type: "json" });
@@ -36,7 +46,8 @@ export default async (req) => {
       for (const collection of ["customers","receipts","payment-links","inventory-movements","review-requests"]) {
         v3Collections[collection] = await listV3Records(site.siteId, collection, { limit: 1000 });
       }
-      tenants.push({ siteId: site.siteId, site, commerce, v3Collections });
+      const assets = await assetManifest(site.siteId);
+      tenants.push({ siteId: site.siteId, site, commerce, v3Collections, assets });
     }
 
     const payload = {
