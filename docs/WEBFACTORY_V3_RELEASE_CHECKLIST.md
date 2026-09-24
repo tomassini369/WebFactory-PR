@@ -55,6 +55,8 @@ The dedicated WebFactory iOS app is deferred. Native Stripe Terminal/Tap to Pay 
 - [x] Owners can permanently delete their WebFactory account after typing `DELETE ACCOUNT`.
 - [x] Billing webhooks arriving after site deletion are safely ignored instead of generating retry failures.
 - [x] Account deletion deletes sites owned by the user, removes memberships from other businesses, then deletes the Netlify Identity user.
+- [x] Identity site references are removed for every affected member when a page is deleted or account membership is removed.
+- [x] Platform admin identities are protected from self-deletion through the client portal.
 - [x] Destructive actions are isolated in a portal Danger Zone and are not available to non-owner roles.
 
 ### Client portal and permissions
