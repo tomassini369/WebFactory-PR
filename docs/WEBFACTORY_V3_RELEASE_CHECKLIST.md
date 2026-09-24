@@ -1,6 +1,7 @@
 # WebFactory V3 — Release Checklist
 
 Status: pre-production checklist for PR #36  
+Latest validated head: `38cdc921d2fa84fe924433cbaa9708693b99a548` — CI green, Deploy Preview green, smoke test green, 0 commits behind `main`, PR mergeable and Ready for Review.  
 Branch: `feature/webfactory-v3-business-platform`
 
 ## Scope decision
@@ -16,7 +17,7 @@ The dedicated WebFactory iOS app is deferred. Native Stripe Terminal/Tap to Pay 
 - [x] Netlify secret scan reports no exposed credentials.
 - [x] Scheduled functions are present where expected.
 - [x] Deploy Preview smoke test verifies homepage, Templates, Builder, Client Portal and the V3 readiness endpoint over real HTTPS.
-- [ ] After merge, verify the production `/.netlify/functions/v3-release-readiness` response returns `readyForV3Web=true`. Production webhook/email secrets are intentionally not copied into Deploy Preview.
+- [ ] Publish the merged/current V3 build to Netlify production and verify `/.netlify/functions/v3-release-readiness` returns `readyForV3Web=true`. Production webhook/email secrets are intentionally not copied into Deploy Preview. The normal chat runtime cannot reach the Netlify upload proxy, so the final production publish requires Netlify UI/Work or another authenticated deploy environment.
 
 ### Automated verification
 - [x] `npm ci` passes in clean GitHub Actions runner.
