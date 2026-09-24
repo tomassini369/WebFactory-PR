@@ -5,6 +5,7 @@ import { createInventoryMovement } from "../lib/webfactory-v3-domain.mjs";
 import { getV3Record, putV3Record } from "../lib/webfactory-v3-store.mjs";
 import crypto from "node:crypto";
 import { refundState } from "../lib/refund-policy.mjs";
+import { assertStripeWriteAllowed } from "../lib/stripe-runtime.mjs";
 
 function env(name) { return globalThis.Netlify?.env?.get(name) || ""; }
 
@@ -75,6 +76,7 @@ export default async (req) => {
         record.reviewRequestId = reviewRequestId;
       }
     } else if (payload.action === "refund") {
+      assertStripeWriteAllowed();
       if (!record.stripePaymentIntentId || record.paymentStatus !== "paid") throw Object.assign(new Error("This transaction cannot be refunded through Stripe."), { status: 409 });
       const refundMath = refundState({
         amountTotal: record.amountTotal,
