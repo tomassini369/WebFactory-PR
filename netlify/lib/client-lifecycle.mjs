@@ -109,19 +109,7 @@ export async function purgeClientSite(siteId,{cancelSubscription=true}={}){
 
   try{await disconnectGoogle(site);}catch{}
 
-  const memberEmails=new Set((site.members||[]).map((member)=>normalizeEmail(member.email)).filter(Boolean));
-  try{
-    const users=await admin.listUsers({page:1,perPage:500});
-    for(const user of users||[]){
-      if(!memberEmails.has(normalizeEmail(user.email)))continue;
-      const previousSites=Array.isArray(user.appMetadata?.webfactory_site_ids)?user.appMetadata.webfactory_site_ids:[];
-      if(previousSites.includes(site.siteId)){
-        await admin.updateUser(user.id,{
-          app_metadata:{...(user.appMetadata||{}),webfactory_site_ids:previousSites.filter((id)=>id!==site.siteId)},
-        });
-      }
-    }
-  }catch{}
+  try{await removeSiteFromIdentityMembers(site);}catch{}
 
   for(const member of site.members||[]){
     const email=normalizeEmail(member.email);
@@ -142,6 +130,24 @@ export async function removeUserFromSite(site,email){
   const normalized=normalizeEmail(email);
   const members=(site.members||[]).filter((member)=>normalizeEmail(member.email)!==normalized);
   await clientSiteStore().delete(`members/${emailHash(normalized)}/${site.siteId}.json`).catch(()=>{});
+  try{
+    const perPage=100;
+    for(let page=1;page<=20;page+=1){
+      const users=await admin.listUsers({page,perPage});
+      if(!Array.isArray(users)||users.length===0)break;
+      const user=users.find((candidate)=>normalizeEmail(candidate.email)===normalized);
+      if(user){
+        const previousSites=Array.isArray(user.appMetadata?.webfactory_site_ids)?user.appMetadata.webfactory_site_ids:[];
+        if(previousSites.includes(site.siteId)){
+          await admin.updateUser(user.id,{
+            app_metadata:{...(user.appMetadata||{}),webfactory_site_ids:previousSites.filter((id)=>id!==site.siteId)},
+          });
+        }
+        break;
+      }
+      if(users.length<perPage)break;
+    }
+  }catch{}
   if(members.length===(site.members||[]).length)return site;
   return saveClientSite({...site,members,revision:Number(site.revision||0)+1,updatedAt:new Date().toISOString()});
 }
