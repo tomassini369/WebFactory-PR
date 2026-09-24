@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type CSSProperties, type Dispatch, type SetStateAction } from 'react'
-import { demoConfigs, templateGroups, templateGroupForCategory, templateVisualStyle } from './demoData'
+import { templateConfigs, templateGroups, templateGroupForCategory, templateVisualStyle } from './templateData'
 import BuilderAiAssistant from './BuilderAiAssistant'
 import './builder.css'
 
@@ -187,7 +187,7 @@ const initialState: BuilderState = {
   },
 }
 
-const categories = [...new Set([...demoConfigs.map((demo)=>demo.category),'Other'])].sort()
+const categories = [...new Set([...templateConfigs.map((template)=>template.category),'Other'])].sort()
 const styles: BuilderStyle[] = ['Modern','Luxury','Minimal','Bold']
 
 const featureHelp: Record<Language,Record<string,string>> = {
@@ -633,20 +633,20 @@ function BusinessStep({state,setState,lang,lockedEmail}:{state:BuilderState;setS
 function DesignStep({state,setState,lang}:{state:BuilderState;setState:Dispatch<SetStateAction<BuilderState>>;lang:Language}) {
   const setDesign = <K extends keyof BuilderState['design']>(key:K, value:BuilderState['design'][K]) =>
     setState((current)=>({...current,design:{...current.design,[key]:value}}))
-  const selectedTemplate = demoConfigs.find((demo)=>demo.slug===state.design.templateSlug)
+  const selectedTemplate = templateConfigs.find((template)=>template.slug===state.design.templateSlug)
   const selectedTemplateGroup = selectedTemplate ? templateGroupForCategory(selectedTemplate.category) : undefined
   const [templateGroupId,setTemplateGroupId] = useState(selectedTemplateGroup?.id || templateGroups[0]?.id || '')
   useEffect(()=>{ if (selectedTemplateGroup?.id) setTemplateGroupId(selectedTemplateGroup.id) },[selectedTemplateGroup?.id])
-  const visibleTemplates = demoConfigs.filter((demo)=>templateGroups.find((group)=>group.id===templateGroupId)?.categories.includes(demo.category))
+  const visibleTemplates = templateConfigs.filter((template)=>templateGroups.find((group)=>group.id===templateGroupId)?.categories.includes(template.category))
 
   const selectTemplate = (slug:string) => {
-    const demo = demoConfigs.find((entry)=>entry.slug===slug)
+    const template = templateConfigs.find((entry)=>entry.slug===slug)
     setState((current)=>({
       ...current,
       design:{
         ...current.design,
         templateSlug:slug,
-        ...(demo ? {primary:demo.dark,secondary:demo.accent,style:({modern:'Modern',luxury:'Luxury',minimal:'Minimal',bold:'Bold'} as const)[templateVisualStyle(demo.category)]} : {}),
+        ...(template ? {primary:template.dark,secondary:template.accent,style:({modern:'Modern',luxury:'Luxury',minimal:'Minimal',bold:'Bold'} as const)[templateVisualStyle(template.category)]} : {}),
       },
     }))
   }
@@ -683,19 +683,19 @@ function DesignStep({state,setState,lang}:{state:BuilderState;setState:Dispatch<
         {state.design.templateSlug!==''||templateGroupId?<>
           <div className="wf-template-category-picker">
             <small>{lang==='es'?'TEMPLATES POR CATEGORÍA':'TEMPLATES BY CATEGORY'}</small>
-            <div>{templateGroups.map((group)=><button type="button" key={group.id} className={templateGroupId===group.id?'active':''} onClick={()=>setTemplateGroupId(group.id)}>{lang==='es'?group.nameEs:group.nameEn}<b>{demoConfigs.filter((demo)=>group.categories.includes(demo.category)).length}</b></button>)}</div>
+            <div>{templateGroups.map((group)=><button type="button" key={group.id} className={templateGroupId===group.id?'active':''} onClick={()=>setTemplateGroupId(group.id)}>{lang==='es'?group.nameEs:group.nameEn}<b>{templateConfigs.filter((template)=>group.categories.includes(template.category)).length}</b></button>)}</div>
           </div>
-          {visibleTemplates.map((demo)=>(
-            <article key={demo.slug} className={state.design.templateSlug===demo.slug?'selected':''}>
-              <button type="button" onClick={()=>selectTemplate(demo.slug)} aria-pressed={state.design.templateSlug===demo.slug}>
-                <span style={{backgroundImage:`linear-gradient(180deg,transparent,rgba(5,10,16,.78)),url(${demo.heroImage})`}}>
-                  {state.design.templateSlug===demo.slug && <b>✓ {lang==='es'?'Seleccionado':'Selected'}</b>}
+          {visibleTemplates.map((template)=>(
+            <article key={template.slug} className={state.design.templateSlug===template.slug?'selected':''}>
+              <button type="button" onClick={()=>selectTemplate(template.slug)} aria-pressed={state.design.templateSlug===template.slug}>
+                <span style={{backgroundImage:`linear-gradient(180deg,transparent,rgba(5,10,16,.78)),url(${template.heroImage})`}}>
+                  {state.design.templateSlug===template.slug && <b>✓ {lang==='es'?'Seleccionado':'Selected'}</b>}
                 </span>
                 <small>TEMPLATE</small>
-                <strong>{demo.category}</strong>
-                <em>{demo.name}</em>
+                <strong>{template.category}</strong>
+                <em>{template.name}</em>
               </button>
-              <a href={`/templates/${demo.slug}`} target="_blank" rel="noreferrer">{lang==='es'?'Ver Template completo':'View full Template'} ↗</a>
+              <a href={`/templates/${template.slug}`} target="_blank" rel="noreferrer">{lang==='es'?'Ver Template completo':'View full Template'} ↗</a>
             </article>
           ))}
         </>:null}
@@ -1057,7 +1057,7 @@ function FinalStep({state,setStep,lang,complimentaryInviteToken}:{state:BuilderS
   const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(state.business.email.trim())
   const customerReady = Boolean(state.business.name.trim() && state.business.contactName.trim() && emailValid)
   const paymentReady = Object.values(state.payments.methods).some(Boolean)
-  const selectedTemplate = demoConfigs.find((demo)=>demo.slug===state.design.templateSlug)
+  const selectedTemplate = templateConfigs.find((template)=>template.slug===state.design.templateSlug)
   const canCheckout = Boolean(customerReady && paymentReady && state.business.slug.trim() && !missingUpload && !checkingOut)
 
   const startCheckout = async () => {
@@ -1181,11 +1181,11 @@ export default function WebFactoryBuilder({lang}:{lang:Language}) {
   useEffect(()=>{
     const params = new URLSearchParams(window.location.search)
     const templateSlug = params.get('template') || ''
-    const demo = demoConfigs.find((entry)=>entry.slug===templateSlug)
-    if (demo) {
+    const template = templateConfigs.find((entry)=>entry.slug===templateSlug)
+    if (template) {
       setState((current)=>({
         ...current,
-        design:{...current.design,templateSlug:demo.slug,primary:demo.dark,secondary:demo.accent,style:({modern:'Modern',luxury:'Luxury',minimal:'Minimal',bold:'Bold'} as const)[templateVisualStyle(demo.category)]},
+        design:{...current.design,templateSlug:template.slug,primary:template.dark,secondary:template.accent,style:({modern:'Modern',luxury:'Luxury',minimal:'Minimal',bold:'Bold'} as const)[templateVisualStyle(template.category)]},
       }))
       setStep(1)
     }
