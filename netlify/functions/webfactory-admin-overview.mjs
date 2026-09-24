@@ -94,8 +94,8 @@ function publicClient(site) {
     stripeStatus: site.paymentRules?.stripeCapabilityStatus || "not_started",
     calendarConnected: Boolean(site.googleCalendar?.connected),
     planName: servicePlan.name || "WebFactory Premium Commerce Website",
-    billingModel: servicePlan.billingModel || "one_time",
-    billingStatus: servicePlan.billingStatus || "paid",
+    billingModel: servicePlan.billingModel || "subscription",
+    billingStatus: servicePlan.billingStatus || "subscription_required",
     subscriptionStatus: servicePlan.subscriptionStatus || "not_started",
     updatedAt: site.updatedAt || site.createdAt || "",
     templateMode: site.design?.mode === "demo_base" ? "template_base" : (site.design?.mode || (site.design?.templateSlug ? "template_base" : "custom")),
@@ -151,7 +151,6 @@ export default async (req) => {
     const pastDueSubscriptions = sites.filter((site) => ["past_due", "unpaid"].includes(site.servicePlan?.subscriptionStatus)).length;
     const secretNames = [
       "STRIPE_SECRET_KEY",
-      "STRIPE_PRICE_WEBFACTORY_PREMIUM",
       "STRIPE_PRICE_WEBFACTORY_MONTHLY",
       "STRIPE_PRICE_WEBFACTORY_ANNUAL",
       "STRIPE_WEBHOOK_SECRET",
