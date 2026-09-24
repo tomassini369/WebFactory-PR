@@ -1,6 +1,6 @@
 import { assertSameOrigin, authorizedSites, errorResponse, requireSiteAccess, siteRoleCapabilities } from "../lib/client-auth.mjs";
 import { normalizeEmail, patchClientSite, publicClientSite } from "../lib/client-store.mjs";
-import { cleanText, validEmail } from "../lib/order-store.mjs";
+import { cleanText, validEmail } from "../lib/platform-utils.mjs";
 import { normalizeTaxConfig } from "../lib/webfactory-v3-domain.mjs";
 
 const allowedSections = new Set(["business", "design", "catalog", "employees", "hours", "paymentRules", "settings", "taxConfig", "members", "reviewSettings"]);
