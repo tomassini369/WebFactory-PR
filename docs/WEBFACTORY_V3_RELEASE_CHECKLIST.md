@@ -81,7 +81,7 @@ The dedicated WebFactory iOS app is deferred. Native Stripe Terminal/Tap to Pay 
 - [x] Stripe payouts are visible without exposing bank data.
 - [x] Full refunds reconcile receipt and inventory.
 - [ ] Manually test a Stripe test-mode storefront purchase end-to-end.
-- [ ] Current live Connect account is not charge-enabled (`charges_enabled=false`, `payouts_enabled=false`, onboarding incomplete). Complete merchant onboarding before any live end-to-end payment test.
+- [ ] Current live Connect account was re-verified on 2026-09-24 and remains not charge-enabled (`charges_enabled=false`, `payouts_enabled=false`, `details_submitted=false`). Complete merchant onboarding before any live end-to-end payment test.
 - [ ] Manually test a Payment Link purchase end-to-end.
 - [x] Refund policy tests verify cumulative full refunds, remaining balance limits and one-time full-refund inventory restore logic. Backend cumulative refund math and tracked-inventory restore logic are covered by automated tests/build validation.
 - [x] Partial refund policy is cumulative; partial refunds do not restore inventory and the portal keeps refund action available until the refundable balance reaches zero. Portal now supports refund amount + reason and repeated partial refunds up to the remaining balance.
