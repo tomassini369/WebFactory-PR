@@ -3,6 +3,7 @@ name: WebFactory V3 CI
 on:
   push:
     branches:
+      - main
       - feature/webfactory-v3-business-platform
   pull_request:
     branches:
