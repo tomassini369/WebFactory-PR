@@ -1,6 +1,7 @@
 import { clientCommerceStore, commerceKey, getClientSiteBySlug } from "../lib/client-store.mjs";
 import { cleanText, publicBaseUrl, validEmail } from "../lib/platform-utils.mjs";
 import { siteEntitlement } from "../lib/subscription-billing.mjs";
+import { assertStripeWriteAllowed } from "../lib/stripe-runtime.mjs";
 import { calculateTax } from "../lib/webfactory-v3-domain.mjs";
 import { listV3Records } from "../lib/webfactory-v3-store.mjs";
 
@@ -69,6 +70,7 @@ export default async (req) => {
 
     const accountId = site.paymentRules?.stripeConnectedAccountId;
     if (!accountId || !site.paymentRules?.methods?.stripe) throw Object.assign(new Error("Online payments are not connected for this business."), { status: 409 });
+    assertStripeWriteAllowed();
     if (await verifyMerchantCapability(accountId) !== "active") throw Object.assign(new Error("This business must finish Stripe verification before accepting payments."), { status: 409 });
 
     const transactionId = `txn_pl_${checkoutAttemptId}`;
