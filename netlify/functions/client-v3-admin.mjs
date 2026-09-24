@@ -1,5 +1,5 @@
 import { assertSameOrigin, errorResponse, requireSiteAccess, requireSiteCapability } from "../lib/client-auth.mjs";
-import { cleanText } from "../lib/order-store.mjs";
+import { cleanText } from "../lib/platform-utils.mjs";
 import { createCustomerRecord, createInventoryMovement, createPaymentLinkRecord } from "../lib/webfactory-v3-domain.mjs";
 import { sendEmail } from "../lib/email.mjs";
 import { getV3Record, listV3Records, putV3Record } from "../lib/webfactory-v3-store.mjs";
