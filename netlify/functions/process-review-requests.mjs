@@ -19,9 +19,18 @@ export default async () => {
       if (!request.customer?.email || !request.reviewUrl) continue;
       attempted += 1;
       try {
-        const businessName = site.business?.name || site.business?.nameEn || site.business?.nameEs || "the business";
-        const customerName = request.customer?.name || "there";
-        const text = [
+        const es = site.settings?.locale === "es";
+        const businessName = (es ? (site.business?.nameEs || site.business?.name || site.business?.nameEn) : (site.business?.nameEn || site.business?.name || site.business?.nameEs)) || (es ? "el negocio" : "the business");
+        const customerName = request.customer?.name || (es ? "hola" : "there");
+        const text = es ? [
+          `Hola ${customerName},`,
+          "",
+          `Gracias por elegir ${businessName}.`,
+          "Si tienes un momento, agradeceríamos mucho tu reseña:",
+          request.reviewUrl,
+          "",
+          "Gracias.",
+        ].join("\n") : [
           `Hello ${customerName},`,
           "",
           `Thank you for choosing ${businessName}.`,
@@ -35,7 +44,7 @@ export default async () => {
           category: "team",
           fromName: businessName,
           to: request.customer.email,
-          subject: `How was your experience with ${businessName}?`,
+          subject: es ? `¿Cómo fue tu experiencia con ${businessName}?` : `How was your experience with ${businessName}?`,
           text,
         });
 
