@@ -57,11 +57,12 @@ export function useFeedbackExperience() {
     const observer = 'IntersectionObserver' in window ? new IntersectionObserver((entries) => {
       if (reduceMotion.matches) return
       for (const entry of entries) {
-        if (!entry.isIntersecting || entry.intersectionRatio < 0.58 || entered.has(entry.target)) continue
+        const visibleScreenRatio = entry.intersectionRect.height / Math.max(window.innerHeight, 1)
+        if (!entry.isIntersecting || visibleScreenRatio < 0.45 || entered.has(entry.target)) continue
         const type = (entry.target as HTMLElement).dataset.scrollSound
         if (feedback.sectionEnter(type === 'feature' || type === 'major' ? type : 'section')) entered.add(entry.target)
       }
-    }, { threshold: [0.58, 0.7] }) : null
+    }, { threshold: [0, 0.01, 0.1, 0.25] }) : null
     const observed = new WeakSet<Element>()
     const observeSections = (root: ParentNode) => {
       const sections = root instanceof Element && root.matches('[data-scroll-sound]')
