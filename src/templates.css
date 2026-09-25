@@ -7,9 +7,7 @@
 .templates-hero{position:relative;overflow:hidden;background:
   radial-gradient(circle at 78% 24%,rgba(77,150,243,.34),transparent 30%),
   linear-gradient(135deg,#071120 0%,#0b1529 56%,#10264b 100%)}
-.templates-hero:before,.templates-hero:after{content:"";position:absolute;border:1px solid rgba(255,255,255,.15);backdrop-filter:blur(12px);pointer-events:none}
-.templates-hero:before{width:230px;height:150px;right:10%;top:24%;border-radius:34px;transform:rotate(12deg);box-shadow:0 30px 90px rgba(0,0,0,.2)}
-.templates-hero:after{width:110px;height:110px;right:27%;bottom:-28px;border-radius:30px;transform:rotate(-18deg)}
+
 .templates-hero .shell{position:relative;z-index:2}.templates-hero h1{text-wrap:balance;letter-spacing:-.055em}.templates-hero .eyebrow{display:inline-flex;padding:7px 11px;border:1px solid rgba(255,255,255,.2);border-radius:999px;background:rgba(255,255,255,.07)}
 .template-group-list button,.template-card,.template-card-art,.template-card-actions a{transition:transform .25s ease,box-shadow .25s ease,border-color .25s ease,background .25s ease}
 .template-group-list button:hover{transform:translateX(4px);border-color:rgba(60,134,246,.35)}
@@ -18,11 +16,11 @@
 .template-card-art{position:relative;overflow:hidden;border-radius:22px 22px 12px 12px;transform:perspective(900px) rotateX(.01deg)}
 .template-card-art:before{content:"";position:absolute;inset:0;background:linear-gradient(115deg,transparent 35%,rgba(255,255,255,.22) 50%,transparent 66%);transform:translateX(-120%);transition:transform .8s ease}
 .template-card:hover .template-card-art:before{transform:translateX(120%)}
-.template-card-art:after{content:"";position:absolute;right:14px;top:14px;width:74px;height:52px;border-radius:15px;border:1px solid rgba(255,255,255,.28);background:rgba(255,255,255,.08);backdrop-filter:blur(8px);box-shadow:0 15px 35px rgba(0,0,0,.14)}
+
 .template-card>div{position:relative}.template-card h3{letter-spacing:-.025em}.template-card-actions a:hover{transform:translateY(-2px)}.template-card-actions a.primary{box-shadow:0 10px 28px rgba(60,134,246,.2)}
 .template-card.visual-luxury h3{font-family:Georgia,'Times New Roman',serif;font-weight:500}.template-card.visual-luxury{border-radius:10px}.template-card.visual-luxury .template-card-art{border-radius:8px}
 .template-card.visual-minimal{box-shadow:none;border-radius:10px}.template-card.visual-minimal .template-card-art{border-radius:8px}.template-card.visual-minimal:hover{box-shadow:0 18px 45px rgba(11,21,41,.07)}
 .template-card.visual-bold{transform:rotate(-.3deg)}.template-card.visual-bold:nth-child(even){transform:rotate(.35deg)}.template-card.visual-bold:hover{transform:translateY(-7px) rotate(0deg)}.template-card.visual-bold:before{content:"";position:absolute;width:42px;height:22px;border:3px solid #3c86f6;border-radius:50%;right:-10px;top:-8px;transform:rotate(-16deg);opacity:.35}
-.template-card.visual-modern .template-card-art:after{box-shadow:0 0 35px rgba(60,134,246,.22),0 15px 35px rgba(0,0,0,.14)}
-@media(max-width:640px){.templates-hero:before{right:-90px;top:32%}.templates-hero:after{display:none}.template-card,.template-card.visual-bold,.template-card.visual-bold:nth-child(even){transform:none}}
+
+@media(max-width:640px){.template-card,.template-card.visual-bold,.template-card.visual-bold:nth-child(even){transform:none}}
 @media(prefers-reduced-motion:reduce){.templates-page *{animation:none!important;transition-duration:.01ms!important}}

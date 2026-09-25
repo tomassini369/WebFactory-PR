@@ -270,7 +270,6 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
   z-index:1;width:min(60vw,760px);height:min(60vw,760px);right:1%;top:3%;
   background:radial-gradient(circle,rgba(25,109,255,.28),rgba(41,97,222,.09) 43%,transparent 72%);filter:blur(12px)
 }
-.wf-home .hero:after,.wf-home .final:after{content:none;display:none}
 .wf-home .hero>div:not(.wf-home-hero-media){position:relative;z-index:2;max-width:650px}
 .wf-home .hero .eyebrow,.wf-home .hero h3{color:#58a5ff}
 .wf-home .hero h3{padding:0;border:0;background:none}
