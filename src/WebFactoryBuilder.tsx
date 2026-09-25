@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type CSSProperties, type Dispatch, type SetStateAction } from 'react'
 import { templateConfigs, templateGroups, templateGroupForCategory, templateVisualStyle } from './templateData'
 import BuilderAiAssistant from './BuilderAiAssistant'
+import { feedback } from './feedback/feedback'
 import './builder.css'
 
 type Language = 'es' | 'en'
@@ -1096,8 +1097,10 @@ function FinalStep({state,setStep,lang,complimentaryInviteToken}:{state:BuilderS
         throw new Error(result.message || (lang==='es'?'No se pudo preparar tu acceso.':'Your access could not be prepared.'))
       }
       setCreated({portalUrl:result.portalUrl,publicUrl:result.publicUrl})
+      feedback.success()
     } catch (error) {
       setCheckoutError(error instanceof Error ? error.message : (lang==='es'?'No se pudo crear tu acceso.':'Your access could not be created.'))
+      feedback.error()
       setCheckingOut(false)
     }
   }
