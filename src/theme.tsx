@@ -34,6 +34,10 @@ function platformSurfaceForPath(pathname: string) {
   return true
 }
 
+function legalPlatformPath(pathname: string) {
+  return /^\/(?:privacy|terms|refund-policy)\/?$/.test(pathname)
+}
+
 function applyDocumentTheme(theme: Theme, isPlatformSurface: boolean) {
   const root = document.documentElement
   root.dataset.wfTheme = theme
@@ -56,6 +60,10 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setThemeState] = useState<Theme>(getInitialTheme)
   const isPlatformSurface = useMemo(
     () => typeof window === 'undefined' ? true : platformSurfaceForPath(window.location.pathname),
+    [],
+  )
+  const hasInlineThemeToggle = useMemo(
+    () => typeof window !== 'undefined' && legalPlatformPath(window.location.pathname),
     [],
   )
 
@@ -87,7 +95,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   return (
     <ThemeContext.Provider value={value}>
       {children}
-      {isPlatformSurface && <ThemeToggle floating />}
+      {isPlatformSurface && !hasInlineThemeToggle && <ThemeToggle floating />}
     </ThemeContext.Provider>
   )
 }
