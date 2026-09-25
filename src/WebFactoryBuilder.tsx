@@ -1047,7 +1047,7 @@ function PaymentsStep({state,setState,lang}:{state:BuilderState;setState:Dispatc
   )
 }
 
-function FinalStep({state,setStep,lang,complimentaryInviteToken}:{state:BuilderState;setStep:(step:number)=>void;lang:Language;complimentaryInviteToken:string}) {
+function FinalStep({state,setStep,lang,complimentaryInviteToken,trialInviteToken}:{state:BuilderState;setStep:(step:number)=>void;lang:Language;complimentaryInviteToken:string;trialInviteToken:string}) {
   const [checkoutError,setCheckoutError] = useState('')
   const [checkingOut,setCheckingOut] = useState(false)
   const [created,setCreated] = useState<{portalUrl:string;publicUrl:string}|null>(null)
@@ -1076,6 +1076,7 @@ function FinalStep({state,setStep,lang,complimentaryInviteToken}:{state:BuilderS
           slug:state.business.slug,
           locale:lang,
           complimentaryInviteToken,
+          trialInviteToken,
           orderData:{
             client:{
               name:state.business.contactName,
@@ -1134,8 +1135,8 @@ function FinalStep({state,setStep,lang,complimentaryInviteToken}:{state:BuilderS
         </div>
         <p className="wf-after-payment-security">{lang==='es'?'WebFactory nunca te pedirá contraseñas, códigos de seguridad, datos bancarios ni llaves secretas.':'WebFactory will never ask for passwords, security codes, bank details, or secret keys.'}</p>
       </section>
-      {created ? <div className="wf-checkout-placeholder success"><div><small>{lang==='es'?'ACCESO ENVIADO':'ACCESS SENT'}</small><strong>{lang==='es'?'Revisa tu email':'Check your email'}</strong><span>{lang==='es'?'Establece tu contraseña, entra al portal y activa las 7 días gratis cuando estés listo.':'Set your password, enter the portal, and activate the free 7 days when you are ready.'}</span></div><a className="wf-builder-access-link" href={created.portalUrl}>{lang==='es'?'Abrir portal administrativo':'Open administrative portal'}</a></div> : <div className="wf-checkout-placeholder">
-        <div><small>{lang==='es'?'SIGUIENTE ETAPA':'NEXT STEP'}</small><strong>{complimentaryInviteToken?(lang==='es'?'Crear website con acceso gratuito':'Create website with complimentary access'):(lang==='es'?'Crear acceso · 7 días gratis':'Create access · 7 days free')}</strong><span>{complimentaryInviteToken?(lang==='es'?'No se requiere suscripción mientras el acceso complimentary permanezca activo.':'No subscription is required while complimentary access remains active.'):(lang==='es'?'Después escoge $30 mensual o $350 anual. Sin comisión sobre tus ventas.':'Then choose $30 monthly or $350 yearly. No commission on your sales.')}</span></div>
+      {created ? <div className="wf-checkout-placeholder success"><div><small>{lang==='es'?'ACCESO ENVIADO':'ACCESS SENT'}</small><strong>{lang==='es'?'Revisa tu email':'Check your email'}</strong><span>{lang==='es'?'Establece tu contraseña, entra al portal y activa los 7 días gratis cuando estés listo.':'Set your password, enter the portal, and activate the free 7 days when you are ready.'}</span></div><a className="wf-builder-access-link" href={created.portalUrl}>{lang==='es'?'Abrir portal administrativo':'Open administrative portal'}</a></div> : <div className="wf-checkout-placeholder">
+        <div><small>{lang==='es'?'SIGUIENTE ETAPA':'NEXT STEP'}</small><strong>{complimentaryInviteToken?(lang==='es'?'Crear website con acceso gratuito':'Create website with complimentary access'):(lang==='es'?'Crear acceso · 7 días gratis':'Create access · 7 days free')}</strong><span>{complimentaryInviteToken?(lang==='es'?'No se requiere suscripción mientras el acceso complimentary permanezca activo.':'No subscription is required while complimentary access remains active.'):(lang==='es'?'Activa el trial desde el portal cuando estés listo; después podrás escoger $30 mensual o $350 anual.':'Activate the trial from your portal when ready; then choose $30 monthly or $350 yearly.')}</span></div>
         <button disabled={!canCheckout} onClick={startCheckout}>{checkingOut?(lang==='es'?'Preparando acceso…':'Preparing access…'):(lang==='es'?'Crear mi cuenta':'Create my account')}</button>
       </div>}
       {checkoutError && <div className="wf-checkout-warning error">{checkoutError}</div>}
@@ -1178,6 +1179,7 @@ export default function WebFactoryBuilder({lang}:{lang:Language}) {
   const [saved,setSaved] = useState(false)
   const [complimentaryInviteToken,setComplimentaryInviteToken] = useState('')
   const [complimentaryInviteError,setComplimentaryInviteError] = useState('')
+  const [trialInviteToken,setTrialInviteToken] = useState('')
 
   useEffect(()=>{
     const params = new URLSearchParams(window.location.search)
@@ -1191,9 +1193,16 @@ export default function WebFactoryBuilder({lang}:{lang:Language}) {
       setStep(1)
     }
     const inviteToken = params.get('complimentary_invite') || ''
-    if (!inviteToken) return
-    fetch('/.netlify/functions/complimentary-invite-status?token='+encodeURIComponent(inviteToken),{cache:'no-store'})
-      .then(async(response)=>{const result=await response.json();if(!response.ok||!result.valid)throw new Error(lang==='es'?'La invitación gratuita es inválida o expiró.':'The complimentary invitation is invalid or expired.');setComplimentaryInviteToken(inviteToken);setState((current)=>({...current,business:{...current.business,email:result.email}}))})
+    if (inviteToken) {
+      fetch('/.netlify/functions/complimentary-invite-status?token='+encodeURIComponent(inviteToken),{cache:'no-store'})
+        .then(async(response)=>{const result=await response.json();if(!response.ok||!result.valid)throw new Error(lang==='es'?'La invitación gratuita es inválida o expiró.':'The complimentary invitation is invalid or expired.');setComplimentaryInviteToken(inviteToken);setState((current)=>({...current,business:{...current.business,email:result.email}}))})
+        .catch((error)=>setComplimentaryInviteError(error instanceof Error?error.message:String(error)))
+      return
+    }
+    const trialToken = params.get('trial_invite') || ''
+    if (!trialToken) return
+    fetch('/.netlify/functions/trial-invite-status?token='+encodeURIComponent(trialToken),{cache:'no-store'})
+      .then(async(response)=>{const result=await response.json();if(!response.ok||!result.valid)throw new Error(lang==='es'?'La invitación de prueba de 7 días es inválida o expiró.':'The 7-day trial invitation is invalid or expired.');setTrialInviteToken(trialToken);setState((current)=>({...current,business:{...current.business,email:result.email}}))})
       .catch((error)=>setComplimentaryInviteError(error instanceof Error?error.message:String(error)))
   },[])
 
@@ -1228,14 +1237,14 @@ export default function WebFactoryBuilder({lang}:{lang:Language}) {
   }
 
   const stepContent = [
-    <BusinessStep key="business" state={state} setState={setState} lang={lang} lockedEmail={complimentaryInviteToken?state.business.email:undefined}/>,
+    <BusinessStep key="business" state={state} setState={setState} lang={lang} lockedEmail={complimentaryInviteToken||trialInviteToken?state.business.email:undefined}/>,
     <DesignStep key="design" state={state} setState={setState} lang={lang}/>,
     <FeaturesStep key="features" state={state} setState={setState} lang={lang}/>,
     <CatalogStep key="catalog" state={state} setState={setState} lang={lang}/>,
     <TeamStep key="team" state={state} setState={setState} lang={lang}/>,
     <HoursStep key="hours" state={state} setState={setState} lang={lang}/>,
     <PaymentsStep key="payments" state={state} setState={setState} lang={lang}/>,
-    <FinalStep key="preview" state={state} setStep={setStep} lang={lang} complimentaryInviteToken={complimentaryInviteToken}/>,
+    <FinalStep key="preview" state={state} setStep={setStep} lang={lang} complimentaryInviteToken={complimentaryInviteToken} trialInviteToken={trialInviteToken}/>,
   ][step]
 
   return (
@@ -1267,7 +1276,7 @@ export default function WebFactoryBuilder({lang}:{lang:Language}) {
             <div><small>{lang==='es'?'CONFIGURACIÓN GUIADA':'GUIDED SETUP'}</small><strong>{labels[step]}</strong></div>
             <span>{completion}%</span>
           </div>
-          {complimentaryInviteToken&&<div className="wf-invite-banner"><strong>{lang==='es'?'Acceso complimentary activo':'Complimentary access active'}</strong><span>{lang==='es'?'Completa el Builder usando el email invitado. No se cobrará suscripción mientras este acceso permanezca activo.':'Complete the Builder using the invited email. No subscription will be charged while this access remains active.'}</span></div>}{complimentaryInviteError&&<div className="wf-checkout-warning error">{complimentaryInviteError}</div>}<BuilderAiAssistant state={state} setState={setState} lang={lang}/>
+          {(complimentaryInviteToken||trialInviteToken)&&<div className="wf-invite-banner"><strong>{complimentaryInviteToken?(lang==='es'?'Acceso complimentary activo':'Complimentary access active'):(lang==='es'?'Invitación de prueba de 7 días activa':'7-day trial invitation active')}</strong><span>{complimentaryInviteToken?(lang==='es'?'Completa el Builder usando el email invitado. No se cobrará suscripción mientras este acceso permanezca activo.':'Complete the Builder using the invited email. No subscription will be charged while this access remains active.'):(lang==='es'?'Completa el Builder con el email invitado. No se requiere tarjeta; activarás los 7 días desde tu portal.':'Complete the Builder with the invited email. No card is required; activate the 7 days from your portal.')}</span></div>}{complimentaryInviteError&&<div className="wf-checkout-warning error">{complimentaryInviteError}</div>}<BuilderAiAssistant state={state} setState={setState} lang={lang}/>
           {stepContent}
           <div className="wf-builder-navigation">
             <button className="secondary" disabled={step===0} onClick={()=>setStep((current)=>Math.max(0,current-1))}>← {lang==='es'?'Atrás':'Back'}</button>

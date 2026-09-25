@@ -101,7 +101,12 @@ export default async (req) => {
     }
     const ownerEmail = normalizeEmail(order.client.email);
     const complimentaryInviteToken = cleanText(payload.complimentaryInviteToken, 200);
+    const trialInviteToken = cleanText(payload.trialInviteToken, 200);
     let complimentaryInvite = null;
+    let trialInvite = null;
+    if (complimentaryInviteToken && trialInviteToken) {
+      throw Object.assign(new Error("Use one invitation link at a time."), { status: 400 });
+    }
     if (complimentaryInviteToken) {
       complimentaryInvite = await clientSiteStore().get(`complimentary-invites/${inviteHash(complimentaryInviteToken)}.json`, { type: "json" });
       const expired = !complimentaryInvite?.expiresAt || new Date(complimentaryInvite.expiresAt).getTime() <= Date.now();
@@ -110,6 +115,16 @@ export default async (req) => {
       }
       if (normalizeEmail(complimentaryInvite.email) !== ownerEmail) {
         throw Object.assign(new Error("Use the email address that received the complimentary invitation."), { status: 403 });
+      }
+    }
+    if (trialInviteToken) {
+      trialInvite = await clientSiteStore().get(`trial-invites/${inviteHash(trialInviteToken)}.json`, { type: "json" });
+      const expired = !trialInvite?.expiresAt || new Date(trialInvite.expiresAt).getTime() <= Date.now();
+      if (!trialInvite || trialInvite.status !== "pending" || expired) {
+        throw Object.assign(new Error("This 7-day trial invitation is invalid or expired."), { status: 403 });
+      }
+      if (normalizeEmail(trialInvite.email) !== ownerEmail) {
+        throw Object.assign(new Error("Use the email address that received the 7-day trial invitation."), { status: 403 });
       }
     }
     const requestedSlug = slugify(payload.slug || order.business.name);
@@ -203,6 +218,14 @@ export default async (req) => {
     }
 
     await ensureClientIdentity(ownerEmail, site.siteId, order.business.name);
+    if (trialInvite) {
+      await clientSiteStore().setJSON(`trial-invites/${inviteHash(trialInviteToken)}.json`, {
+        ...trialInvite,
+        status: "redeemed",
+        redeemedAt: new Date().toISOString(),
+        siteId: site.siteId,
+      });
+    }
     const origin = new URL(req.url).origin;
     return Response.json({
       ok: true,
