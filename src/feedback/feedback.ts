@@ -8,15 +8,17 @@ const soundCooldowns: Record<FeedbackSound, number> = {
   tap: 65, toggle: 90, navigate: 240, success: 180, warning: 180, error: 180, section: 1800, feature: 1300, major: 2200,
 }
 const soundProfiles: Record<FeedbackSound, { frequency: number; endFrequency?: number; duration: number; volume: number; type?: OscillatorType }> = {
-  tap: { frequency: 1380, endFrequency: 1180, duration: 0.024, volume: 0.07, type: 'sine' },
-  toggle: { frequency: 810, endFrequency: 1050, duration: 0.035, volume: 0.075, type: 'sine' },
-  navigate: { frequency: 520, endFrequency: 940, duration: 0.105, volume: 0.09, type: 'sine' },
-  success: { frequency: 760, endFrequency: 1170, duration: 0.105, volume: 0.11, type: 'sine' },
-  warning: { frequency: 620, endFrequency: 520, duration: 0.075, volume: 0.065, type: 'sine' },
-  error: { frequency: 420, endFrequency: 330, duration: 0.105, volume: 0.075, type: 'sine' },
-  section: { frequency: 470, endFrequency: 760, duration: 0.11, volume: 0.055, type: 'sine' },
-  feature: { frequency: 1040, endFrequency: 1380, duration: 0.045, volume: 0.045, type: 'sine' },
-  major: { frequency: 360, endFrequency: 690, duration: 0.16, volume: 0.055, type: 'sine' },
+  // Keep the envelope long enough to register on laptop/mobile speakers while
+  // staying below 0.15 full-scale amplitude for a restrained UI sound.
+  tap: { frequency: 1320, endFrequency: 1080, duration: 0.052, volume: 0.12, type: 'sine' },
+  toggle: { frequency: 790, endFrequency: 1040, duration: 0.06, volume: 0.12, type: 'sine' },
+  navigate: { frequency: 500, endFrequency: 900, duration: 0.13, volume: 0.12, type: 'sine' },
+  success: { frequency: 740, endFrequency: 1120, duration: 0.13, volume: 0.14, type: 'sine' },
+  warning: { frequency: 600, endFrequency: 500, duration: 0.09, volume: 0.1, type: 'sine' },
+  error: { frequency: 410, endFrequency: 320, duration: 0.12, volume: 0.11, type: 'sine' },
+  section: { frequency: 450, endFrequency: 740, duration: 0.14, volume: 0.09, type: 'sine' },
+  feature: { frequency: 1000, endFrequency: 1320, duration: 0.065, volume: 0.08, type: 'sine' },
+  major: { frequency: 350, endFrequency: 660, duration: 0.18, volume: 0.09, type: 'sine' },
 }
 
 function readPreferences(): FeedbackPreferences {
