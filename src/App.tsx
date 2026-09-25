@@ -135,19 +135,6 @@ function Heading({data,invert=false}:{data:string[],invert?:boolean}) {
   return <div className={'heading '+(invert?'invert':'')}><p>{data[0]}</p><h2>{data[1]}</h2>{data[2]&&<span>{data[2]}</span>}</div>
 }
 
-function Devices(){
-  return <div className="devices">
-    <div className="desktop-device">
-      <div className="browser"><i/><i/><i/></div>
-      <div className="screen-nav"><b>STUDIO</b><span>Services</span><span>Shop</span><span>Book</span></div>
-      <div className="screen-hero"><small>PREMIUM SERVICE</small><strong>Designed to move your business forward.</strong><button>Book now</button></div>
-      <div className="screen-cards"><i/><i/><i/></div>
-    </div>
-    <div className="tablet-device"><b>STUDIO</b><small>Premium service</small><strong>Book your next visit.</strong></div>
-    <div className="phone-device"><b>STUDIO</b><small>Shop · Book</small><strong>Simple. Fast. Ready.</strong></div>
-  </div>
-}
-
 function HeroMedia(){
   const videoRef = useRef<HTMLVideoElement>(null)
   const [reducedMotion, setReducedMotion] = useState(() =>
@@ -247,7 +234,6 @@ function App(){
           <div className="actions"><a className="btn primary" href="/builder">{t.hero.primary} <b>↗</b></a><a className="btn secondary" href="/templates">{t.hero.secondary}</a></div>
           <div className="badges">{(lang==='es'?['Responsive','Carrito','Stripe','ATH Móvil','Reservaciones','Google Calendar']:['Responsive','Cart','Stripe','ATH Móvil','Bookings','Google Calendar']).map(x=><span key={x}>{x}</span>)}</div>
         </div>
-        <Devices/>
       </section>
 
       <section className="value" id="incluye"><div className="shell value-grid"><Heading data={t.value}/><aside><small>WEBFACTORY COMMERCE PLATFORM</small><strong>{PRICE}</strong><span>{t.hero.once} · {lang==='es'?'o $350 al año':'or $350 yearly'}</span></aside></div></section>
