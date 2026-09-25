@@ -1,4 +1,4 @@
-import { Suspense, lazy, useEffect, useState, type ReactNode } from 'react'
+import { Suspense, lazy, useEffect, useRef, useState, type ReactNode } from 'react'
 import { AdaptiveLogo } from './theme'
 
 const TemplatePreview = lazy(() => import('./TemplatePreview'))
@@ -148,6 +148,46 @@ function Devices(){
   </div>
 }
 
+function HeroMedia(){
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const [reducedMotion, setReducedMotion] = useState(() =>
+    typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches,
+  )
+
+  useEffect(() => {
+    const preference = window.matchMedia('(prefers-reduced-motion: reduce)')
+    const updatePreference = () => setReducedMotion(preference.matches)
+    preference.addEventListener('change', updatePreference)
+    return () => preference.removeEventListener('change', updatePreference)
+  }, [])
+
+  useEffect(() => {
+    const video = videoRef.current
+    if (!video) return
+    if (reducedMotion) {
+      video.pause()
+      video.currentTime = 0
+      return
+    }
+    void video.play().catch(() => {})
+  }, [reducedMotion])
+
+  return <div className="wf-home-hero-media" aria-hidden="true">
+    <video
+      ref={videoRef}
+      className="wf-home-hero-video"
+      src="/webfactory-hero-tech-hud.mp4"
+      poster="/webfactory-hero-tech-hud-poster.webp"
+      autoPlay={!reducedMotion}
+      muted
+      loop
+      playsInline
+      preload={reducedMotion ? 'none' : 'metadata'}
+      disablePictureInPicture
+    />
+  </div>
+}
+
 function App(){
   const [lang,setLang]=useState<Language>('en')
   const [menu,setMenu]=useState(false)
@@ -197,6 +237,7 @@ function App(){
 
     <main id="top" className="wf-home">
       <section className="hero shell">
+        <HeroMedia/>
         <div>
           <p className="eyebrow">{t.hero.eyebrow}</p>
           <h1>{t.hero.title.map(x=><span key={x}>{x}</span>)}</h1>
