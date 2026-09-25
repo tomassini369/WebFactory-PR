@@ -188,7 +188,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
   .ca-work>header,.wfa-top{gap:12px}
   .ca-work>header h1,.wfa-top h1{overflow-wrap:anywhere}
   .ca-sidebar,.wfa-sidebar{padding:18px 14px;gap:17px}
-  .ca-sidebar>img,.wfa-sidebar>img{width:144px}
+  .ca-sidebar>.wf-adaptive-logo-slot,.wfa-sidebar>.wf-adaptive-logo-slot{width:144px}.ca-sidebar>.wf-adaptive-logo-slot img,.wfa-sidebar>.wf-adaptive-logo-slot img{width:100%}
   .ca-sidebar nav,.wfa-sidebar nav{margin-inline:-4px;padding:4px}
   .ca-sidebar nav button,.wfa-sidebar nav button{flex:0 0 auto;min-height:44px;padding-inline:12px}
   .ca-v3-metrics,.ca-grid.compact,.ca-tax-presets,.ca-plans{grid-template-columns:1fr}

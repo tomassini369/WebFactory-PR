@@ -21,6 +21,10 @@ html[data-wf-platform-theme="true"][data-wf-theme="dark"] .wf-theme-toggle{
   background:rgba(13,20,34,.9);border-color:rgba(255,255,255,.12);color:#D7DEEA;
   box-shadow:0 18px 48px rgba(0,0,0,.38);
 }
+.wf-adaptive-logo-slot{display:inline-grid;max-width:100%;vertical-align:middle;line-height:0}
+.wf-adaptive-logo-slot>.wf-adaptive-logo{grid-area:1/1;display:block;max-width:100%;height:auto;object-fit:contain;image-rendering:auto;visibility:hidden;pointer-events:none}
+.wf-adaptive-logo-slot>.wf-adaptive-logo[data-logo-active="true"]{visibility:visible}
+.wf-adaptive-logo-slot>.wf-adaptive-logo[data-logo-active="false"]{visibility:hidden}
 .wf-adaptive-logo{display:block;max-width:100%;height:auto;object-fit:contain;image-rendering:auto}
 @media(max-width:820px){
   .wf-theme-toggle{width:52px;height:52px;border-radius:17px}

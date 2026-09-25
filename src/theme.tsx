@@ -151,6 +151,44 @@ export function AdaptiveLogo({
 
   const useDarkLogo = !darkFailed && (variant === 'dark' || (variant === 'auto' && isPlatformSurface && theme === 'dark'))
 
+  // Keep both platform marks mounted. Swapping the image URL on every theme
+  // change makes mobile Safari fetch/decode the alternate PNG at click time,
+  // which looks like the logo is lagging behind the rest of the interface.
+  // The stacked images are eager-loaded at page start and theme changes only
+  // switch visibility, preserving the original artwork without filters.
+  if (variant === 'auto' && isPlatformSurface) {
+    return (
+      <span className={`wf-adaptive-logo-slot ${className}`.trim()} role="img" aria-label={alt}>
+        <img
+          {...props}
+          src={lightSrc}
+          alt=""
+          className="wf-adaptive-logo"
+          data-logo-theme="light"
+          data-logo-active={useDarkLogo ? 'false' : 'true'}
+          loading="eager"
+          decoding="async"
+          onError={(event) => {
+            onError?.(event)
+          }}
+        />
+        <img
+          src={darkSrc}
+          alt=""
+          aria-hidden="true"
+          className="wf-adaptive-logo"
+          data-logo-theme="dark"
+          data-logo-active={useDarkLogo ? 'true' : 'false'}
+          loading="eager"
+          decoding="async"
+          onError={(event) => {
+            setDarkFailed(true)
+          }}
+        />
+      </span>
+    )
+  }
+
   return (
     <img
       {...props}
