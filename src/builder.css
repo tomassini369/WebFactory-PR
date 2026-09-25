@@ -145,3 +145,29 @@
 .wf-ai-actions{display:flex;align-items:center;justify-content:space-between;gap:10px}.wf-ai-actions span{color:#8794a5;font-size:.58rem}.wf-ai-actions button,.wf-ai-proposal nav button{min-height:36px;padding:0 11px;border:0;border-radius:9px;background:var(--blue);color:#fff;font-size:.65rem;font-weight:850;cursor:pointer}.wf-ai-actions button:disabled{opacity:.55;cursor:wait}
 .wf-ai-error{padding:9px 10px;border-radius:9px;background:#fff0f0;color:#a33;font-size:.65rem;line-height:1.4}
 .wf-ai-proposal{padding:12px;display:grid;gap:8px;border:1px solid #bdd5f4;border-radius:11px;background:#fff}.wf-ai-proposal>small{color:var(--blue);font-size:.56rem;font-weight:900;letter-spacing:.1em}.wf-ai-proposal>strong{font-size:.75rem;line-height:1.45}.wf-ai-proposal>div{display:flex;gap:6px;flex-wrap:wrap}.wf-ai-proposal>div span{padding:5px 7px;border-radius:999px;background:#edf5ff;color:#496079;font-size:.57rem;font-weight:800}.wf-ai-proposal>p{margin:0;color:#728095;font-size:.61rem;line-height:1.45}.wf-ai-proposal nav{display:flex;justify-content:flex-end;gap:7px}.wf-ai-proposal nav button.secondary{border:1px solid #cbd9eb;background:#fff;color:#526273}
+
+/* V3 Spatial Builder */
+.wf-builder{background:
+  radial-gradient(circle at 92% 6%,rgba(60,134,246,.08),transparent 24%),
+  linear-gradient(180deg,#f8fbff,#f3f6fb)}
+.wf-builder-shell,.wf-builder-panel,.wf-builder-preview,.wf-step-content>section,.wf-template-grid article,.wf-custom-layout-grid button{backdrop-filter:blur(12px)}
+.wf-builder-shell{border-radius:32px;box-shadow:0 34px 110px rgba(11,21,41,.12);border:1px solid rgba(220,232,247,.84);overflow:hidden}
+.wf-builder-sidebar{background:linear-gradient(180deg,rgba(11,21,41,.98),rgba(18,39,75,.98));box-shadow:inset -1px 0 rgba(255,255,255,.05)}
+.wf-builder-sidebar button{transition:transform .2s ease,background .2s ease,color .2s ease}
+.wf-builder-sidebar button:hover{transform:translateX(4px)}
+.wf-builder-sidebar button.active{background:linear-gradient(135deg,rgba(60,134,246,.3),rgba(77,150,243,.14));box-shadow:0 10px 26px rgba(0,0,0,.16)}
+.wf-builder-workspace{background:rgba(255,255,255,.78);backdrop-filter:blur(16px)}
+.wf-step-intro h3{text-wrap:balance}.wf-step-intro small{display:inline-flex;padding:6px 9px;border-radius:999px;background:rgba(60,134,246,.08)}
+.wf-field,.wf-upload,.wf-toggle,.wf-template-grid article,.wf-custom-layout-grid button{transition:transform .24s cubic-bezier(.2,.8,.2,1),box-shadow .24s ease,border-color .24s ease}
+.wf-field:focus-within,.wf-upload:hover,.wf-toggle:hover,.wf-template-grid article:hover,.wf-custom-layout-grid button:hover{transform:translateY(-3px);box-shadow:0 18px 50px rgba(11,21,41,.08);border-color:rgba(60,134,246,.3)}
+.wf-template-grid article:nth-of-type(even){transform:translateY(10px)}.wf-template-grid article:nth-of-type(even):hover{transform:translateY(4px)}
+.wf-builder-preview{position:relative;background:
+  radial-gradient(circle at 82% 10%,rgba(60,134,246,.11),transparent 28%),
+  #eef4fb}
+.wf-preview-shell{box-shadow:0 34px 95px rgba(11,21,41,.16);transition:transform .35s cubic-bezier(.2,.8,.2,1)}.wf-preview-shell:hover{transform:translateY(-4px)}
+.wf-preview-page{border-radius:22px;overflow:hidden}.wf-preview-hero{position:relative;overflow:hidden}.wf-preview-hero:after{content:"";position:absolute;width:100px;height:100px;right:6%;top:15%;border:1px solid rgba(255,255,255,.22);border-radius:26px;transform:rotate(14deg);backdrop-filter:blur(8px)}
+.wf-preview-catalog-gateway,.wf-preview-booking,.wf-preview-team article,.wf-preview-location{transition:transform .24s ease,box-shadow .24s ease}.wf-preview-catalog-gateway:hover,.wf-preview-booking:hover,.wf-preview-team article:hover,.wf-preview-location:hover{transform:translateY(-4px);box-shadow:0 20px 55px rgba(11,21,41,.09)}
+@media(max-width:820px){.wf-template-grid article:nth-of-type(even){transform:none}}
+@media(prefers-reduced-motion:reduce){.wf-builder *{animation:none!important;transition-duration:.01ms!important}}
+
+.wf-invite-banner{margin:0 0 18px;padding:14px 16px;display:grid;gap:4px;border:1px solid rgba(60,134,246,.28);border-radius:16px;background:linear-gradient(135deg,rgba(60,134,246,.10),rgba(77,150,243,.04));box-shadow:0 14px 35px rgba(60,134,246,.08)}.wf-invite-banner strong{color:#0b1529}.wf-invite-banner span{color:#5d6a7d;font-size:.78rem;line-height:1.5}

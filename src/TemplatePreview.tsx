@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type CSSProperties } from 'react'
-import { templateBySlug, type TemplateItem } from './templateData'
+import { templateBySlug, templateVisualStyle, type TemplateItem } from './templateData'
 import { templateUi, localizeTemplate, type TemplateLanguage, type TemplateUi } from './templateI18n'
 import './template-preview.css'
 
@@ -191,7 +191,7 @@ function TemplateSite({ slug }: { slug: string }) {
   }
 
   return (
-    <div className="template-site" style={styles}>
+    <div className={`template-site visual-${templateVisualStyle(config.category)}`} style={styles}>
       <TemplateNotice ui={ui} />
 
       <header className="template-header">

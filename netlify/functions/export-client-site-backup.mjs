@@ -1,13 +1,14 @@
 import { requirePlatformAdmin, errorResponse } from "../lib/client-auth.mjs";
 import { clientAssetStore, clientCommerceStore, clientSiteStore, getClientSite } from "../lib/client-store.mjs";
 import { cleanText } from "../lib/platform-utils.mjs";
+import { listV3Records } from "../lib/webfactory-v3-store.mjs";
 
-async function readJsonPrefix(store, prefix) {
+async function readPrefix(store, prefix) {
   const listed = await store.list({ prefix });
   const records = [];
   for (const blob of listed.blobs || []) {
     const value = await store.get(blob.key, { type: "json" });
-    if (value !== null) records.push({ key: blob.key, value });
+    if (value) records.push({ key: blob.key, value });
   }
   return records;
 }
@@ -32,16 +33,21 @@ export default async (req) => {
     const site = await getClientSite(siteId);
     if (!site) throw Object.assign(new Error("Client site not found."), { status: 404 });
 
-    const commerce = await readJsonPrefix(clientCommerceStore(), `${siteId}/`);
+    const commerce = await readPrefix(clientCommerceStore(), `${siteId}/`);
+    const v3Collections = {};
+    for (const collection of ["customers","receipts","payment-links","inventory-movements","review-requests"]) {
+      v3Collections[collection] = await listV3Records(siteId, collection, { limit: 1000 });
+    }
     const assets = await assetManifest(siteId);
 
     const payload = {
-      exportVersion: "webfactory-production-site-backup-1",
+      exportVersion: "webfactory-v3-site-backup-1",
       exportedAt: new Date().toISOString(),
       exportedBy: admin.email,
       siteId,
       site,
       commerce,
+      v3Collections,
       assets,
     };
 

@@ -3,6 +3,7 @@ import { admin, requestPasswordRecovery } from "@netlify/identity";
 import { assertSameOrigin, errorResponse } from "../lib/client-auth.mjs";
 import {
   clientAssetStore,
+  clientSiteStore,
   getClientSiteBySlug,
   normalizeEmail,
   saveClientSite,
@@ -10,7 +11,9 @@ import {
   slugify,
 } from "../lib/client-store.mjs";
 import { builderDraftAssetStore, safeFileName } from "../lib/builder-assets.mjs";
+import { cleanText } from "../lib/platform-utils.mjs";
 import { sanitizeBuilderRequest } from "../lib/builder-request.mjs";
+import { createComplimentaryServicePlan } from "../lib/subscription-billing.mjs";
 
 async function findIdentityUser(email) {
   for (let page = 1; page <= 20; page += 1) {
@@ -79,6 +82,8 @@ function pendingSubscriptionPlan() {
   };
 }
 
+const inviteHash = (token) => crypto.createHash("sha256").update(String(token || "")).digest("hex");
+
 export default async (req) => {
   if (req.method !== "POST") {
     return Response.json({ ok: false, message: "Method not allowed." }, { status: 405 });
@@ -95,6 +100,18 @@ export default async (req) => {
       throw Object.assign(error, { status: 400 });
     }
     const ownerEmail = normalizeEmail(order.client.email);
+    const complimentaryInviteToken = cleanText(payload.complimentaryInviteToken, 200);
+    let complimentaryInvite = null;
+    if (complimentaryInviteToken) {
+      complimentaryInvite = await clientSiteStore().get(`complimentary-invites/${inviteHash(complimentaryInviteToken)}.json`, { type: "json" });
+      const expired = !complimentaryInvite?.expiresAt || new Date(complimentaryInvite.expiresAt).getTime() <= Date.now();
+      if (!complimentaryInvite || complimentaryInvite.status !== "pending" || expired) {
+        throw Object.assign(new Error("This complimentary invitation is invalid or expired."), { status: 403 });
+      }
+      if (normalizeEmail(complimentaryInvite.email) !== ownerEmail) {
+        throw Object.assign(new Error("Use the email address that received the complimentary invitation."), { status: 403 });
+      }
+    }
     const requestedSlug = slugify(payload.slug || order.business.name);
     const existingForEmail = await sitesForEmail(ownerEmail);
     const reusable = existingForEmail.find((site) =>
@@ -142,7 +159,7 @@ export default async (req) => {
         siteId,
         sourceDraftId: order.draftId,
         slug: requestedSlug,
-        status: "setup_pending",
+        status: complimentaryInvite ? "active" : "setup_pending",
         createdAt: now,
         updatedAt: now,
         revision: 1,
@@ -160,7 +177,28 @@ export default async (req) => {
         },
         googleCalendar: { connected: false, calendarEmail: "", connectedAt: "", employeeCalendars: {} },
         settings: { locale: payload.locale === "es" ? "es" : "en", timezone: "America/Puerto_Rico", currency: "usd" },
-        servicePlan: pendingSubscriptionPlan(),
+        servicePlan: complimentaryInvite ? createComplimentaryServicePlan({ grantedBy: complimentaryInvite.grantedBy || "webfactory-admin", note: "Email-only complimentary invitation" }) : pendingSubscriptionPlan(),
+      });
+    }
+
+    if (complimentaryInvite) {
+      if (site.servicePlan?.billingModel !== "complimentary") {
+        site = await saveClientSite({
+          ...site,
+          status: "active",
+          updatedAt: new Date().toISOString(),
+          revision: Number(site.revision || 0) + 1,
+          servicePlan: createComplimentaryServicePlan({
+            grantedBy: complimentaryInvite.grantedBy || "webfactory-admin",
+            note: "Email-only complimentary invitation",
+          }),
+        });
+      }
+      await clientSiteStore().setJSON(`complimentary-invites/${inviteHash(complimentaryInviteToken)}.json`, {
+        ...complimentaryInvite,
+        status: "redeemed",
+        redeemedAt: new Date().toISOString(),
+        siteId: site.siteId,
       });
     }
 
@@ -174,6 +212,7 @@ export default async (req) => {
       publicUrl: `${origin}/sites/${site.slug}`,
       portalUrl: `${origin}/client-admin`,
       accessEmailSent: true,
+      accessType: complimentaryInvite ? "complimentary" : "trial",
     }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
     return errorResponse(error);

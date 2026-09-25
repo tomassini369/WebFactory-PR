@@ -1,0 +1,274 @@
+import { useEffect, useMemo, useState } from 'react'
+import { withAuthRetry } from './auth-retry'
+
+type Language='es'|'en'
+type Transaction={transactionId:string;kind:'order'|'booking';source?:string;customer:{name:string;email:string;phone:string};items:Array<{name:string;quantity:number;unitAmount:number}>;amountTotal:number;refundedAmount?:number;paymentStatus:string;status:string;createdAt:string;start?:string}
+type Customer={customerId:string;name:string;email:string;phone:string;tags:string[];notes:string;totalSpent:number;orderCount:number;bookingCount:number;lastActivityAt:string}
+type PaymentLink={paymentLinkId:string;token:string;title:string;description:string;amount:number;active:boolean;expiresAt?:string;createdAt:string}
+type Receipt={receiptId:string;transactionId:string;total:number;paymentStatus:string;createdAt:string;customer:{name:string;email:string}}
+type TaxConfig={enabled:boolean;stateRate:number;municipalRate:number;pricesIncludeTax:boolean;defaultTaxable:boolean}
+type Payout={id:string;amount:number;currency:string;status:string;arrivalDate:string;createdAt:string;method:string;type:string}
+
+const api=(url:string,options?:RequestInit)=>withAuthRetry(async()=>{const response=await fetch(url,{credentials:'include',cache:'no-store',...options});const result=await response.json();if(!response.ok||result.ok===false)throw new Error(result.message||'Request failed.');return result})
+const money=(cents:number)=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format((Number(cents)||0)/100)
+
+export function TransactionPanel({records,kind,lang,onAction,busy}:{records:Transaction[];kind:'order'|'booking';lang:Language;onAction:(r:Transaction,a:string)=>void;busy:boolean}){
+  const es=lang==='es';const rows=records.filter(x=>x.kind===kind).sort((a,b)=>Date.parse(b.createdAt)-Date.parse(a.createdAt))
+  return <section className="ca-panel"><header><h2>{kind==='order'?(es?'Órdenes':'Orders'):(es?'Reservaciones':'Bookings')}</h2><p>{kind==='order'?(es?'Ventas online, links de pago y futuras ventas POS aparecerán aquí.':'Online sales, payment links and future POS sales appear here.'):(es?'Administra citas, pagos y cancelaciones por separado.':'Manage appointments, payments and cancellations separately.')}</p></header><div className="ca-transactions">{rows.length===0?<p>{es?'No hay registros todavía.':'No records yet.'}</p>:rows.map(record=><article key={record.transactionId}><div><small>{kind==='order'?(es?'ORDEN':'ORDER'):(es?'CITA':'BOOKING')}</small><strong>{record.customer?.name||record.customer?.email||record.transactionId}</strong><span>{record.transactionId}</span></div><div><b>{money(record.amountTotal)}</b><span>{record.paymentStatus} · {record.status}</span>{record.start&&<time>{new Date(record.start).toLocaleString(es?'es-PR':'en-US')}</time>}</div><nav>{record.paymentStatus==='due'&&<button disabled={busy} onClick={()=>onAction(record,'mark_paid')}>{es?'Marcar pagado':'Mark paid'}</button>}{['paid','paid_in_person'].includes(record.paymentStatus)&&!['completed','refunded'].includes(record.status)&&<button disabled={busy} onClick={()=>onAction(record,'complete')}>{es?'Completar':'Complete'}</button>}{record.paymentStatus==='paid'&&Number(record.refundedAmount||0)<Number(record.amountTotal||0)&&<button disabled={busy} onClick={()=>onAction(record,'refund')}>{record.refundedAmount?(es?'Reembolsar restante':'Refund remaining'):(es?'Reembolsar':'Refund')}</button>}{kind==='booking'&&record.status!=='cancelled'&&record.status!=='completed'&&<button disabled={busy} onClick={()=>onAction(record,'cancel')}>{es?'Cancelar':'Cancel'}</button>}</nav></article>)}</div></section>
+}
+
+export function CustomersPanel({siteId,lang}:{siteId:string;lang:Language}){
+  const es=lang==='es';const [rows,setRows]=useState<Customer[]>([]);const [loading,setLoading]=useState(true);const [error,setError]=useState('')
+  const load=async()=>{setLoading(true);setError('');try{const result=await api(`/.netlify/functions/client-v3-admin?siteId=${encodeURIComponent(siteId)}&collection=customers`);setRows(result.records||[])}catch(e){setError(e instanceof Error?e.message:'Error')}finally{setLoading(false)}}
+  useEffect(()=>{load()},[siteId])
+  return <section className="ca-panel"><header><h2>{es?'Clientes':'Customers'}</h2><p>{es?'Los clientes se crean automáticamente desde ventas y reservaciones confirmadas.':'Customer profiles are created automatically from confirmed sales and bookings.'}</p></header>{error&&<div className="ca-error">{error}</div>}{loading?<p>{es?'Cargando clientes…':'Loading customers…'}</p>:<div className="ca-v3-table">{rows.length===0?<p>{es?'Aún no hay clientes registrados.':'No customers have been recorded yet.'}</p>:rows.map(customer=><article key={customer.customerId}><div><strong>{customer.name||customer.email||customer.phone||customer.customerId}</strong><span>{customer.email}{customer.phone&&` · ${customer.phone}`}</span></div><div><b>{money(customer.totalSpent)}</b><span>{es?'Valor total':'Lifetime value'}</span></div><div><b>{customer.orderCount}</b><span>{es?'Órdenes':'Orders'}</span></div><div><b>{customer.bookingCount}</b><span>{es?'Citas':'Bookings'}</span></div></article>)}</div>}</section>
+}
+
+export function PaymentLinksPanel({siteId,siteSlug,lang}:{siteId:string;siteSlug:string;lang:Language}){
+  const es=lang==='es';const [rows,setRows]=useState<PaymentLink[]>([]);const [title,setTitle]=useState('');const [amount,setAmount]=useState('');const [busy,setBusy]=useState(false);const [error,setError]=useState('')
+  const load=async()=>{try{const result=await api(`/.netlify/functions/client-v3-admin?siteId=${encodeURIComponent(siteId)}&collection=payment-links`);setRows(result.records||[])}catch(e){setError(e instanceof Error?e.message:'Error')}}
+  useEffect(()=>{load()},[siteId])
+  const create=async()=>{const cents=Math.round(Number(amount)*100);if(!title.trim()||!Number.isFinite(cents)||cents<=0)return setError(es?'Escribe un título y una cantidad válida.':'Enter a title and valid amount.');setBusy(true);setError('');try{await api('/.netlify/functions/client-v3-admin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({siteId,action:'create_payment_link',value:{title,amount:cents,currency:'usd'}})});setTitle('');setAmount('');await load()}catch(e){setError(e instanceof Error?e.message:'Error')}finally{setBusy(false)}}
+  const toggle=async(row:PaymentLink)=>{setBusy(true);try{await api('/.netlify/functions/client-v3-admin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({siteId,action:'set_payment_link_active',paymentLinkId:row.paymentLinkId,active:!row.active})});await load()}catch(e){setError(e instanceof Error?e.message:'Error')}finally{setBusy(false)}}
+  return <section className="ca-panel"><header><h2>{es?'Links de pago':'Payment links'}</h2><p>{es?'Crea un enlace directo de cobro para compartir por WhatsApp, redes, SMS o QR.':'Create direct payment links to share through WhatsApp, social, SMS or QR.'}</p></header>{error&&<div className="ca-error">{error}</div>}<div className="ca-grid"><label>{es?'Título':'Title'}<input value={title} onChange={e=>setTitle(e.target.value)} placeholder={es?'Ej. Depósito de cita':'e.g. Appointment deposit'}/></label><label>{es?'Cantidad USD':'Amount USD'}<input type="number" min="0.01" step="0.01" value={amount} onChange={e=>setAmount(e.target.value)}/></label></div><button className="ca-save" disabled={busy} onClick={create}>{busy?(es?'Creando…':'Creating…'):(es?'Crear link de pago':'Create payment link')}</button><div className="ca-v3-links">{rows.map(row=>{const path=`/pay/${siteSlug}/${row.token}`;return <article key={row.paymentLinkId}><div><strong>{row.title}</strong><span>{money(row.amount)} · {row.active?(es?'Activo':'Active'):(es?'Inactivo':'Inactive')}</span><code>{path}</code></div><nav><button onClick={()=>navigator.clipboard?.writeText(location.origin+path)}>{es?'Copiar':'Copy'}</button><a className="ca-primary-link secondary" href={`/.netlify/functions/client-payment-link-qr?siteId=${encodeURIComponent(siteId)}&paymentLinkId=${encodeURIComponent(row.paymentLinkId)}`} target="_blank">QR</a><button disabled={busy} onClick={()=>toggle(row)}>{row.active?(es?'Desactivar':'Disable'):(es?'Activar':'Enable')}</button></nav></article>})}</div></section>
+}
+
+export function ReceiptsPanel({siteId,lang}:{siteId:string;lang:Language}){
+  const es=lang==='es';const [rows,setRows]=useState<Receipt[]>([]);const [busy,setBusy]=useState('');const [error,setError]=useState('')
+  const load=()=>api(`/.netlify/functions/client-v3-admin?siteId=${encodeURIComponent(siteId)}&collection=receipts`).then(r=>setRows(r.records||[])).catch(()=>setRows([]))
+  useEffect(()=>{load()},[siteId])
+  const resend=async(receiptId:string)=>{setBusy(receiptId);setError('');try{await api('/.netlify/functions/client-v3-admin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({siteId,action:'resend_receipt',receiptId})});await load()}catch(e){setError(e instanceof Error?e.message:'Error')}finally{setBusy('')}}
+  return <section className="ca-panel"><header><h2>{es?'Recibos':'Receipts'}</h2><p>{es?'Registro normalizado de pagos confirmados.':'Normalized record of confirmed payments.'}</p></header>{error&&<div className="ca-error">{error}</div>}<div className="ca-transactions">{rows.length===0?<p>{es?'No hay recibos todavía.':'No receipts yet.'}</p>:rows.map(r=><article key={r.receiptId}><div><strong>{r.customer?.name||r.customer?.email||r.receiptId}</strong><span>{r.receiptId}</span></div><div><b>{money(r.total)}</b><span>{r.paymentStatus}</span><time>{new Date(r.createdAt).toLocaleString(es?'es-PR':'en-US')}</time></div><nav><a className="ca-primary-link secondary" href={`/.netlify/functions/client-receipt-pdf?siteId=${encodeURIComponent(siteId)}&receiptId=${encodeURIComponent(r.receiptId)}`} target="_blank">{es?'Abrir PDF':'Open PDF'}</a>{r.customer?.email&&<button disabled={busy===r.receiptId} onClick={()=>resend(r.receiptId)}>{busy===r.receiptId?(es?'Enviando…':'Sending…'):(es?'Reenviar':'Resend')}</button>}</nav></article>)}</div></section>
+}
+
+export function AnalyticsPanel({commerce,lang}:{commerce:{orders:Transaction[];bookings:Transaction[]};lang:Language}){
+  const es=lang==='es';const all=[...commerce.orders,...commerce.bookings];const paid=all.filter(x=>['paid','paid_in_person'].includes(x.paymentStatus));const revenue=paid.reduce((s,x)=>s+Number(x.amountTotal||0),0);const average=paid.length?Math.round(revenue/paid.length):0
+  const orderRevenue=commerce.orders.filter(x=>['paid','paid_in_person'].includes(x.paymentStatus)).reduce((s,x)=>s+Number(x.amountTotal||0),0)
+  const bookingRevenue=commerce.bookings.filter(x=>['paid','paid_in_person'].includes(x.paymentStatus)).reduce((s,x)=>s+Number(x.amountTotal||0),0)
+  const itemMap=new Map<string,{name:string;quantity:number;revenue:number}>()
+  paid.forEach(tx=>tx.items?.forEach(item=>{const key=item.name||'Item';const current=itemMap.get(key)||{name:key,quantity:0,revenue:0};current.quantity+=Number(item.quantity||0);current.revenue+=Number(item.quantity||0)*Number(item.unitAmount||0);itemMap.set(key,current)}))
+  const topItems=[...itemMap.values()].sort((a,b)=>b.revenue-a.revenue).slice(0,5)
+  const paymentLinks=commerce.orders.filter(x=>x.source==='payment_link').length
+  return <><section className="ca-panel"><header><h2>{es?'Analítica':'Analytics'}</h2><p>{es?'Vista consolidada de ventas, reservaciones y rendimiento comercial registrado por WebFactory.':'Consolidated view of sales, bookings and business performance recorded by WebFactory.'}</p></header><div className="ca-v3-metrics"><article><small>{es?'INGRESOS REGISTRADOS':'RECORDED REVENUE'}</small><strong>{money(revenue)}</strong></article><article><small>{es?'TRANSACCIONES PAGADAS':'PAID TRANSACTIONS'}</small><strong>{paid.length}</strong></article><article><small>{es?'TICKET PROMEDIO':'AVERAGE TICKET'}</small><strong>{money(average)}</strong></article><article><small>{es?'LINKS DE PAGO':'PAYMENT LINK SALES'}</small><strong>{paymentLinks}</strong></article></div></section><section className="ca-panel"><header><h2>{es?'Ingresos por canal':'Revenue by channel'}</h2><p>{es?'Separa ventas directas de ingresos por reservaciones.':'Separate direct sales from booking revenue.'}</p></header><div className="ca-v3-metrics"><article><small>{es?'ÓRDENES':'ORDERS'}</small><strong>{money(orderRevenue)}</strong></article><article><small>{es?'RESERVACIONES':'BOOKINGS'}</small><strong>{money(bookingRevenue)}</strong></article></div></section><section className="ca-panel"><header><h2>{es?'Más vendidos':'Top sellers'}</h2><p>{es?'Productos y servicios con mayor ingreso dentro del historial cargado.':'Products and services with the highest revenue in the loaded history.'}</p></header><div className="ca-v3-table">{topItems.length===0?<p>{es?'Todavía no hay datos suficientes.':'Not enough data yet.'}</p>:topItems.map(item=><article key={item.name}><div><strong>{item.name}</strong></div><div><b>{item.quantity}</b><span>{es?'Unidades':'Units'}</span></div><div><b>{money(item.revenue)}</b><span>{es?'Ingresos':'Revenue'}</span></div></article>)}</div></section></>
+}
+
+export function MarketingPanel({site,lang}:{site:any;lang:Language}){
+  const es=lang==='es'
+  return <section className="ca-panel"><header><h2>{es?'Marketing':'Marketing'}</h2><p>{es?'Centro de crecimiento y retención del negocio.':'Business growth and retention center.'}</p></header><div className="ca-v3-cards"><article><small>REVIEWS</small><strong>{es?'Solicitudes automáticas de reseñas':'Automated review requests'}</strong><p>{es?'La automatización se habilitará en V3.1 usando órdenes y citas completadas.':'Automation will be enabled in V3.1 using completed orders and bookings.'}</p></article><article><small>SOCIAL</small><strong>{es?'Comparte tu website':'Share your website'}</strong><p>/sites/{site.slug}</p></article><article><small>CUSTOMERS</small><strong>{es?'Retención basada en CRM':'CRM-based retention'}</strong><p>{es?'Los perfiles de clientes ya se están preparando automáticamente con cada pago confirmado.':'Customer profiles are already being prepared automatically with each confirmed payment.'}</p></article></div></section>
+}
+
+export function WebsitePanel({site,lang}:{site:any;lang:Language}){
+  const es=lang==='es'
+  return <section className="ca-panel"><header><h2>{es?'Website':'Website'}</h2><p>{es?'Administra la presencia pública de tu negocio y vuelve al Builder cuando necesites cambios de diseño.':'Manage your public business presence and return to the Builder for design changes.'}</p></header><div className="ca-v3-cards"><article><small>PUBLIC SITE</small><strong>/sites/{site.slug}</strong><a className="ca-primary-link" href={`/sites/${site.slug}`} target="_blank">{es?'Ver website':'View website'}</a></article><article><small>BUILDER</small><strong>{site.design?.mode==='template_base'?(site.design?.templateName||site.design?.templateSlug||'Template'):'Custom'}</strong><a className="ca-primary-link" href="/builder">{es?'Abrir Builder':'Open Builder'}</a></article><article><small>REVISION</small><strong>Rev. {site.revision}</strong><p>{es?'Los cambios administrativos se publican sin crear un nuevo deploy por cliente.':'Administrative changes publish without a separate client deployment.'}</p></article></div></section>
+}
+
+export function SettingsPanel({site,lang,onSave,busy}:{site:any;lang:Language;onSave:(section:string,value:any)=>void;busy:boolean}){
+  const es=lang==='es';const [tax,setTax]=useState<TaxConfig>(()=>({enabled:site.taxConfig?.enabled!==false,stateRate:Number(site.taxConfig?.stateRate??10.5),municipalRate:Number(site.taxConfig?.municipalRate??1),pricesIncludeTax:Boolean(site.taxConfig?.pricesIncludeTax),defaultTaxable:site.taxConfig?.defaultTaxable!==false}))
+  useEffect(()=>setTax({enabled:site.taxConfig?.enabled!==false,stateRate:Number(site.taxConfig?.stateRate??10.5),municipalRate:Number(site.taxConfig?.municipalRate??1),pricesIncludeTax:Boolean(site.taxConfig?.pricesIncludeTax),defaultTaxable:site.taxConfig?.defaultTaxable!==false}),[site.siteId,site.revision])
+  const total=useMemo(()=>Number(tax.stateRate||0)+Number(tax.municipalRate||0),[tax])
+  const taxPreset=Math.abs(total-11.5)<0.001&&Number(tax.stateRate)===10.5&&Number(tax.municipalRate)===1?'basic':Math.abs(total-4)<0.001&&Number(tax.stateRate)===4&&Number(tax.municipalRate)===0?'special4':!tax.enabled||total===0?'exempt':'custom'
+  const applyTaxPreset=(preset:string)=>{if(preset==='basic')setTax({...tax,enabled:true,stateRate:10.5,municipalRate:1});else if(preset==='special4')setTax({...tax,enabled:true,stateRate:4,municipalRate:0});else if(preset==='exempt')setTax({...tax,enabled:false,stateRate:0,municipalRate:0})}
+  return <section className="ca-panel"><header><h2>{es?'Configuración':'Settings'}</h2><p>{es?'Impuestos y comportamiento general de comercio para este negocio.':'Taxes and general commerce behavior for this business.'}</p></header><h3>{es?'IVU de Puerto Rico':'Puerto Rico IVU'}</h3><div className="ca-tax-presets"><button className={taxPreset==='basic'?'active':''} onClick={()=>applyTaxPreset('basic')}><strong>11.5%</strong><span>{es?'IVU básico · 10.5% estatal + 1% municipal':'Basic IVU · 10.5% state + 1% municipal'}</span></button><button className={taxPreset==='special4'?'active':''} onClick={()=>applyTaxPreset('special4')}><strong>4%</strong><span>{es?'IVU especial · ciertos servicios profesionales/B2B':'Special IVU · certain professional/B2B services'}</span></button><button className={taxPreset==='exempt'?'active':''} onClick={()=>applyTaxPreset('exempt')}><strong>0%</strong><span>{es?'Exento / no cobrar IVU':'Exempt / do not collect IVU'}</span></button><button className={taxPreset==='custom'?'active':''} type="button"><strong>{es?'Custom':'Custom'}</strong><span>{es?'Usa las tasas manuales de abajo':'Use the manual rates below'}</span></button></div><p className="ca-note">{es?'La clasificación contributiva depende del negocio y de la transacción. WebFactory no determina automáticamente si un servicio cualifica para 4%, 11.5% o una exención.':'Tax classification depends on the business and transaction. WebFactory does not automatically decide whether a service qualifies for 4%, 11.5%, or an exemption.'}</p><div className="ca-grid"><label className="check"><input type="checkbox" checked={tax.enabled} onChange={e=>setTax({...tax,enabled:e.target.checked})}/>{es?'Calcular IVU':'Calculate IVU'}</label><label>{es?'IVU estatal %':'State rate %'}<input type="number" min="0" step="0.01" value={tax.stateRate} onChange={e=>setTax({...tax,stateRate:Number(e.target.value)})}/></label><label>{es?'IVU municipal %':'Municipal rate %'}<input type="number" min="0" step="0.01" value={tax.municipalRate} onChange={e=>setTax({...tax,municipalRate:Number(e.target.value)})}/></label><label>{es?'Total':'Total'}<input value={`${total.toFixed(2)}%`} disabled/></label><label className="check"><input type="checkbox" checked={tax.pricesIncludeTax} onChange={e=>setTax({...tax,pricesIncludeTax:e.target.checked})}/>{es?'Precios incluyen IVU':'Prices include tax'}</label><label className="check"><input type="checkbox" checked={tax.defaultTaxable} onChange={e=>setTax({...tax,defaultTaxable:e.target.checked})}/>{es?'Artículos son tributables por defecto':'Items taxable by default'}</label></div><button className="ca-save" disabled={busy} onClick={()=>onSave('taxConfig',tax)}>{busy?(es?'Guardando…':'Saving…'):(es?'Guardar configuración':'Save settings')}</button></section>
+}
+
+
+export function PayoutsPanel({siteId,lang}:{siteId:string;lang:Language}){
+  const es=lang==='es';const [rows,setRows]=useState<Payout[]>([]);const [connected,setConnected]=useState<boolean|null>(null);const [error,setError]=useState('')
+  useEffect(()=>{api(`/.netlify/functions/client-stripe-payouts?siteId=${encodeURIComponent(siteId)}`).then(r=>{setConnected(Boolean(r.connected));setRows(r.payouts||[])}).catch(e=>setError(e instanceof Error?e.message:'Error'))},[siteId])
+  return <section className="ca-panel"><header><h2>{es?'Depósitos de Stripe':'Stripe payouts'}</h2><p>{es?'Consulta los depósitos enviados por Stripe a la cuenta bancaria conectada del negocio.':'View payouts Stripe sends to the connected business bank account.'}</p></header>{error&&<div className="ca-error">{error}</div>}{connected===false?<div className="ca-warning">{es?'Conecta Stripe para ver depósitos y fechas estimadas.':'Connect Stripe to view payouts and estimated arrival dates.'}</div>:rows.length===0?<p>{es?'No hay depósitos recientes para mostrar.':'No recent payouts to display.'}</p>:<div className="ca-transactions">{rows.map(row=><article key={row.id}><div><small>PAYOUT</small><strong>{row.id}</strong><span>{row.method||'standard'} · {row.type||'bank_account'}</span></div><div><b>{money(row.amount)}</b><span>{row.status}</span>{row.arrivalDate&&<time>{es?'Llega aprox. ':'Expected '} {new Date(row.arrivalDate).toLocaleDateString(es?'es-PR':'en-US')}</time>}</div></article>)}</div>}</section>
+}
+
+export function InventoryStatusPanel({site,lang}:{site:any;lang:Language}){
+  const es=lang==='es'
+  const tracked=(site.catalog||[]).filter((item:any)=>item.type==='product'&&item.trackInventory)
+  const low=tracked.filter((item:any)=>Number(item.inventory??0)<=Number(item.lowStockThreshold??0))
+  const out=tracked.filter((item:any)=>Number(item.inventory??0)<=0&&!item.allowBackorder)
+  return <section className="ca-panel"><header><h2>{es?'Inventario':'Inventory'}</h2><p>{es?'Estado del inventario rastreado en todo WebFactory.':'Inventory status tracked across WebFactory.'}</p></header><div className="ca-v3-metrics"><article><small>{es?'RASTREADOS':'TRACKED'}</small><strong>{tracked.length}</strong></article><article><small>{es?'BAJO INVENTARIO':'LOW STOCK'}</small><strong>{low.length}</strong></article><article><small>{es?'AGOTADOS':'SOLD OUT'}</small><strong>{out.length}</strong></article></div>{low.length>0&&<div className="ca-v3-table">{low.map((item:any)=><article key={item.id}><div><strong>{item.nameEn||item.name||item.nameEs}</strong><span>SKU {item.sku||'—'}</span></div><div><b>{Number(item.inventory??0)}</b><span>{es?'Disponibles':'On hand'}</span></div><div><b>{Number(item.lowStockThreshold??0)}</b><span>{es?'Alerta desde':'Alert at'}</span></div><div><b>{item.allowBackorder?(es?'Sí':'Yes'):(es?'No':'No')}</b><span>Backorder</span></div></article>)}</div>}</section>
+}
+
+
+export function InventoryMovementsPanel({siteId,lang}:{siteId:string;lang:Language}){
+  const es=lang==='es';const [rows,setRows]=useState<any[]>([])
+  useEffect(()=>{api(`/.netlify/functions/client-v3-admin?siteId=${encodeURIComponent(siteId)}&collection=inventory-movements&limit=100`).then(r=>setRows(r.records||[])).catch(()=>setRows([]))},[siteId])
+  return <section className="ca-panel"><header><h2>{es?'Movimientos de inventario':'Inventory movements'}</h2><p>{es?'Historial reciente de ventas, reembolsos y ajustes que cambiaron existencias.':'Recent sales, refunds and adjustments that changed stock.'}</p></header><div className="ca-transactions">{rows.length===0?<p>{es?'No hay movimientos todavía.':'No inventory movements yet.'}</p>:rows.map(row=><article key={row.movementId}><div><small>{String(row.reason||'adjustment').toUpperCase()}</small><strong>{row.itemId}</strong><span>{row.referenceId||row.movementId}</span></div><div><b>{Number(row.quantityDelta)>0?'+':''}{row.quantityDelta}</b><time>{new Date(row.createdAt).toLocaleString(es?'es-PR':'en-US')}</time></div></article>)}</div></section>
+}
+
+export function MemberRolesPanel({site,setSite,lang,onSave,busy,membership}:{site:any;setSite:(site:any)=>void;lang:Language;onSave:(section:string,value:any)=>void;busy:boolean;membership:any}){
+  const es=lang==='es';const [members,setMembers]=useState<any[]>(site.members||[]);const [email,setEmail]=useState('');const [role,setRole]=useState('employee');const [accessBusy,setAccessBusy]=useState('');const [error,setError]=useState('');const [message,setMessage]=useState('')
+  useEffect(()=>setMembers(site.members||[]),[site.siteId,site.revision])
+  const ownerOnly=(membership?.role||'owner')==='owner'||membership?.role==='admin'
+  const update=(index:number,role:string)=>setMembers(current=>current.map((member,i)=>i===index?{...member,role}:member))
+  const invite=async()=>{if(!email.trim())return;setAccessBusy('invite');setError('');setMessage('');try{const result=await api('/.netlify/functions/client-member-access',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({siteId:site.siteId,action:'invite',email,role})});if(result.site){setSite(result.site);setMembers(result.site.members||[])}setEmail('');setMessage(es?'Invitación enviada. La persona recibirá un enlace para establecer su contraseña.':'Invitation sent. The person will receive a link to set their password.')}catch(e){setError(e instanceof Error?e.message:'Could not invite member.')}finally{setAccessBusy('')}}
+  const revoke=async(memberEmail:string)=>{if(!confirm(es?`¿Revocar acceso a ${memberEmail}?`:`Revoke access for ${memberEmail}?`))return;setAccessBusy(memberEmail);setError('');setMessage('');try{const result=await api('/.netlify/functions/client-member-access',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({siteId:site.siteId,action:'revoke',email:memberEmail})});if(result.site){setSite(result.site);setMembers(result.site.members||[])}setMessage(es?'Acceso revocado.':'Access revoked.')}catch(e){setError(e instanceof Error?e.message:'Could not revoke access.')}finally{setAccessBusy('')}}
+  return <section className="ca-panel"><header><h2>{es?'Roles y acceso al portal':'Portal roles & access'}</h2><p>{es?'Invita miembros, asigna permisos y revoca acceso sin borrar sus datos del negocio.':'Invite members, assign permissions and revoke access without deleting business data.'}</p></header>{error&&<div className="ca-error">{error}</div>}{message&&<div className="ca-success">{message}</div>}{ownerOnly&&<div className="ca-grid"><label>Email<input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="employee@example.com"/></label><label>{es?'Rol':'Role'}<select value={role} onChange={e=>setRole(e.target.value)}><option value="manager">Manager</option><option value="employee">Employee</option><option value="cashier">Cashier</option></select></label><div className="ca-inline-action"><button className="ca-save" disabled={accessBusy==='invite'||!email.trim()} onClick={invite}>{accessBusy==='invite'?(es?'Enviando…':'Sending…'):(es?'Invitar miembro':'Invite member')}</button></div></div>}<div className="ca-v3-table">{members.map((member,index)=><article key={member.email}><div><strong>{member.email}</strong><span>{member.role}</span></div><div>{member.role==='owner'?<b>Owner</b>:<select disabled={!ownerOnly||busy||Boolean(accessBusy)} value={member.role||'employee'} onChange={e=>update(index,e.target.value)}><option value="manager">Manager</option><option value="employee">Employee</option><option value="cashier">Cashier</option></select>}</div>{ownerOnly&&member.role!=='owner'&&<div><button disabled={accessBusy===member.email} onClick={()=>revoke(member.email)}>{accessBusy===member.email?(es?'Revocando…':'Revoking…'):(es?'Revocar acceso':'Revoke access')}</button></div>}</article>)}</div>{ownerOnly&&<button className="ca-save" disabled={busy||Boolean(accessBusy)} onClick={()=>onSave('members',members)}>{busy?(es?'Guardando…':'Saving…'):(es?'Guardar cambios de roles':'Save role changes')}</button>}</section>
+}
+
+export function ReviewAutomationPanel({site,lang,onSave,busy}:{site:any;lang:Language;onSave:(section:string,value:any)=>void;busy:boolean}){
+  const es=lang==='es';const [value,setValue]=useState<any>(()=>({enabled:Boolean(site.reviewSettings?.enabled),delayHours:Number(site.reviewSettings?.delayHours??2),reviewUrl:site.reviewSettings?.reviewUrl||'',includeOrders:site.reviewSettings?.includeOrders!==false,includeBookings:site.reviewSettings?.includeBookings!==false}))
+  useEffect(()=>setValue({enabled:Boolean(site.reviewSettings?.enabled),delayHours:Number(site.reviewSettings?.delayHours??2),reviewUrl:site.reviewSettings?.reviewUrl||'',includeOrders:site.reviewSettings?.includeOrders!==false,includeBookings:site.reviewSettings?.includeBookings!==false}),[site.siteId,site.revision])
+  return <section className="ca-panel"><header><h2>{es?'Solicitudes de reseñas':'Review requests'}</h2><p>{es?'Configura cuándo WebFactory debe preparar una solicitud de reseña después de completar una venta o cita.':'Configure when WebFactory should prepare a review request after a completed sale or booking.'}</p></header><div className="ca-grid"><label className="check"><input type="checkbox" checked={value.enabled} onChange={e=>setValue({...value,enabled:e.target.checked})}/>{es?'Activar automatización':'Enable automation'}</label><label>{es?'Enviar después de (horas)':'Send after (hours)'}<input type="number" min="0" max="720" value={value.delayHours} onChange={e=>setValue({...value,delayHours:Number(e.target.value)})}/></label><label className="wide">{es?'Google review URL':'Google review URL'}<input value={value.reviewUrl} onChange={e=>setValue({...value,reviewUrl:e.target.value})} placeholder="https://..."/></label><label className="check"><input type="checkbox" checked={value.includeOrders} onChange={e=>setValue({...value,includeOrders:e.target.checked})}/>{es?'Incluir órdenes':'Include orders'}</label><label className="check"><input type="checkbox" checked={value.includeBookings} onChange={e=>setValue({...value,includeBookings:e.target.checked})}/>{es?'Incluir citas':'Include bookings'}</label></div><button className="ca-save" disabled={busy} onClick={()=>onSave('reviewSettings',value)}>{busy?(es?'Guardando…':'Saving…'):(es?'Guardar automatización':'Save automation')}</button></section>
+}
+
+
+export function PosPanel({site,lang,onSaleComplete}:{site:any;lang:Language;onSaleComplete?:()=>void}){
+  const es=lang==='es'
+  const available=(site.catalog||[]).filter((item:any)=>item.active!==false)
+  const [cart,setCart]=useState<Array<{id:string;quantity:number}>>([])
+  const [customer,setCustomer]=useState({name:'',email:'',phone:''})
+  const [discount,setDiscount]=useState('0')
+  const [tip,setTip]=useState('0')
+  const [paymentMethod,setPaymentMethod]=useState<'cash'|'manual_ath'|'other'>('cash')
+  const [busy,setBusy]=useState(false)
+  const [error,setError]=useState('')
+  const [receiptId,setReceiptId]=useState('')
+  const [remoteCheckout,setRemoteCheckout]=useState<{transactionId:string;checkoutUrl:string}|null>(null)
+  const [remoteStatus,setRemoteStatus]=useState<{paymentStatus:string;status:string;receiptId:string;amountTotal:number}|null>(null)
+  const [remoteAttemptId,setRemoteAttemptId]=useState('')
+  const [directAttemptId,setDirectAttemptId]=useState('')
+
+  const add=(id:string)=>setCart(current=>{const found=current.find(x=>x.id===id);return found?current.map(x=>x.id===id?{...x,quantity:Math.min(100,x.quantity+1)}:x):[...current,{id,quantity:1}]})
+  const change=(id:string,quantity:number)=>setCart(current=>quantity<=0?current.filter(x=>x.id!==id):current.map(x=>x.id===id?{...x,quantity:Math.max(1,Math.min(100,quantity))}:x))
+  const lines=cart.map(line=>({line,item:available.find((x:any)=>x.id===line.id)})).filter(x=>x.item)
+  const subtotal=lines.reduce((sum,x)=>sum+Number(x.item?.price||0)*x.line.quantity,0)
+  const discountValue=Math.max(0,Number(discount||0))
+  const tipValue=Math.max(0,Number(tip||0))
+  const estimatedTax=Math.max(0,(subtotal-discountValue)*(site.taxConfig?.enabled===false?0:(Number(site.taxConfig?.stateRate??10.5)+Number(site.taxConfig?.municipalRate??1))/100))
+  const estimatedTotal=Math.max(0,subtotal-discountValue+(site.taxConfig?.pricesIncludeTax?0:estimatedTax)+tipValue)
+
+  useEffect(()=>{setRemoteAttemptId('');setDirectAttemptId('');setRemoteCheckout(null);setRemoteStatus(null)},[cart,customer,discount,tip,paymentMethod])
+
+  const checkRemoteStatus=async()=>{
+    if(!remoteCheckout)return
+    setBusy(true);setError('')
+    try{
+      const result=await api(`/.netlify/functions/client-pos-status?siteId=${encodeURIComponent(site.siteId)}&transactionId=${encodeURIComponent(remoteCheckout.transactionId)}`)
+      setRemoteStatus(result.transaction)
+      if(result.transaction?.paymentStatus==='paid'){
+        onSaleComplete?.()
+      }
+    }catch(e){setError(e instanceof Error?e.message:'Could not check POS payment status.')}finally{setBusy(false)}
+  }
+
+  const sendToCard=async()=>{
+    if(!cart.length)return setError(es?'Añade al menos un artículo.':'Add at least one item.')
+    if(!customer.name||!customer.email)return setError(es?'Para enviar el pago con tarjeta necesitas nombre y email.':'Name and email are required to send a card payment.')
+    setBusy(true);setError('');setReceiptId('');
+    const attemptId=remoteAttemptId||crypto.randomUUID();if(!remoteAttemptId)setRemoteAttemptId(attemptId)
+    try{
+      const result=await api('/.netlify/functions/client-pos-checkout',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+        siteId:site.siteId,
+        items:cart,
+        customer,
+        discountCents:Math.round(discountValue*100),
+        tipCents:Math.round(tipValue*100),
+        saleAttemptId:attemptId,
+      })})
+      setRemoteCheckout({transactionId:result.transactionId,checkoutUrl:result.checkoutUrl});setRemoteStatus(null)
+    }catch(e){setError(e instanceof Error?e.message:'POS card checkout failed.')}finally{setBusy(false)}
+  }
+
+  const complete=async()=>{
+    if(!cart.length)return setError(es?'Añade al menos un artículo.':'Add at least one item.')
+    setBusy(true);setError('');setReceiptId('')
+    const attemptId=directAttemptId||crypto.randomUUID();if(!directAttemptId)setDirectAttemptId(attemptId)
+    try{
+      const result=await api('/.netlify/functions/client-pos-sale-idempotent',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+        siteId:site.siteId,
+        items:cart,
+        customer,
+        discountCents:Math.round(discountValue*100),
+        tipCents:Math.round(tipValue*100),
+        paymentMethod,
+        saleAttemptId:attemptId,
+      })})
+      setReceiptId(result.receiptId||'')
+      setCart([]);setCustomer({name:'',email:'',phone:''});setDiscount('0');setTip('0')
+      onSaleComplete?.()
+    }catch(e){setError(e instanceof Error?e.message:'POS sale failed.')}finally{setBusy(false)}
+  }
+
+  return <section className="ca-panel"><header><h2>WebFactory POS</h2><p>{es?'Venta presencial usando el mismo catálogo, clientes, IVU, inventario, recibos y analítica del website.':'In-person sales using the same catalog, customers, tax, inventory, receipts and analytics as the website.'}</p></header><div className="ca-v3-cards"><article><small>TAP TO PAY · IPHONE</small><strong>{site.paymentRules?.stripeConnectedAccountId?(es?'Backend nativo preparado':'Native backend ready'):(es?'Conecta Stripe primero':'Connect Stripe first')}</strong><p>{es?'Puerto Rico es compatible con Tap to Pay on iPhone mediante Stripe Terminal. El cobro NFC requiere la futura app iOS de WebFactory; el navegador no accede al lector NFC de pagos.':'Puerto Rico supports Tap to Pay on iPhone through Stripe Terminal. NFC collection requires the future WebFactory iOS app; the browser does not access the payment NFC reader.'}</p></article></div>{error&&<div className="ca-error">{error}</div>}{receiptId&&<div className="ca-success">{es?'Venta completada. Recibo: ':'Sale completed. Receipt: '}{receiptId}</div>}<div className="ca-pos-layout"><div><h3>{es?'Catálogo':'Catalog'}</h3><div className="ca-pos-catalog">{available.map((item:any)=><button key={item.id} disabled={item.type==='product'&&item.trackInventory&&!item.allowBackorder&&Number(item.inventory??0)<=0} onClick={()=>add(item.id)}><span>{item.nameEn||item.name||item.nameEs}</span><b>{money(Math.round(Number(item.price||0)*100))}</b><small>{item.type==='product'&&item.trackInventory?`${Number(item.inventory??0)} ${es?'en stock':'in stock'}`:item.type}</small></button>)}</div></div><aside className="ca-pos-cart"><h3>{es?'Venta actual':'Current sale'}</h3>{lines.length===0?<p>{es?'Selecciona productos o servicios.':'Select products or services.'}</p>:lines.map(({line,item}:any)=><article key={line.id}><div><strong>{item.nameEn||item.name||item.nameEs}</strong><span>{money(Math.round(Number(item.price||0)*100))}</span></div><input type="number" min="0" max="100" value={line.quantity} onChange={e=>change(line.id,Number(e.target.value))}/></article>)}<div className="ca-grid"><label>{es?'Descuento $':'Discount $'}<input type="number" min="0" step="0.01" value={discount} onChange={e=>setDiscount(e.target.value)}/></label><label>{es?'Propina $':'Tip $'}<input type="number" min="0" step="0.01" value={tip} onChange={e=>setTip(e.target.value)}/></label><label>{es?'Método':'Method'}<select value={paymentMethod} onChange={e=>setPaymentMethod(e.target.value as any)}><option value="cash">{es?'Efectivo':'Cash'}</option><option value="manual_ath">ATH Móvil</option><option value="other">{es?'Otro':'Other'}</option></select></label></div><div className="ca-pos-totals"><span>{es?'Subtotal':'Subtotal'} <b>{money(Math.round(subtotal*100))}</b></span><span>{es?'IVU estimado':'Estimated tax'} <b>{money(Math.round(estimatedTax*100))}</b></span><strong>Total <b>{money(Math.round(estimatedTotal*100))}</b></strong></div><h3>{es?'Cliente opcional':'Optional customer'}</h3><div className="ca-grid"><label>{es?'Nombre':'Name'}<input value={customer.name} onChange={e=>setCustomer({...customer,name:e.target.value})}/></label><label>Email<input type="email" value={customer.email} onChange={e=>setCustomer({...customer,email:e.target.value})}/></label><label>{es?'Teléfono':'Phone'}<input value={customer.phone} onChange={e=>setCustomer({...customer,phone:e.target.value})}/></label></div><div className="ca-pos-actions"><button className="ca-save" disabled={busy||!cart.length} onClick={complete}>{busy?(es?'Procesando…':'Processing…'):(es?'Completar venta presencial':'Complete in-person sale')}</button><button className="ca-save secondary" disabled={busy||!cart.length} onClick={sendToCard}>{es?'Enviar a pago con tarjeta':'Send to card payment'}</button></div>{remoteCheckout&&<div className="ca-pos-remote"><strong>{remoteStatus?.paymentStatus==='paid'?(es?'Pago confirmado':'Payment confirmed'):(es?'Pago pendiente':'Pending payment')}</strong><code>{remoteCheckout.checkoutUrl}</code>{remoteStatus&&<span>{remoteStatus.paymentStatus} · {remoteStatus.status}{remoteStatus.receiptId?` · ${remoteStatus.receiptId}`:''}</span>}<div><a className="ca-primary-link" href={remoteCheckout.checkoutUrl} target="_blank">{es?'Abrir checkout':'Open checkout'}</a><button onClick={()=>navigator.clipboard?.writeText(remoteCheckout.checkoutUrl)}>{es?'Copiar link':'Copy link'}</button><a className="ca-primary-link secondary" href={`/.netlify/functions/client-pos-checkout-qr?siteId=${encodeURIComponent(site.siteId)}&transactionId=${encodeURIComponent(remoteCheckout.transactionId)}`} target="_blank">QR</a><button disabled={busy} onClick={checkRemoteStatus}>{busy?(es?'Verificando…':'Checking…'):(es?'Verificar pago':'Check payment')}</button></div></div>}<p className="ca-note">{es?'El total definitivo y el IVU se recalculan en el servidor antes de guardar o cobrar la venta.':'The final total and tax are recalculated on the server before saving or charging the sale.'}</p></aside></div></section>
+}
+
+
+export function InventoryAdjustmentPanel({site,setSite,lang}:{site:any;setSite:(site:any)=>void;lang:Language}){
+  const es=lang==='es'
+  const tracked=(site.catalog||[]).filter((item:any)=>item.type==='product'&&item.trackInventory)
+  const [itemId,setItemId]=useState(tracked[0]?.id||'')
+  const [quantity,setQuantity]=useState('')
+  const [reason,setReason]=useState('manual_adjustment')
+  const [busy,setBusy]=useState(false)
+  const [message,setMessage]=useState('')
+  const [error,setError]=useState('')
+  useEffect(()=>{if(!tracked.some((item:any)=>item.id===itemId))setItemId(tracked[0]?.id||'')},[site.revision])
+
+  const adjust=async()=>{
+    const delta=Number(quantity)
+    if(!itemId||!Number.isInteger(delta)||delta===0)return setError(es?'Selecciona un producto y usa una cantidad entera distinta de 0.':'Choose a product and use a non-zero whole number.')
+    setBusy(true);setError('');setMessage('')
+    try{
+      const result=await api('/.netlify/functions/client-v3-admin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({siteId:site.siteId,action:'adjust_inventory',itemId,quantityDelta:delta,reason})})
+      if(result.site)setSite(result.site)
+      setMessage(es?'Inventario ajustado y movimiento registrado.':'Inventory adjusted and movement recorded.')
+      setQuantity('')
+    }catch(e){setError(e instanceof Error?e.message:'Inventory adjustment failed.')}finally{setBusy(false)}
+  }
+
+  return <section className="ca-panel"><header><h2>{es?'Ajuste de inventario':'Inventory adjustment'}</h2><p>{es?'Suma o resta existencias manualmente. Cada cambio queda guardado en el historial.':'Add or subtract stock manually. Every change is saved in the movement history.'}</p></header>{message&&<div className="ca-success">{message}</div>}{error&&<div className="ca-error">{error}</div>}{tracked.length===0?<p>{es?'Activa Track inventory en un producto para usar esta herramienta.':'Enable Track inventory on a product to use this tool.'}</p>:<div className="ca-grid"><label>{es?'Producto':'Product'}<select value={itemId} onChange={e=>setItemId(e.target.value)}>{tracked.map((item:any)=><option key={item.id} value={item.id}>{item.nameEn||item.name||item.nameEs} · {Number(item.inventory??0)}</option>)}</select></label><label>{es?'Cambio de unidades':'Quantity change'}<input type="number" step="1" value={quantity} onChange={e=>setQuantity(e.target.value)} placeholder="+5 / -2"/></label><label>{es?'Motivo':'Reason'}<select value={reason} onChange={e=>setReason(e.target.value)}><option value="manual_adjustment">{es?'Ajuste manual':'Manual adjustment'}</option><option value="restock">{es?'Reposición':'Restock'}</option><option value="damage">{es?'Daño/pérdida':'Damage/loss'}</option><option value="correction">{es?'Corrección':'Correction'}</option></select></label></div>} {tracked.length>0&&<button className="ca-save" disabled={busy} onClick={adjust}>{busy?(es?'Guardando…':'Saving…'):(es?'Aplicar ajuste':'Apply adjustment')}</button>}</section>
+}
+
+
+export function IntegrationManagementPanel({site,setSite,lang,membership}:{site:any;setSite:(site:any)=>void;lang:Language;membership:any}){
+  const es=lang==='es'
+  const [busy,setBusy]=useState('')
+  const [message,setMessage]=useState('')
+  const [error,setError]=useState('')
+  const owner=(membership?.role||'owner')==='owner'||membership?.role==='admin'
+  const disconnect=async(action:string,label:string)=>{
+    if(!confirm(es?`¿Desconectar ${label} de este negocio?`:`Disconnect ${label} from this business?`))return
+    setBusy(action);setMessage('');setError('')
+    try{
+      const result=await api('/.netlify/functions/client-integration-management',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({siteId:site.siteId,action})})
+      if(result.site)setSite(result.site)
+      setMessage(es?`${label} fue desconectado.`:`${label} was disconnected.`)
+    }catch(e){setError(e instanceof Error?e.message:'Integration could not be disconnected.')}finally{setBusy('')}
+  }
+  const stripeConnected=Boolean(site.paymentRules?.stripeConnectedAccountId)
+  const athConnected=Boolean(site.paymentRules?.methods?.ath||site.paymentRules?.ath?.publicPath)
+  const googleConnected=Boolean(site.googleCalendar?.connected)
+  return <section className="ca-panel"><header><h2>{es?'Servicios conectados':'Connected services'}</h2><p>{es?'Desconecta servicios externos sin eliminar tu página ni tu cuenta de WebFactory.':'Disconnect external services without deleting your WebFactory page or account.'}</p></header>{message&&<div className="ca-success">{message}</div>}{error&&<div className="ca-error">{error}</div>}<div className="ca-v3-table">
+    <article><div><strong>Google Calendar</strong><span>{googleConnected?(es?'Conectado':'Connected'):(es?'No conectado':'Not connected')}</span></div><div>{googleConnected&&<button disabled={Boolean(busy)} onClick={()=>disconnect('disconnect_google','Google Calendar')}>{busy==='disconnect_google'?(es?'Desconectando…':'Disconnecting…'):(es?'Desconectar':'Disconnect')}</button>}</div></article>
+    <article><div><strong>Stripe</strong><span>{stripeConnected?(es?'Conectado a esta página':'Connected to this page'):(es?'No conectado':'Not connected')}</span></div><div>{stripeConnected&&owner&&<button disabled={Boolean(busy)} onClick={()=>disconnect('disconnect_stripe','Stripe')}>{busy==='disconnect_stripe'?(es?'Desconectando…':'Disconnecting…'):(es?'Desconectar':'Disconnect')}</button>}</div></article>
+    <article><div><strong>ATH Móvil</strong><span>{athConnected?(es?'Configurado':'Configured'):(es?'No configurado':'Not configured')}</span></div><div>{athConnected&&<button disabled={Boolean(busy)} onClick={()=>disconnect('disconnect_ath','ATH Móvil')}>{busy==='disconnect_ath'?(es?'Desconectando…':'Disconnecting…'):(es?'Desconectar':'Disconnect')}</button>}</div></article>
+  </div><p className="ca-note">{es?'Desconectar un servicio elimina su vínculo con esta página. No elimina la cuenta que tengas directamente con el proveedor.':'Disconnecting removes the service link from this page. It does not delete your account with the external provider.'}</p></section>
+}
+
+export function AccountLifecyclePanel({site,lang,membership,onPageDeleted,onAccountDeleted}:{site:any;lang:Language;membership:any;onPageDeleted:()=>Promise<void>|void;onAccountDeleted:()=>Promise<void>|void}){
+  const es=lang==='es'
+  const owner=(membership?.role||'owner')==='owner'||membership?.role==='admin'
+  const [busy,setBusy]=useState('')
+  const [error,setError]=useState('')
+  if(!owner)return null
+
+  const deletePage=async()=>{
+    const confirmation=prompt(es?'Escribe DELETE PAGE para eliminar permanentemente esta página y sus datos.':'Type DELETE PAGE to permanently delete this page and its data.','')
+    if(confirmation!=='DELETE PAGE')return
+    setBusy('page');setError('')
+    try{
+      await api('/.netlify/functions/client-delete-account',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'delete_site',siteId:site.siteId,confirmation})})
+      await onPageDeleted()
+    }catch(e){setError(e instanceof Error?e.message:'Page could not be deleted.');setBusy('')}
+  }
+
+  const deleteAccount=async()=>{
+    const confirmation=prompt(es?'Escribe DELETE ACCOUNT para eliminar tu cuenta WebFactory, todas las páginas que posees y tu acceso al portal.':'Type DELETE ACCOUNT to delete your WebFactory account, every page you own, and your portal access.','')
+    if(confirmation!=='DELETE ACCOUNT')return
+    setBusy('account');setError('')
+    try{
+      await api('/.netlify/functions/client-delete-account',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'delete_account',confirmation})})
+      await onAccountDeleted()
+    }catch(e){setError(e instanceof Error?e.message:'Account could not be deleted.');setBusy('')}
+  }
+
+  return <section className="ca-panel ca-danger-zone"><header><h2>{es?'Zona de peligro':'Danger zone'}</h2><p>{es?'Estas acciones son permanentes. WebFactory cancela la suscripción del site antes de eliminarlo cuando corresponde.':'These actions are permanent. WebFactory cancels the site subscription before deletion when applicable.'}</p></header>{error&&<div className="ca-error">{error}</div>}<div className="ca-danger-actions"><article><div><strong>{es?'Eliminar esta página':'Delete this page'}</strong><span>{es?'Borra este website, comercio, citas, clientes, recibos, assets e integraciones. Tu login permanece si tienes otras páginas.':'Deletes this website, commerce data, bookings, customers, receipts, assets, and integrations. Your login remains if you have other pages.'}</span></div><button disabled={Boolean(busy)} onClick={deletePage}>{busy==='page'?(es?'Eliminando…':'Deleting…'):(es?'Eliminar página':'Delete page')}</button></article><article><div><strong>{es?'Eliminar mi cuenta WebFactory':'Delete my WebFactory account'}</strong><span>{es?'Elimina todas las páginas que posees, remueve tus accesos a otros negocios y elimina tu login de WebFactory.':'Deletes every page you own, removes your access to other businesses, and deletes your WebFactory login.'}</span></div><button disabled={Boolean(busy)} onClick={deleteAccount}>{busy==='account'?(es?'Eliminando…':'Deleting…'):(es?'Eliminar cuenta':'Delete account')}</button></article></div></section>
+}

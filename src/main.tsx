@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import App from './App'
 import { ThemeProvider } from './theme'
 import './styles.css'
+import './v3-system.css'
 import './theme.css'
 
 const adminPwaRoutes: Record<string, string> = {

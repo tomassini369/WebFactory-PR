@@ -1,3 +1,4 @@
+
 export type TemplateVisualStyle = 'modern' | 'luxury' | 'minimal' | 'bold'
 
 export const templateVisualStyle = (category: string): TemplateVisualStyle => {

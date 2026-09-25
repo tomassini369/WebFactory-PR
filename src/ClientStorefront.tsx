@@ -152,7 +152,9 @@ export default function ClientStorefront({slug}:{slug:string}){
     '--demo-cream':template?.cream||'#F3F6FB',
   } as CSSProperties
 
-  return <div className={`demo-site client-template template-${site.design?.templateSlug||'custom'} custom-layout-${customLayout}`} style={styles}>
+  const visualStyle = template ? templateVisualStyle(template.category) : String(site.design?.style || 'Modern').toLowerCase()
+
+  return <div className={`demo-site client-template template-${site.design?.templateSlug||'custom'} custom-layout-${customLayout} visual-${visualStyle}`} style={styles}>
     <header className="demo-header">
       <a className="demo-brand" href="#site-top">{site.business.logoUrl?<img className="cs-template-logo" src={site.business.logoUrl} alt={businessName}/>:businessName}</a>
       <nav>

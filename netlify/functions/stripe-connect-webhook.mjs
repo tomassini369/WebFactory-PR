@@ -2,6 +2,8 @@ import crypto from "node:crypto";
 import { clientCommerceStore, clientEventStore, commerceKey, getClientSite, patchClientSite } from "../lib/client-store.mjs";
 import { createGoogleEvent } from "../lib/google-calendar.mjs";
 import { sendBusinessCommerceEmail, sendCustomerCommerceEmail } from "../lib/client-notifications.mjs";
+import { createCustomerRecord, createInventoryMovement, createReceiptRecord } from "../lib/webfactory-v3-domain.mjs";
+import { getV3Record, putV3Record } from "../lib/webfactory-v3-store.mjs";
 
 function env(name) { return globalThis.Netlify?.env?.get(name) || ""; }
 
@@ -37,12 +39,60 @@ async function finalizeTransaction(event) {
     if (record.kind === "order") {
       const catalog = (site.catalog || []).map((item) => {
         const purchased = record.items.find((entry) => entry.id === item.id);
-        return purchased && item.inventory !== null && item.inventory !== undefined
+        return purchased && item.type === "product" && item.trackInventory && item.inventory !== null && item.inventory !== undefined
           ? { ...item, inventory: Math.max(0, Number(item.inventory) - Number(purchased.quantity)) }
           : item;
       });
       await patchClientSite(siteId, { catalog });
     }
+  }
+
+  if (!record.v3ArtifactsCreatedAt) {
+    const customerSeed = createCustomerRecord({ siteId, customer: record.customer || {} });
+    const existingCustomer = await getV3Record(siteId, "customers", customerSeed.customerId);
+    const customer = createCustomerRecord({
+      siteId,
+      customer: {
+        ...(record.customer || {}),
+        totalSpent: Number(existingCustomer?.totalSpent || 0) + Number(record.amountTotal || 0),
+        orderCount: Number(existingCustomer?.orderCount || 0) + (record.kind === "order" ? 1 : 0),
+        bookingCount: Number(existingCustomer?.bookingCount || 0) + (record.kind === "booking" ? 1 : 0),
+        lastActivityAt: record.paidAt || new Date().toISOString(),
+      },
+      existing: existingCustomer,
+    });
+    customer.totalSpent = Number(existingCustomer?.totalSpent || 0) + Number(record.amountTotal || 0);
+    customer.orderCount = Number(existingCustomer?.orderCount || 0) + (record.kind === "order" ? 1 : 0);
+    customer.bookingCount = Number(existingCustomer?.bookingCount || 0) + (record.kind === "booking" ? 1 : 0);
+    await putV3Record(siteId, "customers", customer.customerId, customer);
+
+    const receipt = createReceiptRecord({ siteId, transaction: record });
+    await putV3Record(siteId, "receipts", receipt.receiptId, receipt);
+
+    if (record.kind === "order") {
+      for (const purchased of record.items || []) {
+        const catalogItem = (site.catalog || []).find((item) => item.id === purchased.id);
+        if (catalogItem?.type === "product" && catalogItem.trackInventory && catalogItem.inventory !== null && catalogItem.inventory !== undefined) {
+          const movement = createInventoryMovement({
+            siteId,
+            itemId: purchased.id,
+            quantityDelta: -Math.max(1, Number(purchased.quantity || 1)),
+            reason: "sale",
+            referenceId: record.transactionId,
+          });
+          await putV3Record(siteId, "inventory-movements", movement.movementId, movement);
+        }
+      }
+    }
+
+    record = {
+      ...record,
+      customerId: customer.customerId,
+      receiptId: receipt.receiptId,
+      v3ArtifactsCreatedAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    await clientCommerceStore().setJSON(key, record);
   }
 
   const finalKey = commerceKey(siteId, record.kind === "booking" ? "bookings" : "orders", transactionId);
@@ -94,11 +144,26 @@ export default async (req) => {
     if (previous?.completed) return Response.json({ received: true, duplicate: true });
     if (previous?.processing && Date.parse(previous.updatedAt || "") > Date.now() - 5 * 60_000) return Response.json({ received: true, processing: true });
     await clientEventStore().setJSON(key, { processing: true, updatedAt: new Date().toISOString(), type: event.type });
-    if (!["checkout.session.completed", "checkout.session.async_payment_succeeded"].includes(event.type) || event.data?.object?.metadata?.flow !== "webfactory_client_commerce") {
+    const object = event.data?.object || {};
+    const checkoutEvent = ["checkout.session.completed", "checkout.session.async_payment_succeeded"].includes(event.type) && object.metadata?.flow === "webfactory_client_commerce";
+    const terminalEvent = event.type === "payment_intent.succeeded" && object.metadata?.flow === "webfactory_terminal";
+    if (!checkoutEvent && !terminalEvent) {
       await clientEventStore().setJSON(key, { completed: true, ignored: true, type: event.type, updatedAt: new Date().toISOString() });
       return Response.json({ received: true, ignored: true });
     }
-    const result = await finalizeTransaction(event);
+    const normalizedEvent = terminalEvent ? {
+      ...event,
+      data: {
+        object: {
+          metadata: object.metadata,
+          payment_status: object.status === "succeeded" ? "paid" : "unpaid",
+          amount_total: Number(object.amount_received || object.amount || 0),
+          currency: object.currency,
+          payment_intent: object.id,
+        },
+      },
+    } : event;
+    const result = await finalizeTransaction(normalizedEvent);
     await clientEventStore().setJSON(key, { completed: !result.pending, pending: result.pending, transactionId: result.record.transactionId, updatedAt: new Date().toISOString() });
     return Response.json({ received: true, transactionId: result.record.transactionId, pending: result.pending });
   } catch (error) {
