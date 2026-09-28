@@ -1,4 +1,4 @@
-const CACHE_NAME = "webfactory-pr-v5";
+const CACHE_NAME = "webfactory-pr-v6";
 
 const ADMIN_SHELLS = {
   "/webfactory-admin": "./webfactory-admin/index.html",
@@ -18,7 +18,10 @@ const STATIC_ASSETS = [
   "./apple-touch-icon-clean.png",
   "./icon-clean-192.png",
   "./icon-clean-512.png",
-  "./icon-clean-maskable-512.png"
+  "./icon-clean-maskable-512.png",
+  "./mobile-app-icon-192.png",
+  "./mobile-app-icon-512.png",
+  "./mobile-app-icon-maskable-512.png"
 ];
 
 self.addEventListener("install", (event) => {

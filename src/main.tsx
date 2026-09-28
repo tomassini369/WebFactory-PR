@@ -19,8 +19,8 @@ function configureInstallableApp() {
   document.getElementById('app-manifest')?.setAttribute('href', adminManifest)
   document.getElementById('application-name')?.setAttribute('content', 'Admin/Log In')
   document.getElementById('apple-mobile-web-app-title')?.setAttribute('content', 'Admin/Log In')
-  document.getElementById('apple-touch-icon')?.setAttribute('href', '/apple-touch-icon-clean.png?v=6')
-  document.getElementById('app-icon')?.setAttribute('href', '/icon-clean-192.png?v=6')
+  document.getElementById('apple-touch-icon')?.setAttribute('href', '/apple-touch-icon-clean.png?v=7')
+  document.getElementById('app-icon')?.setAttribute('href', '/icon-clean-192.png?v=7')
   document.title = 'Admin/Log In | WebFactory PR'
 }
 
