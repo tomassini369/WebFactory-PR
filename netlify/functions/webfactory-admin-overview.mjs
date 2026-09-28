@@ -103,6 +103,7 @@ function publicClient(site) {
     templateCategory: site.design?.templateCategory || "",
     templatePath: site.design?.templateSlug ? (site.design?.templateRoute || `/templates/${site.design.templateSlug}`).replace(/^\/demos\//, "/templates/") : "",
     publicPath: site.slug ? `/sites/${site.slug}` : "",
+    qrAccent: site.design?.secondary || site.design?.primary || "#3C86F6",
   };
 }
 

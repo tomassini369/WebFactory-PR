@@ -72,10 +72,11 @@ export async function requireSiteAccess(siteId, roles = ["owner", "manager", "em
 
 
 export const SITE_ROLE_CAPABILITIES = {
-  owner: ["overview","website","orders","bookings","customers","catalog","employees","payments","pos","marketing","analytics","integrations","settings","billing","refunds"],
-  manager: ["overview","website","orders","bookings","customers","catalog","employees","payments","pos","marketing","analytics","integrations","settings","refunds"],
-  employee: ["overview","bookings","customers"],
-  cashier: ["overview","orders","customers","payments","pos"],
+  owner: ["overview","website","share","orders","bookings","customers","catalog","employees","payments","pos","marketing","analytics","integrations","settings","billing","refunds"],
+  manager: ["overview","website","share","orders","bookings","customers","catalog","employees","payments","pos","marketing","analytics","integrations","settings","refunds"],
+  employee: ["overview","share","bookings","customers"],
+  cashier: ["overview","share","orders","customers","payments","pos"],
+  staff: ["overview","share"],
   admin: ["overview","website","orders","bookings","customers","catalog","employees","payments","pos","marketing","analytics","integrations","settings","billing","refunds"],
 };
 

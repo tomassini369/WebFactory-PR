@@ -18,7 +18,7 @@ test("manager can operate business but cannot manage billing", () => {
 
 test("employee is limited to booking and customer work", () => {
   const caps = siteRoleCapabilities("employee");
-  assert.deepEqual(caps, ["overview","bookings","customers"]);
+  assert.deepEqual(caps, ["overview","share","bookings","customers"]);
 });
 
 test("cashier can use POS but cannot refund or edit catalog", () => {
@@ -29,5 +29,11 @@ test("cashier can use POS but cannot refund or edit catalog", () => {
 });
 
 test("unknown roles fall back to employee capabilities", () => {
-  assert.deepEqual(siteRoleCapabilities("unknown"), ["overview","bookings","customers"]);
+  assert.deepEqual(siteRoleCapabilities("unknown"), ["overview","share","bookings","customers"]);
+});
+
+test("every client role can view and share its public business QR", () => {
+  for (const role of ["owner", "manager", "employee", "cashier", "staff"]) {
+    assert.equal(membershipHasCapability({ role }, "share"), true);
+  }
 });
