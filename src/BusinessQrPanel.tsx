@@ -6,7 +6,7 @@ type Props={siteId?:string;slug?:string;businessName:string;lang:Language;revisi
 
 export function BusinessQrPanel({siteId,slug,businessName,lang,revision=0,accent='#3C86F6',compact=false,onClose}:Props){
   const es=lang==='es'
-  const endpoint=useMemo(()=>`/.netlify/functions/business-qr?${siteId?`siteId=${encodeURIComponent(siteId)}`:'platform=1'}&v=${revision}`,[siteId,revision])
+  const endpoint=useMemo(()=>`/.netlify/functions/business-qr?${siteId?`siteId=${encodeURIComponent(siteId)}`:'platform=1'}&lang=${lang}&v=${revision}`,[siteId,lang,revision])
   const url=siteId&&slug?`${location.origin}/sites/${encodeURIComponent(slug)}`:`${location.origin}/`
   const [imageFailed,setImageFailed]=useState(false)
   const [feedback,setFeedback]=useState('')

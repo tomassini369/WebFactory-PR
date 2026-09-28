@@ -40,6 +40,7 @@ export default async (req) => {
     const url = new URL(req.url)
     const siteId = (url.searchParams.get('siteId') || '').trim()
     const platform = url.searchParams.get('platform') === '1'
+    const lang = url.searchParams.get('lang') === 'es' ? 'es' : 'en'
 
     let site = null
     let target = `${publicBaseUrl()}/`
@@ -47,6 +48,7 @@ export default async (req) => {
     let accent = '3c86f6'
     let ink = '0b1529'
     let logo = ''
+    let description = lang === 'es' ? 'Páginas web, ventas y reservaciones.' : 'Websites, online sales and bookings.'
 
     if (platform) {
       await requirePlatformAdmin()
@@ -63,6 +65,13 @@ export default async (req) => {
       }
       target = `${publicBaseUrl()}/sites/${encodeURIComponent(site.slug)}`
       name = site.business?.name || site.business?.nameEn || site.business?.nameEs || site.slug
+      const business = site.business || {}
+      description = lang === 'es'
+        ? (business.descriptionEs || business.descriptionEn || business.description || business.category || '')
+        : (business.descriptionEn || business.description || business.descriptionEs || business.category || '')
+      description = String(description).replace(/\s+/g, ' ').trim()
+      if (!description) description = lang === 'es' ? 'Descubre nuestros productos y servicios.' : 'Explore our products and services.'
+      if (Array.from(description).length > 104) description = `${Array.from(description).slice(0, 101).join('').trimEnd()}…`
       const primary = safeColor(site.design?.primary, '0b1529')
       const secondary = safeColor(site.design?.secondary, '3c86f6')
       ink = luminance(primary) <= .20 ? primary : luminance(secondary) <= .20 ? secondary : '0b1529'
@@ -83,8 +92,8 @@ export default async (req) => {
       finderDotStyle: 'rounded',
       ecLevel: logo ? 'H' : 'Q',
       ...(logo ? { centerImageUrl: logo, centerImageSizeRatio: .22 } : {}),
-      caption: name,
-      captionFontSize: 28,
+      caption: description ? `${name}\n${description}` : name,
+      captionFontSize: description ? 22 : 28,
       captionFontColor: ink,
     }
     const response = await fetch('https://quickchart.io/qr', {

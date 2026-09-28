@@ -65,6 +65,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const hasInlineThemeToggle = useMemo(
     () => typeof window !== 'undefined' && (
       legalPlatformPath(window.location.pathname)
+      || window.location.pathname === '/'
       || /^\/(?:webfactory-admin|client-admin|password|password-recovery)\/?$/.test(window.location.pathname)
       || /^#(?:invite_token|recovery_token)=/.test(window.location.hash)
     ),

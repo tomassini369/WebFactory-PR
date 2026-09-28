@@ -1,5 +1,5 @@
 import { Suspense, lazy, useEffect, useRef, useState, type ReactNode } from 'react'
-import { AdaptiveLogo } from './theme'
+import { AdaptiveLogo, ThemeToggle } from './theme'
 import { FeedbackPreferences } from './feedback/FeedbackPreferences'
 import { useFeedbackExperience } from './feedback/FeedbackExperience'
 
@@ -219,7 +219,7 @@ function App(){
       <nav className={menu?'open':''}>{t.nav.map((n,i)=><a key={n} href={anchors[i]} onClick={()=>setMenu(false)}>{n}</a>)}<a className="mobile-portal-link" href="/client-admin" onClick={()=>setMenu(false)}>Log In</a></nav>
       <div className="header-actions">
         <a href="/client-admin" className="btn secondary desktop-cta">Log In</a>
-        <div className="langs"><button className={lang==='en'?'active':''} onClick={()=>setLang('en')}>EN</button><button className={lang==='es'?'active':''} onClick={()=>setLang('es')}>ES</button></div>
+        <div className="langs"><button className={lang==='en'?'active':''} onClick={()=>setLang('en')}>EN</button><button className={lang==='es'?'active':''} onClick={()=>setLang('es')}>ES</button><ThemeToggle/></div>
         <a href="/builder" className="btn primary desktop-cta">{t.hero.primary}</a>
         <button className="hamburger" aria-expanded={menu} onClick={()=>setMenu(v=>!v)}><i/><i/><i/></button>
       </div>

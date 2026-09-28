@@ -84,6 +84,7 @@
 .ca-danger-actions button,.ca-v3-table button{cursor:pointer}
 .ca-danger-actions button{flex:0 0 auto;background:#fff;color:#b42318;border:1px solid rgba(180,35,24,.34);border-radius:12px;padding:10px 13px;font-weight:800}
 .ca-danger-actions button:hover{background:#fff2f0;border-color:#b42318}
+@media(max-width:820px){.ca-sidebar{height:auto!important;max-height:none!important;min-height:0;overflow:visible!important}.ca-sidebar>.ca-brand-row{display:flex;width:100%;min-width:0;flex-direction:row;align-items:center;justify-content:space-between;gap:8px}.ca-brand-row>.wf-adaptive-logo-slot{width:clamp(108px,34vw,148px);flex:0 1 auto}.ca-brand-row>.portal-language.sidebar{display:flex;flex:0 0 auto;align-items:center;justify-content:flex-end;gap:3px}.ca-brand-row>.portal-language.sidebar button{min-height:36px;padding:6px 8px}.ca-brand-row>.portal-language.sidebar .wf-theme-toggle{width:36px;height:36px;padding:0}}
 @media(max-width:680px){.ca-danger-actions article{align-items:stretch;flex-direction:column}.ca-danger-actions button{width:100%}}
 
 .ca-site-switcher{display:grid;gap:5px;margin-top:12px}.ca-site-switcher>span{font-size:.66rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.58)}.ca-site-switcher select{width:100%;border:1px solid rgba(255,255,255,.14);border-radius:12px;background:rgba(255,255,255,.08);color:#fff;padding:9px 10px;font:inherit}.ca-site-switcher select option{color:#0b1529;background:#fff}
