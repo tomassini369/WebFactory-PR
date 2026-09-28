@@ -1,19 +1,19 @@
 import sharp from 'sharp'
-import { mkdir } from 'node:fs/promises'
+import { copyFile, mkdir } from 'node:fs/promises'
 
 const source = 'assets/webfactory-pr-logo.png'
 const outputDir = 'assets'
-const background = { r: 255, g: 255, b: 255, alpha: 1 }
+const background = { r: 6, g: 19, b: 41, alpha: 1 }
 
 await mkdir(outputDir, { recursive: true })
 
-async function makeIcon(cleanLogo, size, filename, safeScale = 0.68) {
+async function makeIcon(cleanLogo, size, filename, safeScale = 1) {
   const innerWidth = Math.round(size * safeScale)
   const innerHeight = Math.round(size * safeScale)
 
   const logo = await sharp(cleanLogo)
     .resize(innerWidth, innerHeight, {
-      fit: 'contain',
+      fit: 'cover',
       withoutEnlargement: false,
       background,
     })
@@ -33,15 +33,16 @@ async function makeIcon(cleanLogo, size, filename, safeScale = 0.68) {
     .toFile(`${outputDir}/${filename}`)
 }
 
-// Use the verified official source directly. It already has a clean white
-// background, so no pixel replacement or trimming is needed.
+// Use the supplied square WF mark as-is for standard app icons. The maskable
+// variant adds navy safe area so Android's icon mask won't crop the artwork.
 const cleanLogo = source
 
 await Promise.all([
-  makeIcon(cleanLogo, 180, 'apple-touch-icon-clean.png', 0.68),
-  makeIcon(cleanLogo, 192, 'icon-clean-192.png', 0.68),
-  makeIcon(cleanLogo, 512, 'icon-clean-512.png', 0.68),
-  makeIcon(cleanLogo, 512, 'icon-clean-maskable-512.png', 0.56),
+  copyFile(source, 'assets/webfactory-pr-logo-dark.png'),
+  makeIcon(cleanLogo, 180, 'apple-touch-icon-clean.png'),
+  makeIcon(cleanLogo, 192, 'icon-clean-192.png'),
+  makeIcon(cleanLogo, 512, 'icon-clean-512.png'),
+  makeIcon(cleanLogo, 512, 'icon-clean-maskable-512.png', 0.78),
 ])
 
-console.log('Generated clean WebFactoryPR icons from the official logo.')
+console.log('Generated WebFactory PR app icons from the supplied WF mark.')

@@ -43,13 +43,13 @@ function makeAdminShell(manifest) {
   )
   html = replaceRequired(
     html,
-    '<link id="apple-touch-icon" rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon-clean.png" />',
-    '<link id="apple-touch-icon" rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon-clean.png?v=5" />',
+    '<link id="apple-touch-icon" rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon-clean.png?v=6" />',
+    '<link id="apple-touch-icon" rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon-clean.png?v=6" />',
   )
   html = replaceRequired(
     html,
-    '<link id="app-icon" rel="icon" type="image/png" sizes="192x192" href="/icon-clean-192.png" />',
-    '<link id="app-icon" rel="icon" type="image/png" sizes="192x192" href="/icon-clean-192.png?v=5" />',
+    '<link id="app-icon" rel="icon" type="image/png" sizes="192x192" href="/icon-clean-192.png?v=6" />',
+    '<link id="app-icon" rel="icon" type="image/png" sizes="192x192" href="/icon-clean-192.png?v=6" />',
   )
 
   return html

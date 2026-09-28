@@ -284,7 +284,7 @@ html[data-wf-platform-theme="true"][data-wf-theme="dark"] .legal-content aside{b
 .portal-language .wf-theme-toggle{width:38px;height:36px;padding:0;border-radius:9px;box-shadow:none}
 .portal-language .wf-theme-toggle svg{width:20px;height:20px}
 .wfa-brand-row,.ca-brand-row{display:flex;flex-direction:column;align-items:flex-start;gap:16px;min-width:0}
-.wfa-brand-row>.wf-adaptive-logo-slot,.ca-brand-row>.wf-adaptive-logo-slot{width:164px;max-width:100%}
+.wfa-brand-row>.wf-adaptive-logo-slot,.ca-brand-row>.wf-adaptive-logo-slot,.wfa-brand-row>.wf-adaptive-logo,.ca-brand-row>.wf-adaptive-logo{width:76px;max-width:100%;height:auto}
 .wfa-brand-row>.portal-language.sidebar,.ca-brand-row>.portal-language.sidebar{margin:0}
 .ca-sidebar>.ca-brand-row{background:transparent;border:0;border-radius:0;padding:0}
 html[data-wf-platform-theme="true"][data-wf-theme="dark"] .ca-sidebar>.ca-brand-row{background:transparent;border:0;border-radius:0;padding:0}
@@ -303,7 +303,7 @@ html[data-wf-platform-theme="true"][data-wf-theme="dark"] .wfa-admin-id strong{c
   .wfa-sidebar,.ca-sidebar{height:auto!important;max-height:none!important;min-height:0;overflow:visible!important;overscroll-behavior:auto}
   .wfa-sidebar,.ca-sidebar{position:relative!important;padding:14px;gap:12px}
   .wfa-brand-row,.ca-brand-row{width:100%;flex-direction:row;align-items:center;justify-content:space-between;gap:8px}
-  .wfa-brand-row>.wf-adaptive-logo-slot,.ca-brand-row>.wf-adaptive-logo-slot{width:clamp(112px,38vw,150px);flex:0 1 auto}
+  .wfa-brand-row>.wf-adaptive-logo-slot,.ca-brand-row>.wf-adaptive-logo-slot,.wfa-brand-row>.wf-adaptive-logo,.ca-brand-row>.wf-adaptive-logo{width:68px!important;height:68px;flex:0 0 68px;object-fit:cover;border-radius:14px}
   .wfa-brand-row>.portal-language.sidebar,.ca-brand-row>.portal-language.sidebar{flex:0 0 auto;justify-content:flex-end;gap:4px}
   .wfa-brand-row .portal-language button:not(.wf-theme-toggle),.ca-brand-row .portal-language button:not(.wf-theme-toggle){min-height:36px;padding:6px 8px}
   .wfa-sidebar nav,.ca-sidebar nav{order:1;min-width:0;max-width:100%;overflow-x:auto;overflow-y:hidden;scrollbar-width:none;overscroll-behavior-x:contain}
@@ -318,8 +318,15 @@ html[data-wf-platform-theme="true"][data-wf-theme="dark"] .wfa-admin-id strong{c
 @media(max-width:560px) and (max-height:720px){
   .wfa-login-page,.ca-page{padding-top:max(8px,env(safe-area-inset-top));padding-bottom:max(8px,env(safe-area-inset-bottom))}
   .wfa-login,.ca-login{padding:18px 20px;border-radius:20px}
-  .wfa-login img,.ca-login img{width:145px;margin-bottom:10px}
+  .wfa-login img,.ca-login img{width:112px;height:112px;object-fit:cover;border-radius:20px;margin-bottom:10px}
   .wfa-login h1,.ca-login h1{font-size:clamp(1.7rem,7vw,2.2rem);line-height:1.02;margin:8px 0}
   .wfa-login p,.ca-login p{line-height:1.4;margin:8px 0}
   .wfa-login form,.ca-login form{gap:10px;margin-top:14px}
 }
+.wfa-login img,.ca-login img{width:128px;height:128px;object-fit:cover;border-radius:20px}
+.footer img{width:64px;height:64px;object-fit:cover;border-radius:14px}
+.wf-pay-card>img{width:72px;height:72px;max-width:72px;max-height:72px;object-fit:cover;border-radius:14px}
+@media(max-width:820px){
+  .wfa-brand-row>.wf-adaptive-logo-slot,.ca-brand-row>.wf-adaptive-logo-slot,.wfa-brand-row>.wf-adaptive-logo,.ca-brand-row>.wf-adaptive-logo{width:68px!important;height:68px;flex:0 0 68px;object-fit:cover;border-radius:14px}
+}
+@media(max-width:560px) and (max-height:720px){.wfa-login img,.ca-login img{width:112px;height:112px}}

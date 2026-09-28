@@ -1,4 +1,4 @@
-const CACHE_NAME = "webfactory-pr-v4";
+const CACHE_NAME = "webfactory-pr-v5";
 
 const ADMIN_SHELLS = {
   "/webfactory-admin": "./webfactory-admin/index.html",
@@ -14,6 +14,7 @@ const STATIC_ASSETS = [
   "./webfactory-admin/index.html",
   "./client-admin/index.html",
   "./webfactory-pr-logo.png",
+  "./webfactory-pr-logo-dark.png",
   "./apple-touch-icon-clean.png",
   "./icon-clean-192.png",
   "./icon-clean-512.png",
