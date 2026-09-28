@@ -9,14 +9,9 @@ type ThemeContextValue = {
   isPlatformSurface: boolean
 }
 
-const THEME_KEY = 'webfactory-theme'
+const THEME_KEY = 'webfactory-theme-v2'
 
 const ThemeContext = createContext<ThemeContextValue | null>(null)
-
-function getSystemTheme(): Theme {
-  if (typeof window === 'undefined') return 'light'
-  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
-}
 
 function getSavedTheme(): Theme | null {
   if (typeof window === 'undefined') return null
@@ -25,7 +20,7 @@ function getSavedTheme(): Theme | null {
 }
 
 function getInitialTheme(): Theme {
-  return getSavedTheme() ?? getSystemTheme()
+  return getSavedTheme() ?? 'dark'
 }
 
 function platformSurfaceForPath(pathname: string) {
@@ -66,6 +61,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     () => typeof window !== 'undefined' && (
       legalPlatformPath(window.location.pathname)
       || window.location.pathname === '/'
+      || /^\/(?:builder|templates)\/?$/.test(window.location.pathname)
       || /^\/(?:webfactory-admin|client-admin|password|password-recovery)\/?$/.test(window.location.pathname)
       || /^#(?:invite_token|recovery_token)=/.test(window.location.hash)
     ),
@@ -75,15 +71,6 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   useLayoutEffect(() => {
     applyDocumentTheme(theme, isPlatformSurface)
   }, [theme, isPlatformSurface])
-
-  useEffect(() => {
-    if (typeof window === 'undefined' || getSavedTheme()) return
-
-    const media = window.matchMedia('(prefers-color-scheme: dark)')
-    const onChange = (event: MediaQueryListEvent) => setThemeState(event.matches ? 'dark' : 'light')
-    media.addEventListener('change', onChange)
-    return () => media.removeEventListener('change', onChange)
-  }, [])
 
   const setTheme = (nextTheme: Theme) => {
     window.localStorage.setItem(THEME_KEY, nextTheme)

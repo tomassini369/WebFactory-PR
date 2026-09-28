@@ -51,6 +51,9 @@ html[data-wf-platform-theme="true"][data-wf-theme="dark"] .footer,
 html[data-wf-platform-theme="true"][data-wf-theme="dark"] .standalone-builder{
   background:var(--wf-theme-dark-bg);
 }
+html[data-wf-platform-theme="true"][data-wf-theme="dark"] .builder-price{background:rgba(17,27,45,.94);border-color:var(--wf-theme-dark-line);color:var(--wf-theme-dark-text)}
+html[data-wf-platform-theme="true"][data-wf-theme="dark"] .builder-price strong{color:var(--wf-theme-dark-text)}
+html[data-wf-platform-theme="true"][data-wf-theme="dark"] .builder-price span{color:var(--wf-theme-dark-muted)}
 html[data-wf-platform-theme="true"][data-wf-theme="dark"] .soft{background:#0A101C}
 html[data-wf-platform-theme="true"][data-wf-theme="dark"] .header{
   background:rgba(13,20,34,.92);border-color:rgba(255,255,255,.10);box-shadow:0 14px 38px rgba(0,0,0,.28);

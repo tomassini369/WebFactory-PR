@@ -17,6 +17,9 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid rgb
 .wf-home-header .langs{align-items:center;gap:2px}
 .wf-home-header .langs .wf-theme-toggle{width:34px;height:32px;margin-left:3px;border-radius:50%;box-shadow:none;background:transparent;color:inherit;border-color:transparent}
 .wf-home-header .langs .wf-theme-toggle svg{width:19px;height:19px}
+.header .langs{align-items:center;gap:2px}
+.header .langs .wf-theme-toggle{width:34px;height:32px;margin-left:3px;padding:0;border-radius:50%;box-shadow:none;background:transparent;color:inherit;border-color:transparent}
+.header .langs .wf-theme-toggle svg{width:19px;height:19px}
 .hamburger{display:none;width:44px;height:44px;padding:11px;border:1px solid #9FC5F8;border-radius:13px;background:#EEF5FF;box-shadow:0 3px 10px rgba(60,134,246,.12);transition:background-color .08s ease,border-color .08s ease,box-shadow .08s ease}.hamburger i{display:block;height:2px;margin:4px 0;border-radius:99px;background:#0B1529}
 .hamburger:hover{background:#E1EEFF;border-color:#3C86F6;box-shadow:0 4px 14px rgba(60,134,246,.2)}
 .btn{min-height:50px;padding:0 19px;display:inline-flex;align-items:center;justify-content:center;gap:8px;border:1px solid transparent;border-radius:14px;font-weight:820;transition:.25s}.btn:hover{transform:translateY(-2px)}.primary{color:#fff;background:linear-gradient(135deg,var(--blue),var(--accent));box-shadow:0 14px 28px rgba(60,134,246,.22)}.secondary{background:#fff;border-color:var(--line)}.light{background:#fff;color:var(--navy)}
