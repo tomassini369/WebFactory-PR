@@ -277,8 +277,8 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 .wf-home .price{border-color:rgba(171,198,232,.2);background:rgba(255,255,255,.055);box-shadow:0 18px 48px rgba(0,0,0,.14);backdrop-filter:blur(12px)}
 .wf-home .price span,.wf-home .price strong small{color:#bac8da}
 .wf-home .badges span{border-color:rgba(171,198,232,.2);background:rgba(255,255,255,.045);color:#d2ddec}
-.wf-home .btn.secondary{border-color:rgba(91,160,255,.78);background:rgba(255,255,255,.025);color:#f5f8fd}
-.wf-home .btn.secondary:hover{background:rgba(60,134,246,.14)}
+.wf-home .hero .btn.secondary{border-color:rgba(91,160,255,.78);background:rgba(255,255,255,.025);color:#f5f8fd}
+.wf-home .hero .btn.secondary:hover{background:rgba(60,134,246,.14)}
 .wf-home .desktop-device,.wf-home .tablet-device,.wf-home .phone-device{border-color:rgba(166,194,232,.5);box-shadow:0 36px 92px rgba(0,0,0,.46),0 0 42px rgba(30,108,255,.17)}
 .wf-home .desktop-device{background:#111c2e}
 .wf-home .browser{background:#142137}
