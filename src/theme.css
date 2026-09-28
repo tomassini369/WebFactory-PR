@@ -291,6 +291,13 @@ html[data-wf-platform-theme="true"][data-wf-theme="dark"] .ca-sidebar>.ca-brand-
 .wfa-admin-id strong{color:#0B1529}
 html[data-wf-platform-theme="true"][data-wf-theme="dark"] .wfa-admin-id strong{color:#F7FAFF}
 
+/* Keep platform labels readable on the light surfaces they sit inside. */
+html[data-wf-platform-theme="true"][data-wf-theme="light"] .builder-price,
+html[data-wf-platform-theme="true"][data-wf-theme="light"] .builder-price strong{color:#0B1529}
+html[data-wf-platform-theme="true"][data-wf-theme="light"] .builder-price span{color:#5D5F64}
+html[data-wf-platform-theme="true"][data-wf-theme="light"] .wfa-admin-id strong{color:#0B1529}
+html[data-wf-platform-theme="true"][data-wf-theme="light"] .wfa-admin-id span{color:#526078}
+
 .wfa-login-page,.ca-page{
   height:100svh;height:100dvh;min-height:0;box-sizing:border-box;overflow:hidden;
   padding-top:max(12px,env(safe-area-inset-top));padding-bottom:max(12px,env(safe-area-inset-bottom));

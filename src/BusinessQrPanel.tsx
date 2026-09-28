@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { contrastTextColor } from './color-contrast'
 import './business-qr.css'
 
 type Language='es'|'en'
@@ -16,7 +17,7 @@ export function BusinessQrPanel({siteId,slug,businessName,lang,revision=0,accent
   const share=async()=>{try{if(navigator.share)await navigator.share({title:businessName,text:es?`Visita ${businessName}`:`Visit ${businessName}`,url});else await copy()}catch(error){if(!(error instanceof DOMException&&error.name==='AbortError'))setFeedback(es?'No se pudo compartir':'Could not share')}}
   const download=async()=>{try{const response=await fetch(endpoint,{credentials:'include',cache:'no-store'});if(!response.ok)throw new Error();const blob=await response.blob();const objectUrl=URL.createObjectURL(blob);const anchor=document.createElement('a');anchor.href=objectUrl;anchor.download=`${(slug||'webfactory').replace(/[^a-z0-9-]/gi,'-')}-qr.png`;document.body.append(anchor);anchor.click();anchor.remove();URL.revokeObjectURL(objectUrl);setFeedback(es?'QR descargado':'QR downloaded')}catch{setFeedback(es?'No se pudo descargar el QR':'Could not download the QR')}}
 
-  return <section className={`business-qr${compact?' compact':''}`} style={{'--business-qr-accent':accent} as React.CSSProperties}>
+  return <section className={`business-qr${compact?' compact':''}`} style={{'--business-qr-accent':accent,'--business-qr-accent-text':contrastTextColor(accent)} as React.CSSProperties}>
     <header><div><small>{es?'COMPARTE TU NEGOCIO':'SHARE YOUR BUSINESS'}</small><h2>{es?'Tu código QR':'Your QR code'}</h2><p>{es?'Al escanearlo, abre la página principal de tu negocio.':'Scanning it opens your business home page.'}</p></div>{onClose&&<button className="business-qr-close" type="button" onClick={onClose} aria-label={es?'Cerrar':'Close'}>×</button>}</header>
     <div className="business-qr-content"><div className="business-qr-image-wrap">{imageFailed?<div className="business-qr-error">{es?'No se pudo cargar el QR. Intenta de nuevo.':'The QR could not load. Try again.'}</div>:<img className="business-qr-image" src={endpoint} alt={es?`Código QR de ${businessName}`:`${businessName} QR code`} onError={()=>setImageFailed(true)}/>}<strong>{businessName}</strong></div>
       <div className="business-qr-details"><span>{es?'ENLACE PRINCIPAL':'MAIN LINK'}</span><code>{url}</code><nav><button type="button" onClick={share}><ShareIcon/>{es?'Compartir perfil':'Share profile'}</button><button type="button" onClick={copy}><LinkIcon/>{es?'Copiar enlace':'Copy link'}</button><button type="button" onClick={download}><DownloadIcon/>{es?'Descargar':'Download'}</button></nav>{feedback&&<small role="status">{feedback}</small>}</div></div>

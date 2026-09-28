@@ -4,3 +4,4 @@
 @media(max-width:560px){.business-qr-content,.business-qr.compact .business-qr-content{grid-template-columns:minmax(0,1fr)}.business-qr-image-wrap{width:min(100%,240px);box-sizing:border-box;margin:auto}.business-qr-details nav button{flex:1 1 120px}}
 html[data-wf-platform-theme="true"][data-wf-theme="dark"] .business-qr{--ca-surface:#111b2d;--ca-text:#f7faff;--ca-muted:#a9b7c9;--ca-line:#2b3c58;--ca-bg:#0b1529;background:radial-gradient(circle at 100% 0,color-mix(in srgb,var(--business-qr-accent) 18%,transparent),transparent 36%),#111b2d;color:#f7faff}
 html[data-wf-platform-theme="true"][data-wf-theme="dark"] .business-qr-image-wrap{background:linear-gradient(145deg,color-mix(in srgb,var(--business-qr-accent) 18%,#111b2d),#fff 92%)}
+.business-qr-details nav button:first-child{color:var(--business-qr-accent-text,#fff)}
