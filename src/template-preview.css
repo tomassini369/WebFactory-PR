@@ -121,6 +121,27 @@ body.template-overlay-open{overflow:hidden}
 .template-site .template-map-faux{box-shadow:inset 0 0 0 1px rgba(255,255,255,.45),0 28px 80px rgba(20,35,48,.09)}
 .template-site .template-function-showcase article{transition:transform .24s ease,border-color .24s ease,background .24s ease}.template-site .template-function-showcase article:hover{transform:translateY(-4px);border-color:color-mix(in srgb,var(--template-accent) 30%,transparent);background:color-mix(in srgb,var(--template-cream) 72%,#fff)}
 .template-site .template-catalog-modal,.template-site .template-detail-modal,.template-site .template-booking-modal,.template-site .template-cart-drawer{animation:templateSpatialEnter .28s cubic-bezier(.2,.8,.2,1)}
+
+.wf-month-calendar{width:100%;max-width:540px;padding:16px;border:1px solid rgba(25,40,55,.12);border-radius:16px;background:#fff;box-sizing:border-box;color:var(--template-dark,var(--demo-dark,var(--cs-primary,#0B1529)))}
+.wf-month-calendar-heading{display:grid;grid-template-columns:42px 1fr 42px;align-items:center;gap:8px;margin-bottom:14px;text-align:center}
+.wf-month-calendar-heading strong{text-transform:capitalize;font-size:1rem}
+.wf-month-calendar-heading button{width:40px;height:40px;border:1px solid rgba(25,40,55,.12);border-radius:11px;background:var(--template-cream,var(--demo-cream,#F3F6FB));color:inherit;font-size:1.5rem;line-height:1;cursor:pointer}
+.wf-month-calendar-heading button:disabled{opacity:.38;cursor:not-allowed}
+.wf-month-calendar-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px}
+.wf-month-weekday{min-height:30px;display:grid;place-items:center;color:#74808c;font-size:.68rem;font-weight:800;text-transform:capitalize}
+.wf-month-empty{min-height:48px}
+.wf-month-day{position:relative;min-width:0;min-height:48px;display:grid;place-items:center;align-content:center;gap:3px;border:1px solid transparent;border-radius:12px;background:#f6f8fb;color:#687384;font:inherit;font-weight:750;cursor:not-allowed}
+.wf-month-day.has-availability{border-color:color-mix(in srgb,var(--template-accent,var(--demo-accent,var(--cs-accent,#3C86F6))) 22%,transparent);background:color-mix(in srgb,var(--template-accent,var(--demo-accent,var(--cs-accent,#3C86F6))) 7%,white);color:var(--template-dark,var(--demo-dark,var(--cs-primary,#0B1529)));cursor:pointer}
+.wf-month-day.has-availability:hover,.wf-month-day.selected{border-color:var(--template-accent,var(--demo-accent,var(--cs-accent,#3C86F6)));box-shadow:inset 0 0 0 1px var(--template-accent,var(--demo-accent,var(--cs-accent,#3C86F6)))}
+.wf-month-day.selected{background:var(--template-accent,var(--demo-accent,var(--cs-accent,#3C86F6)));color:#fff}
+.wf-month-day i,.wf-month-calendar-legend i{width:5px;height:5px;border-radius:50%;background:var(--template-accent,var(--demo-accent,var(--cs-accent,#3C86F6)))}
+.wf-month-day.selected i{background:#fff}
+.wf-month-calendar-legend{min-height:25px;margin-top:12px;display:flex;align-items:center;justify-content:space-between;color:#74808c;font-size:.7rem}
+.wf-month-calendar-legend span{display:flex;align-items:center;gap:7px}
+.template-calendar-demo-note{display:block;margin-top:9px;color:#74808c;font-size:.68rem;line-height:1.45}
+.template-booking-date-controls{display:flex;gap:6px;margin:12px 0;padding:4px;border:1px solid rgba(25,40,55,.1);border-radius:999px;background:var(--template-cream)}
+.template-booking-date-controls button{flex:1;min-height:38px;padding:7px 11px;border:0;border-radius:999px;background:transparent;color:#74808c;font:inherit;font-size:.7rem;font-weight:850;cursor:pointer}
+.template-booking-date-controls button.selected{background:var(--template-dark);color:#fff}
 @keyframes templateSpatialEnter{from{opacity:0;transform:translateY(14px) scale(.985)}to{opacity:1;transform:none}}
 
 /* Modern: glass, clean geometry, sharper spatial hierarchy */

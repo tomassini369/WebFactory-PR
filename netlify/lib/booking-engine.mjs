@@ -42,11 +42,33 @@ async function reservationsForEmployee(siteId, employeeId, startDay, endDay) {
   return records;
 }
 
-export async function availabilityForDate(site, serviceId, employeeId, date) {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) throw Object.assign(new Error("Invalid booking date."), { status: 400 });
+function bookingServiceAndEmployee(site, serviceId, employeeId) {
   const service = (site.catalog || []).find((item) => item.id === serviceId && item.type === "service" && item.requiresAppointment && item.active !== false);
   const employee = (site.employees || []).find((item) => item.id === employeeId && item.active !== false && (item.serviceIds || []).includes(serviceId));
   if (!service || !employee) throw Object.assign(new Error("Service or employee is unavailable."), { status: 404 });
+  return { service, employee };
+}
+
+function slotsForSchedule({ date, schedule, service, blocks, timeZone }) {
+  if (!schedule?.enabled) return [];
+  const dayStart = zonedToUtc(date, schedule.open || "09:00", timeZone);
+  const dayEnd = zonedToUtc(date, schedule.close || "17:00", timeZone);
+  const duration = Math.max(5, Number(service.duration || 30));
+  const buffer = Math.max(0, Number(service.bufferMinutes || 0));
+  const slots = [];
+  for (let cursor = dayStart.getTime(); cursor + duration * 60_000 <= dayEnd.getTime(); cursor += 15 * 60_000) {
+    const end = cursor + (duration + buffer) * 60_000;
+    if (cursor < Date.now() + 60 * 60_000) continue;
+    if (!blocks.some((block) => overlaps(cursor, end, block.start, block.end))) {
+      slots.push({ start: new Date(cursor).toISOString(), end: new Date(cursor + duration * 60_000).toISOString() });
+    }
+  }
+  return slots.slice(0, 96);
+}
+
+export async function availabilityForDate(site, serviceId, employeeId, date) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) throw Object.assign(new Error("Invalid booking date."), { status: 400 });
+  const { service, employee } = bookingServiceAndEmployee(site, serviceId, employeeId);
   const timeZone = site.settings?.timezone || "America/Puerto_Rico";
   const midday = zonedToUtc(date, "12:00", timeZone);
   const dayName = DAY_NAMES[new Intl.DateTimeFormat("en-US", { timeZone, weekday: "short" }).format(midday)];
@@ -54,8 +76,6 @@ export async function availabilityForDate(site, serviceId, employeeId, date) {
   if (!schedule?.enabled) return [];
   const dayStart = zonedToUtc(date, schedule.open || "09:00", timeZone);
   const dayEnd = zonedToUtc(date, schedule.close || "17:00", timeZone);
-  const duration = Math.max(5, Number(service.duration || 30));
-  const buffer = Math.max(0, Number(service.bufferMinutes || 0));
   const reserved = await reservationsForEmployee(site.siteId, employeeId, dayStart.getTime(), dayEnd.getTime());
   let googleReserved = [];
   if (site.googleCalendar?.connected && employee.calendarId) {
@@ -66,16 +86,47 @@ export async function availabilityForDate(site, serviceId, employeeId, date) {
       console.error("google-freebusy", site.siteId, error?.message || error);
     }
   }
-  const blocks = [...reserved, ...googleReserved];
-  const slots = [];
-  for (let cursor = dayStart.getTime(); cursor + duration * 60_000 <= dayEnd.getTime(); cursor += 15 * 60_000) {
-    const end = cursor + (duration + buffer) * 60_000;
-    if (cursor < Date.now() + 60 * 60_000) continue;
-    if (!blocks.some((block) => overlaps(cursor, end, block.start, block.end))) {
-      slots.push({ start: new Date(cursor).toISOString(), end: new Date(cursor + duration * 60_000).toISOString() });
+  return slotsForSchedule({ date, schedule, service, blocks: [...reserved, ...googleReserved], timeZone });
+}
+
+export function monthAvailabilityFromBlocks({ month, timeZone, service, employee, site, blocks }) {
+  const [year, monthNumber] = month.split("-").map(Number);
+  const available = {};
+  const dayCount = new Date(Date.UTC(year, monthNumber, 0)).getUTCDate();
+  for (let day = 1; day <= dayCount; day += 1) {
+    const date = `${month}-${String(day).padStart(2, "0")}`;
+    const midday = zonedToUtc(date, "12:00", timeZone);
+    const dayName = DAY_NAMES[new Intl.DateTimeFormat("en-US", { timeZone, weekday: "short" }).format(midday)];
+    const schedule = employee.schedule?.[dayName] || site.hours?.[dayName];
+    const slots = slotsForSchedule({ date, schedule, service, blocks, timeZone });
+    if (slots.length) available[date] = slots.length;
+  }
+  return available;
+}
+
+export async function availabilityForMonth(site, serviceId, employeeId, month) {
+  if (!/^\d{4}-\d{2}$/.test(month)) throw Object.assign(new Error("Invalid booking month."), { status: 400 });
+  const { service, employee } = bookingServiceAndEmployee(site, serviceId, employeeId);
+  const [year, monthNumber] = month.split("-").map(Number);
+  if (monthNumber < 1 || monthNumber > 12) throw Object.assign(new Error("Invalid booking month."), { status: 400 });
+  const firstDate = `${month}-01`;
+  const lastDate = `${month}-${String(new Date(Date.UTC(year, monthNumber, 0)).getUTCDate()).padStart(2, "0")}`;
+  const timeZone = site.settings?.timezone || "America/Puerto_Rico";
+  const rangeStart = zonedToUtc(firstDate, "00:00", timeZone);
+  const rangeEnd = zonedToUtc(lastDate, "23:59", timeZone);
+  const reserved = await reservationsForEmployee(site.siteId, employeeId, rangeStart.getTime(), rangeEnd.getTime());
+  let googleReserved = [];
+  if (site.googleCalendar?.connected && employee.calendarId) {
+    try {
+      googleReserved = (await googleBusy(site.siteId, employee.calendarId, rangeStart.toISOString(), rangeEnd.toISOString(), timeZone))
+        .map((entry) => ({ start: Date.parse(entry.start), end: Date.parse(entry.end) }))
+        .filter((entry) => Number.isFinite(entry.start) && Number.isFinite(entry.end));
+    } catch (error) {
+      console.error("google-freebusy-month", site.siteId, error?.message || error);
     }
   }
-  return slots.slice(0, 96);
+  const blocks = [...reserved, ...googleReserved];
+  return monthAvailabilityFromBlocks({ month, timeZone, service, employee, site, blocks });
 }
 
 export async function createBookingHold(site, { serviceId, employeeId, start }) {

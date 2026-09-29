@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type CSSProperties } from 'react'
 import { templateBySlug, templateVisualStyle, type TemplateItem } from './templateData'
 import { templateUi, localizeTemplate, type TemplateLanguage, type TemplateUi } from './templateI18n'
+import MonthCalendar from './MonthCalendar'
 import './template-preview.css'
 
 type CartLine = { item: TemplateItem; quantity: number }
@@ -79,6 +80,11 @@ function TemplateSite({ slug }: { slug: string }) {
   const [catalogOpen, setCatalogOpen] = useState(false)
   const [selectedEmployee, setSelectedEmployee] = useState('')
   const [selectedDate, setSelectedDate] = useState('')
+  const [calendarView, setCalendarView] = useState(true)
+  const [selectedMonth, setSelectedMonth] = useState(() => {
+    const parts = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Puerto_Rico', year: 'numeric', month: '2-digit' }).formatToParts(new Date()).reduce((acc, part) => ({ ...acc, [part.type]: part.value }), {} as Record<string, string>)
+    return `${parts.year}-${parts.month}`
+  })
   const [selectedTime, setSelectedTime] = useState('')
   const [bookingStage, setBookingStage] = useState<'selection' | 'checkout' | 'verified' | 'confirmed'>('selection')
   const [bookingPaymentMethod, setBookingPaymentMethod] = useState<'stripe' | 'ath'>('stripe')
@@ -125,7 +131,7 @@ function TemplateSite({ slug }: { slug: string }) {
     )
   }
 
-  const showcaseFeatures = Array.from(new Set([...config.features, 'WhatsApp', 'Direct calls', 'Social media', 'Contact form', 'Google Maps', 'Google Calendar']))
+  const showcaseFeatures = Array.from(new Set([...config.features, language === 'es' ? 'Calendario mensual de disponibilidad' : 'Monthly availability calendar', 'WhatsApp', 'Direct calls', 'Social media', 'Contact form', 'Google Maps', 'Google Calendar']))
 
   const styles = {
     '--template-accent': config.accent,
@@ -159,6 +165,9 @@ function TemplateSite({ slug }: { slug: string }) {
     setBookingItem(target)
     setSelectedEmployee('')
     setSelectedDate('')
+    setCalendarView(true)
+    const parts = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Puerto_Rico', year: 'numeric', month: '2-digit' }).formatToParts(new Date()).reduce((acc, part) => ({ ...acc, [part.type]: part.value }), {} as Record<string, string>)
+    setSelectedMonth(`${parts.year}-${parts.month}`)
     setSelectedTime('')
     setBookingStage('selection')
     setBookingPaymentMethod('stripe')
@@ -179,6 +188,23 @@ function TemplateSite({ slug }: { slug: string }) {
     : bookingRequiresPayment
       ? `${ui.fullPayment} · ${money(bookingCharge, language)}`
       : ui.noPayment
+
+  const demoAvailability = useMemo(() => {
+    const [year, month] = selectedMonth.split('-').map(Number)
+    const dayCount = new Date(Date.UTC(year, month, 0)).getUTCDate()
+    const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Puerto_Rico', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date())
+    const available: Record<string, number> = {}
+    for (let day = 1; day <= dayCount; day += 1) {
+      const date = `${selectedMonth}-${String(day).padStart(2, '0')}`
+      const weekday = new Date(Date.UTC(year, month - 1, day)).getUTCDay()
+      if (date >= today && weekday !== 0) available[date] = 4
+    }
+    return available
+  }, [selectedMonth])
+  const formattedSelectedDate = selectedDate
+    ? new Intl.DateTimeFormat(language === 'es' ? 'es-PR' : 'en-US', { dateStyle: 'full', timeZone: 'UTC' }).format(new Date(`${selectedDate}T12:00:00Z`))
+    : ''
+  const quickDates = Object.keys(demoAvailability).slice(0, 4)
 
   const continueTemplateBooking = () => {
     if (!selectedDate || !selectedTime || (employeesForBooking.length > 0 && !selectedEmployee)) return
@@ -493,11 +519,14 @@ function TemplateSite({ slug }: { slug: string }) {
 
                 <section>
                   <strong>{employeesForBooking.length > 0 ? '2' : '1'} · {ui.chooseDate}</strong>
-                  <div className="template-date-row">
-                    {ui.dates.map((date, index) => (
-                      <button key={date} className={selectedDate === String(index) ? 'selected' : ''} onClick={() => setSelectedDate(String(index))}>{date}</button>
-                    ))}
+                  <div className="template-booking-date-controls" role="group" aria-label={language === 'es' ? 'Vista de fechas' : 'Date view'}>
+                    <button type="button" className={calendarView ? 'selected' : ''} aria-pressed={calendarView} onClick={() => setCalendarView(true)}>{language === 'es' ? 'Mes completo' : 'Full month'}</button>
+                    <button type="button" className={!calendarView ? 'selected' : ''} aria-pressed={!calendarView} onClick={() => setCalendarView(false)}>{language === 'es' ? 'Fechas próximas' : 'Upcoming dates'}</button>
                   </div>
+                  {calendarView
+                    ? <MonthCalendar month={selectedMonth} locale={language} selectedDate={selectedDate} availability={demoAvailability} onMonthChange={(month) => { setSelectedMonth(month); setSelectedDate(''); setSelectedTime('') }} onSelectDate={(date) => { setSelectedDate(date); setSelectedTime('') }} />
+                    : <div className="template-date-row">{quickDates.map((date) => <button type="button" key={date} className={selectedDate === date ? 'selected' : ''} onClick={() => { setSelectedDate(date); setSelectedTime('') }}>{new Intl.DateTimeFormat(language === 'es' ? 'es-PR' : 'en-US', { weekday: 'short', day: 'numeric', timeZone: 'UTC' }).format(new Date(`${date}T12:00:00Z`))}</button>)}</div>}
+                  <small className="template-calendar-demo-note">{language === 'es' ? 'Disponibilidad de ejemplo. En una página publicada, se calcula con el horario del negocio.' : 'Sample availability. Published pages calculate this from the business schedule.'}</small>
                 </section>
 
                 <section>
@@ -540,7 +569,7 @@ function TemplateSite({ slug }: { slug: string }) {
                 <div className="template-booking-order">
                   <span><b>{ui.service}</b><strong>{bookingItem.name}</strong></span>
                   <span><b>{ui.professional}</b><strong>{selectedEmployee === 'any' ? ui.anyAvailable : selectedEmployee}</strong></span>
-                  <span><b>{ui.dateTime}</b><strong>{ui.dates[Number(selectedDate)]} · {selectedTime}</strong></span>
+                  <span><b>{ui.dateTime}</b><strong>{formattedSelectedDate} · {selectedTime}</strong></span>
                   <span><b>{bookingItem.deposit ? ui.depositDue : ui.amountDue}</b><strong>{money(bookingCharge, language)}</strong></span>
                 </div>
 
@@ -592,7 +621,7 @@ function TemplateSite({ slug }: { slug: string }) {
                 <span>✓</span>
                 <small>{ui.templateConfirmed}</small>
                 <h2>{ui.bookingComplete}</h2>
-                <p>{bookingItem.name} · {ui.dates[Number(selectedDate)]} · {selectedTime}</p>
+                <p>{bookingItem.name} · {formattedSelectedDate} · {selectedTime}</p>
                 <b>{selectedEmployee && selectedEmployee !== 'any' ? selectedEmployee : ui.anyAvailable}</b>
                 <div className="template-confirmation-receipt">
                   <span>{ui.bookingStatus} <b>{ui.confirmedTemplate}</b></span>
