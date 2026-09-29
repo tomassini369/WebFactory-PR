@@ -335,59 +335,105 @@ html[data-wf-platform-theme="true"][data-wf-theme="light"] .wfa-admin-id span{co
 /* Mobile portal auth: fixed full-screen login shell */
 @media(max-width:820px){
   .wfa-login-page,.ca-page{
-    position:fixed;
-    inset:0;
-    width:100%;
-    height:100dvh;
-    min-height:100dvh;
-    margin:0;
-    padding:0;
-    overflow:hidden;
-    overscroll-behavior:none;
+    position:fixed!important;
+    inset:0!important;
+    width:100vw!important;
+    height:100dvh!important;
+    min-height:100dvh!important;
+    margin:0!important;
+    padding:0!important;
+    overflow:hidden!important;
+    overscroll-behavior:none!important;
     touch-action:manipulation;
   }
 
   .wfa-login-page>.wfa-login,
   .ca-page>.ca-login,
   .ca-page>.ca-activate{
-    width:100%;
-    max-width:none;
-    height:100%;
-    min-height:100%;
-    margin:0;
-    border:0;
-    border-radius:0;
-    box-shadow:none;
-    padding-top:max(24px,env(safe-area-inset-top));
-    padding-right:max(22px,calc((100% - 480px)/2));
-    padding-bottom:max(24px,env(safe-area-inset-bottom));
-    padding-left:max(22px,calc((100% - 480px)/2));
-    overflow-y:auto;
-    overflow-x:hidden;
-    overscroll-behavior:contain;
-    -webkit-overflow-scrolling:touch;
-    scrollbar-width:none;
+    position:relative;
+    display:block!important;
+    width:100vw!important;
+    max-width:none!important;
+    height:100dvh!important;
+    min-height:100dvh!important;
+    margin:0!important;
+    border:0!important;
+    border-radius:0!important;
+    box-shadow:none!important;
+    padding:max(34px,calc(env(safe-area-inset-top) + 18px)) 18px max(24px,env(safe-area-inset-bottom))!important;
+    overflow:hidden!important;
+    overscroll-behavior:none!important;
+    box-sizing:border-box!important;
+    transform:none!important;
   }
 
-  .wfa-login-page>.wfa-login::-webkit-scrollbar,
-  .ca-page>.ca-login::-webkit-scrollbar,
-  .ca-page>.ca-activate::-webkit-scrollbar{display:none}
+  .wfa-login-page>.wfa-login .portal-language,
+  .ca-page>.ca-login .portal-language,
+  .ca-page>.ca-activate .portal-language{
+    position:absolute;
+    top:max(18px,calc(env(safe-area-inset-top) + 8px));
+    right:18px;
+    z-index:3;
+    margin:0;
+  }
 
-  .wfa-login-page>.wfa-loading,
-  .ca-page>.ca-loading{
-    width:100%;
-    height:100%;
-    display:grid;
-    place-items:center;
-    padding:max(24px,env(safe-area-inset-top)) 22px max(24px,env(safe-area-inset-bottom));
+  .wfa-login-page>.wfa-login .wf-adaptive-logo-slot,
+  .ca-page>.ca-login .wf-adaptive-logo-slot,
+  .ca-page>.ca-activate .wf-adaptive-logo-slot{
+    display:block;
+    width:min(46vw,190px)!important;
+    max-width:190px!important;
+    margin:72px 0 24px!important;
+  }
+
+  .wfa-login-page>.wfa-login .wf-adaptive-logo,
+  .ca-page>.ca-login .wf-adaptive-logo,
+  .ca-page>.ca-activate .wf-adaptive-logo{
+    width:100%!important;
+    max-width:100%!important;
+    height:auto!important;
+    margin:0!important;
+  }
+
+  .wfa-login-page>.wfa-login h1,
+  .ca-page>.ca-login h1,
+  .ca-page>.ca-activate h1,
+  .ca-page>.ca-activate h2{
+    margin:12px 0 22px!important;
+    font-size:clamp(2.35rem,10vw,3.15rem)!important;
+    line-height:.98!important;
+    letter-spacing:-.035em;
+  }
+
+  .wfa-login-page>.wfa-login>p,
+  .ca-page>.ca-login>p,
+  .ca-page>.ca-activate>p{
+    margin:0 0 28px!important;
+    font-size:clamp(.98rem,4vw,1.08rem);
+    line-height:1.55!important;
+  }
+
+  .wfa-login-page>.wfa-login form,
+  .ca-page>.ca-login form{
+    width:100%!important;
+    margin-top:0!important;
+    gap:15px!important;
   }
 
   .wfa-login input:not([type="checkbox"]),
   .ca-login input:not([type="checkbox"]),
   .ca-activate input:not([type="checkbox"]){
-    min-height:48px;
+    width:100%!important;
+    min-height:50px!important;
     font-size:16px!important;
     line-height:1.25;
+  }
+
+  .wfa-login form>button,
+  .ca-login form>button,
+  .ca-activate>button{
+    width:100%!important;
+    min-height:50px;
   }
 
   .wfa-login button,
@@ -398,14 +444,23 @@ html[data-wf-platform-theme="true"][data-wf-theme="light"] .wfa-admin-id span{co
   .ca-activate input{
     touch-action:manipulation;
   }
+
+  .wfa-login-page>.wfa-loading,
+  .ca-page>.ca-loading{
+    width:100%;
+    height:100%;
+    display:grid;
+    place-items:center;
+    padding:max(24px,env(safe-area-inset-top)) 22px max(24px,env(safe-area-inset-bottom));
+  }
 }
 
-@media(max-width:820px) and (min-height:700px){
+/* Short mobile viewports may scroll only inside the full-screen auth surface. */
+@media(max-width:820px) and (max-height:700px){
   .wfa-login-page>.wfa-login,
   .ca-page>.ca-login,
   .ca-page>.ca-activate{
-    display:flex;
-    flex-direction:column;
-    justify-content:center;
+    overflow-y:auto!important;
+    -webkit-overflow-scrolling:touch;
   }
 }
