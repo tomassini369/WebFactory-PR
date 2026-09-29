@@ -2,6 +2,7 @@ import { assertSameOrigin, authorizedSites, errorResponse, requireSiteAccess, si
 import { normalizeEmail, patchClientSite, publicClientSite } from "../lib/client-store.mjs";
 import { cleanText, validEmail } from "../lib/platform-utils.mjs";
 import { normalizeTaxConfig } from "../lib/webfactory-v3-domain.mjs";
+import { TEMPLATE_CATALOG } from "../lib/builder-request.mjs";
 
 const allowedSections = new Set(["business", "design", "catalog", "employees", "hours", "paymentRules", "settings", "taxConfig", "members", "reviewSettings"]);
 
@@ -144,12 +145,27 @@ export default async (req) => {
 
     let value;
     if (section === "business") value = sanitizeBusiness(payload.value, site.business);
-    if (section === "design") value = {
-      ...site.design,
-      style: ["Modern", "Luxury", "Minimal", "Bold"].includes(payload.value?.style) ? payload.value.style : site.design?.style,
-      primary: color(payload.value?.primary, site.design?.primary || "#0B1529"),
-      secondary: color(payload.value?.secondary, site.design?.secondary || "#3C86F6"),
-    };
+    if (section === "design") {
+      if (!['owner', 'manager'].includes(membership.role)) throw Object.assign(new Error("Only an owner or manager can redesign the website."), { status: 403 });
+      if (!["active", "trialing", "trial", "complimentary"].includes(site.servicePlan?.subscriptionStatus)) {
+        throw Object.assign(new Error("An active subscription or complimentary access is required to publish design changes."), { status: 403 });
+      }
+      const templateSlug = cleanText(payload.value?.templateSlug, 80);
+      const template = Object.hasOwn(TEMPLATE_CATALOG, templateSlug) ? TEMPLATE_CATALOG[templateSlug] : null;
+      if (templateSlug && !template) throw Object.assign(new Error("Choose a valid WebFactory template."), { status: 400 });
+      value = {
+        ...site.design,
+        mode: template ? "template_base" : "custom",
+        templateSlug: template ? templateSlug : "",
+        templateCategory: template?.category || "",
+        templateName: template?.name || "",
+        templateRoute: template ? `/templates/${templateSlug}` : "",
+        preserveTemplateStructure: Boolean(template),
+        style: ["Modern", "Luxury", "Minimal", "Bold"].includes(payload.value?.style) ? payload.value.style : site.design?.style,
+        primary: color(payload.value?.primary, site.design?.primary || "#0B1529"),
+        secondary: color(payload.value?.secondary, site.design?.secondary || "#3C86F6"),
+      };
+    }
     if (section === "catalog") value = sanitizeCatalog(payload.value);
     if (section === "employees") value = sanitizeEmployees(payload.value, site.catalog);
     if (section === "hours") value = sanitizeHours(payload.value);
