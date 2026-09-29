@@ -117,7 +117,7 @@ const faqEs = [
   ['¿Puedo vender productos y también recibir citas?','Sí. El mismo website puede manejar productos, servicios, carrito y reservaciones.'],
   ['¿Mi página será igual a uno de los Templates?','Tú decides. Puedes comenzar con un diseño personalizado o escoger un Template como base. El Builder aplica tu marca, colores, textos, catálogo y configuraciones.'],
   ['¿Cómo se evita el double booking?','La arquitectura revalida base de datos, empleado, horarios, holds y Google Calendar antes de confirmar.'],
-  ['¿Puedo modificarlo después de publicarlo?','Sí. Tu portal administrativo permite cambiar productos, servicios, precios, empleados, horarios, pagos y calendario sin solicitar otro deployment.'],
+  ['¿Puedo rediseñar mi página después de publicarla?','Sí. Mientras tu plan esté activo, puedes cambiar el template, los colores y el estilo desde Builder y rediseño en tu portal. Tu catálogo, citas, pedidos, pagos y equipo se conservan.'],
   ['¿Puedo usar mi propio logo?','Sí. Puedes subir tu logo e imágenes desde el Builder y administrar el contenido desde tu portal.'],
   ['¿Factory AI crea otra página o deployment aparte?','No. Factory AI trabaja únicamente dentro del Builder y genera configuración para tu website en /sites/:slug. Todo permanece dentro de la misma plataforma WebFactory.']
 ]
@@ -128,7 +128,7 @@ const faqEn = [
   ['Can I sell products and also accept appointments?','Yes. The same website can handle products, services, cart and bookings.'],
   ['Will my website look exactly like one of the Templates?','You decide. Start with a custom design or choose a Template as your base. The Builder applies your brand, colors, copy, catalog and settings.'],
   ['How is double booking prevented?','The architecture rechecks the database, employee, schedules, holds and Google Calendar before confirmation.'],
-  ['Can I edit it after publishing?','Yes. Your admin portal lets you change products, services, prices, employees, hours, payments and calendar without requesting another deployment.'],
+  ['Can I redesign my website after publishing?','Yes. While your plan is active, you can change the template, colors and visual style from Builder & redesign in your portal. Your catalog, bookings, orders, payments and team stay in place.'],
   ['Can I use my own logo?','Yes. Upload your logo and images in the Builder and manage your content from the portal.'],
   ['Does Factory AI create a separate website or deployment?','No. Factory AI works only inside the Builder and generates configuration for your website at /sites/:slug. Everything stays inside the same WebFactory platform.']
 ]
@@ -257,6 +257,23 @@ function App(){
           <div className="wf-home-ai-prompt">{lang==='es'?'Tengo un salón de belleza. Quiero un diseño moderno con color, keratina, uñas y booking por especialista.':'I own a beauty salon. I want a modern design with color, keratin, nails and specialist booking.'}</div>
           <div className="wf-home-ai-result"><span>Template · Bella Vita Salon</span><span>6 {lang==='es'?'servicios':'services'}</span><span>3 {lang==='es'?'miembros':'team members'}</span></div>
           <button>{lang==='es'?'Aplicar al Builder':'Apply to Builder'} →</button>
+        </div>
+      </div></section>
+
+      <section className="section white wf-home-redesign" data-scroll-sound="feature"><div className="shell split wf-redesign-grid">
+        <div className="wf-redesign-copy">
+          <p className="eyebrow">{lang==='es'?'BUILDER · REDISEÑO':'BUILDER · REDESIGN'}</p>
+          <h2>{lang==='es'?'Tu negocio cambia. Tu página también.':'Your business evolves. Your website can too.'}</h2>
+          <p>{lang==='es'?'Con un plan activo, renueva el template, los colores y el estilo visual de tu página desde el portal de clientes. Publica el cambio en tu website actual y conserva el catálogo, las citas, los pedidos, los pagos y el equipo.':'With an active plan, refresh your page’s template, colors and visual style from the client portal. Publish the update to your current website and keep your catalog, bookings, orders, payments and team.'}</p>
+          <div className="actions"><a className="btn primary" href="/client-admin">{lang==='es'?'Entrar al portal y rediseñar':'Log in to redesign'} →</a><a className="btn secondary" href="/templates">{lang==='es'?'Explorar Templates':'Explore Templates'}</a></div>
+          <small>{lang==='es'?'Revisa los cambios y confirma antes de publicarlos.':'Review your changes and confirm before publishing.'}</small>
+        </div>
+        <div className="wf-redesign-mock" role="img" aria-label={lang==='es'?'Vista ilustrativa del rediseño de una página en WebFactory Builder':'Illustration of redesigning a website in WebFactory Builder'}>
+          <div className="wf-redesign-toolbar"><span><i/><i/><i/></span><b>WEBFACTORY BUILDER</b><small>{lang==='es'?'REDISEÑO':'REDESIGN'}</small></div>
+          <div className="wf-redesign-workspace"><aside><small>{lang==='es'?'DISEÑO ACTUAL':'CURRENT DESIGN'}</small><b>{lang==='es'?'Template':'Template'}</b><span>{lang==='es'?'Colores':'Colors'}</span><div className="wf-redesign-swatches"><i/><i/><i/></div><b>{lang==='es'?'Nuevo estilo':'New style'}</b><span>{lang==='es'?'Vista previa':'Preview'}</span></aside>
+            <div className="wf-redesign-site"><header><strong>{lang==='es'?'Tu negocio':'Your business'}</strong><span>{lang==='es'?'Servicios　 Catálogo':'Services　 Catalog'}</span></header><div className="wf-redesign-hero"><small>{lang==='es'?'UNA NUEVA IMAGEN':'A FRESH NEW LOOK'}</small><strong>{lang==='es'?'El estilo de tu negocio, renovado.':'A fresh look for your business.'}</strong><i>{lang==='es'?'Ver servicios':'Explore services'} →</i></div><div className="wf-redesign-items"><i/><i/><i/></div></div>
+          </div>
+          <div className="wf-redesign-preserve"><b>✓</b>{lang==='es'?'Tu operación y datos permanecen':'Your operations and data stay in place'}</div>
         </div>
       </div></section>
 
