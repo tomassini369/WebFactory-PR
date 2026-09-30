@@ -42,9 +42,10 @@ async function reservationsForEmployee(siteId, employeeId, startDay, endDay) {
   return records;
 }
 
-function bookingServiceAndEmployee(site, serviceId, employeeId) {
+function bookingServiceAndEmployee(site, serviceId, employeeId, locationId = "") {
   const service = (site.catalog || []).find((item) => item.id === serviceId && item.type === "service" && item.requiresAppointment && item.active !== false);
-  const employee = (site.employees || []).find((item) => item.id === employeeId && item.active !== false && (item.serviceIds || []).includes(serviceId));
+  const hasLocations = (site.business?.locations || []).filter((location) => location.active !== false).length > 0;
+  const employee = (site.employees || []).find((item) => item.id === employeeId && item.active !== false && (item.serviceIds || []).includes(serviceId) && (!hasLocations || (locationId && (item.locationIds || []).includes(locationId))));
   if (!service || !employee) throw Object.assign(new Error("Service or employee is unavailable."), { status: 404 });
   return { service, employee };
 }
@@ -66,13 +67,14 @@ function slotsForSchedule({ date, schedule, service, blocks, timeZone }) {
   return slots.slice(0, 96);
 }
 
-export async function availabilityForDate(site, serviceId, employeeId, date) {
+export async function availabilityForDate(site, serviceId, employeeId, date, locationId = "") {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) throw Object.assign(new Error("Invalid booking date."), { status: 400 });
-  const { service, employee } = bookingServiceAndEmployee(site, serviceId, employeeId);
+  const { service, employee } = bookingServiceAndEmployee(site, serviceId, employeeId, locationId);
   const timeZone = site.settings?.timezone || "America/Puerto_Rico";
   const midday = zonedToUtc(date, "12:00", timeZone);
   const dayName = DAY_NAMES[new Intl.DateTimeFormat("en-US", { timeZone, weekday: "short" }).format(midday)];
-  const schedule = employee.schedule?.[dayName] || site.hours?.[dayName];
+  const location = (site.business?.locations || []).find((entry) => entry.id === locationId);
+  const schedule = employee.schedule?.[dayName] || location?.hours?.[dayName] || site.hours?.[dayName];
   if (!schedule?.enabled) return [];
   const dayStart = zonedToUtc(date, schedule.open || "09:00", timeZone);
   const dayEnd = zonedToUtc(date, schedule.close || "17:00", timeZone);
@@ -89,7 +91,7 @@ export async function availabilityForDate(site, serviceId, employeeId, date) {
   return slotsForSchedule({ date, schedule, service, blocks: [...reserved, ...googleReserved], timeZone });
 }
 
-export function monthAvailabilityFromBlocks({ month, timeZone, service, employee, site, blocks }) {
+export function monthAvailabilityFromBlocks({ month, timeZone, service, employee, site, blocks, locationId = "" }) {
   const [year, monthNumber] = month.split("-").map(Number);
   const available = {};
   const dayCount = new Date(Date.UTC(year, monthNumber, 0)).getUTCDate();
@@ -97,16 +99,17 @@ export function monthAvailabilityFromBlocks({ month, timeZone, service, employee
     const date = `${month}-${String(day).padStart(2, "0")}`;
     const midday = zonedToUtc(date, "12:00", timeZone);
     const dayName = DAY_NAMES[new Intl.DateTimeFormat("en-US", { timeZone, weekday: "short" }).format(midday)];
-    const schedule = employee.schedule?.[dayName] || site.hours?.[dayName];
+    const location = (site.business?.locations || []).find((entry) => entry.id === locationId);
+    const schedule = employee.schedule?.[dayName] || location?.hours?.[dayName] || site.hours?.[dayName];
     const slots = slotsForSchedule({ date, schedule, service, blocks, timeZone });
     if (slots.length) available[date] = slots.length;
   }
   return available;
 }
 
-export async function availabilityForMonth(site, serviceId, employeeId, month) {
+export async function availabilityForMonth(site, serviceId, employeeId, month, locationId = "") {
   if (!/^\d{4}-\d{2}$/.test(month)) throw Object.assign(new Error("Invalid booking month."), { status: 400 });
-  const { service, employee } = bookingServiceAndEmployee(site, serviceId, employeeId);
+  const { service, employee } = bookingServiceAndEmployee(site, serviceId, employeeId, locationId);
   const [year, monthNumber] = month.split("-").map(Number);
   if (monthNumber < 1 || monthNumber > 12) throw Object.assign(new Error("Invalid booking month."), { status: 400 });
   const firstDate = `${month}-01`;
@@ -126,20 +129,20 @@ export async function availabilityForMonth(site, serviceId, employeeId, month) {
     }
   }
   const blocks = [...reserved, ...googleReserved];
-  return monthAvailabilityFromBlocks({ month, timeZone, service, employee, site, blocks });
+  return monthAvailabilityFromBlocks({ month, timeZone, service, employee, site, blocks, locationId });
 }
 
-export async function createBookingHold(site, { serviceId, employeeId, start }) {
+export async function createBookingHold(site, { serviceId, employeeId, start, locationId = "" }) {
   const isoStart = new Date(start).toISOString();
   const parts = new Intl.DateTimeFormat("en-US", { timeZone: site.settings?.timezone || "America/Puerto_Rico", year: "numeric", month: "2-digit", day: "2-digit" })
     .formatToParts(new Date(isoStart)).reduce((acc, part) => ({ ...acc, [part.type]: part.value }), {});
   const localDate = `${parts.year}-${parts.month}-${parts.day}`;
-  const slots = await availabilityForDate(site, serviceId, employeeId, localDate);
+  const slots = await availabilityForDate(site, serviceId, employeeId, localDate, locationId);
   const selected = slots.find((slot) => slot.start === isoStart);
   if (!selected) throw Object.assign(new Error("That time is no longer available."), { status: 409 });
   const holdId = `hold_${crypto.randomUUID()}`;
   const hold = {
-    holdId, siteId: site.siteId, serviceId, employeeId, start: selected.start, end: selected.end,
+    holdId, siteId: site.siteId, serviceId, employeeId, locationId, start: selected.start, end: selected.end,
     status: "held", createdAt: new Date().toISOString(), expiresAt: new Date(Date.now() + 15 * 60_000).toISOString(),
   };
   await clientCommerceStore().setJSON(commerceKey(site.siteId, "holds", holdId), hold);

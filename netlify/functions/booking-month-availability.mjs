@@ -9,7 +9,7 @@ export default async (req) => {
     const site = payload.siteId ? await getClientSite(payload.siteId) : await getClientSiteBySlug(payload.slug);
     if (!site) return Response.json({ ok: false, message: "Business site not found." }, { status: 404 });
     if (!siteEntitlement(site).public) return Response.json({ ok: false, message: "Business site is not available." }, { status: 404 });
-    const available = await availabilityForMonth(site, String(payload.serviceId || ""), String(payload.employeeId || ""), String(payload.month || ""));
+    const available = await availabilityForMonth(site, String(payload.serviceId || ""), String(payload.employeeId || ""), String(payload.month || ""), String(payload.locationId || ""));
     return Response.json({ ok: true, available }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
     return Response.json({ ok: false, message: error?.message || "Availability could not be loaded." }, { status: Number(error?.status || 500), headers: { "Cache-Control": "no-store" } });

@@ -37,3 +37,13 @@ test("month availability leaves fully booked days out of the calendar", () => {
   assert.equal(available["2028-02-01"], undefined);
   assert.equal(available["2028-02-08"], 3);
 });
+
+test("branch hours control monthly booking availability when employee hours are unset", () => {
+  const closed = { enabled: false, open: "09:00", close: "17:00" };
+  const site = {
+    hours: Object.fromEntries(["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"].map((day) => [day, closed])),
+    business: { locations: [{ id: "east", hours: { Martes: { enabled: true, open: "10:00", close: "11:00" } } }] },
+  };
+  const available = monthAvailabilityFromBlocks({ month: "2028-02", timeZone: "America/Puerto_Rico", service: { duration: 30 }, employee: { schedule: {} }, site, blocks: [], locationId: "east" });
+  assert.deepEqual(Object.keys(available), ["2028-02-01", "2028-02-08", "2028-02-15", "2028-02-22", "2028-02-29"]);
+});
