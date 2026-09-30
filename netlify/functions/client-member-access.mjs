@@ -32,7 +32,7 @@ export default async(req)=>{
       const ownerEmail=normalizeEmail((site.members||[]).find((member)=>member.role==="owner")?.email);
       if(email===ownerEmail)throw Object.assign(new Error("The owner already has access."),{status:409});
 
-      const members=[...(site.members||[]).filter((member)=>normalizeEmail(member.email)!==email),{email,role}];
+      const members=[...(site.members||[]).filter((member)=>normalizeEmail(member.email)!==email),{email,role,locationIds:[]}];
       const updated=await saveClientSite({...site,members,revision:Number(site.revision||0)+1,updatedAt:new Date().toISOString()});
 
       let user=await findIdentityUserByEmail(email);

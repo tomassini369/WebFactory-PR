@@ -127,6 +127,7 @@ export function publicClientSite(site) {
       whatsapp: site.business?.whatsapp || "",
       email: site.business?.email || "",
       mapsUrl: site.business?.mapsUrl || "",
+      locations: (site.business?.locations || []).filter((location) => location.active !== false).map((location) => ({ id: location.id, name: location.name, address: location.address, phone: location.phone, mapsUrl: location.mapsUrl, hours: location.hours || {} })),
       instagram: site.business?.instagram || "",
       facebook: site.business?.facebook || "",
       x: site.business?.x || "",
@@ -167,6 +168,7 @@ export function publicClientSite(site) {
       roleEn: member.roleEn || member.role || "",
       roleEs: member.roleEs || "",
       serviceIds: member.serviceIds || [],
+      locationIds: member.locationIds || [],
     })),
     hours: site.hours || {},
     paymentRules: {

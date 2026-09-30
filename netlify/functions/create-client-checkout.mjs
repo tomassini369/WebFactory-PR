@@ -66,15 +66,21 @@ export default async (req) => {
 
     const lang = payload.lang === "es" ? "es" : "en";
     const transactionId = `txn_${crypto.randomUUID()}`;
+    const locations = (site.business?.locations || []).filter((location) => location.active !== false);
+    const locationId = cleanText(payload.locationId || payload.booking?.locationId, 120);
+    if (locations.length && (!locationId || !locations.some((location) => location.id === locationId))) {
+      throw Object.assign(new Error("Choose an available location."), { status: 400 });
+    }
+    const selectedLocation = locations.find((location) => location.id === locationId);
     let hold = null;
     let items;
     let kind;
     if (payload.booking) {
       kind = "booking";
       const service = (site.catalog || []).find((item) => item.id === payload.booking.serviceId && item.type === "service" && item.requiresAppointment && item.active !== false);
-      const employee = (site.employees || []).find((member) => member.id === payload.booking.employeeId && member.active !== false && (member.serviceIds || []).includes(service?.id));
+      const employee = (site.employees || []).find((member) => member.id === payload.booking.employeeId && member.active !== false && (member.serviceIds || []).includes(service?.id) && (!locations.length || (locationId && (member.locationIds || []).includes(locationId))));
       if (!service || !employee) throw Object.assign(new Error("The selected service or employee is unavailable."), { status: 409 });
-      hold = await createBookingHold(site, payload.booking);
+      hold = await createBookingHold(site, { ...payload.booking, locationId });
       const fullAmount = Math.round(Number(service.price) * 100);
       const unitAmount = site.paymentRules?.bookingPayment === "deposit"
         ? Math.round(fullAmount * Number(site.paymentRules?.bookingDepositPercent || 25) / 100)
@@ -114,16 +120,22 @@ export default async (req) => {
     }
 
     const record = {
-      transactionId, siteId: site.siteId, kind, customer, items, holdId: hold?.holdId || "",
+      transactionId, siteId: site.siteId, kind, customer, items, locationId, locationName: selectedLocation?.name || "", holdId: hold?.holdId || "",
       serviceId: hold?.serviceId || "", employeeId: hold?.employeeId || "", start: hold?.start || "", end: hold?.end || "",
       subtotal, tax: taxCents, amountTotal: subtotal + (site.taxConfig?.pricesIncludeTax ? 0 : taxCents), currency: "usd",
       paymentStatus: inPerson ? "due" : "pending", status: inPerson ? "confirmed" : "payment_pending",
       createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
     };
 
+    const trackingToken = kind === "order" ? crypto.randomBytes(24).toString("base64url") : "";
+    if (trackingToken) {
+      const trackingHash = crypto.createHash("sha256").update(trackingToken).digest("hex");
+      record.trackingHash = trackingHash;
+      await clientCommerceStore().setJSON(`tracking/${trackingHash}.json`, { siteId: site.siteId, transactionId });
+    }
     if (inPerson) {
       await clientCommerceStore().setJSON(commerceKey(site.siteId, kind === "booking" ? "bookings" : "orders", transactionId), record);
-      return Response.json({ ok: true, paymentRequired: false, transactionId, status: record.status });
+      return Response.json({ ok: true, paymentRequired: false, transactionId, status: record.status, ...(trackingToken ? { trackingUrl: `${publicBaseUrl()}/track/${trackingToken}` } : {}) });
     }
 
     const accountId = site.paymentRules?.stripeConnectedAccountId;
@@ -134,7 +146,7 @@ export default async (req) => {
 
     const params = new URLSearchParams();
     params.set("mode", "payment");
-    params.set("success_url", `${publicBaseUrl()}/sites/${encodeURIComponent(site.slug)}?checkout=success&session_id={CHECKOUT_SESSION_ID}`);
+    params.set("success_url", `${publicBaseUrl()}/sites/${encodeURIComponent(site.slug)}?checkout=success&session_id={CHECKOUT_SESSION_ID}${trackingToken ? `&tracking=${encodeURIComponent(trackingToken)}` : ""}`);
     params.set("cancel_url", `${publicBaseUrl()}/sites/${encodeURIComponent(site.slug)}?checkout=cancelled`);
     params.set("customer_email", customer.email);
     params.set("client_reference_id", transactionId);

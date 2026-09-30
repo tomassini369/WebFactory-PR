@@ -5,7 +5,8 @@ import './template-preview.css'
 import './client-storefront.css'
 
 type Item={id:string;type:'product'|'service';name:string;nameEn?:string;nameEs?:string;description:string;descriptionEn?:string;descriptionEs?:string;price:number;inventory:number|null;requiresAppointment:boolean;duration:number;imageUrl:string}
-type Employee={id:string;name:string;role:string;roleEn?:string;roleEs?:string;serviceIds:string[]}
+type Employee={id:string;name:string;role:string;roleEn?:string;roleEs?:string;serviceIds:string[];locationIds?:string[]}
+type Location={id:string;name:string;address:string;phone:string;mapsUrl:string;hours:any}
 type Site={siteId:string;slug:string;business:any;design:any;features:Record<string,boolean>;catalog:Item[];employees:Employee[];hours:any;paymentRules:any;settings:any}
 type CartLine={id:string;quantity:number}
 const money=(value:number)=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(value)
@@ -38,7 +39,8 @@ export default function ClientStorefront({slug}:{slug:string}){
   const [lang,setLang]=useState<'es'|'en'>('en')
   const [catalog,setCatalog]=useState(false)
   const [cart,setCart]=useState<CartLine[]>([])
-  const [booking,setBooking]=useState<{serviceId:string;employeeId:string;date:string;start:string}|null>(null)
+  const [selectedLocationId,setSelectedLocationId]=useState('')
+  const [booking,setBooking]=useState<{serviceId:string;employeeId:string;date:string;start:string;locationId:string}|null>(null)
   const [slots,setSlots]=useState<Array<{start:string;end:string}>>([])
   const [bookingMonth,setBookingMonth]=useState(()=>currentMonth())
   const [availableDates,setAvailableDates]=useState<Record<string,number>>({})
@@ -49,6 +51,7 @@ export default function ClientStorefront({slug}:{slug:string}){
   const [checkoutOpen,setCheckoutOpen]=useState(false)
   const [contact,setContact]=useState({name:'',email:'',phone:'',message:''})
   const [contactStatus,setContactStatus]=useState('')
+  const [trackingUrl,setTrackingUrl]=useState('')
 
   useEffect(()=>{
     let active=true
@@ -70,6 +73,7 @@ export default function ClientStorefront({slug}:{slug:string}){
     document.addEventListener('visibilitychange',refresh)
     return()=>{active=false;window.removeEventListener('focus',refresh);document.removeEventListener('visibilitychange',refresh)}
   },[slug])
+  useEffect(()=>{const token=new URLSearchParams(location.search).get('tracking');if(token){const url=`${location.origin}/track/${encodeURIComponent(token)}`;setTrackingUrl(url);history.replaceState({},'',location.pathname)}},[])
 
   const visibleCatalog=useMemo(()=>site?.catalog.filter(item=>item.type==='product'?site.features.products!==false:site.features.services!==false)||[],[site])
   const cartItems=useMemo(()=>cart.map(line=>({line,item:visibleCatalog.find(x=>x.id===line.id)})).filter(x=>x.item),[cart,visibleCatalog])
@@ -80,16 +84,17 @@ export default function ClientStorefront({slug}:{slug:string}){
   }
   const beginBooking=(item:Item)=>{
     if(site?.features.bookings===false)return
-    setBooking({serviceId:item.id,employeeId:'',date:'',start:''});setSlots([]);setAvailableDates({});setBookingMonth(currentMonth(site?.settings?.timezone));setCalendarView(true);setCatalog(false)
+    setBooking({serviceId:item.id,employeeId:'',date:'',start:'',locationId:selectedLocationId});setSlots([]);setAvailableDates({});setBookingMonth(currentMonth(site?.settings?.timezone));setCalendarView(true);setCatalog(false)
   }
-  const employees=site?.employees.filter(x=>x.serviceIds.includes(booking?.serviceId||''))||[]
-  const getSlots=async(next:{serviceId:string;employeeId:string;date:string;start:string})=>{
+  const locations=(site?.business.locations||[]) as Location[]
+  const employees=site?.employees.filter(x=>x.serviceIds.includes(booking?.serviceId||'')&&(!locations.length||(booking?.locationId&&x.locationIds?.includes(booking.locationId))))||[]
+  const getSlots=async(next:{serviceId:string;employeeId:string;date:string;start:string;locationId:string})=>{
     setBooking(next)
     setSlots([])
     if(!next.employeeId||!next.date||!site)return
     setBusy(true)
     try{
-      const r=await fetch('/.netlify/functions/booking-availability',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({siteId:site.siteId,serviceId:next.serviceId,employeeId:next.employeeId,date:next.date})})
+      const r=await fetch('/.netlify/functions/booking-availability',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({siteId:site.siteId,serviceId:next.serviceId,employeeId:next.employeeId,date:next.date,locationId:next.locationId})})
       const x=await r.json()
       if(!r.ok)throw new Error(x.message)
       setSlots(x.slots)
@@ -99,7 +104,7 @@ export default function ClientStorefront({slug}:{slug:string}){
     if(!booking?.employeeId||!site)return
     let active=true
     setCalendarLoading(true)
-    fetch('/.netlify/functions/booking-month-availability',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({siteId:site.siteId,serviceId:booking.serviceId,employeeId:booking.employeeId,month:bookingMonth})})
+    fetch('/.netlify/functions/booking-month-availability',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({siteId:site.siteId,serviceId:booking.serviceId,employeeId:booking.employeeId,month:bookingMonth,locationId:booking.locationId})})
       .then(async response=>{const result=await response.json();if(!response.ok)throw new Error(result.message);return result.available as Record<string,number>})
       .then(available=>{if(active){setAvailableDates(available);setError('')}})
       .catch(e=>{if(active){setAvailableDates({});setError(e instanceof Error?e.message:'No se pudo consultar el calendario.')}})
@@ -111,12 +116,12 @@ export default function ClientStorefront({slug}:{slug:string}){
     if(!site)return
     setBusy(true);setError('')
     try{
-      const body=booking?{siteId:site.siteId,customer,booking,lang}:{siteId:site.siteId,customer,items:cart,lang}
+      const body=booking?{siteId:site.siteId,customer,booking,locationId:booking.locationId,lang}:{siteId:site.siteId,customer,items:cart,locationId:selectedLocationId,lang}
       const r=await fetch('/.netlify/functions/create-client-checkout',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
       const x=await r.json()
       if(!r.ok)throw new Error(x.message)
       if(x.checkoutUrl)location.assign(x.checkoutUrl)
-      else{setCheckoutOpen(false);setBooking(null);setCart([]);alert(lang==='es'?'Confirmación recibida. El pago se realizará presencialmente.':'Confirmation received. Payment is due in person.')}
+      else{setCheckoutOpen(false);setBooking(null);setCart([]);if(x.trackingUrl){setTrackingUrl(x.trackingUrl);alert(lang==='es'?'Pedido recibido. El enlace para seguirlo aparece en la página.':'Order received. The tracking link is shown on the page.')}else alert(lang==='es'?'Confirmación recibida.':'Confirmation received.')}
     }catch(e){setError(e instanceof Error?e.message:'No se pudo iniciar el pago.')}finally{setBusy(false)}
   }
   useEffect(()=>{if(site){const name=lang==='es'?(site.business.nameEs||site.business.nameEn||site.business.name):(site.business.nameEn||site.business.name||site.business.nameEs||'WebFactory');document.title=name||'WebFactory';document.documentElement.lang=lang}},[lang,site])
@@ -181,7 +186,7 @@ export default function ClientStorefront({slug}:{slug:string}){
       <a className="demo-brand" href="#site-top">{site.business.logoUrl?<img className="cs-template-logo" src={site.business.logoUrl} alt={businessName}/>:businessName}</a>
       <nav>
         {(site.features.products!==false||site.features.services!==false)&&<a href="#services">{t.services}</a>}
-        {site.employees.length>0&&site.features.bookings&&<a href="#team">{lang==='es'?'Equipo':'Team'}</a>}
+        {site.employees.length>0&&site.features.bookings&&<a href="#team">{lang==='es'?'Equipo':'Team'}</a>}{locations.length>0&&<a href="#locations">{lang==='es'?'Sucursales':'Locations'}</a>}
         <a href="#about">{t.about}</a>
         <a href="#contact">{t.contact}</a>
       </nav>
@@ -213,6 +218,8 @@ export default function ClientStorefront({slug}:{slug:string}){
         </aside>
       </section>
 
+      {locations.length>0&&<section className="demo-section cs-locations" id="locations"><div className="demo-section-heading"><div><small>{lang==='es'?'VISÍTANOS':'VISIT US'}</small><h2>{lang==='es'?'Nuestras localidades':'Our locations'}</h2></div></div><div className="cs-location-grid">{locations.map(location=><article key={location.id}><h3>{location.name}</h3>{location.address&&<p>{location.address}</p>}{location.phone&&<a href={`tel:${location.phone}`}>{location.phone}</a>}{location.mapsUrl&&<p><a href={location.mapsUrl} target="_blank" rel="noreferrer">Google Maps ↗</a></p>}</article>)}</div></section>}
+
       {activeFeatureLabels.length>0&&<section className="demo-feature-strip">{activeFeatureLabels.slice(0,6).map((feature,index)=><div key={feature}><span>{String(index+1).padStart(2,'0')}</span><strong>{feature}</strong></div>)}</section>}
 
       {(site.features.products!==false||site.features.services!==false)&&<section className="demo-section demo-catalog" id="services" style={{order:sectionPosition('catalog')}}>
@@ -222,7 +229,7 @@ export default function ClientStorefront({slug}:{slug:string}){
 
       {site.employees.length>0&&site.features.bookings&&<section className="demo-section demo-team-section" id="team" style={{order:sectionPosition('team')}}>
         <div className="demo-section-heading"><div><small>{lang==='es'?'EQUIPO':'TEAM'}</small><h2>{lang==='es'?'Profesionales disponibles':'Available professionals'}</h2></div><p>{lang==='es'?'Cada servicio se conecta con las personas autorizadas para ofrecerlo.':'Each service connects to the people authorized to provide it.'}</p></div>
-        <div className="demo-team-grid">{site.employees.map(employee=><article key={employee.id}><span>{initials(employee.name)}</span><small>{employeeRole(employee)}</small><h3>{employee.name}</h3><div>{employee.serviceIds.map(id=>{const item=site.catalog.find(x=>x.id===id);return item?<b key={id}>{itemName(item)}</b>:null})}</div></article>)}</div>
+        <div className="demo-team-grid">{site.employees.map(employee=><article key={employee.id}><span>{initials(employee.name)}</span><small>{employeeRole(employee)}</small><h3>{employee.name}</h3><div>{employee.serviceIds.map(id=>{const item=site.catalog.find(x=>x.id===id);return item?<b key={id}>{itemName(item)}</b>:null})}</div>{(employee.locationIds||[]).length>0&&<small>{(employee.locationIds||[]).map(id=>locations.find(location=>location.id===id)?.name).filter(Boolean).join(' · ')}</small>}</article>)}</div>
       </section>}
 
       <section className="demo-section" id="about" style={{order:sectionPosition('about')}}>
@@ -256,8 +263,8 @@ export default function ClientStorefront({slug}:{slug:string}){
 
     {catalog&&<div className="cs-modal" onMouseDown={()=>setCatalog(false)}><section onMouseDown={e=>e.stopPropagation()}><header><div><small>CATALOG</small><h2>{t.available}</h2></div><button onClick={()=>setCatalog(false)}>×</button></header>{visibleCatalog.length===0?<p>{t.empty}</p>:<div className="cs-catalog-grid">{visibleCatalog.map(item=><article key={item.id}>{item.imageUrl&&<img src={item.imageUrl}/>}<div><small>{item.type}</small><h3>{itemName(item)}</h3><p>{itemDescription(item)}</p><b>{money(item.price)}</b><button disabled={item.inventory===0} onClick={()=>item.requiresAppointment&&site.features.bookings?beginBooking(item):site.features.cart!==false?add(item):undefined}>{item.inventory===0?(lang==='es'?'Agotado':'Sold out'):item.requiresAppointment&&site.features.bookings?t.book:site.features.cart!==false?t.shop:(lang==='es'?'Ver':'View')}</button></div></article>)}</div>}</section></div>}
 
-    {booking&&<div className="cs-modal"><section><header><div><small>BOOKING</small><h2>{(()=>{const service=site.catalog.find(x=>x.id===booking.serviceId);return service?itemName(service):''})()}</h2></div><button onClick={()=>setBooking(null)}>×</button></header><div className="cs-booking"><label>{t.team}<select value={booking.employeeId} onChange={e=>{setAvailableDates({});void getSlots({...booking,employeeId:e.target.value,date:'',start:''})}}><option value="">—</option>{employees.map(x=><option key={x.id} value={x.id}>{x.name} · {employeeRole(x)}</option>)}</select></label><section className="cs-booking-date"><div className="cs-booking-date-heading"><strong>{t.date}</strong><div role="group" aria-label={lang==='es'?'Vista de fechas':'Date view'}><button type="button" className={calendarView?'active':''} aria-pressed={calendarView} onClick={()=>setCalendarView(true)}>{t.calendarView}</button><button type="button" className={!calendarView?'active':''} aria-pressed={!calendarView} onClick={()=>setCalendarView(false)}>{t.quickDate}</button></div></div>{calendarView?<MonthCalendar month={bookingMonth} locale={lang} timeZone={site.settings?.timezone||'America/Puerto_Rico'} selectedDate={booking.date} availability={availableDates} loading={calendarLoading} onMonthChange={setBookingMonth} onSelectDate={date=>void getSlots({...booking,date,start:''})}/>:<label className="cs-quick-date"><span>{t.date}</span><input type="date" min={currentDate(site.settings?.timezone)} value={booking.date} onChange={e=>{const date=e.target.value;if(date)setBookingMonth(date.slice(0,7));void getSlots({...booking,date,start:''})}}/></label>}</section><fieldset><legend>{t.times}</legend>{!booking.employeeId?<p>{lang==='es'?'Primero selecciona un profesional.':'Choose a professional first.'}</p>:busy?<p>{lang==='es'?'Consultando…':'Checking…'}</p>:!booking.date?<p>{lang==='es'?'Selecciona un día disponible.':'Choose an available day.'}</p>:slots.length===0?<p>{lang==='es'?'No quedan horarios para este día.':'No times remain for this day.'}</p>:slots.map(slot=><button type="button" className={booking.start===slot.start?'active':''} key={slot.start} onClick={()=>setBooking({...booking,start:slot.start})}>{new Date(slot.start).toLocaleTimeString(lang==='es'?'es-PR':'en-US',{hour:'numeric',minute:'2-digit',timeZone:site.settings?.timezone||'America/Puerto_Rico'})}</button>)}</fieldset><button className="cs-primary" disabled={!booking.start} onClick={()=>setCheckoutOpen(true)}>{t.continue}</button></div></section></div>}
+    {booking&&<div className="cs-modal"><section><header><div><small>BOOKING</small><h2>{(()=>{const service=site.catalog.find(x=>x.id===booking.serviceId);return service?itemName(service):''})()}</h2></div><button onClick={()=>setBooking(null)}>×</button></header><div className="cs-booking">{locations.length>0&&<label>{lang==='es'?'Localidad':'Location'}<select value={booking.locationId} onChange={e=>{const locationId=e.target.value;setAvailableDates({});setSlots([]);setBooking({...booking,locationId,employeeId:'',date:'',start:''})}}><option value="">—</option>{locations.map(location=><option value={location.id} key={location.id}>{location.name}</option>)}</select></label>}<label>{t.team}<select value={booking.employeeId} disabled={locations.length>0&&!booking.locationId} onChange={e=>{setAvailableDates({});void getSlots({...booking,employeeId:e.target.value,date:'',start:''})}}><option value="">—</option>{employees.map(x=><option key={x.id} value={x.id}>{x.name} · {employeeRole(x)}</option>)}</select></label><section className="cs-booking-date"><div className="cs-booking-date-heading"><strong>{t.date}</strong><div role="group" aria-label={lang==='es'?'Vista de fechas':'Date view'}><button type="button" className={calendarView?'active':''} aria-pressed={calendarView} onClick={()=>setCalendarView(true)}>{t.calendarView}</button><button type="button" className={!calendarView?'active':''} aria-pressed={!calendarView} onClick={()=>setCalendarView(false)}>{t.quickDate}</button></div></div>{calendarView?<MonthCalendar month={bookingMonth} locale={lang} timeZone={site.settings?.timezone||'America/Puerto_Rico'} selectedDate={booking.date} availability={availableDates} loading={calendarLoading} onMonthChange={setBookingMonth} onSelectDate={date=>void getSlots({...booking,date,start:''})}/>:<label className="cs-quick-date"><span>{t.date}</span><input type="date" min={currentDate(site.settings?.timezone)} value={booking.date} onChange={e=>{const date=e.target.value;if(date)setBookingMonth(date.slice(0,7));void getSlots({...booking,date,start:''})}}/></label>}</section><fieldset><legend>{t.times}</legend>{!booking.employeeId?<p>{lang==='es'?'Primero selecciona un profesional.':'Choose a professional first.'}</p>:busy?<p>{lang==='es'?'Consultando…':'Checking…'}</p>:!booking.date?<p>{lang==='es'?'Selecciona un día disponible.':'Choose an available day.'}</p>:slots.length===0?<p>{lang==='es'?'No quedan horarios para este día.':'No times remain for this day.'}</p>:slots.map(slot=><button type="button" className={booking.start===slot.start?'active':''} key={slot.start} onClick={()=>setBooking({...booking,start:slot.start})}>{new Date(slot.start).toLocaleTimeString(lang==='es'?'es-PR':'en-US',{hour:'numeric',minute:'2-digit',timeZone:site.settings?.timezone||'America/Puerto_Rico'})}</button>)}</fieldset><button className="cs-primary" disabled={!booking.start} onClick={()=>setCheckoutOpen(true)}>{t.continue}</button></div></section></div>}
 
-    {checkoutOpen&&<div className="cs-modal"><section className="cs-checkout"><header><div><small>CHECKOUT</small><h2>{t.customer}</h2></div><button onClick={()=>setCheckoutOpen(false)}>×</button></header>{!booking&&<div className="cs-cart-lines">{cartItems.map(({line,item})=><div key={line.id}><span>{item?itemName(item):''} × {line.quantity}</span><b>{money((item?.price||0)*line.quantity)}</b></div>)}<strong>Total <b>{money(total)}</b></strong></div>}<form onSubmit={checkout}><label>{lang==='es'?'Nombre':'Name'}<input value={customer.name} onChange={e=>setCustomer({...customer,name:e.target.value})} required/></label><label>Email<input type="email" value={customer.email} onChange={e=>setCustomer({...customer,email:e.target.value})} required/></label><label>{lang==='es'?'Teléfono':'Phone'}<input value={customer.phone} onChange={e=>setCustomer({...customer,phone:e.target.value})}/></label><button disabled={busy||(!booking&&cart.length===0)}>{busy?(lang==='es'?'Preparando…':'Preparing…'):t.pay}</button></form><p>{lang==='es'?'Stripe procesa el pago. Esta página no confirma una transacción hasta recibir verificación segura del servidor.':'Stripe processes the payment. This page does not confirm a transaction until secure server verification is received.'}</p>{error&&<div className="cs-error">{error}</div>}</section></div>}
+    {trackingUrl&&<div className="cs-tracking-banner"><span>{lang==='es'?'Guarda este enlace para ver el progreso de tu orden.':'Save this link to check your order progress.'}</span><a href={trackingUrl}>{lang==='es'?'Ver estado':'View status'} ↗</a><button onClick={()=>navigator.clipboard?.writeText(trackingUrl)}>{lang==='es'?'Copiar':'Copy'}</button></div>}{checkoutOpen&&<div className="cs-modal"><section className="cs-checkout"><header><div><small>CHECKOUT</small><h2>{t.customer}</h2></div><button onClick={()=>setCheckoutOpen(false)}>×</button></header>{locations.length>0&&!booking&&<label className="cs-location-select">{lang==='es'?'Localidad':'Location'}<select value={selectedLocationId} onChange={e=>setSelectedLocationId(e.target.value)} required><option value="">—</option>{locations.map(location=><option key={location.id} value={location.id}>{location.name}</option>)}</select></label>}{!booking&&<div className="cs-cart-lines">{cartItems.map(({line,item})=><div key={line.id}><span>{item?itemName(item):''} × {line.quantity}</span><b>{money((item?.price||0)*line.quantity)}</b></div>)}<strong>Total <b>{money(total)}</b></strong></div>}<form onSubmit={checkout}><label>{lang==='es'?'Nombre':'Name'}<input value={customer.name} onChange={e=>setCustomer({...customer,name:e.target.value})} required/></label><label>Email<input type="email" value={customer.email} onChange={e=>setCustomer({...customer,email:e.target.value})} required/></label><label>{lang==='es'?'Teléfono':'Phone'}<input value={customer.phone} onChange={e=>setCustomer({...customer,phone:e.target.value})}/></label><button disabled={busy||(!booking&&cart.length===0)||(locations.length>0&&!(booking?.locationId||selectedLocationId))}>{busy?(lang==='es'?'Preparando…':'Preparing…'):t.pay}</button></form><p>{lang==='es'?'Stripe procesa el pago. Esta página no confirma una transacción hasta recibir verificación segura del servidor.':'Stripe processes the payment. This page does not confirm a transaction until secure server verification is received.'}</p>{error&&<div className="cs-error">{error}</div>}</section></div>}
   </div>
 }

@@ -12,9 +12,10 @@ function env(name) { return globalThis.Netlify?.env?.get(name) || ""; }
 async function listRecords(siteId, kind) {
   const result = await clientCommerceStore().list({ prefix: `${siteId}/${kind}/` });
   const records = [];
-  for (const blob of result.blobs || []) {
-    const value = await clientCommerceStore().get(blob.key, { type: "json" });
-    if (value) records.push(value);
+  const blobs = result.blobs || [];
+  for (let index = 0; index < blobs.length; index += 40) {
+    const batch = await Promise.all(blobs.slice(index, index + 40).map((blob) => clientCommerceStore().get(blob.key, { type: "json" })));
+    records.push(...batch.filter(Boolean));
   }
   return records.sort((a, b) => Date.parse(b.createdAt || "") - Date.parse(a.createdAt || "")).slice(0, 250);
 }
@@ -23,21 +24,31 @@ export default async (req) => {
   try {
     if (req.method === "GET") {
       const siteId = new URL(req.url).searchParams.get("siteId") || "";
-      await requireSiteAccess(siteId);
+      const { site, membership } = await requireSiteAccess(siteId);
       const [orders, bookings] = await Promise.all([listRecords(siteId, "orders"), listRecords(siteId, "bookings")]);
-      return Response.json({ ok: true, orders, bookings }, { headers: { "Cache-Control": "no-store" } });
+      const limited = ["employee", "cashier", "staff"].includes(membership?.role) && (site.business?.locations || []).length > 0;
+      const visible = (records) => limited ? records.filter((record) => (membership.locationIds || []).includes(record.locationId)) : records;
+      return Response.json({ ok: true, orders: visible(orders), bookings: visible(bookings) }, { headers: { "Cache-Control": "no-store" } });
     }
     if (req.method !== "POST") return Response.json({ ok: false, message: "Method not allowed." }, { status: 405 });
     assertSameOrigin(req);
     const payload = await req.json();
-    const requestedCapability = payload.action === "refund" ? "refunds" : (payload.kind === "booking" ? "bookings" : "orders");
-    const { site } = await requireSiteCapability(payload.siteId, requestedCapability);
+    const requestedCapability = payload.action === "refund" ? "refunds" : payload.action === "kitchen_status" ? "kitchen" : (payload.kind === "booking" ? "bookings" : "orders");
+    const { site, membership } = await requireSiteCapability(payload.siteId, requestedCapability);
     const kind = payload.kind === "booking" ? "bookings" : "orders";
     const key = commerceKey(site.siteId, kind, payload.transactionId);
     let record = await clientCommerceStore().get(key, { type: "json" });
     if (!record) throw Object.assign(new Error("Transaction not found."), { status: 404 });
+    if (["employee", "cashier", "staff"].includes(membership?.role) && (site.business?.locations || []).length > 0 && !(membership.locationIds || []).includes(record.locationId)) {
+      throw Object.assign(new Error("This account is not assigned to the order location."), { status: 403 });
+    }
 
-    if (payload.action === "cancel" && kind === "bookings") {
+    if (payload.action === "kitchen_status") {
+      if (kind !== "orders" || !record.queueNumber) throw Object.assign(new Error("Kitchen updates are only available for paid food orders."), { status: 409 });
+      const kitchenStatus = String(payload.kitchenStatus || "");
+      if (!["received", "preparing", "ready", "completed"].includes(kitchenStatus)) throw Object.assign(new Error("Invalid kitchen status."), { status: 400 });
+      record = { ...record, kitchenStatus, updatedAt: new Date().toISOString() };
+    } else if (payload.action === "cancel" && kind === "bookings") {
       if (record.googleEventId) {
         try { await deleteGoogleEvent(site.siteId, record.googleCalendarId, record.googleEventId); }
         catch (error) { console.error("calendar-cancel", record.transactionId, error?.message || error); }
@@ -45,6 +56,10 @@ export default async (req) => {
       record = { ...record, status: "cancelled", cancelledAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
     } else if (payload.action === "mark_paid" && record.paymentStatus === "due") {
       record = { ...record, paymentStatus: "paid_in_person", status: "confirmed", paidAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+      if (kind === "orders" && /restaurant|food|catering|bakery|cafe|coffee|comida|alimento|panader|cafeter|restaurante/i.test(`${site.business?.category || ""} ${site.business?.name || ""}`)) {
+        record.kitchenStatus = "received";
+        record.queueNumber = `Q${Date.parse(record.paidAt)}`;
+      }
     } else if (payload.action === "complete") {
       if (!["paid","paid_in_person"].includes(record.paymentStatus)) throw Object.assign(new Error("Only paid transactions can be completed."), { status: 409 });
       record = { ...record, status: "completed", completedAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
