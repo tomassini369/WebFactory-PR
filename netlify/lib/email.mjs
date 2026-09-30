@@ -23,6 +23,7 @@ function transportConfig() {
   const requestedProvider = env("WEBFACTORY_EMAIL_PROVIDER").trim().toLowerCase();
   const apiKey = env("MAILJET_API_KEY");
   const secretKey = env("MAILJET_SECRET_KEY");
+
   const mailjet = () => {
     if (!apiKey || !secretKey) throw new Error("Mailjet email provider is selected, but its API key pair is not configured.");
     return {
@@ -35,12 +36,14 @@ function transportConfig() {
       },
     };
   };
+
   const user = env("WEBFACTORY_GMAIL_USER");
   const pass = env("WEBFACTORY_GMAIL_APP_PASSWORD");
   const gmail = () => {
     if (!user || !pass) throw new Error("Gmail email provider is selected, but its account or app password is not configured.");
     return { provider: "gmail", options: { host: "smtp.gmail.com", port: 465, secure: true, auth: { user, pass } } };
   };
+
   if (requestedProvider === "gmail") return gmail();
   if (requestedProvider === "mailjet") return mailjet();
   if (requestedProvider && requestedProvider !== "auto") throw new Error("WEBFACTORY_EMAIL_PROVIDER must be set to auto, gmail, or mailjet.");
@@ -59,16 +62,16 @@ export function emailProvider() {
 
 export async function sendEmail({ category = "team", to, subject, html, text, replyTo, attachments, headers, fromName = "WebFactory PR" }) {
   const key = FROM_BY_CATEGORY[category] || FROM_BY_CATEGORY.team;
-  const gmailAddress = env("WEBFACTORY_GMAIL_USER");
+  const fallback = env("WEBFACTORY_GMAIL_USER");
   const { provider, options } = transportConfig();
   const configuredFrom = env(key);
-  const fromAddress = cleanAddress(provider === "gmail" || provider === "gmail-fallback" ? gmailAddress : (configuredFrom || gmailAddress));
+  const fromAddress = cleanAddress(provider === "gmail" || provider === "gmail-fallback" ? fallback : (configuredFrom || fallback));
   const recipients = (Array.isArray(to) ? to : [to]).map(cleanAddress);
   const safeReplyTo = replyTo ? cleanAddress(replyTo) : (provider === "gmail" || provider === "gmail-fallback") && configuredFrom ? cleanAddress(configuredFrom) : undefined;
   const safeSubject = cleanHeader(subject, 240);
   if (!safeSubject) throw new Error("Email subject is required.");
   const info = await nodemailer.createTransport(options).sendMail({
-    from: "\"" + cleanHeader(fromName, 120).replace(/\"/g, "") + "\" <" + fromAddress + ">",
+    from: `"${cleanHeader(fromName, 120).replace(/"/g, "")}" <${fromAddress}>`,
     to: recipients,
     subject: safeSubject,
     text: text ? String(text) : undefined,

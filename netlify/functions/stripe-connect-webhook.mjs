@@ -1,7 +1,6 @@
 import crypto from "node:crypto";
 import { clientCommerceStore, clientEventStore, commerceKey, getClientSite, patchClientSite } from "../lib/client-store.mjs";
 import { createGoogleEvent } from "../lib/google-calendar.mjs";
-import { sendBusinessCommerceEmail, sendCustomerCommerceEmail } from "../lib/client-notifications.mjs";
 import { createCustomerRecord, createInventoryMovement, createReceiptRecord } from "../lib/webfactory-v3-domain.mjs";
 import { getV3Record, putV3Record } from "../lib/webfactory-v3-store.mjs";
 
@@ -34,7 +33,10 @@ async function finalizeTransaction(event) {
   if (Number(session.amount_total) !== Number(record.amountTotal) || String(session.currency).toLowerCase() !== "usd") throw new Error("Stripe amount or currency does not match the server record.");
 
   if (record.paymentStatus !== "paid") {
-    record = { ...record, paymentStatus: "paid", status: "confirmed", stripePaymentIntentId: session.payment_intent || "", paidAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+    const paidAt = new Date(Number(event.created || Date.now() / 1000) * 1000).toISOString();
+    const foodBusiness = /restaurant|food|catering|bakery|cafe|coffee|comida|alimento|panader|cafeter|restaurante/i.test(`${site.business?.category || ""} ${site.business?.name || ""}`);
+    record = { ...record, paymentStatus: "paid", status: "confirmed", stripePaymentIntentId: session.payment_intent || "", paidAt, updatedAt: paidAt,
+      ...(record.kind === "order" && foodBusiness ? { kitchenStatus: "received", queueNumber: `Q${Date.parse(paidAt)}` } : {}) };
     await clientCommerceStore().setJSON(key, record);
     if (record.kind === "order") {
       const catalog = (site.catalog || []).map((item) => {
@@ -117,19 +119,6 @@ async function finalizeTransaction(event) {
     } catch (error) { console.error("google-calendar-event", transactionId, error?.message || error); }
   }
 
-  if (!record.customerEmailSent) {
-    await sendCustomerCommerceEmail(site, record);
-    record.customerEmailSent = true;
-    await clientCommerceStore().setJSON(finalKey, record);
-    await clientCommerceStore().setJSON(key, record);
-  }
-  if (!record.businessEmailSent && site.business?.email) {
-    await sendBusinessCommerceEmail(site, record);
-    record.businessEmailSent = true;
-    record.emailsSentAt = new Date().toISOString();
-    await clientCommerceStore().setJSON(finalKey, record);
-    await clientCommerceStore().setJSON(key, record);
-  }
   return { record, pending: false };
 }
 

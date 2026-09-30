@@ -1,6 +1,6 @@
 import { cleanText, validEmail } from "./platform-utils.mjs";
 
-export const TEMPLATE_CATALOG = {
+const TEMPLATE_CATALOG = {
   "brisa-cocina": { category: "Restaurant", name: "Brisa Cocina" },
   "northline-barber": { category: "Barber", name: "Northline Barber Studio" },
   "aura-beauty": { category: "Beauty", name: "Aura Beauty Lab" },

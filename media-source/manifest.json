@@ -1,0 +1,46 @@
+[
+  {
+    "name": "webfactory-hero-original.mov",
+    "size": 30752132,
+    "sha256": "33bd5899dde8fed25675f251959c073d4262392db8cdfb672139ba1084dbd488",
+    "parts": [
+      "webfactory-hero-original.mov.part01",
+      "webfactory-hero-original.mov.part02",
+      "webfactory-hero-original.mov.part03",
+      "webfactory-hero-original.mov.part04",
+      "webfactory-hero-original.mov.part05",
+      "webfactory-hero-original.mov.part06",
+      "webfactory-hero-original.mov.part07",
+      "webfactory-hero-original.mov.part08",
+      "webfactory-hero-original.mov.part09",
+      "webfactory-hero-original.mov.part10",
+      "webfactory-hero-original.mov.part11",
+      "webfactory-hero-original.mov.part12",
+      "webfactory-hero-original.mov.part13",
+      "webfactory-hero-original.mov.part14",
+      "webfactory-hero-original.mov.part15"
+    ]
+  },
+  {
+    "name": "webfactory-hero-original.mp4",
+    "size": 30750521,
+    "sha256": "312d2552fc87107b9d3dc050932d95092231bce991d424614d79d5d4cc4053a4",
+    "parts": [
+      "webfactory-hero-original.mp4.part01",
+      "webfactory-hero-original.mp4.part02",
+      "webfactory-hero-original.mp4.part03",
+      "webfactory-hero-original.mp4.part04",
+      "webfactory-hero-original.mp4.part05",
+      "webfactory-hero-original.mp4.part06",
+      "webfactory-hero-original.mp4.part07",
+      "webfactory-hero-original.mp4.part08",
+      "webfactory-hero-original.mp4.part09",
+      "webfactory-hero-original.mp4.part10",
+      "webfactory-hero-original.mp4.part11",
+      "webfactory-hero-original.mp4.part12",
+      "webfactory-hero-original.mp4.part13",
+      "webfactory-hero-original.mp4.part14",
+      "webfactory-hero-original.mp4.part15"
+    ]
+  }
+]

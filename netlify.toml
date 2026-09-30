@@ -30,6 +30,23 @@
     X-Robots-Tag = "noindex, nofollow, noarchive"
 
 [[headers]]
+  for = "/preview-review"
+  [headers.values]
+    Cache-Control = "no-store"
+    X-Robots-Tag = "noindex, nofollow, noarchive"
+
+[[headers]]
+  for = "/preview-review/*"
+  [headers.values]
+    Cache-Control = "no-store"
+    X-Robots-Tag = "noindex, nofollow, noarchive"
+
+[[headers]]
+  for = "/media/*"
+  [headers.values]
+    Cache-Control = "public, max-age=86400, stale-while-revalidate=604800"
+
+[[headers]]
   for = "/sites/*"
   [headers.values]
     Cache-Control = "no-cache, no-store, must-revalidate"

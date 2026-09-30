@@ -2,9 +2,8 @@ import { assertSameOrigin, authorizedSites, errorResponse, requireSiteAccess, si
 import { normalizeEmail, patchClientSite, publicClientSite } from "../lib/client-store.mjs";
 import { cleanText, validEmail } from "../lib/platform-utils.mjs";
 import { normalizeTaxConfig } from "../lib/webfactory-v3-domain.mjs";
-import { TEMPLATE_CATALOG } from "../lib/builder-request.mjs";
 
-const allowedSections = new Set(["business", "design", "catalog", "employees", "hours", "paymentRules", "settings", "taxConfig", "members", "reviewSettings"]);
+const allowedSections = new Set(["business", "design", "features", "catalog", "employees", "hours", "paymentRules", "settings", "taxConfig", "members", "reviewSettings"]);
 
 function color(value, fallback) {
   const result = cleanText(value, 20);
@@ -12,6 +11,17 @@ function color(value, fallback) {
 }
 
 function sanitizeBusiness(value = {}, current = {}) {
+  const locations = Array.isArray(value.locations ?? current.locations)
+    ? (value.locations ?? current.locations).slice(0, 30).map((location, index) => ({
+      id: cleanText(location.id || `location-${index + 1}`, 120),
+      name: cleanText(location.name, 180),
+      address: cleanText(location.address, 500),
+      phone: cleanText(location.phone, 80),
+      mapsUrl: cleanText(location.mapsUrl, 1500),
+      hours: sanitizeHours(location.hours || {}),
+      active: location.active !== false,
+    })).filter((location) => location.name)
+    : [];
   return {
     ...current,
     name: cleanText(value.nameEn ?? value.name ?? current.nameEn ?? current.name, 180),
@@ -26,6 +36,7 @@ function sanitizeBusiness(value = {}, current = {}) {
     whatsapp: cleanText(value.whatsapp ?? current.whatsapp, 80),
     email: cleanText(value.email ?? current.email, 320),
     mapsUrl: cleanText(value.mapsUrl ?? current.mapsUrl, 1500),
+    locations,
     instagram: cleanText(value.instagram ?? current.instagram, 300),
     logoAssetKey: cleanText(value.logoAssetKey ?? current.logoAssetKey, 700),
   };
@@ -67,10 +78,11 @@ function sanitizeCatalog(value) {
   });
 }
 
-function sanitizeEmployees(value, catalog) {
+function sanitizeEmployees(value, catalog, locations = []) {
   if (!Array.isArray(value)) throw Object.assign(new Error("Employees must be a list."), { status: 400 });
   if (value.length > 100) throw Object.assign(new Error("The employee limit is 100."), { status: 400 });
   const serviceIds = new Set((catalog || []).filter((item) => item.type === "service").map((item) => item.id));
+  const locationIds = new Set((locations || []).map((location) => location.id));
   return value.map((member, index) => ({
     id: cleanText(member.id || `employee-${index + 1}`, 120),
     name: cleanText(member.name, 180),
@@ -80,6 +92,9 @@ function sanitizeEmployees(value, catalog) {
     active: member.active !== false,
     serviceIds: Array.isArray(member.serviceIds)
       ? [...new Set(member.serviceIds.map((id) => cleanText(id, 120)).filter((id) => serviceIds.has(id)))].slice(0, 100)
+      : [],
+    locationIds: Array.isArray(member.locationIds)
+      ? [...new Set(member.locationIds.map((id) => cleanText(id, 120)).filter((id) => locationIds.has(id)))].slice(0, 30)
       : [],
     calendarId: cleanText(member.calendarId, 500),
     dailyLimit: Math.max(1, Math.min(100, Number(member.dailyLimit || 8))),
@@ -142,32 +157,39 @@ export default async (req) => {
     if (!allowedSections.has(section)) throw Object.assign(new Error("Invalid settings section."), { status: 400 });
     const { site, membership } = await requireSiteAccess(payload.siteId, ["owner", "manager"]);
     if (membership.role === "staff") throw Object.assign(new Error("Staff cannot change business settings."), { status: 403 });
+    if (section === "business" && !["active", "trialing", "trial", "complimentary"].includes(site.servicePlan?.subscriptionStatus)) {
+      const incoming = payload.value || {};
+      const brandFields = ["name", "nameEn", "nameEs", "category"];
+      const changesBrand = brandFields.some((field) => incoming[field] !== undefined && incoming[field] !== (site.business?.[field] ?? (field === "nameEn" ? site.business?.name : "")));
+      if (changesBrand) throw Object.assign(new Error("An active WebFactory subscription is required to change the business brand or category."), { status: 403 });
+    }
+    if (["design", "features"].includes(section) && !["active", "trialing", "trial", "complimentary"].includes(site.servicePlan?.subscriptionStatus)) {
+      throw Object.assign(new Error("An active WebFactory subscription is required to redesign this website."), { status: 403 });
+    }
 
     let value;
     if (section === "business") value = sanitizeBusiness(payload.value, site.business);
-    if (section === "design") {
-      if (!['owner', 'manager'].includes(membership.role)) throw Object.assign(new Error("Only an owner or manager can redesign the website."), { status: 403 });
-      if (!["active", "trialing", "trial", "complimentary"].includes(site.servicePlan?.subscriptionStatus)) {
-        throw Object.assign(new Error("An active subscription or complimentary access is required to publish design changes."), { status: 403 });
-      }
-      const templateSlug = cleanText(payload.value?.templateSlug, 80);
-      const template = Object.hasOwn(TEMPLATE_CATALOG, templateSlug) ? TEMPLATE_CATALOG[templateSlug] : null;
-      if (templateSlug && !template) throw Object.assign(new Error("Choose a valid WebFactory template."), { status: 400 });
-      value = {
-        ...site.design,
-        mode: template ? "template_base" : "custom",
-        templateSlug: template ? templateSlug : "",
-        templateCategory: template?.category || "",
-        templateName: template?.name || "",
-        templateRoute: template ? `/templates/${templateSlug}` : "",
-        preserveTemplateStructure: Boolean(template),
-        style: ["Modern", "Luxury", "Minimal", "Bold"].includes(payload.value?.style) ? payload.value.style : site.design?.style,
-        primary: color(payload.value?.primary, site.design?.primary || "#0B1529"),
-        secondary: color(payload.value?.secondary, site.design?.secondary || "#3C86F6"),
-      };
+    if (section === "design") value = {
+      ...site.design,
+      ...(typeof payload.value?.templateSlug === "string" && /^[a-z0-9-]{1,80}$/.test(payload.value.templateSlug) ? {
+        templateSlug: cleanText(payload.value.templateSlug, 80),
+        templateName: cleanText(payload.value.templateName, 220),
+        templateCategory: cleanText(payload.value.templateCategory, 180),
+        templateRoute: `/templates/${cleanText(payload.value.templateSlug, 80)}`,
+        preserveTemplateStructure: true,
+        mode: "template_base",
+      } : payload.value?.templateSlug === "" ? { templateSlug: "", templateName: "", templateCategory: "", templateRoute: "", preserveTemplateStructure: false, mode: "custom" } : {}),
+      style: ["Modern", "Luxury", "Minimal", "Bold"].includes(payload.value?.style) ? payload.value.style : site.design?.style,
+      primary: color(payload.value?.primary, site.design?.primary || "#0B1529"),
+      secondary: color(payload.value?.secondary, site.design?.secondary || "#3C86F6"),
+    };
+    if (section === "features") {
+      const allowedFeatures = ["products", "services", "bookings", "cart", "maps", "calls", "whatsapp", "social", "form", "calendar"];
+      value = { ...(site.features || {}) };
+      for (const feature of allowedFeatures) if (payload.value?.[feature] !== undefined) value[feature] = Boolean(payload.value[feature]);
     }
     if (section === "catalog") value = sanitizeCatalog(payload.value);
-    if (section === "employees") value = sanitizeEmployees(payload.value, site.catalog);
+    if (section === "employees") value = sanitizeEmployees(payload.value, site.catalog, site.business?.locations || []);
     if (section === "hours") value = sanitizeHours(payload.value);
     if (section === "paymentRules") value = sanitizePaymentRules(payload.value, site.paymentRules);
     if (section === "taxConfig") value = normalizeTaxConfig(payload.value);
@@ -179,9 +201,11 @@ export default async (req) => {
         const email = normalizeEmail(member.email);
         if (!email) throw Object.assign(new Error("Member email is required."), { status: 400 });
         const role = email === ownerEmail ? "owner" : ["manager","employee","cashier","staff"].includes(member.role) ? member.role : "staff";
-        return { email, role };
+        const allowedLocations = new Set((site.business?.locations || []).map((location) => location.id));
+        const locationIds = Array.isArray(member.locationIds) ? [...new Set(member.locationIds.map((id) => cleanText(id, 120)).filter((id) => allowedLocations.has(id)))].slice(0, 30) : [];
+        return { email, role, locationIds };
       });
-      if (!value.some((member) => member.email === ownerEmail && member.role === "owner")) value.unshift({ email: ownerEmail, role: "owner" });
+      if (!value.some((member) => member.email === ownerEmail && member.role === "owner")) value.unshift({ email: ownerEmail, role: "owner", locationIds: [] });
     }
     if (section === "reviewSettings") value = {
       enabled: Boolean(payload.value?.enabled),
