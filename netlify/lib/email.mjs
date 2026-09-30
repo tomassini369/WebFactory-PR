@@ -20,9 +20,11 @@ function cleanAddress(value) {
 }
 
 function transportConfig() {
+  const requestedProvider = env("WEBFACTORY_EMAIL_PROVIDER").trim().toLowerCase();
   const apiKey = env("MAILJET_API_KEY");
   const secretKey = env("MAILJET_SECRET_KEY");
-  if (apiKey && secretKey) {
+  const mailjet = () => {
+    if (!apiKey || !secretKey) throw new Error("Mailjet email provider is selected, but its API key pair is not configured.");
     return {
       provider: "mailjet",
       options: {
@@ -32,15 +34,23 @@ function transportConfig() {
         auth: { user: apiKey, pass: secretKey },
       },
     };
-  }
+  };
   const user = env("WEBFACTORY_GMAIL_USER");
   const pass = env("WEBFACTORY_GMAIL_APP_PASSWORD");
-  if (user && pass) return { provider: "gmail-fallback", options: { host: "smtp.gmail.com", port: 465, secure: true, auth: { user, pass } } };
+  const gmail = () => {
+    if (!user || !pass) throw new Error("Gmail email provider is selected, but its account or app password is not configured.");
+    return { provider: "gmail", options: { host: "smtp.gmail.com", port: 465, secure: true, auth: { user, pass } } };
+  };
+  if (requestedProvider === "gmail") return gmail();
+  if (requestedProvider === "mailjet") return mailjet();
+  if (requestedProvider && requestedProvider !== "auto") throw new Error("WEBFACTORY_EMAIL_PROVIDER must be set to auto, gmail, or mailjet.");
+  if (apiKey && secretKey) return mailjet();
+  if (user && pass) return { ...gmail(), provider: "gmail-fallback" };
   throw new Error("Transactional email transport is not configured.");
 }
 
 export function emailConfigured() {
-  return Boolean((env("MAILJET_API_KEY") && env("MAILJET_SECRET_KEY")) || (env("WEBFACTORY_GMAIL_USER") && env("WEBFACTORY_GMAIL_APP_PASSWORD")));
+  try { transportConfig(); return true; } catch { return false; }
 }
 
 export function emailProvider() {
@@ -49,15 +59,16 @@ export function emailProvider() {
 
 export async function sendEmail({ category = "team", to, subject, html, text, replyTo, attachments, headers, fromName = "WebFactory PR" }) {
   const key = FROM_BY_CATEGORY[category] || FROM_BY_CATEGORY.team;
-  const fallback = env("WEBFACTORY_GMAIL_USER");
-  const fromAddress = cleanAddress(env(key) || fallback);
+  const gmailAddress = env("WEBFACTORY_GMAIL_USER");
+  const { provider, options } = transportConfig();
+  const configuredFrom = env(key);
+  const fromAddress = cleanAddress(provider === "gmail" || provider === "gmail-fallback" ? gmailAddress : (configuredFrom || gmailAddress));
   const recipients = (Array.isArray(to) ? to : [to]).map(cleanAddress);
-  const safeReplyTo = replyTo ? cleanAddress(replyTo) : undefined;
+  const safeReplyTo = replyTo ? cleanAddress(replyTo) : (provider === "gmail" || provider === "gmail-fallback") && configuredFrom ? cleanAddress(configuredFrom) : undefined;
   const safeSubject = cleanHeader(subject, 240);
   if (!safeSubject) throw new Error("Email subject is required.");
-  const { provider, options } = transportConfig();
   const info = await nodemailer.createTransport(options).sendMail({
-    from: `"${cleanHeader(fromName, 120).replace(/"/g, "")}" <${fromAddress}>`,
+    from: "\"" + cleanHeader(fromName, 120).replace(/\"/g, "") + "\" <" + fromAddress + ">",
     to: recipients,
     subject: safeSubject,
     text: text ? String(text) : undefined,
