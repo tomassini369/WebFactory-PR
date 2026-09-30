@@ -12,6 +12,8 @@ const WebFactoryAdminPage = lazy(() => import('./WebFactoryAdminPage'))
 const PasswordRecoveryPage = lazy(() => import('./PasswordRecoveryPage'))
 const LegalPage = lazy(() => import('./LegalPage'))
 const PaymentLinkPage = lazy(() => import('./PaymentLinkPage'))
+const OrderTrackingPage = lazy(() => import('./OrderTrackingPage'))
+const SiteRedesignBuilder = lazy(() => import('./SiteRedesignBuilder'))
 
 function RouteLoading(){
   return <main className="route-loading" role="status" aria-live="polite"><span/><b>Loading WebFactory…</b></main>
@@ -84,10 +86,13 @@ const content = {
 
 const features = {
   es: [
-    ['Website Builder','Diseña, previsualiza y publica tu website desde un Builder visual.'],
+    ['Website Builder','Diseña, previsualiza y publica tu website desde un Builder visual; vuelve a rediseñarlo desde el portal mientras tu plan esté activo.'],
     ['Comercio','Administra productos, servicios, catálogo, carrito y pedidos.'],
+    ['Sucursales','Publica varias localidades en una sola página con sus mapas, horarios y empleados asignados.'],
+    ['Órdenes de comida','Organiza la pantalla de cocina por sucursal y ordena los turnos según la confirmación de pago.'],
+    ['Seguimiento de órdenes','Comparte un enlace privado para que el cliente consulte el progreso de su pedido, sin alertas por SMS o email.'],
     ['Pagos','Conecta Stripe y ATH Móvil, comparte Payment Links y revisa transacciones.'],
-    ['Reservaciones','Disponibilidad por empleado con horarios, descansos y depósitos.'],
+    ['Reservaciones','Disponibilidad por empleado, vista del mes completo, horarios, descansos y depósitos.'],
     ['POS','Completa ventas presenciales con carrito, IVU y recibos.'],
     ['CRM','Organiza clientes y actividad de ventas y reservaciones.'],
     ['Inventario','Controla existencias, ajustes y productos con poco inventario.'],
@@ -97,10 +102,13 @@ const features = {
     ['Factory AI','Prepara contenido y estructura bilingüe dentro del mismo Builder.'],
   ],
   en: [
-    ['Website Builder','Design, preview and publish your website from a visual Builder.'],
+    ['Website Builder','Design, preview and publish from a visual Builder; return to redesign the site from your portal while the plan is active.'],
     ['Commerce','Manage products, services, catalog, cart and orders.'],
+    ['Locations','Show multiple branches on one page with maps, hours and assigned employees.'],
+    ['Food orders','Run a kitchen display per location and order turns by payment confirmation.'],
+    ['Order tracking','Share a private link so customers can check progress without SMS or email alerts.'],
     ['Payments','Connect Stripe and ATH Móvil, share Payment Links and track transactions.'],
-    ['Bookings','Employee-aware scheduling with hours, breaks and deposits.'],
+    ['Bookings','Employee-aware scheduling with full-month availability, hours, breaks and deposits.'],
     ['POS','Complete in-person sales with cart, tax and receipts.'],
     ['CRM','Organize customers and sales and booking activity.'],
     ['Inventory','Track stock, adjustments and low inventory.'],
@@ -117,7 +125,7 @@ const faqEs = [
   ['¿Puedo vender productos y también recibir citas?','Sí. El mismo website puede manejar productos, servicios, carrito y reservaciones.'],
   ['¿Mi página será igual a uno de los Templates?','Tú decides. Puedes comenzar con un diseño personalizado o escoger un Template como base. El Builder aplica tu marca, colores, textos, catálogo y configuraciones.'],
   ['¿Cómo se evita el double booking?','La arquitectura revalida base de datos, empleado, horarios, holds y Google Calendar antes de confirmar.'],
-  ['¿Puedo rediseñar mi página después de publicarla?','Sí. Mientras tu plan esté activo, puedes cambiar el template, los colores y el estilo desde Builder y rediseño en tu portal. Tu catálogo, citas, pedidos, pagos y equipo se conservan.'],
+  ['¿Puedo modificarlo después de publicarlo?','Sí. Tu portal administrativo permite cambiar productos, servicios, precios, empleados, horarios, pagos y calendario sin solicitar otro deployment.'],
   ['¿Puedo usar mi propio logo?','Sí. Puedes subir tu logo e imágenes desde el Builder y administrar el contenido desde tu portal.'],
   ['¿Factory AI crea otra página o deployment aparte?','No. Factory AI trabaja únicamente dentro del Builder y genera configuración para tu website en /sites/:slug. Todo permanece dentro de la misma plataforma WebFactory.']
 ]
@@ -128,7 +136,7 @@ const faqEn = [
   ['Can I sell products and also accept appointments?','Yes. The same website can handle products, services, cart and bookings.'],
   ['Will my website look exactly like one of the Templates?','You decide. Start with a custom design or choose a Template as your base. The Builder applies your brand, colors, copy, catalog and settings.'],
   ['How is double booking prevented?','The architecture rechecks the database, employee, schedules, holds and Google Calendar before confirmation.'],
-  ['Can I redesign my website after publishing?','Yes. While your plan is active, you can change the template, colors and visual style from Builder & redesign in your portal. Your catalog, bookings, orders, payments and team stay in place.'],
+  ['Can I edit it after publishing?','Yes. Your admin portal lets you change products, services, prices, employees, hours, payments and calendar without requesting another deployment.'],
   ['Can I use my own logo?','Yes. Upload your logo and images in the Builder and manage your content from the portal.'],
   ['Does Factory AI create a separate website or deployment?','No. Factory AI works only inside the Builder and generates configuration for your website at /sites/:slug. Everything stays inside the same WebFactory platform.']
 ]
@@ -196,7 +204,9 @@ function App(){
   const identityRecoveryRoute = /^#recovery_token=/.test(window.location.hash)
   const clientSiteMatch = window.location.pathname.match(/^\/sites\/([^/]+)\/?$/)
   const paymentLinkMatch = window.location.pathname.match(/^\/pay\/([^/]+)\/([^/]+)\/?$/)
+  const trackingMatch = window.location.pathname.match(/^\/track\/([^/]+)\/?$/)
   const builderRoute = /^\/builder\/?$/.test(window.location.pathname)
+  const builderEditSiteId = builderRoute ? new URLSearchParams(window.location.search).get('edit') || '' : ''
   const privacyRoute = /^\/privacy\/?$/.test(window.location.pathname)
   const termsRoute = /^\/terms\/?$/.test(window.location.pathname)
   const refundRoute = /^\/refund-policy\/?$/.test(window.location.pathname)
@@ -209,9 +219,10 @@ function App(){
   if (clientAdminRoute) return <RouteView><ClientAdminPage /></RouteView>
   if (clientSiteMatch) return <RouteView><ClientStorefront slug={decodeURIComponent(clientSiteMatch[1])} /></RouteView>
   if (paymentLinkMatch) return <RouteView><PaymentLinkPage slug={decodeURIComponent(paymentLinkMatch[1])} token={decodeURIComponent(paymentLinkMatch[2])} /></RouteView>
+  if (trackingMatch) return <RouteView><OrderTrackingPage token={decodeURIComponent(trackingMatch[1])} /></RouteView>
   if (templateMatch) return <RouteView><TemplatePreview slug={templateMatch[1]} /></RouteView>
   if (templatesRoute) return <><header className="header"><a href="/" className="logo"><AdaptiveLogo alt="WebFactory PR"/></a><div className="header-actions"><a className="btn secondary desktop-cta" href="/client-admin">Log In</a><a className="btn secondary desktop-cta" href="/">{lang==='es'?'Volver al inicio':'Back to home'}</a><div className="langs"><button className={lang==='en'?'active':''} onClick={()=>setLang('en')}>EN</button><button className={lang==='es'?'active':''} onClick={()=>setLang('es')}>ES</button><ThemeToggle/></div></div></header><RouteView><TemplatesPage lang={lang}/></RouteView></>
-  if (builderRoute) return <><header className="header"><a href="/" className="logo"><AdaptiveLogo alt="WebFactory PR"/></a><div className="header-actions"><a className="btn secondary desktop-cta" href="/client-admin">Log In</a><a className="btn secondary desktop-cta" href="/">{lang==='es'?'Volver al inicio':'Back to home'}</a><div className="langs"><button className={lang==='en'?'active':''} onClick={()=>setLang('en')}>EN</button><button className={lang==='es'?'active':''} onClick={()=>setLang('es')}>ES</button><ThemeToggle/></div></div></header><main className="standalone-builder"><section className="section white builder"><div className="shell"><div className="builder-head"><Heading data={t.builder}/><div className="builder-price"><strong>7 días</strong><span>{lang==='es'?'gratis · sin tarjeta':'free · no card'}</span></div></div><RouteView><WebFactoryBuilder lang={lang}/></RouteView></div></section></main></>
+  if (builderRoute) return <><header className="header"><a href="/" className="logo"><AdaptiveLogo alt="WebFactory PR"/></a><div className="header-actions"><a className="btn secondary desktop-cta" href="/client-admin">Log In</a><a className="btn secondary desktop-cta" href="/">{lang==='es'?'Volver al inicio':'Back to home'}</a><div className="langs"><button className={lang==='en'?'active':''} onClick={()=>setLang('en')}>EN</button><button className={lang==='es'?'active':''} onClick={()=>setLang('es')}>ES</button><ThemeToggle/></div></div></header><main className="standalone-builder"><section className="section white builder"><div className="shell">{builderEditSiteId?<RouteView><SiteRedesignBuilder lang={lang} siteId={builderEditSiteId}/></RouteView>:<><div className="builder-head"><Heading data={t.builder}/><div className="builder-price"><strong>7 días</strong><span>{lang==='es'?'gratis · sin tarjeta':'free · no card'}</span></div></div><RouteView><WebFactoryBuilder lang={lang}/></RouteView></>}</div></section></main></>
 
   return <>
     <header className="header wf-home-header">
@@ -257,23 +268,6 @@ function App(){
           <div className="wf-home-ai-prompt">{lang==='es'?'Tengo un salón de belleza. Quiero un diseño moderno con color, keratina, uñas y booking por especialista.':'I own a beauty salon. I want a modern design with color, keratin, nails and specialist booking.'}</div>
           <div className="wf-home-ai-result"><span>Template · Bella Vita Salon</span><span>6 {lang==='es'?'servicios':'services'}</span><span>3 {lang==='es'?'miembros':'team members'}</span></div>
           <button>{lang==='es'?'Aplicar al Builder':'Apply to Builder'} →</button>
-        </div>
-      </div></section>
-
-      <section className="section white wf-home-redesign" data-scroll-sound="feature"><div className="shell split wf-redesign-grid">
-        <div className="wf-redesign-copy">
-          <p className="eyebrow">{lang==='es'?'BUILDER · REDISEÑO':'BUILDER · REDESIGN'}</p>
-          <h2>{lang==='es'?'Tu negocio cambia. Tu página también.':'Your business evolves. Your website can too.'}</h2>
-          <p>{lang==='es'?'Con un plan activo, renueva el template, los colores y el estilo visual de tu página desde el portal de clientes. Publica el cambio en tu website actual y conserva el catálogo, las citas, los pedidos, los pagos y el equipo.':'With an active plan, refresh your page’s template, colors and visual style from the client portal. Publish the update to your current website and keep your catalog, bookings, orders, payments and team.'}</p>
-          <div className="actions"><a className="btn primary" href="/client-admin">{lang==='es'?'Entrar al portal y rediseñar':'Log in to redesign'} →</a><a className="btn secondary" href="/templates">{lang==='es'?'Explorar Templates':'Explore Templates'}</a></div>
-          <small>{lang==='es'?'Revisa los cambios y confirma antes de publicarlos.':'Review your changes and confirm before publishing.'}</small>
-        </div>
-        <div className="wf-redesign-mock" role="img" aria-label={lang==='es'?'Vista ilustrativa del rediseño de una página en WebFactory Builder':'Illustration of redesigning a website in WebFactory Builder'}>
-          <div className="wf-redesign-toolbar"><span><i/><i/><i/></span><b>WEBFACTORY BUILDER</b><small>{lang==='es'?'REDISEÑO':'REDESIGN'}</small></div>
-          <div className="wf-redesign-workspace"><aside><small>{lang==='es'?'DISEÑO ACTUAL':'CURRENT DESIGN'}</small><b>{lang==='es'?'Template':'Template'}</b><span>{lang==='es'?'Colores':'Colors'}</span><div className="wf-redesign-swatches"><i/><i/><i/></div><b>{lang==='es'?'Nuevo estilo':'New style'}</b><span>{lang==='es'?'Vista previa':'Preview'}</span></aside>
-            <div className="wf-redesign-site"><header><strong>{lang==='es'?'Tu negocio':'Your business'}</strong><span>{lang==='es'?'Servicios　 Catálogo':'Services　 Catalog'}</span></header><div className="wf-redesign-hero"><small>{lang==='es'?'UNA NUEVA IMAGEN':'A FRESH NEW LOOK'}</small><strong>{lang==='es'?'El estilo de tu negocio, renovado.':'A fresh look for your business.'}</strong><i>{lang==='es'?'Ver servicios':'Explore services'} →</i></div><div className="wf-redesign-items"><i/><i/><i/></div></div>
-          </div>
-          <div className="wf-redesign-preserve"><b>✓</b>{lang==='es'?'Tu operación y datos permanecen':'Your operations and data stay in place'}</div>
         </div>
       </div></section>
 
