@@ -178,7 +178,9 @@ export function publicClientSite(site) {
       bookingDepositPercent: Number(site.paymentRules?.bookingDepositPercent || 25),
       allowTips: Boolean(site.paymentRules?.allowTips),
       stripeReady: site.paymentRules?.stripeCapabilityStatus === "active",
+      stripeAvailable: Boolean(site.paymentRules?.methods?.stripe && site.paymentRules?.stripeConnectedAccountId),
       athPublicPath: site.paymentRules?.ath?.publicPath || "",
+      athReady: Boolean(site.paymentRules?.methods?.ath && site.paymentRules?.ath?.credentialsConfigured && site.paymentRules?.ath?.credentialVersion),
       inPersonInstructions: site.paymentRules?.inPerson?.instructions || "",
     },
   };

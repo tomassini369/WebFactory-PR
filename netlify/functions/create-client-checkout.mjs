@@ -5,6 +5,8 @@ import { cleanText, publicBaseUrl, validEmail } from "../lib/platform-utils.mjs"
 import { siteEntitlement } from "../lib/subscription-billing.mjs";
 import { assertStripeWriteAllowed } from "../lib/stripe-runtime.mjs";
 import { calculateTax } from "../lib/webfactory-v3-domain.mjs";
+import { createAthCheckout } from "../lib/ath-movil.mjs";
+import { assertSameOrigin } from "../lib/client-auth.mjs";
 
 function env(name) { return globalThis.Netlify?.env?.get(name) || ""; }
 
@@ -53,6 +55,7 @@ function appendLine(params, index, item) {
 export default async (req) => {
   if (req.method !== "POST") return Response.json({ ok: false, message: "Method not allowed." }, { status: 405 });
   try {
+    assertSameOrigin(req);
     const payload = await req.json();
     const site = payload.siteId ? await getClientSite(payload.siteId) : await getClientSiteBySlug(payload.slug);
     if (!site) throw Object.assign(new Error("Business site not found."), { status: 404 });
@@ -138,6 +141,12 @@ export default async (req) => {
       return Response.json({ ok: true, paymentRequired: false, transactionId, status: record.status, ...(trackingToken ? { trackingUrl: `${publicBaseUrl()}/track/${trackingToken}` } : {}) });
     }
 
+    if(payload.paymentProvider === "ath_movil") {
+      const result=await createAthCheckout(site,record,{lang,requestUrl:req.url,returnUrl:`/sites/${encodeURIComponent(site.slug)}${trackingToken?`?tracking=${encodeURIComponent(trackingToken)}`:""}`});
+      return Response.json(result,{headers:{"Cache-Control":"no-store"}});
+    }
+    if(payload.paymentProvider && payload.paymentProvider !== "stripe") throw Object.assign(new Error("Unsupported payment provider."),{status:400});
+
     const accountId = site.paymentRules?.stripeConnectedAccountId;
     if (!accountId || !site.paymentRules?.methods?.stripe) throw Object.assign(new Error("Online payments are not connected for this business."), { status: 409 });
     assertStripeWriteAllowed({ requestUrl: req.url });
@@ -180,3 +189,5 @@ export default async (req) => {
     return Response.json({ ok: false, message: error?.message || "Checkout could not be prepared." }, { status: Number(error?.status || 500), headers: { "Cache-Control": "no-store" } });
   }
 };
+
+export const config = { rateLimit: { windowLimit: 20, windowSize: 60, aggregateBy: ["ip"] } };

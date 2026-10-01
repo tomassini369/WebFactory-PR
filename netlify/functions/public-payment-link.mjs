@@ -19,6 +19,7 @@ export default async (req) => {
       ok: true,
       business: { name: site.business?.name || site.business?.nameEn || site.business?.nameEs || "", logo: site.business?.logoAssetKey ? `/.netlify/functions/client-asset?siteId=${encodeURIComponent(site.siteId)}&key=${encodeURIComponent(site.business.logoAssetKey)}` : "" },
       locale: site.settings?.locale === "es" ? "es" : "en",
+      paymentMethods: { stripe: Boolean(site.paymentRules?.methods?.stripe && site.paymentRules?.stripeConnectedAccountId), ath_movil: Boolean(site.paymentRules?.methods?.ath && site.paymentRules?.ath?.credentialsConfigured && site.paymentRules?.ath?.credentialVersion) },
       link: { title: link.title, description: link.description, amount: Number(link.amount || 0), currency: link.currency || "usd", allowQuantity: Boolean(link.allowQuantity) },
     }, { headers: { "Cache-Control": "public, max-age=30" } });
   } catch (error) {

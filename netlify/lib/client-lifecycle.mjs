@@ -54,12 +54,13 @@ export async function disconnectStripe(site){
 }
 
 export async function disconnectAth(site){
+  await clientOAuthStore().delete(`ath/tokens/${site.siteId}.json`);
   return saveClientSite({
     ...site,
     paymentRules:{
       ...(site.paymentRules||{}),
       methods:{...(site.paymentRules?.methods||{}),ath:false},
-      ath:{...(site.paymentRules?.ath||{}),publicPath:""},
+      ath:{publicPath:"",credentialsConfigured:false,credentialVersion:"",status:"disconnected",verifiedAt:"",disconnectedAt:new Date().toISOString()},
     },
     revision:Number(site.revision||0)+1,
     updatedAt:new Date().toISOString(),
@@ -117,6 +118,13 @@ export async function purgeClientSite(siteId,{cancelSubscription=true}={}){
   }
   await clientSiteStore().delete(`slugs/${slugify(site.slug)}.json`).catch(()=>{});
   await clientOAuthStore().delete(`tokens/${site.siteId}.json`).catch(()=>{});
+  await clientOAuthStore().delete(`ath/tokens/${site.siteId}.json`);
+  const athSessions=await clientOAuthStore().list({prefix:`ath/sessions/${site.siteId}/`});
+  for(const blob of athSessions.blobs||[]){
+    const hash=blob.key.split("/").pop().replace(/\.json$/,"");
+    await clientOAuthStore().delete(`ath/session-index/${hash}.json`);
+    await clientOAuthStore().delete(blob.key);
+  }
 
   const deletedCommerce=await deletePrefix(clientCommerceStore(),`${site.siteId}/`);
   const deletedAssets=await deletePrefix(clientAssetStore(),`sites/${site.siteId}/`);
