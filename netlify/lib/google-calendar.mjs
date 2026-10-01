@@ -104,11 +104,11 @@ export async function googleBusy(siteId, calendarId, timeMin, timeMax, timeZone)
   return result.calendars?.[calendarId]?.busy || [];
 }
 
-export async function createGoogleEvent(siteId, calendarId, event) {
+export async function createGoogleEvent(siteId, calendarId, event, { sendUpdates = "none" } = {}) {
   if (!calendarId) return null;
   const path = `/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events`;
   try {
-    return await googleApi(siteId, path, { method: "POST", body: JSON.stringify(event) });
+    return await googleApi(siteId, `${path}?sendUpdates=${sendUpdates}`, { method: "POST", body: JSON.stringify(event) });
   } catch (error) {
     if (error.status !== 409 || !event.id) throw error;
     const existing = await googleApi(siteId, `${path}/${encodeURIComponent(event.id)}`);
@@ -117,7 +117,20 @@ export async function createGoogleEvent(siteId, calendarId, event) {
   }
 }
 
+export async function ensureGoogleGuest(siteId, calendarId, eventId, guest, event = null) {
+  const path = `/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events/${encodeURIComponent(eventId)}`;
+  const current = event || await googleApi(siteId, path);
+  if (current.status === "cancelled") throw new Error("The calendar event is cancelled.");
+  if ((current.attendees || []).some(row => row.email?.toLowerCase() === guest.email.toLowerCase())) return current;
+  return googleApi(siteId, `${path}?sendUpdates=all`, {
+    method: "PATCH",
+    body: JSON.stringify({ attendees: [...(current.attendees || []), guest], guestsCanInviteOthers: false, guestsCanSeeOtherGuests: false, reminders: { useDefault: false, overrides: [{ method: "popup", minutes: 1440 }, { method: "popup", minutes: 240 }] } }),
+  });
+}
+
 export async function deleteGoogleEvent(siteId, calendarId, eventId) {
   if (!calendarId || !eventId) return;
-  await googleApi(siteId, `/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events/${encodeURIComponent(eventId)}`, { method: "DELETE" });
+  try {
+    await googleApi(siteId, `/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events/${encodeURIComponent(eventId)}?sendUpdates=all`, { method: "DELETE" });
+  } catch (error) { if (![404, 410].includes(error.status)) throw error; }
 }

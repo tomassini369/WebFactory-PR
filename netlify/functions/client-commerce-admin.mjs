@@ -51,10 +51,13 @@ export default async (req) => {
       record = { ...record, kitchenStatus, updatedAt: new Date().toISOString() };
     } else if (payload.action === "cancel" && kind === "bookings") {
       if (record.googleEventId) {
-        try { await deleteGoogleEvent(site.siteId, record.googleCalendarId, record.googleEventId); }
-        catch (error) { console.error("calendar-cancel", record.transactionId, error?.message || error); }
+        try { await deleteGoogleEvent(site.siteId, record.googleCalendarId, record.googleEventId); record.calendarCancellationPending = false; }
+        catch { record.calendarCancellationPending = true; }
       }
       record = { ...record, status: "cancelled", cancelledAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+    } else if (payload.action === "invite_customer" && kind === "bookings") {
+      if (!bookingCanSync(record) || Date.parse(record.end) <= Date.now()) throw Object.assign(new Error("Only active appointments can send invitations."), { status: 409 });
+      record = await syncBookingCalendar(site, { ...record, customerCalendarInviteRequested: true });
     } else if (payload.action === "sync_calendar" && kind === "bookings") {
       if (!bookingCanSync(record)) throw Object.assign(new Error("Only confirmed appointments can sync to Google Calendar."), { status: 409 });
       record = await syncBookingCalendar(site, record);

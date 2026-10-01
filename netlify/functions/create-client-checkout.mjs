@@ -127,6 +127,7 @@ export default async (req) => {
       transactionId, siteId: site.siteId, kind, customer, items, locationId, locationName: selectedLocation?.name || "", holdId: hold?.holdId || "",
       serviceId: hold?.serviceId || "", employeeId: hold?.employeeId || "", start: hold?.start || "", end: hold?.end || "",
       subtotal, tax: taxCents, amountTotal: subtotal + (site.taxConfig?.pricesIncludeTax ? 0 : taxCents), currency: "usd",
+      ...(kind === "booking" ? { customerCalendarInviteRequested: true } : {}),
       paymentStatus: inPerson ? "due" : "pending", status: inPerson ? "confirmed" : "payment_pending",
       createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
     };
