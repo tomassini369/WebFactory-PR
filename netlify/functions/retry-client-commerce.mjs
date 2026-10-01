@@ -1,6 +1,6 @@
 import { deleteGoogleEvent } from "../lib/google-calendar.mjs";
 import { clientCommerceStore, clientSiteStore, commerceKey, getClientSite } from "../lib/client-store.mjs";
-import { sendBusinessCommerceEmail, sendCustomerCommerceEmail } from "../lib/client-notifications.mjs";
+import { sendBusinessCommerceEmail, sendCustomerCommerceEmail, sendBookingConfirmationEmails } from "../lib/client-notifications.mjs";
 import { syncBookingCalendar, bookingCanSync } from "../lib/booking-calendar.mjs";
 
 export default async () => {
@@ -31,7 +31,7 @@ export default async () => {
     // In-person appointments have no payment transaction: retry their calendar sync separately.
     const bookings = await clientCommerceStore().list({ prefix: `${siteId}/bookings/` });
     for (const blob of bookings.blobs || []) {
-      const record = await clientCommerceStore().get(blob.key, { type: "json" });
+      let record = await clientCommerceStore().get(blob.key, { type: "json" });
       if (record?.status === "cancelled" && record.calendarCancellationPending && record.googleEventId) {
         try {
           await deleteGoogleEvent(siteId, record.googleCalendarId, record.googleEventId);
@@ -39,6 +39,7 @@ export default async () => {
         } catch { /* Keep retrying without restoring the cancelled appointment. */ }
         continue;
       }
+      if (record?.confirmationEmailRequested && bookingCanSync(record) && Date.parse(record.end) > Date.now()) record = await sendBookingConfirmationEmails(site,record,value=>clientCommerceStore().setJSON(blob.key,value));
       if (!record || !bookingCanSync(record) || (record.googleEventId && (!record.customerCalendarInviteRequested || record.customerCalendarInviteStatus === "sent")) || Date.parse(record.end) < Date.now()) continue;
       const synced = await syncBookingCalendar(site, record);
       await clientCommerceStore().setJSON(blob.key, synced);
