@@ -20,8 +20,8 @@ export default async (req) => {
         account: accountId,
         use_case: { type: "account_onboarding", account_onboarding: {
           collection_options: { fields: "eventually_due" }, configurations: ["merchant"],
-          return_url: `${publicBaseUrl()}/client-admin?stripe=returned`,
-          refresh_url: `${publicBaseUrl()}/client-admin?stripe=refresh`,
+          return_url: `${publicBaseUrl()}/client-admin?stripe=returned&siteId=${encodeURIComponent(site.siteId)}`,
+          refresh_url: `${publicBaseUrl()}/client-admin?stripe=refresh&siteId=${encodeURIComponent(site.siteId)}`,
         } },
       }),
     });

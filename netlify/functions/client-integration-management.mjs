@@ -1,6 +1,7 @@
 import { assertSameOrigin, errorResponse, requireSiteAccess } from "../lib/client-auth.mjs";
 import { cleanText } from "../lib/platform-utils.mjs";
 import { disconnectAth, disconnectGoogle, disconnectStripe } from "../lib/client-lifecycle.mjs";
+import { patchClientSite } from "../lib/client-store.mjs";
 
 export default async(req)=>{
   try{
@@ -17,6 +18,15 @@ export default async(req)=>{
       if((membership.role||"")==="manager")throw Object.assign(new Error("Only the owner can disconnect Stripe."),{status:403});
       updated=await disconnectStripe(site);
     }else if(action==="disconnect_ath")updated=await disconnectAth(site);
+    else if(action==="configure_ath"){
+      const publicPath=cleanText(payload.publicPath,120);
+      if(!publicPath)throw Object.assign(new Error("Enter your ATH Móvil business path."),{status:400});
+      updated=await patchClientSite(site.siteId,{paymentRules:{...site.paymentRules,methods:{...site.paymentRules?.methods,ath:true},ath:{...site.paymentRules?.ath,publicPath}}});
+    }else if(action==="enable_stripe"){
+      if((membership.role||"")==="manager")throw Object.assign(new Error("Only the owner can enable Stripe."),{status:403});
+      if(!site.paymentRules?.stripeConnectedAccountId)throw Object.assign(new Error("Connect Stripe first."),{status:409});
+      updated=await patchClientSite(site.siteId,{paymentRules:{...site.paymentRules,methods:{...site.paymentRules?.methods,stripe:true}}});
+    }
     else throw Object.assign(new Error("Unsupported integration action."),{status:400});
 
     return Response.json({ok:true,site:updated},{headers:{"Cache-Control":"no-store"}});
