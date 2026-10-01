@@ -142,7 +142,7 @@ export function publicClientSite(site) {
         : [],
     },
     design: normalizeSiteDesign(site.design || {}),
-    features: site.features,
+    features: { ...site.features, calendar: Boolean(site.features?.calendar && site.googleCalendar?.connected) },
     catalog: (site.catalog || []).filter((item) => item.active !== false).map((item) => ({
       id: item.id,
       type: item.type,

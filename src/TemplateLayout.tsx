@@ -52,9 +52,9 @@ export default function TemplateLayout({config,ui,language,setLanguage,startBook
             </div>
           </div>
           <aside className="template-hero-meta">
-            <div><small>{ui.location}</small>{locationHref ? <a href={locationHref} target="_blank" rel="noreferrer">{config.location || 'Google Maps ↗'}</a> : <strong>{config.location}</strong>}</div>
-            <div><small>{ui.hours}</small><strong>{config.hours}</strong></div>
-            <div><small>{ui.call}</small>{phoneHref ? <a href={phoneHref}>{config.phone}</a> : <strong>{config.phone}</strong>}</div>
+            {(config.location || locationHref) && <div><small>{ui.location}</small>{locationHref ? <a href={locationHref} target="_blank" rel="noreferrer">{config.location || 'Google Maps ↗'}</a> : <strong>{config.location}</strong>}</div>}
+            {config.hours && <div><small>{ui.hours}</small><strong>{config.hours}</strong></div>}
+            {config.phone && <div><small>{ui.call}</small>{phoneHref ? <a href={phoneHref}>{config.phone}</a> : <strong>{config.phone}</strong>}</div>}
           </aside>
         </section>
 
