@@ -1,8 +1,9 @@
+import type {StorefrontSite} from './ClientStorefront'
+import StorefrontPreview from './StorefrontPreview'
 import { useEffect, useMemo, useState, type CSSProperties, type Dispatch, type SetStateAction } from 'react'
 import { templateConfigs, templateGroups, templateGroupForCategory, templateVisualStyle } from './templateData'
 import BuilderAiAssistant from './BuilderAiAssistant'
 import { feedback } from './feedback/feedback'
-import { contrastTextColor } from './color-contrast'
 import './builder.css'
 
 type Language = 'es' | 'en'
@@ -347,159 +348,14 @@ function Field({label,value,onChange,placeholder,type='text',disabled=false}:{
 }
 
 function Preview({state,device,lang}:{state:BuilderState;device:Device;lang:Language}) {
-  const [catalogOpen,setCatalogOpen] = useState(false)
-  const businessName = lang==='es' ? (state.business.nameEs || state.business.nameEn || state.business.name) : (state.business.nameEn || state.business.name || state.business.nameEs || '')
-  const businessDescription = lang==='es' ? (state.business.descriptionEs || state.business.descriptionEn || state.business.description) : (state.business.descriptionEn || state.business.description || state.business.descriptionEs || '')
-  const itemName = (item:CatalogItem) => lang==='es' ? (item.nameEs || item.nameEn || item.name) : (item.nameEn || item.name || item.nameEs || '')
-  const itemDescription = (item:CatalogItem) => lang==='es' ? (item.descriptionEs || item.descriptionEn || item.description) : (item.descriptionEn || item.description || item.descriptionEs || '')
-  const memberRole = (member:TeamMember) => lang==='es' ? (member.roleEs || member.roleEn || member.role) : (member.roleEn || member.role || member.roleEs || '')
-  const [selectedItem,setSelectedItem] = useState<CatalogItem | null>(null)
-  const appointments = state.catalog.filter((item)=>item.type==='service' && item.requiresAppointment)
-  const mapsValid = isGoogleMapsUrl(state.business.mapsUrl)
-  const mapsEmbed = googleMapsEmbedUrl(state.business.mapsUrl)
-  const visibleCatalog = state.catalog.filter((item)=>
-    item.type==='product' ? state.features.products : state.features.services
-  )
-  const style = {
-    '--preview-primary': state.design.primary,
-    '--preview-secondary': state.design.secondary,
-    '--preview-primary-contrast': contrastTextColor(state.design.primary),
-    '--preview-secondary-contrast': contrastTextColor(state.design.secondary),
-  } as CSSProperties
-
-  return (
-    <div className={`wf-preview-shell ${device}`} style={style}>
-      <div className={`wf-preview-page style-${state.design.style.toLowerCase()}`}>
-        <header>
-          <div className="wf-preview-brand">
-            {state.business.logo ? <img src={state.business.logo} alt="" /> : <span>{businessName.slice(0,2).toUpperCase()}</span>}
-            <strong>{businessName || (lang==='es'?'Tu negocio':'Your business')}</strong>
-          </div>
-          <nav>
-            <span>{lang==='es'?'Inicio':'Home'}</span>
-            {(state.features.services || state.features.products) && <button className="wf-preview-catalog-link" onClick={()=>setCatalogOpen(true)}>{lang==='es'?'Catálogo':'Catalog'}</button>}
-            {state.features.bookings && <button>{lang==='es'?'Reservar':'Book'}</button>}
-          </nav>
-        </header>
-
-        <section className="wf-preview-hero">
-          {state.business.hero&&<img className="wf-preview-hero-photo" src={state.business.hero} alt="" />}
-          <small>{state.business.category || 'BUSINESS'}</small>
-          <h3>{businessName || (lang==='es'?'Tu negocio':'Your business')}</h3>
-          <p>{businessDescription || (lang==='es'?'Describe aquí lo que hace especial a tu negocio.':'Describe what makes your business special.')}</p>
-          <div>
-            {(state.features.products || state.features.services) && <button onClick={()=>setCatalogOpen(true)}>{lang==='es'?'Ver productos y servicios':'View products and services'}</button>}
-            {state.features.bookings && <button className="ghost">{lang==='es'?'Reservar ahora':'Book now'}</button>}
-            {state.features.whatsapp && <button className="ghost">WhatsApp</button>}
-          </div>
-        </section>
-
-        <section className="wf-preview-catalog-gateway">
-          <small>{lang==='es'?'CATÁLOGO':'CATALOG'}</small>
-          <strong>{visibleCatalog.length} {lang==='es'?'productos y servicios disponibles':'products and services available'}</strong>
-          <p>{lang==='es'?'El catálogo permanece oculto para mantener la página limpia. El cliente lo abre solamente cuando desea explorar.':'The catalog stays tucked away to keep the page clean and opens when a customer wants to browse.'}</p>
-          <button onClick={()=>setCatalogOpen(true)}>{lang==='es'?'Abrir catálogo':'Open catalog'} →</button>
-        </section>
-
-        {state.features.bookings && appointments.length > 0 && (
-          <section className="wf-preview-booking">
-            <small>BOOKING</small>
-            <strong>{lang==='es'?'Reserva en pocos pasos.':'Book in a few steps.'}</strong>
-            <div>
-              <span>{lang==='es'?'Servicio':'Service'}</span><i>→</i>
-              <span>{lang==='es'?'Empleado':'Team member'}</span><i>→</i>
-              <span>{lang==='es'?'Hora':'Time'}</span>
-            </div>
-          </section>
-        )}
-
-        {(state.business.gallery||[]).length>0&&<section className="wf-preview-gallery">{(state.business.gallery||[]).map((image,index)=><img key={index} src={image} alt="" />)}</section>}
-
-        {state.team.length > 0 && (
-          <section className="wf-preview-team">
-            <small>{lang==='es'?'EQUIPO':'TEAM'}</small>
-            <div>
-              {state.team.slice(0,4).map((member) => (
-                <article key={member.id}>
-                  <b>{member.name.slice(0,1).toUpperCase()}</b>
-                  <span><strong>{member.name}</strong><em>{memberRole(member)}</em></span>
-                </article>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {state.features.maps && mapsValid && (
-          <section className="wf-preview-location">
-            <div>
-              <small>{lang==='es'?'UBICACIÓN':'LOCATION'}</small>
-              <strong>{lang==='es'?'Encuéntranos en Google Maps.':'Find us on Google Maps.'}</strong>
-              <a href={state.business.mapsUrl} target="_blank" rel="noreferrer">{lang==='es'?'Ver ubicación real':'View location'} ↗</a>
-            </div>
-            {mapsEmbed ? (
-              <iframe
-                title={lang==='es'?'Ubicación de Google Maps':'Google Maps location'}
-                src={mapsEmbed}
-                loading="lazy"
-                referrerPolicy="no-referrer-when-downgrade"
-              />
-            ) : (
-              <a className="wf-preview-map-link" href={state.business.mapsUrl} target="_blank" rel="noreferrer">
-                <span>Google Maps</span>
-                <b>{lang==='es'?'Abrir ubicación real':'Open location'} ↗</b>
-              </a>
-            )}
-          </section>
-        )}
-
-        <footer>
-          <strong>{businessName || (lang==='es'?'Tu negocio':'Your business')}</strong>
-          <span>{state.business.phone}</span>
-          {state.features.maps && mapsValid && (
-            <a href={state.business.mapsUrl} target="_blank" rel="noreferrer">Google Maps ↗</a>
-          )}
-        </footer>
-
-        {catalogOpen && (
-          <div className="wf-preview-modal-backdrop" onMouseDown={()=>setCatalogOpen(false)}>
-            <section className="wf-preview-catalog-window" onMouseDown={(event)=>event.stopPropagation()}>
-              <header>
-                <div><small>{lang==='es'?'CATÁLOGO':'CATALOG'}</small><strong>{lang==='es'?'Productos y servicios':'Products and services'}</strong></div>
-                <button onClick={()=>setCatalogOpen(false)}>×</button>
-              </header>
-              <div className="wf-preview-modal-items">
-                {visibleCatalog.length===0 ? (
-                  <div className="wf-preview-empty">{lang==='es'?'No hay productos o servicios activos en el preview.':'There are no active products or services in this preview.'}</div>
-                ) : visibleCatalog.map((item)=>(
-                  <button key={item.id} className="wf-preview-modal-card" onClick={()=>setSelectedItem(item)}>
-                    {item.image ? <img src={item.image} alt="" /> : <span className="wf-preview-placeholder">{item.type==='service'?'SERVICE':'PRODUCT'}</span>}
-                    <div><small>{item.type==='service'?(lang==='es'?'servicio':'service'):(lang==='es'?'producto':'product')}</small><strong>{itemName(item) || (lang==='es'?'Sin nombre':'Untitled')}</strong><b>${Number(item.price || 0).toFixed(2)}</b></div>
-                  </button>
-                ))}
-              </div>
-            </section>
-          </div>
-        )}
-
-        {selectedItem && (
-          <div className="wf-preview-modal-backdrop detail" onMouseDown={()=>setSelectedItem(null)}>
-            <section className="wf-preview-item-window" onMouseDown={(event)=>event.stopPropagation()}>
-              <button className="wf-preview-close" onClick={()=>setSelectedItem(null)}>×</button>
-              {selectedItem.image ? <img src={selectedItem.image} alt="" /> : <div className="wf-preview-item-placeholder">{selectedItem.type==='service'?'SERVICE':'PRODUCT'}</div>}
-              <div>
-                <small>{selectedItem.type.toUpperCase()}</small>
-                <h4>{itemName(selectedItem) || (lang==='es'?'Sin nombre':'Untitled')}</h4>
-                <strong>${Number(selectedItem.price || 0).toFixed(2)}</strong>
-                <p>{itemDescription(selectedItem) || (lang==='es'?'Descripción del producto o servicio.':'Product or service description.')}</p>
-                {selectedItem.requiresAppointment && <span>{selectedItem.duration} min · {lang==='es'?'Requiere reservación':'Booking required'}</span>}
-                <button>{selectedItem.requiresAppointment?(lang==='es'?'Reservar':'Book'):(lang==='es'?'Añadir al carrito':'Add to cart')}</button>
-              </div>
-            </section>
-          </div>
-        )}
-      </div>
-    </div>
-  )
+  const previewSite: StorefrontSite = {
+    siteId:'builder-preview',slug:state.business.slug || 'preview',
+    business:{...state.business,logoUrl:state.business.logo,heroUrl:state.business.hero,galleryUrls:state.business.gallery},
+    design:state.design,features:state.features,
+    catalog:state.catalog.map(item=>({...item,imageUrl:item.image||'',inventory:null})),employees:state.team,
+    hours:state.hours,paymentRules:state.payments,settings:{locale:lang,timezone:'America/Puerto_Rico'},
+  }
+  return <StorefrontPreview previewSite={previewSite} lang={lang} device={device}/>
 }
 
 function BusinessStep({state,setState,lang,lockedEmail}:{state:BuilderState;setState:Dispatch<SetStateAction<BuilderState>>;lang:Language;lockedEmail?:string}) {
