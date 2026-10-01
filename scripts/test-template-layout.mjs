@@ -7,6 +7,7 @@ const server = await createServer({server:{middlewareMode:true}, appType:'custom
 try {
   const {default: Storefront} = await server.ssrLoadModule('/src/ClientStorefront.tsx')
   const {default: Layout} = await server.ssrLoadModule('/src/TemplateLayout.tsx')
+  const {default: CatalogCard} = await server.ssrLoadModule('/src/TemplateCatalogCard.tsx')
   const {templateConfigs} = await server.ssrLoadModule('/src/templateData.ts')
   const {templateUi} = await server.ssrLoadModule('/src/templateI18n.ts')
   let checked=0
@@ -31,6 +32,9 @@ try {
     assert.ok(!off.includes('template-booking-showcase'))
     assert.ok(off.includes('/custom-hero.jpg') && off.includes('/custom-gallery.jpg'))
     assert.ok(!off.includes(config.heroImage), 'Uploaded content overrides sample media')
+    const card=renderToStaticMarkup(React.createElement(CatalogCard,{item:config.items[0],accent:config.accent,language:lang,ui:templateUi[lang],onView(){},onAdd(){},onBook(){},bookEnabled:false,cartEnabled:false,disabled:true}))
+    assert.ok(card.includes('template-catalog-card') && card.includes('template-card-copy'))
+    assert.ok(!card.includes('template-solid'), 'Disabled commerce/booking never renders an action button')
     checked++
   }
   console.log(`Template layout regression: ${checked} template/language combinations passed; custom colors, content, media, feature gates and missing team verified.`)

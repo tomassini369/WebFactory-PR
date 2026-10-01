@@ -1,3 +1,4 @@
+import CatalogCard from './TemplateCatalogCard'
 import TemplateLayout from './TemplateLayout'
 import { useEffect, useMemo, useState, type CSSProperties } from 'react'
 import { templateBySlug, templateVisualStyle, type TemplateItem } from './templateData'
@@ -20,50 +21,6 @@ function TemplateNotice({ ui }: { ui: TemplateUi }) {
   )
 }
 
-function CatalogCard({
-  item,
-  accent,
-  onView,
-  onAdd,
-  onBook,
-  language,
-  ui,
-}: {
-  item: TemplateItem
-  accent: string
-  onView: () => void
-  onAdd: () => void
-  onBook: () => void
-  language: TemplateLanguage
-  ui: TemplateUi
-}) {
-  const price = item.displayPrice ?? money(item.price, language)
-  const typeLabel = { product: ui.product, service: ui.serviceType, listing: ui.listing, class: ui.classType }[item.type]
-  return (
-    <article className="template-catalog-card">
-      <button className="template-card-image" onClick={onView} aria-label={`${ui.view} ${item.name}`}>
-        <img src={item.image} alt="" loading="lazy" />
-        {item.badge && <span style={{ background: accent }}>{item.badge}</span>}
-      </button>
-      <div className="template-card-copy">
-        <div>
-          <small>{typeLabel}</small>
-          <h3>{item.name}</h3>
-        </div>
-        <strong>{price}</strong>
-        <p>{item.description}</p>
-        <div className="template-card-actions">
-          <button className="template-outline" onClick={onView}>{ui.view}</button>
-          {item.appointment ? (
-            <button className="template-solid" onClick={onBook}>{ui.reserve}</button>
-          ) : item.purchasable !== false ? (
-            <button className="template-solid" onClick={onAdd}>{ui.add}</button>
-          ) : null}
-        </div>
-      </div>
-    </article>
-  )
-}
 
 function TemplateSite({ slug }: { slug: string }) {
   const baseConfig = templateBySlug(slug)
