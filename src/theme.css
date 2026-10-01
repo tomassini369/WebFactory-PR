@@ -31,6 +31,8 @@ html[data-wf-platform-theme="true"][data-wf-theme="dark"] .ca-pos-actions .secon
 /* Destructive actions retain a paired light surface and dark text in either theme. */
 html[data-wf-platform-theme="true"][data-wf-theme="dark"] .ca-danger-zone{color:#0B1529}
 html[data-wf-platform-theme="true"][data-wf-theme="dark"] .ca-danger-actions article{color:#0B1529}
+html[data-wf-platform-theme="true"][data-wf-theme="dark"] .ca-sidebar .ca-signout{color:#FFABB5}
+html[data-wf-platform-theme="true"][data-wf-theme="light"] .wf-review-grid article>small{color:#526782}
 
 /* Builder editor surfaces follow the platform theme; business previews keep their own palette. */
 html[data-wf-platform-theme="true"][data-wf-theme="dark"] :is(.wf-upload,.wf-catalog-tile,.wf-builder-item-modal,.wf-custom-layout-grid>button,.wf-section-order>div,.wf-section-order button,.wf-template-category-picker,.wf-template-category-picker button,.wf-ai-proposal,.wf-payment-methods>article,.wf-payment-rules,.wf-after-payment,.wf-after-payment article){
@@ -50,6 +52,15 @@ html[data-wf-platform-theme="true"][data-wf-theme="dark"] .wf-payment-methods>ar
 html[data-wf-platform-theme="true"][data-wf-theme="dark"] .wf-checkout-placeholder.success{background:#123C2D;color:#F7FAFF;border-color:#48886B}
 /* Native placeholders must remain readable rather than using browser-dependent dark colors. */
 html[data-wf-platform-theme="true"][data-wf-theme="dark"] :is(.ca-login,.ca-panel,.wfa-login,.wfa-provision,.wf-builder-app) :is(input,textarea)::placeholder{color:#A9B7C9;opacity:1}
+
+/* Public payment links are platform surfaces, including their language controls and inputs. */
+html[data-wf-platform-theme="true"][data-wf-theme="dark"] .wf-pay-page{background:var(--wf-theme-dark-bg);color:var(--wf-theme-dark-text)}
+html[data-wf-platform-theme="true"][data-wf-theme="dark"] :is(.wf-pay-card,.wf-pay-amount){background:var(--wf-theme-dark-surface);color:var(--wf-theme-dark-text);border-color:var(--wf-theme-dark-line)}
+html[data-wf-platform-theme="true"][data-wf-theme="dark"] .wf-pay-card :is(h1,label){color:var(--wf-theme-dark-text)}
+html[data-wf-platform-theme="true"][data-wf-theme="dark"] .wf-pay-card>p{color:#B8C5D7}
+html[data-wf-platform-theme="true"][data-wf-theme="dark"] .wf-pay-card input{background:#111B2D;color:#F7FAFF;border-color:#2B3C58}
+html[data-wf-platform-theme="true"][data-wf-theme="dark"] .wf-pay-card .portal-language button{background:#111B2D;color:#B8C5D7;border-color:#385071}
+html[data-wf-platform-theme="true"][data-wf-theme="dark"] .wf-pay-card .portal-language button.active{background:#F7FAFF;color:#0B1529;border-color:#F7FAFF}
 
 .ca-v3-table article.ca-integration-stripe{display:block}
 .ca-stripe-connection{width:100%;min-width:0}
