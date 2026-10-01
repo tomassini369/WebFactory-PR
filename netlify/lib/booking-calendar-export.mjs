@@ -18,7 +18,7 @@ export function bookingCalendarData(site, record) {
   const service = (record.items || []).map(item => item.name).filter(Boolean).join(" · ") || "Appointment / Cita";
   const business = site.business?.name || "Business";
   const employee = (site.employees || []).find(item => item.id === record.employeeId)?.name;
-  const location = (site.locations || []).find(item => item.id === record.locationId);
+  const location = (site.business?.locations || []).find(item => item.id === record.locationId);
   return { title: `${service} — ${business}`, start: stamp(record.start), end: stamp(record.end),
     description: [`${business}`, employee, `Confirmation / Confirmación: ${record.transactionId}`].filter(Boolean).join("\n"),
     location: location?.address || site.business?.address || "" };

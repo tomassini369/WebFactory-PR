@@ -7,7 +7,7 @@ import {bookingIcs,calendarLinks} from './booking-calendar-export.mjs';
 import {sendCustomerCommerceEmail,sendBookingConfirmationEmails} from './client-notifications.mjs';
 import endpoint from '../functions/booking-calendar-file.mjs';
 const site={siteId:'a',business:{name:'Negocio <test>',email:'owner@example.invalid'},settings:{timezone:'America/Puerto_Rico'},employees:[]};
-const record={siteId:'a',kind:'booking',status:'confirmed',transactionId:'txn-a',start:'2099-10-05T09:00:00-04:00',end:'2099-10-05T09:30:00-04:00',createdAt:'2099-10-01T00:00:00Z',items:[{name:'Corte, barba; 🎉'.repeat(10)}],customer:{email:'customer@example.invalid'},paymentStatus:'due',calendarToken:'a'.repeat(43)};
+const record={siteId:'a',kind:'booking',status:'confirmed',transactionId:'txn-a',start:'2099-10-05T09:00:00-04:00',end:'2099-10-05T09:30:00-04:00',createdAt:'2099-10-01T00:00:00Z',items:[{name:'Corte, barba; 🎉'.repeat(10)}],customer:{email:'customer@example.invalid'},paymentStatus:'due',calendarToken:'a'.repeat(43),language:'es'};
 test('calendar export preserves UTC instants, escapes text, folds UTF8 and includes two alarms without personal data',()=>{
  const ics=bookingIcs(site,record);assert.match(ics,/DTSTART:20991005T130000Z/);assert.match(ics,/DTEND:20991005T133000Z/);assert.match(ics,/TRIGGER:-PT24H/);assert.match(ics,/TRIGGER:-PT4H/);assert.match(ics,/Corte\\, barba\\;/);assert.ok(ics.split('\r\n').every(x=>Buffer.byteLength(x)<=75));assert.ok(!ics.includes(record.customer.email));assert.equal(bookingIcs(site,record),ics);
  const links=calendarLinks(site,record);assert.equal(new URL(links.google).searchParams.get('dates'),'20991005T130000Z/20991005T133000Z');assert.equal(new URL(links.outlook).searchParams.get('startdt'),'2099-10-05T13:00:00.000Z');
@@ -18,7 +18,7 @@ function mailFixture(t){
  t.after(()=>delete globalThis.Netlify);const sent=[];t.mock.method(nodemailer,'createTransport',()=>({sendMail:async mail=>{sent.push(mail);return {messageId:'test'}}}));return sent;
 }
 test('booking confirmation has safe HTML calendar button and ICS attachment and describes unpaid booking correctly',async t=>{
- const sent=mailFixture(t);await sendCustomerCommerceEmail(site,record);assert.equal(sent.length,1);assert.match(sent[0].html,/Añadir al calendario/);assert.match(sent[0].html,/Negocio &lt;test&gt;/);assert.equal(sent[0].attachments[0].filename,'appointment.ics');assert.match(sent[0].text,/Amount due at appointment/);assert.ok(!sent[0].text.includes('verified securely by Stripe'));
+ const sent=mailFixture(t);await sendCustomerCommerceEmail(site,record);assert.equal(sent.length,1);assert.match(sent[0].html,/Añadir al calendario/);assert.match(sent[0].html,/Negocio &lt;test&gt;/);assert.equal(sent[0].attachments[0].filename,'appointment.ics');assert.match(sent[0].text,/Pago al llegar/);assert.ok(!sent[0].text.includes('verified securely by Stripe'));
 });
 test('failed confirmation does not cancel reservation and successful recipients are not replayed',async t=>{
  const sent=mailFixture(t);let fail=true;t.mock.method(nodemailer,'createTransport',()=>({sendMail:async mail=>{if(mail.to.includes('customer@example.invalid')&&fail)throw Error('offline');sent.push(mail);return {messageId:'test'}}}));const writes=[];

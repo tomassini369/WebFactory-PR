@@ -1,4 +1,5 @@
 import { bookingIcs, bookingCalendarUrl, escapeHtml } from "./booking-calendar-export.mjs";
+import { renderBookingEmail } from "./booking-email-template.mjs";
 import { sendEmail } from "./email.mjs";
 
 function env(name) { return globalThis.Netlify?.env?.get(name) || ""; }
@@ -32,6 +33,11 @@ function messages(site, record) {
 }
 
 export async function sendCustomerCommerceEmail(site, record) {
+  if (record.kind === "booking" && bookingIcs(site,record)) {
+    const mail=renderBookingEmail(site,record);
+    await sendEmail({category:"team",fromName:site.business?.name || "WebFactory Business",to:record.customer.email,...mail,attachments:[{filename:"appointment.ics",content:bookingIcs(site,record),contentType:"text/calendar; charset=utf-8"}]});
+    return;
+  }
   const { kindLabel, customerText } = messages(site, record);
   const ics = bookingIcs(site, record), url = ics ? bookingCalendarUrl(record) : "";
   const calendarText = ics ? `\n\nAñadir al calendario / Add to calendar: ${url || "Open the attached appointment.ics file / Abre el archivo appointment.ics adjunto"}\nIf you accepted the Google invitation, do not add another copy. / Si aceptaste la invitación de Google, no añadas otra copia.` : "";
@@ -41,6 +47,10 @@ export async function sendCustomerCommerceEmail(site, record) {
 
 export async function sendBusinessCommerceEmail(site, record) {
   if (!site.business?.email) return;
+  if (record.kind === "booking" && bookingIcs(site,record)) {
+    await sendEmail({category:"team",fromName:site.business?.name || "WebFactory Business",to:site.business.email,...renderBookingEmail(site,record,{audience:"business"})});
+    return;
+  }
   const { kindLabel, businessText } = messages(site, record);
   await sendEmail({ category:"team", fromName:site.business?.name || "WebFactory Business", to:site.business.email, subject:`New confirmed ${kindLabel} — ${record.transactionId}`, text:businessText });
 }

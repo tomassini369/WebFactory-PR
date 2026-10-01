@@ -220,6 +220,8 @@ export default async (req) => {
       locale: payload.value?.locale === "es" ? "es" : "en",
       timezone: cleanText(payload.value?.timezone || site.settings?.timezone || "America/Puerto_Rico", 120),
       currency: "usd",
+      allowCustomerCancellation: typeof payload.value?.allowCustomerCancellation === "boolean" ? payload.value.allowCustomerCancellation : (site.settings?.allowCustomerCancellation ?? true),
+      allowCustomerRescheduling: typeof payload.value?.allowCustomerRescheduling === "boolean" ? payload.value.allowCustomerRescheduling : (site.settings?.allowCustomerRescheduling ?? true),
     };
     if (section === "business" && value.email && !validEmail(value.email)) throw Object.assign(new Error("Business email is invalid."), { status: 400 });
 
