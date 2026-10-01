@@ -102,7 +102,9 @@ export async function googleBusy(siteId, calendarId, timeMin, timeMax, timeZone)
     method: "POST",
     body: JSON.stringify({ timeMin, timeMax, timeZone, items: [{ id: calendarId }] }),
   });
-  return result.calendars?.[calendarId]?.busy || [];
+  const calendar=result.calendars?.[calendarId];
+  if(!calendar || calendar.errors?.length) throw new Error("Google Calendar availability could not be verified.");
+  return calendar.busy || [];
 }
 
 export async function createGoogleEvent(siteId, calendarId, event, { sendUpdates = "none" } = {}) {
