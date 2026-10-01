@@ -32,6 +32,8 @@ try {
     assert.ok(!off.includes('template-booking-showcase'))
     assert.ok(off.includes('/custom-hero.jpg') && off.includes('/custom-gallery.jpg'))
     assert.ok(!off.includes(config.heroImage), 'Uploaded content overrides sample media')
+    const styled=renderToStaticMarkup(React.createElement(Storefront,{slug:'example',previewSite:{...site,design:{...site.design,style:'Luxury'}},previewLanguage:lang}))
+    assert.ok(styled.includes('visual-luxury'), 'Saved style preference is honored consistently in Builder and live renderer')
     const card=renderToStaticMarkup(React.createElement(CatalogCard,{item:config.items[0],accent:config.accent,language:lang,ui:templateUi[lang],onView(){},onAdd(){},onBook(){},bookEnabled:false,cartEnabled:false,disabled:true}))
     assert.ok(card.includes('template-catalog-card') && card.includes('template-card-copy'))
     assert.ok(!card.includes('template-solid'), 'Disabled commerce/booking never renders an action button')

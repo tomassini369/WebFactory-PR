@@ -190,7 +190,8 @@ export default function ClientStorefront({slug,previewSite,previewLanguage='en'}
     '--cs-accent':site.design?.secondary||template?.accent||'#3C86F6',
   } as CSSProperties
 
-  const visualStyle = template ? templateVisualStyle(template.category) : String(site.design?.style || 'Modern').toLowerCase()
+  const preferredStyle=String(site.design?.style || '').toLowerCase()
+  const visualStyle=['modern','luxury','minimal','bold'].includes(preferredStyle)?preferredStyle:template?templateVisualStyle(template.category):'modern'
 
   const layoutConfig: TemplateConfig = {
     slug: template?.slug || 'custom', category: businessCategory || '', name: businessName, shortName: businessName,
