@@ -4,6 +4,8 @@ import { siteEntitlement } from "../lib/subscription-billing.mjs";
 import { assertStripeWriteAllowed } from "../lib/stripe-runtime.mjs";
 import { calculateTax } from "../lib/webfactory-v3-domain.mjs";
 import { listV3Records } from "../lib/webfactory-v3-store.mjs";
+import { createAthCheckout } from "../lib/ath-movil.mjs";
+import { assertSameOrigin } from "../lib/client-auth.mjs";
 
 function env(name) { return globalThis.Netlify?.env?.get(name) || ""; }
 
@@ -33,6 +35,7 @@ async function findPaymentLink(siteId, token) {
 export default async (req) => {
   try {
     if (req.method !== "POST") return Response.json({ ok: false, message: "Method not allowed." }, { status: 405 });
+    assertSameOrigin(req);
     const payload = await req.json();
     const slug = cleanText(payload.slug, 80);
     const token = cleanText(payload.token, 200);
@@ -68,12 +71,9 @@ export default async (req) => {
       config: site.taxConfig || {},
     });
 
-    const accountId = site.paymentRules?.stripeConnectedAccountId;
-    if (!accountId || !site.paymentRules?.methods?.stripe) throw Object.assign(new Error("Online payments are not connected for this business."), { status: 409 });
-    assertStripeWriteAllowed({ requestUrl: req.url });
-    if (await verifyMerchantCapability(accountId) !== "active") throw Object.assign(new Error("This business must finish Stripe verification before accepting payments."), { status: 409 });
-
-    const transactionId = `txn_pl_${checkoutAttemptId}`;
+    if(payload.paymentProvider && !["stripe","ath_movil"].includes(payload.paymentProvider)) throw Object.assign(new Error("Unsupported payment provider."),{status:400});
+    const provider=payload.paymentProvider || "stripe";
+    const transactionId = `txn_pl_${provider === "ath_movil" ? "ath_" : ""}${checkoutAttemptId}`;
     const existing = await clientCommerceStore().get(commerceKey(site.siteId, "transactions", transactionId), { type: "json" });
     if (existing?.checkoutUrl && existing?.source === "payment_link") {
       return Response.json({ ok: true, checkoutUrl: existing.checkoutUrl, transactionId, reused: true }, { headers: { "Cache-Control": "no-store" } });
@@ -96,6 +96,14 @@ export default async (req) => {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
+
+    if(provider === "ath_movil") {
+      return Response.json(await createAthCheckout(site,record,{lang:payload.lang,requestUrl:req.url,returnUrl:`/pay/${encodeURIComponent(site.slug)}/${encodeURIComponent(link.token)}`}),{headers:{"Cache-Control":"no-store"}});
+    }
+    const accountId = site.paymentRules?.stripeConnectedAccountId;
+    if (!accountId || !site.paymentRules?.methods?.stripe) throw Object.assign(new Error("Stripe payments are not connected for this business."), { status: 409 });
+    assertStripeWriteAllowed({ requestUrl: req.url });
+    if (await verifyMerchantCapability(accountId) !== "active") throw Object.assign(new Error("This business must finish Stripe verification before accepting payments."), { status: 409 });
 
     const params = new URLSearchParams();
     params.set("mode", "payment");

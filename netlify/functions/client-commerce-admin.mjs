@@ -91,6 +91,7 @@ export default async (req) => {
         record.reviewRequestId = reviewRequestId;
       }
     } else if (payload.action === "refund") {
+      if(record.paymentProvider === "ath_movil") throw Object.assign(new Error("Manage this ATH Móvil refund in ATH Business. Stripe cannot refund ATH payments."),{status:409});
       assertStripeWriteAllowed({ requestUrl: req.url });
       if (!record.stripePaymentIntentId || record.paymentStatus !== "paid") throw Object.assign(new Error("This transaction cannot be refunded through Stripe."), { status: 409 });
       const refundMath = refundState({

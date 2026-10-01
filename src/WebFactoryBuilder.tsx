@@ -854,7 +854,7 @@ function PaymentsStep({state,setState,lang}:{state:BuilderState;setState:Dispatc
           {payments.methods.ath && <>
             <label className="wf-field"><span>{lang==='es'?'Estado de la cuenta':'Account status'}</span><select value={payments.ath.accountStatus} onChange={(event)=>patchPayments({ath:{...payments.ath,accountStatus:event.target.value as 'needs_account'|'active'}})}><option value="needs_account">{lang==='es'?'Necesito crear/configurarla':'I need to create or configure it'}</option><option value="active">{lang==='es'?'Ya está activa':'It is already active'}</option></select></label>
             <Field label={lang==='es'?'pATH público del negocio (opcional)':'Business public pATH (optional)'} value={payments.ath.publicPath} onChange={(value)=>patchPayments({ath:{...payments.ath,publicPath:value}})} placeholder={lang==='es'?'Ej. /MiNegocio':'E.g. /MyBusiness'} />
-            <small className="wf-secure-note">{lang==='es'?'No introduzcas usuario, contraseña, llave API ni información bancaria.':'Do not enter a username, password, API key, or bank information.'}</small>
+            <small className="wf-secure-note">{lang==='es'?'Configura los tokens de ATH Business después en tu portal → Integraciones. Este pATH no conecta la API.':'Configure ATH Business tokens later in your portal → Integrations. This pATH does not connect the API.'}</small>
           </>}
         </article>
 

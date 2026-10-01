@@ -14,7 +14,7 @@ function messages(site, record) {
     ...lines,
     `Total paid: ${money(record.amountTotal)}`,
     record.start ? `Appointment: ${new Date(record.start).toLocaleString("en-US", { timeZone: site.settings?.timezone || "America/Puerto_Rico" })}` : "",
-    "", "Payment was verified securely by Stripe.",
+    "", record.paymentProvider === "ath_movil" ? `Payment was verified by ATH Móvil. Reference: ${record.athReferenceNumber || ""}` : record.paymentMethod === "manual_ath" ? "The business recorded an ATH Móvil payment manually." : record.paymentStatus === "paid_in_person" ? "The business recorded an in-person payment." : "Payment was verified securely by Stripe.",
   ].filter(Boolean).join("\n");
   const businessText = [
     `New confirmed ${kindLabel}`, "",
