@@ -1,3 +1,4 @@
+import { syncBookingCalendar, bookingCanSync } from "../lib/booking-calendar.mjs";
 import { assertSameOrigin, errorResponse, requireSiteAccess, requireSiteCapability } from "../lib/client-auth.mjs";
 import { clientCommerceStore, commerceKey } from "../lib/client-store.mjs";
 import { deleteGoogleEvent } from "../lib/google-calendar.mjs";
@@ -54,7 +55,11 @@ export default async (req) => {
         catch (error) { console.error("calendar-cancel", record.transactionId, error?.message || error); }
       }
       record = { ...record, status: "cancelled", cancelledAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+    } else if (payload.action === "sync_calendar" && kind === "bookings") {
+      if (!bookingCanSync(record)) throw Object.assign(new Error("Only confirmed appointments can sync to Google Calendar."), { status: 409 });
+      record = await syncBookingCalendar(site, record);
     } else if (payload.action === "mark_paid" && record.paymentStatus === "due") {
+      if (["cancelled", "failed", "refunded"].includes(record.status)) throw Object.assign(new Error("This transaction is no longer active."), { status: 409 });
       record = { ...record, paymentStatus: "paid_in_person", status: "confirmed", paidAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
       if (kind === "orders" && /restaurant|food|catering|bakery|cafe|coffee|comida|alimento|panader|cafeter|restaurante/i.test(`${site.business?.category || ""} ${site.business?.name || ""}`)) {
         record.kitchenStatus = "received";
@@ -175,6 +180,7 @@ export default async (req) => {
     } else {
       throw Object.assign(new Error("Unsupported transaction action."), { status: 400 });
     }
+    if (payload.action === "mark_paid" && kind === "bookings") record = await syncBookingCalendar(site, record);
     await clientCommerceStore().setJSON(key, record);
     const transactionKey = commerceKey(site.siteId, "transactions", record.transactionId);
     if (await clientCommerceStore().get(transactionKey)) await clientCommerceStore().setJSON(transactionKey, record);

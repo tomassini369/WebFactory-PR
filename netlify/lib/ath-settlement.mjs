@@ -1,7 +1,7 @@
 import { clientCommerceStore, commerceKey, getClientSite, patchClientSite } from "./client-store.mjs";
 import { createCustomerRecord, createInventoryMovement, createReceiptRecord } from "./webfactory-v3-domain.mjs";
 import { getV3Record, putV3Record } from "./webfactory-v3-store.mjs";
-import { createGoogleEvent } from "./google-calendar.mjs";
+import { syncBookingCalendar } from "./booking-calendar.mjs";
 import { sendCustomerCommerceEmail, sendBusinessCommerceEmail } from "./client-notifications.mjs";
 import { athError } from "./ath-domain.mjs";
 
@@ -59,18 +59,7 @@ export async function settleAthPayment(session, payment) {
     await store.setJSON(finalKey, record);
     await store.setJSON(key, record);
     if (record.holdId) await store.delete(commerceKey(site.siteId, "holds", record.holdId));
-    if (record.kind === "booking" && site.googleCalendar?.connected) {
-      const employee = site.employees?.find((row) => row.id === record.employeeId);
-      try {
-        const event = await createGoogleEvent(site.siteId, employee?.calendarId, {
-          summary: `${record.items?.[0]?.name || "Appointment"} — ${record.customer?.name || "Customer"}`,
-          description: `WebFactory ${record.transactionId} · ATH Móvil ${payment.referenceNumber}`,
-          start: { dateTime: record.start, timeZone: site.settings?.timezone || "America/Puerto_Rico" },
-          end: { dateTime: record.end, timeZone: site.settings?.timezone || "America/Puerto_Rico" },
-        });
-        if (event?.id) { record.googleEventId = event.id; record.googleCalendarId = employee.calendarId; }
-      } catch { record.calendarSyncPending = true; }
-    }
+    record = await syncBookingCalendar(site, record);
     // Mark connected only after ATH has independently verified a completed transaction.
     const current = await getClientSite(site.siteId);
     if (current?.paymentRules?.ath?.credentialVersion === session.credentialVersion) {

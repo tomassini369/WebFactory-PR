@@ -538,3 +538,5 @@ html[data-wf-platform-theme="true"][data-wf-theme="light"] .wfa-admin-id span{co
     -webkit-overflow-scrolling:touch;
   }
 }
+
+.ca-booking-calendar-controls{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:20px}.ca-booking-calendar-controls strong{flex:1;text-transform:capitalize}.ca-booking-calendar-controls label{display:grid;gap:6px}.ca-booking-month{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}.ca-booking-month>small{text-align:center;padding:6px}.ca-booking-month>button{min-width:0;min-height:64px;padding:8px;display:flex;justify-content:space-between;align-items:flex-start;gap:4px}.ca-booking-month>button[aria-pressed="true"]{outline:2px solid #3985ed;outline-offset:1px}.ca-booking-month>button span{border-radius:50%;background:#2167c6;color:#fff;padding:2px 6px;font-size:12px}.ca-booking-agenda article{display:flex;gap:16px;flex-wrap:wrap;padding:14px 0;border-bottom:1px solid #94a3b855}.ca-booking-agenda time{font-weight:700}@media(max-width:600px){.ca-booking-month>button{min-height:48px;padding:6px}.ca-booking-calendar-controls{gap:8px}.ca-booking-calendar-controls label{width:100%}}

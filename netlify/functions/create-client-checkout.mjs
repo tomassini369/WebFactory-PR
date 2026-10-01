@@ -1,3 +1,4 @@
+import { syncBookingCalendar } from "../lib/booking-calendar.mjs";
 import crypto from "node:crypto";
 import { createBookingHold } from "../lib/booking-engine.mjs";
 import { clientCommerceStore, commerceKey, getClientSite, getClientSiteBySlug } from "../lib/client-store.mjs";
@@ -122,7 +123,7 @@ export default async (req) => {
       taxCents = Number(line.taxCents || 0);
     }
 
-    const record = {
+    let record = {
       transactionId, siteId: site.siteId, kind, customer, items, locationId, locationName: selectedLocation?.name || "", holdId: hold?.holdId || "",
       serviceId: hold?.serviceId || "", employeeId: hold?.employeeId || "", start: hold?.start || "", end: hold?.end || "",
       subtotal, tax: taxCents, amountTotal: subtotal + (site.taxConfig?.pricesIncludeTax ? 0 : taxCents), currency: "usd",
@@ -137,8 +138,9 @@ export default async (req) => {
       await clientCommerceStore().setJSON(`tracking/${trackingHash}.json`, { siteId: site.siteId, transactionId });
     }
     if (inPerson) {
+      record = await syncBookingCalendar(site, record);
       await clientCommerceStore().setJSON(commerceKey(site.siteId, kind === "booking" ? "bookings" : "orders", transactionId), record);
-      return Response.json({ ok: true, paymentRequired: false, transactionId, status: record.status, ...(trackingToken ? { trackingUrl: `${publicBaseUrl()}/track/${trackingToken}` } : {}) });
+      return Response.json({ ok: true, paymentRequired: false, transactionId, status: record.status, calendarSyncStatus: record.calendarSyncStatus, ...(trackingToken ? { trackingUrl: `${publicBaseUrl()}/track/${trackingToken}` } : {}) });
     }
 
     if(payload.paymentProvider === "ath_movil") {

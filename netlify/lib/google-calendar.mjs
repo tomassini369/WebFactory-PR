@@ -106,10 +106,15 @@ export async function googleBusy(siteId, calendarId, timeMin, timeMax, timeZone)
 
 export async function createGoogleEvent(siteId, calendarId, event) {
   if (!calendarId) return null;
-  return googleApi(siteId, `/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events`, {
-    method: "POST",
-    body: JSON.stringify(event),
-  });
+  const path = `/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events`;
+  try {
+    return await googleApi(siteId, path, { method: "POST", body: JSON.stringify(event) });
+  } catch (error) {
+    if (error.status !== 409 || !event.id) throw error;
+    const existing = await googleApi(siteId, `${path}/${encodeURIComponent(event.id)}`);
+    if (existing?.status === "cancelled" || existing?.extendedProperties?.private?.webfactoryTransactionId !== event.extendedProperties?.private?.webfactoryTransactionId) throw error;
+    return existing;
+  }
 }
 
 export async function deleteGoogleEvent(siteId, calendarId, eventId) {
