@@ -1,0 +1,118 @@
+{
+  "slug": "novafadestudio",
+  "business": {
+    "name": "Nova Fade Studio",
+    "nameEn": "Nova Fade Studio",
+    "nameEs": "Nova Fade Studio",
+    "category": "Other",
+    "description": "Nova Fade Studio is a modern barbershop focused on premium haircuts, fades, beard grooming, and men's grooming services in a professional and relaxed environment.",
+    "descriptionEn": "Nova Fade Studio is a modern barbershop focused on premium haircuts, fades, beard grooming, and men's grooming services in a professional and relaxed environment.",
+    "descriptionEs": "Nova Fade Studio es una barbería moderna enfocada en cortes premium, fades, barba y grooming masculino en un ambiente profesional y relajado.",
+    "phone": "(787) 555-0148",
+    "whatsapp": "",
+    "email": "tomassini56@gmail.com",
+    "mapsUrl": "",
+    "locations": [],
+    "instagram": "",
+    "facebook": "",
+    "x": "",
+    "logoUrl": "",
+    "heroUrl": "",
+    "galleryUrls": []
+  },
+  "design": {
+    "mode": "template_base",
+    "templateSlug": "northline-barber",
+    "templateCategory": "Barber",
+    "templateName": "Northline Barber Studio",
+    "templateRoute": "/templates/northline-barber",
+    "preserveTemplateStructure": true,
+    "customLayout": "editorial",
+    "sectionOrder": [
+      "catalog",
+      "team",
+      "about",
+      "gallery",
+      "contact"
+    ],
+    "style": "Modern",
+    "primary": "#0B1529",
+    "secondary": "#3C86F6"
+  },
+  "features": {
+    "products": false,
+    "services": true,
+    "cart": false,
+    "whatsapp": true,
+    "calls": true,
+    "social": false,
+    "form": true,
+    "maps": true,
+    "stripe": true,
+    "ath": true,
+    "inPersonPayments": true,
+    "bookings": true,
+    "calendar": true
+  },
+  "catalog": [
+    {
+      "id": "service-1790816841315-ursfl",
+      "type": "service",
+      "name": "Classic Haircut",
+      "nameEn": "Classic Haircut",
+      "nameEs": "Corte Clásico",
+      "description": "A precise, professional haircut tailored to your style.",
+      "descriptionEn": "A precise, professional haircut tailored to your style.",
+      "descriptionEs": "Un corte de cabello preciso y profesional adaptado a tu estilo.",
+      "price": 25,
+      "active": true,
+      "requiresAppointment": true,
+      "duration": 30,
+      "imageUrl": ""
+    }
+  ],
+  "employees": [],
+  "hours": {
+    "Lunes": {
+      "enabled": true,
+      "open": "09:00",
+      "close": "17:00"
+    },
+    "Martes": {
+      "enabled": true,
+      "open": "09:00",
+      "close": "17:00"
+    },
+    "Miércoles": {
+      "enabled": true,
+      "open": "09:00",
+      "close": "17:00"
+    },
+    "Jueves": {
+      "enabled": true,
+      "open": "09:00",
+      "close": "17:00"
+    },
+    "Viernes": {
+      "enabled": true,
+      "open": "09:00",
+      "close": "17:00"
+    },
+    "Sábado": {
+      "enabled": true,
+      "open": "10:00",
+      "close": "15:00"
+    },
+    "Domingo": {
+      "enabled": false,
+      "open": "10:00",
+      "close": "15:00"
+    }
+  },
+  "siteId": "visual-preview-only",
+  "paymentRules": {},
+  "settings": {
+    "locale": "en",
+    "timezone": "America/Puerto_Rico"
+  }
+}
