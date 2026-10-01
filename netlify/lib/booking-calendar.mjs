@@ -12,7 +12,7 @@ export async function syncBookingCalendar(site, record) {
   const employee = (site.employees || []).find(item => item.id === record.employeeId);
   if (!site.googleCalendar?.connected) return { ...record, calendarSyncStatus: "not_connected", calendarSyncPending: true };
   if (!employee?.calendarId) return { ...record, calendarSyncStatus: "unassigned", calendarSyncPending: true };
-  const id = "wf" + crypto.createHash("sha256").update(`${site.siteId}:${record.transactionId}`).digest("hex");
+  const id = "bf" + crypto.createHash("sha256").update(`${site.siteId}:${record.transactionId}`).digest("hex");
   try {
     const event = await createGoogleEvent(site.siteId, employee.calendarId, {
       id,

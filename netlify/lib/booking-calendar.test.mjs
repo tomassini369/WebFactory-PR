@@ -25,7 +25,7 @@ function fixture(t){
 async function prepare(f){await clientSiteStore().setJSON(`sites/${f.site.siteId}.json`,f.site);await clientOAuthStore().setJSON(`tokens/${f.site.siteId}.json`,{encrypted:encryptToken({access_token:'test-token',expires_at:Date.now()+3600000})})}
 const request=(body)=>new Request('https://webfactorypr.com/.netlify/functions/client-commerce-admin',{method:'POST',headers:{Origin:'https://webfactorypr.com','Content-Type':'application/json'},body:JSON.stringify(body)});
 test('confirmed unpaid bookings sync and repeat safely after a lost response',async t=>{
- const f=fixture(t);await prepare(f);const one=await syncBookingCalendar(f.site,f.record);assert.equal(one.calendarSyncStatus,'synced');assert.match(one.googleEventId,/^wf[0-9a-f]{64}$/);
+ const f=fixture(t);await prepare(f);const one=await syncBookingCalendar(f.site,f.record);assert.equal(one.calendarSyncStatus,'synced');assert.match(one.googleEventId,/^bf[0-9a-f]{64}$/);
  await syncBookingCalendar(f.site,one);assert.equal(f.calls.length,1);
  const id=one.googleEventId;t.mock.method(globalThis,'fetch',async(url,opts)=>opts?.method==='POST'?Response.json({error:{message:'exists'}},{status:409}):Response.json({id,extendedProperties:{private:{webfactoryTransactionId:f.record.transactionId}}}));
  const retry=await syncBookingCalendar(f.site,f.record);assert.equal(retry.googleEventId,id);assert.equal(retry.calendarSyncPending,false);
