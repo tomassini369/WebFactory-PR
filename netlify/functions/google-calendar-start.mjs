@@ -22,7 +22,7 @@ export default async (req) => {
       access_type: "offline",
       prompt: "consent",
       include_granted_scopes: "true",
-      scope: "openid email https://www.googleapis.com/auth/calendar",
+      scope: "openid email https://www.googleapis.com/auth/calendar.calendarlist.readonly https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/calendar.events.freebusy",
       state,
     });
     return Response.redirect(`https://accounts.google.com/o/oauth2/v2/auth?${params}`, 302);
