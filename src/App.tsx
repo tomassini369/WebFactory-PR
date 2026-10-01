@@ -17,6 +17,8 @@ const SiteRedesignBuilder = lazy(() => import('./SiteRedesignBuilder'))
 // Preview-only visual comparison. Compiled out of production builds (see vite.config.ts).
 const PreviewReviewPage = typeof __WF_PREVIEW_REVIEW__ !== 'undefined' && __WF_PREVIEW_REVIEW__ ? lazy(() => import('./PreviewReviewPage')) : null
 
+const TemplateParityReview = __WF_PREVIEW_REVIEW__ ? lazy(() => import('./TemplateParityReview')) : null
+
 function RouteLoading(){
   return <main className="route-loading" role="status" aria-live="polite"><span/><b>Loading WebFactory…</b></main>
 }
@@ -59,6 +61,7 @@ function App(){
   const termsRoute = /^\/terms\/?$/.test(window.location.pathname)
   const refundRoute = /^\/refund-policy\/?$/.test(window.location.pathname)
 
+  if (TemplateParityReview && /^\/template-parity-preview\/?$/.test(window.location.pathname)) return <RouteView><TemplateParityReview/></RouteView>
   if (PreviewReviewPage && /^\/preview-review\/?$/.test(window.location.pathname)) return <RouteView><PreviewReviewPage lang={lang} setLang={setLang} /></RouteView>
   if (identityRecoveryRoute) return <RouteView><PasswordRecoveryPage /></RouteView>
   if (privacyRoute) return <RouteView><LegalPage kind="privacy" /></RouteView>

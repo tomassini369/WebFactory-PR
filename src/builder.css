@@ -189,7 +189,7 @@
 .wf-invite-banner{margin:0 0 18px;padding:14px 16px;display:grid;gap:4px;border:1px solid rgba(60,134,246,.28);border-radius:16px;background:linear-gradient(135deg,rgba(60,134,246,.10),rgba(77,150,243,.04));box-shadow:0 14px 35px rgba(60,134,246,.08)}.wf-invite-banner strong{color:#0b1529}.wf-invite-banner span{color:#5d6a7d;font-size:.78rem;line-height:1.5}
 
 /* Preview uses the live renderer in its own viewport so media queries match the published site. */
-.wf-template-preview-shell{width:100%;max-width:100%;margin:auto;overflow:auto;border:1px solid var(--line);border-radius:18px;background:#fff}
+.wf-template-preview-shell{width:100%;max-width:100%;margin:auto;overflow:hidden;border:1px solid var(--line);border-radius:18px;background:#fff}
 .wf-template-preview-frame{display:block;width:1280px;height:800px;border:0;background:#fff}
 .wf-template-preview-shell.tablet{width:min(768px,100%)}.wf-template-preview-shell.tablet .wf-template-preview-frame{width:768px}
 .wf-template-preview-shell.mobile{width:min(390px,100%)}.wf-template-preview-shell.mobile .wf-template-preview-frame{width:390px;height:740px}

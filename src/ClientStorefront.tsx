@@ -194,7 +194,7 @@ export default function ClientStorefront({slug,previewSite,previewLanguage='en'}
     kicker: site.business.kicker || businessCategory || '', headline: site.business.headline || businessName,
     description: businessDescription || '', heroImage, gallery: galleryImages, location: site.business.address || '', phone: site.features.calls ? site.business.phone || '' : '', hours,
     accent: styles['--template-accent' as keyof CSSProperties] as string, accent2: template?.accent2 || '', dark: site.design?.primary || template?.dark || '#0B1529', cream: template?.cream || '#F3F6FB',
-    features: activeFeatureLabels, items: visibleCatalog.map(item=>({id:item.id,type:item.type,name:itemName(item),description:itemDescription(item),price:item.price,image:item.imageUrl,appointment:item.requiresAppointment})),
+    features: activeFeatureLabels, items: visibleCatalog.map(item=>({id:item.id,type:item.type,name:itemName(item),description:itemDescription(item),price:item.price,image:item.imageUrl,appointment:item.requiresAppointment,employees:site.employees.filter(employee=>employee.serviceIds.includes(item.id)).map(employee=>employee.name)})),
     employees: site.features.bookings ? site.employees.map(employee=>({id:employee.id,name:employee.name,role:employeeRole(employee),initials:initials(employee.name),services:employee.serviceIds.map(id=>site.catalog.find(item=>item.id===id)).filter((item):item is Item=>Boolean(item)).map(itemName)})) : [],
     bookingLabel: t.book, bookingEnabled: Boolean(site.features.bookings && visibleCatalog.some(item=>item.requiresAppointment)), cartEnabled: site.features.cart!==false,
     aboutTitle: site.business.aboutTitle || businessName, aboutText: site.business.aboutText || businessDescription || '', trust: [],
