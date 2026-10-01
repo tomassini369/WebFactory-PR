@@ -176,9 +176,6 @@ export default function ClientStorefront({slug,previewSite,previewLanguage='en'}
   ].filter(Boolean) as string[]
   const heroImage=site.business.heroUrl||template?.heroImage||visibleCatalog.find(item=>item.imageUrl)?.imageUrl||''
   const galleryImages:string[]=site.business.galleryUrls?.length?site.business.galleryUrls:(template?.gallery||[])
-  const sectionOrder=site.design?.templateSlug?['catalog','team','about','gallery','contact']:(site.design?.sectionOrder?.length?site.design.sectionOrder:['catalog','team','about','gallery','contact'])
-  const sectionPosition=(key:string)=>sectionOrder.indexOf(key)>=0?sectionOrder.indexOf(key)+2:99
-  const customLayout=site.design?.templateSlug?'demo':(site.design?.customLayout||'split')
   const hours=formatHours(site.hours,lang)
   const initials=(name:string)=>name.split(/\s+/).slice(0,2).map((part:string)=>part[0]||'').join('').toUpperCase()
   const styles={
@@ -206,8 +203,8 @@ export default function ClientStorefront({slug,previewSite,previewLanguage='en'}
   const layoutUi = {...templateUi[lang], catalogIntro:businessDescription, teamIntro:lang==='es'?'Conoce a nuestro equipo y sus servicios.':'Meet our team and explore their services.', aboutTemplate: t.about, livePreview: lang==='es'?'RESERVACIONES Y COMPRAS':'BOOKINGS AND SHOPPING', templateMode: businessName, bookingPreview:lang==='es'?'Reserva tu próxima visita':'Book your next visit', commercePreview: t.catalog, interactHint:businessDescription, availabilityReady:lang==='es'?'Consulta los horarios disponibles':'Explore available times', commerceReady:t.catalog}
   const startLayoutBooking=(item?:TemplateItem)=>{const service=item?visibleCatalog.find(entry=>entry.id===item.id):visibleCatalog.find(entry=>entry.requiresAppointment);if(service)beginBooking(service)}
 
-  return <div className={`template-site client-template template-${site.design?.templateSlug||'custom'} custom-layout-${customLayout} visual-${visualStyle}`} style={styles}>
-    <TemplateLayout config={layoutConfig} ui={layoutUi} language={lang} setLanguage={setLang} startBooking={startLayoutBooking} setCatalogOpen={setCatalog} setCartOpen={open=>{setBooking(null);setCheckoutOpen(open)}} cart={cart} showcaseFeatures={activeFeatureLabels} logoUrl={site.business.logoUrl} locationHref={site.features.maps?site.business.mapsUrl:undefined} phoneHref={site.features.calls&&site.business.phone?`tel:${site.business.phone}`:undefined} catalogEnabled={site.features.products!==false||site.features.services!==false} mainClass={site.design?.templateSlug?'':'cs-custom-main'} sectionOrder={site.design?.templateSlug?undefined:sectionOrder}
+  return <div className={`template-site client-template template-${site.design?.templateSlug||'custom'} visual-${visualStyle}`} style={styles}>
+    <TemplateLayout config={layoutConfig} ui={layoutUi} language={lang} setLanguage={setLang} startBooking={startLayoutBooking} setCatalogOpen={setCatalog} setCartOpen={open=>{setBooking(null);setCheckoutOpen(open)}} cart={cart} showcaseFeatures={activeFeatureLabels} logoUrl={site.business.logoUrl} locationHref={site.features.maps?site.business.mapsUrl:undefined} phoneHref={site.features.calls&&site.business.phone?`tel:${site.business.phone}`:undefined} catalogEnabled={site.features.products!==false||site.features.services!==false}
       extraSections={locations.length>0&&<section className="template-section cs-locations" id="locations"><div className="template-section-heading"><div><small>{lang==='es'?'VISÍTANOS':'VISIT US'}</small><h2>{lang==='es'?'Nuestras localidades':'Our locations'}</h2></div></div><div className="cs-location-grid">{locations.map(location=><article key={location.id}><h3>{location.name}</h3>{location.address&&<p>{location.address}</p>}{location.phone&&<a href={`tel:${location.phone}`}>{location.phone}</a>}{location.mapsUrl&&<p><a href={location.mapsUrl} target="_blank" rel="noreferrer">Google Maps ↗</a></p>}</article>)}</div></section>}
       contact={<div className="cs-contact-grid">
           <div className="cs-contact-links">

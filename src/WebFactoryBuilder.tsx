@@ -525,8 +525,8 @@ function DesignStep({state,setState,lang}:{state:BuilderState;setState:Dispatch<
         <small>{lang==='es'?'PASO 2 · DISEÑO BASE':'STEP 2 · BASE DESIGN'}</small>
         <h3>{lang==='es'?'Elige cómo comenzará tu diseño.':'Choose how your design will begin.'}</h3>
         <p>{lang==='es'
-          ? 'Puedes mantener un diseño personalizado por WebFactory o escoger un Template como diseño base. Si eliges un Template, conservaremos su estructura, navegación y experiencia mientras sustituimos la marca y el contenido.'
-          : 'You can keep a custom WebFactory design or choose a Template as your base design. If you choose a Template, we will preserve its structure, navigation, and experience while replacing its branding and content.'}</p>
+          ? 'Custom y todos los Templates comparten el mismo layout de WebFactory. Personaliza colores, contenido, información e integraciones; la estructura y la navegación se mantienen.'
+          : 'Custom and every Template share the WebFactory layout. Personalize colors, content, business information and integrations while keeping the structure and navigation.'}</p>
       </div>
       <div className="wf-template-grid">
         <article className={`wf-template-custom ${state.design.templateSlug===''?'selected':''}`}>
@@ -538,7 +538,7 @@ function DesignStep({state,setState,lang}:{state:BuilderState;setState:Dispatch<
             <small>WEBFACTORY</small>
             <strong>{lang==='es'?'Diseño personalizado':'Custom design'}</strong>
           </button>
-          <em>{lang==='es'?'Construido según tu configuración actual':'Built from your current configuration'}</em>
+          <em>{lang==='es'?'Mismo layout premium · contenido propio':'Same premium layout · your own content'}</em>
         </article>
         {state.design.templateSlug!==''||templateGroupId?<>
           <div className="wf-template-category-picker">
@@ -560,41 +560,17 @@ function DesignStep({state,setState,lang}:{state:BuilderState;setState:Dispatch<
           ))}
         </>:null}
       </div>
-      {state.design.templateSlug===''&&<>
-        <div className="wf-step-intro compact"><small>{lang==='es'?'CUSTOM LAYOUT':'CUSTOM LAYOUT'}</small><h3>{lang==='es'?'Escoge la composición inicial.':'Choose the starting composition.'}</h3><p>{lang==='es'?'Estas opciones cambian la presentación sin depender de ningún Template.':'These options change the presentation without depending on a Template.'}</p></div>
-        <div className="wf-custom-layout-grid">
-          {[
-            ['split',lang==='es'?'Hero dividido':'Split hero'],
-            ['centered',lang==='es'?'Hero centrado':'Centered hero'],
-            ['editorial',lang==='es'?'Editorial':'Editorial'],
-            ['showcase',lang==='es'?'Visual / Showcase':'Visual / Showcase'],
-          ].map(([value,label])=><button type="button" key={value} className={state.design.customLayout===value?'selected':''} onClick={()=>setDesign('customLayout',value as BuilderState['design']['customLayout'])}><span className={'wf-custom-layout-art '+value}><i/><i/><i/></span><strong>{label}</strong></button>)}
-        </div>
-        <div className="wf-step-intro compact"><small>{lang==='es'?'ORDEN DE SECCIONES':'SECTION ORDER'}</small><h3>{lang==='es'?'Organiza el contenido.':'Arrange the content.'}</h3><p>{lang==='es'?'Usa las flechas para cambiar el orden. Hero permanece como portada.':'Use the arrows to change the order. Hero remains the cover.'}</p></div>
-        <div className="wf-section-order">
-          {state.design.sectionOrder.map((section,index)=>{
-            const labels:Record<string,string>={catalog:lang==='es'?'Catálogo':'Catalog',team:lang==='es'?'Equipo':'Team',about:'About',gallery:lang==='es'?'Galería':'Gallery',contact:lang==='es'?'Contacto':'Contact'}
-            const move=(direction:number)=>setState((current)=>{
-              const next=[...current.design.sectionOrder]; const target=index+direction
-              if(target<0||target>=next.length)return current
-              ;[next[index],next[target]]=[next[target],next[index]]
-              return {...current,design:{...current.design,sectionOrder:next}}
-            })
-            return <div key={section}><span>{index+1}. {labels[section]||section}</span><span><button type="button" disabled={index===0} onClick={()=>move(-1)}>↑</button><button type="button" disabled={index===state.design.sectionOrder.length-1} onClick={()=>move(1)}>↓</button></span></div>
-          })}
-        </div>
-      </>}
       <div className="wf-template-note">
         <strong>{state.design.templateSlug
           ? (lang==='es'?'El Template seleccionado será la base exacta de producción.':'The selected Template will be the exact production base.')
-          : (lang==='es'?'WebFactory creará un diseño personalizado.':'WebFactory will create a custom design.')}</strong>
+          : (lang==='es'?'Custom utiliza el mismo layout de los Templates.':'Custom uses the same layout as the Templates.')}</strong>
         <span>{lang==='es'
           ? (state.design.templateSlug
               ? 'El Template elegido se personaliza para tu negocio y mantiene su estructura y funciones compatibles.'
-              : 'Se utilizarán tu estilo, colores, contenido y funciones sin copiar obligatoriamente uno de los Templates.')
+              : 'Comienza con tu propia marca y contenido. El layout por defecto es el mismo; las secciones y acciones dependen de las funciones que actives.')
           : (state.design.templateSlug
               ? 'The chosen Template is customized for your business while preserving its structure and compatible features.'
-              : 'Your style, colors, content, and features will be used without requiring a copy of a Template.')}</span>
+              : 'Start with your own brand and content. The default layout stays the same; sections and actions follow the features you enable.')}</span>
       </div>
       <div className="wf-step-intro compact"><small>{lang==='es'?'PERSONALIZACIÓN':'CUSTOMIZATION'}</small><h3>{lang==='es'?'Ajusta estilo y colores.':'Adjust style and colors.'}</h3><p>{lang==='es'?'Estos cambios aplican tu identidad sobre el diseño base seleccionado. Todos los colores permanecen editables.':'These changes apply your identity to the selected base design. Every color remains editable.'}</p></div>
       <div className="wf-style-grid">

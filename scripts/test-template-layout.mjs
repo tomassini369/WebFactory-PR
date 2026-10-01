@@ -39,5 +39,13 @@ try {
     assert.ok(!card.includes('template-solid'), 'Disabled commerce/booking never renders an action button')
     checked++
   }
-  console.log(`Template layout regression: ${checked} template/language combinations passed; custom colors, content, media, feature gates and missing team verified.`)
+  const canonical={siteId:'custom-preview',slug:'custom',business:{name:'Custom business',description:'Own content',category:'Barber',heroUrl:'/own-hero.jpg',galleryUrls:['/own-1.jpg','/own-2.jpg']},design:{templateSlug:'northline-barber',style:'Modern',primary:'#123456',secondary:'#abcdef'},features:{services:true,products:false,bookings:false,cart:false},catalog:[],employees:[],hours:{},paymentRules:{},settings:{}}
+  const main=html=>html.match(/<main[^>]*>[\s\S]*?<\/main>/)[0]
+  const expected=main(renderToStaticMarkup(React.createElement(Storefront,{slug:'custom',previewSite:canonical})))
+  for(const legacyLayout of ['split','centered','editorial','showcase']) {
+    const custom=renderToStaticMarkup(React.createElement(Storefront,{slug:'custom',previewSite:{...canonical,design:{...canonical.design,templateSlug:'',customLayout:legacyLayout,sectionOrder:['contact','gallery','about','team','catalog']}}}))
+    assert.equal(main(custom),expected, `Custom with legacy ${legacyLayout} must use identical product layout and section order`)
+    assert.ok(!custom.includes('custom-layout-') && !custom.includes('cs-custom-main'))
+  }
+  console.log(`Template layout regression: ${checked} template/language combinations passed; custom colors, content, media, feature gates and missing team verified. Custom parity verified against all four legacy layouts.`)
 } finally { await server.close() }
