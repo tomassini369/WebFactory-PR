@@ -70,7 +70,7 @@ export async function sendEmail({ category = "team", to, subject, html, text, re
   const safeReplyTo = replyTo ? cleanAddress(replyTo) : (provider === "gmail" || provider === "gmail-fallback") && configuredFrom ? cleanAddress(configuredFrom) : undefined;
   const safeSubject = cleanHeader(subject, 240);
   if (!safeSubject) throw new Error("Email subject is required.");
-  const info = await nodemailer.createTransport(options).sendMail({
+  const info = await nodemailer.createTransport({ ...options, connectionTimeout: 8000, greetingTimeout: 8000, socketTimeout: 10000 }).sendMail({
     from: `"${cleanHeader(fromName, 120).replace(/"/g, "")}" <${fromAddress}>`,
     to: recipients,
     subject: safeSubject,

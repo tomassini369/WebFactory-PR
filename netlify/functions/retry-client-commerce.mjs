@@ -1,3 +1,4 @@
+import { deleteGoogleEvent } from "../lib/google-calendar.mjs";
 import { clientCommerceStore, clientSiteStore, commerceKey, getClientSite } from "../lib/client-store.mjs";
 import { sendBusinessCommerceEmail, sendCustomerCommerceEmail } from "../lib/client-notifications.mjs";
 import { syncBookingCalendar, bookingCanSync } from "../lib/booking-calendar.mjs";
@@ -14,7 +15,7 @@ export default async () => {
     for (const blob of (transactions.blobs || []).slice(0, 250)) {
       let record = await clientCommerceStore().get(blob.key, { type: "json" });
       if (!record || record.paymentStatus !== "paid") continue;
-      if (record.customerEmailSent && (record.businessEmailSent || !site.business?.email) && (record.kind !== "booking" || record.googleEventId || !site.googleCalendar?.connected)) continue;
+      if (record.customerEmailSent && (record.businessEmailSent || !site.business?.email) && (record.kind !== "booking" || (record.googleEventId && (!record.customerCalendarInviteRequested || record.customerCalendarInviteStatus === "sent")) || !site.googleCalendar?.connected)) continue;
       attempted += 1;
       try {
         const finalKey = commerceKey(siteId, record.kind === "booking" ? "bookings" : "orders", record.transactionId);
@@ -31,7 +32,14 @@ export default async () => {
     const bookings = await clientCommerceStore().list({ prefix: `${siteId}/bookings/` });
     for (const blob of bookings.blobs || []) {
       const record = await clientCommerceStore().get(blob.key, { type: "json" });
-      if (!record || !bookingCanSync(record) || record.googleEventId || Date.parse(record.end) < Date.now()) continue;
+      if (record?.status === "cancelled" && record.calendarCancellationPending && record.googleEventId) {
+        try {
+          await deleteGoogleEvent(siteId, record.googleCalendarId, record.googleEventId);
+          await clientCommerceStore().setJSON(blob.key, { ...record, calendarCancellationPending: false });
+        } catch { /* Keep retrying without restoring the cancelled appointment. */ }
+        continue;
+      }
+      if (!record || !bookingCanSync(record) || (record.googleEventId && (!record.customerCalendarInviteRequested || record.customerCalendarInviteStatus === "sent")) || Date.parse(record.end) < Date.now()) continue;
       const synced = await syncBookingCalendar(site, record);
       await clientCommerceStore().setJSON(blob.key, synced);
     }

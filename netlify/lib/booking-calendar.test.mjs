@@ -51,3 +51,23 @@ test('owner repairs existing due booking, repeat does not duplicate, and cancell
  await clientCommerceStore().setJSON(key,{...f.record,status:'cancelled'});assert.equal((await admin(request({...payload,action:'mark_paid'}))).status,409);
  globalThis.netlifyIdentityContext.user.email='other@example.invalid';assert.equal((await admin(request(payload))).status,403);
 });
+test('new bookings invite their customer with explicit updates and 24h/4h business reminders',async t=>{
+ const f=fixture(t);await prepare(f);t.mock.method(globalThis,'fetch',async(url,options)=>{f.calls.push({url,options});const body=JSON.parse(options.body);return Response.json({...body,id:body.id})});
+ const out=await syncBookingCalendar(f.site,{...f.record,customer:{name:'Test',email:'client@example.invalid'},customerCalendarInviteRequested:true});
+ assert.equal(out.customerCalendarInviteStatus,'sent');assert.equal(out.customerCalendarInviteEmail,'client@example.invalid');assert.match(f.calls[0].url,/sendUpdates=all/);
+ const body=JSON.parse(f.calls[0].options.body);assert.deepEqual(body.attendees,[{email:'client@example.invalid',displayName:'Test',responseStatus:'needsAction'}]);assert.deepEqual(body.reminders.overrides.map(x=>x.minutes),[1440,240]);
+ await syncBookingCalendar(f.site,out);assert.equal(f.calls.length,1);
+});
+test('existing event adds only the missing guest, preserving other attendees and does not resend',async t=>{
+ const f=fixture(t);await prepare(f);let event={id:'existing-event',attendees:[{email:'other@example.invalid',responseStatus:'accepted'}]};let patches=0;
+ t.mock.method(globalThis,'fetch',async(url,options={})=>{if(options.method==='PATCH'){patches++;assert.match(url,/sendUpdates=all/);event={...event,...JSON.parse(options.body)}}return Response.json(event)});
+ const record={...f.record,googleEventId:event.id,googleCalendarId:'primary',customer:{name:'Client',email:'client@example.invalid'},customerCalendarInviteRequested:true};
+ const out=await syncBookingCalendar(f.site,record);assert.equal(out.customerCalendarInviteStatus,'sent');assert.equal(event.attendees.length,2);assert.equal(event.attendees[0].responseStatus,'accepted');
+ await syncBookingCalendar(f.site,record);assert.equal(patches,1);
+});
+test('cancelling a booking notifies guests and leaves a retry flag on provider failure',async t=>{
+ const f=fixture(t);await prepare(f);const key=commerceKey(f.site.siteId,'bookings',f.record.transactionId);await clientCommerceStore().setJSON(key,{...f.record,googleEventId:'event',googleCalendarId:'primary'});
+ t.mock.method(globalThis,'fetch',async(url,options)=>{assert.equal(options.method,'DELETE');assert.match(url,/sendUpdates=all/);return new Response(null,{status:204})});
+ const payload={siteId:f.site.siteId,kind:'booking',transactionId:f.record.transactionId,action:'cancel'};assert.equal((await admin(request(payload))).status,200);assert.equal((await clientCommerceStore().get(key,{type:'json'})).status,'cancelled');
+ await clientCommerceStore().setJSON(key,{...f.record,googleEventId:'event',googleCalendarId:'primary'});t.mock.method(globalThis,'fetch',async()=>Response.json({error:{message:'Unavailable'}},{status:503}));await admin(request(payload));assert.equal((await clientCommerceStore().get(key,{type:'json'})).calendarCancellationPending,true);
+});
