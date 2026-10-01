@@ -19,6 +19,38 @@ html[data-wf-platform-theme="true"][data-wf-theme="dark"] :is(.ca-panel,.ca-card
 html[data-wf-platform-theme="true"][data-wf-theme="dark"] :is(.ca-panel,.ca-card) .ca-error{background:#4C202D}
 html[data-wf-platform-theme="true"][data-wf-theme="dark"] :is(.ca-panel,.ca-card) .ca-warning{background:#493717}
 
+/* Controls are surfaces too: an inherited light price cannot sit on a white POS tile. */
+html[data-wf-platform-theme="true"][data-wf-theme="dark"] :is(.ca-pos-catalog button,.ca-tax-presets button,.ca-quick-actions button,.ca-trial-start,.ca-quick-start,.ca-help-card){
+  background:var(--wf-theme-dark-surface-2);color:var(--wf-theme-dark-text);border-color:var(--wf-theme-dark-line);
+}
+html[data-wf-platform-theme="true"][data-wf-theme="dark"] :is(.ca-pos-catalog,.ca-pos-totals,.ca-tax-presets,.ca-quick-actions,.ca-help-card) :is(span,b,strong,h2){color:var(--wf-theme-dark-text)}
+html[data-wf-platform-theme="true"][data-wf-theme="dark"] :is(.ca-pos-catalog,.ca-tax-presets,.ca-quick-actions,.ca-help-card,.ca-trial-start) :is(small,p),
+html[data-wf-platform-theme="true"][data-wf-theme="dark"] :is(.ca-tax-presets button>span,.ca-trial-start>span,.ca-export-note){color:#B8C5D7}
+html[data-wf-platform-theme="true"][data-wf-theme="dark"] .ca-tax-presets button.active{background:#142B49;border-color:#72A9F7}
+html[data-wf-platform-theme="true"][data-wf-theme="dark"] .ca-pos-actions .secondary{background:#17243A;color:#F7FAFF;border-color:#72A9F7}
+/* Destructive actions retain a paired light surface and dark text in either theme. */
+html[data-wf-platform-theme="true"][data-wf-theme="dark"] .ca-danger-zone{color:#0B1529}
+html[data-wf-platform-theme="true"][data-wf-theme="dark"] .ca-danger-actions article{color:#0B1529}
+
+/* Builder editor surfaces follow the platform theme; business previews keep their own palette. */
+html[data-wf-platform-theme="true"][data-wf-theme="dark"] :is(.wf-upload,.wf-catalog-tile,.wf-builder-item-modal,.wf-custom-layout-grid>button,.wf-section-order>div,.wf-section-order button,.wf-template-category-picker,.wf-template-category-picker button,.wf-ai-proposal,.wf-payment-methods>article,.wf-payment-rules,.wf-after-payment,.wf-after-payment article){
+  background:var(--wf-theme-dark-surface-2);color:var(--wf-theme-dark-text);border-color:var(--wf-theme-dark-line);
+}
+html[data-wf-platform-theme="true"][data-wf-theme="dark"] :is(.wf-after-payment,.wf-ai-proposal) :is(h4,strong){color:var(--wf-theme-dark-text)}
+html[data-wf-platform-theme="true"][data-wf-theme="dark"] :is(.wf-template-note,.wf-hours-note,.wf-color-preferences,.wf-checkout-placeholder,.wf-after-payment,.wf-payment-methods,.wf-ai-proposal) :is(p,span),
+html[data-wf-platform-theme="true"][data-wf-theme="dark"] :is(.wf-ai-body>p,.wf-secure-note,.wf-field-help,.wf-template-grid article>button>em){color:#B8C5D7}
+html[data-wf-platform-theme="true"][data-wf-theme="dark"] .wf-ai-body textarea{background:#111B2D;color:#F7FAFF;border-color:#2B3C58}
+html[data-wf-platform-theme="true"][data-wf-theme="dark"] .wf-builder-item-modal>header{background:var(--wf-theme-dark-surface);color:var(--wf-theme-dark-text)}
+html[data-wf-platform-theme="true"][data-wf-theme="dark"] .wf-invite-banner strong{color:var(--wf-theme-dark-text)}
+html[data-wf-platform-theme="true"][data-wf-theme="dark"] .wf-invite-banner span{color:#B8C5D7}
+html[data-wf-platform-theme="true"][data-wf-theme="dark"] .wf-builder-item-modal>header>button,
+html[data-wf-platform-theme="true"][data-wf-theme="dark"] .wf-ai-proposal nav button.secondary{background:#17243A;color:#F7FAFF;border-color:#385071}
+html[data-wf-platform-theme="true"][data-wf-theme="dark"] .wf-template-category-picker button.active{background:#142B49;color:#F7FAFF;border-color:#72A9F7}
+html[data-wf-platform-theme="true"][data-wf-theme="dark"] .wf-payment-methods>article.selected{background:#142B49;border-color:#72A9F7}
+html[data-wf-platform-theme="true"][data-wf-theme="dark"] .wf-checkout-placeholder.success{background:#123C2D;color:#F7FAFF;border-color:#48886B}
+/* Native placeholders must remain readable rather than using browser-dependent dark colors. */
+html[data-wf-platform-theme="true"][data-wf-theme="dark"] :is(.ca-login,.ca-panel,.wfa-login,.wfa-provision,.wf-builder-app) :is(input,textarea)::placeholder{color:#A9B7C9;opacity:1}
+
 .ca-v3-table article.ca-integration-stripe{display:block}
 .ca-stripe-connection{width:100%;min-width:0}
 .ca-stripe-connection .ca-payment-status{flex-wrap:wrap;box-sizing:border-box}
