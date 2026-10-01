@@ -65,8 +65,8 @@ export async function settleAthPayment(session, payment) {
     if (current?.paymentRules?.ath?.credentialVersion === session.credentialVersion) {
       await patchClientSite(site.siteId, { paymentRules: { ...current.paymentRules, ath: { ...current.paymentRules.ath, status: "connected", verifiedAt: paidAt } } });
     }
-    try { if (record.customer?.email) await sendCustomerCommerceEmail(site, record); } catch { record.customerEmailPending = true; }
-    try { if (site.business?.email) await sendBusinessCommerceEmail(site, record); } catch { record.businessEmailPending = true; }
+    try { if (record.customer?.email) { await sendCustomerCommerceEmail(site, record); record.customerEmailSent = true; } } catch { record.customerEmailPending = true; }
+    try { if (site.business?.email) { await sendBusinessCommerceEmail(site, record); record.businessEmailSent = true; } } catch { record.businessEmailPending = true; }
     await store.setJSON(finalKey, record);
     await store.setJSON(key, record);
     return record;

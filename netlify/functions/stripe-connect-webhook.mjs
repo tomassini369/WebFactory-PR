@@ -1,3 +1,4 @@
+import { sendBookingConfirmationEmails } from "../lib/client-notifications.mjs";
 import crypto from "node:crypto";
 import { clientCommerceStore, clientEventStore, commerceKey, getClientSite, patchClientSite } from "../lib/client-store.mjs";
 import { syncBookingCalendar } from "../lib/booking-calendar.mjs";
@@ -105,6 +106,10 @@ async function finalizeTransaction(event) {
   await clientCommerceStore().setJSON(finalKey, record);
   await clientCommerceStore().setJSON(key, record);
 
+  record = await sendBookingConfirmationEmails(site,record,async value => {
+    await clientCommerceStore().setJSON(finalKey,value);
+    await clientCommerceStore().setJSON(key,value);
+  });
   return { record, pending: false };
 }
 
