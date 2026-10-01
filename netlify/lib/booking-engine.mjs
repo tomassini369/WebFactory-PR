@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 import { clientCommerceStore, commerceKey } from "./client-store.mjs";
 import { googleBusy } from "./google-calendar.mjs";
+import { withBookingLock } from "./booking-lock.mjs";
 
 const DAY_NAMES = { Sun: "Domingo", Mon: "Lunes", Tue: "Martes", Wed: "Miércoles", Thu: "Jueves", Fri: "Viernes", Sat: "Sábado" };
 
@@ -67,7 +68,7 @@ function slotsForSchedule({ date, schedule, service, blocks, timeZone }) {
   return slots.slice(0, 96);
 }
 
-export async function availabilityForDate(site, serviceId, employeeId, date, locationId = "") {
+export async function availabilityForDate(site, serviceId, employeeId, date, locationId = "", {strictGoogle=false} = {}) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) throw Object.assign(new Error("Invalid booking date."), { status: 400 });
   const { service, employee } = bookingServiceAndEmployee(site, serviceId, employeeId, locationId);
   const timeZone = site.settings?.timezone || "America/Puerto_Rico";
@@ -85,6 +86,7 @@ export async function availabilityForDate(site, serviceId, employeeId, date, loc
       googleReserved = (await googleBusy(site.siteId, employee.calendarId, dayStart.toISOString(), dayEnd.toISOString(), timeZone))
         .map((entry) => ({ start: Date.parse(entry.start), end: Date.parse(entry.end) }));
     } catch (error) {
+      if (strictGoogle) throw Object.assign(new Error("Calendar availability could not be verified. / No se pudo verificar la disponibilidad del calendario."),{status:503});
       console.error("google-freebusy", site.siteId, error?.message || error);
     }
   }
@@ -132,12 +134,15 @@ export async function availabilityForMonth(site, serviceId, employeeId, month, l
   return monthAvailabilityFromBlocks({ month, timeZone, service, employee, site, blocks, locationId });
 }
 
-export async function createBookingHold(site, { serviceId, employeeId, start, locationId = "" }) {
+export async function createBookingHold(site, { serviceId, employeeId, start, locationId = "" }, {strictGoogle=false} = {}) {
   const isoStart = new Date(start).toISOString();
   const parts = new Intl.DateTimeFormat("en-US", { timeZone: site.settings?.timezone || "America/Puerto_Rico", year: "numeric", month: "2-digit", day: "2-digit" })
     .formatToParts(new Date(isoStart)).reduce((acc, part) => ({ ...acc, [part.type]: part.value }), {});
   const localDate = `${parts.year}-${parts.month}-${parts.day}`;
-  const slots = await availabilityForDate(site, serviceId, employeeId, localDate, locationId);
+  const store=clientCommerceStore();
+  const lockKey=commerceKey(site.siteId,"booking-slot-locks",crypto.createHash("sha256").update(`${employeeId}:${localDate}`).digest("hex"));
+  return withBookingLock(store,lockKey,async()=>{
+  const slots = await availabilityForDate(site, serviceId, employeeId, localDate, locationId,{strictGoogle});
   const selected = slots.find((slot) => slot.start === isoStart);
   if (!selected) throw Object.assign(new Error("That time is no longer available."), { status: 409 });
   const holdId = `hold_${crypto.randomUUID()}`;
@@ -147,4 +152,5 @@ export async function createBookingHold(site, { serviceId, employeeId, start, lo
   };
   await clientCommerceStore().setJSON(commerceKey(site.siteId, "holds", holdId), hold);
   return hold;
+  });
 }

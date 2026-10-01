@@ -71,3 +71,8 @@ test('cancelling a booking notifies guests and leaves a retry flag on provider f
  const payload={siteId:f.site.siteId,kind:'booking',transactionId:f.record.transactionId,action:'cancel'};assert.equal((await admin(request(payload))).status,200);assert.equal((await clientCommerceStore().get(key,{type:'json'})).status,'cancelled');
  await clientCommerceStore().setJSON(key,{...f.record,googleEventId:'event',googleCalendarId:'primary'});t.mock.method(globalThis,'fetch',async()=>Response.json({error:{message:'Unavailable'}},{status:503}));await admin(request(payload));assert.equal((await clientCommerceStore().get(key,{type:'json'})).calendarCancellationPending,true);
 });
+
+ test('owner can preview a booking confirmation without modifying or sending it',async t=>{
+  const f=fixture(t);await prepare(f);await clientCommerceStore().setJSON(commerceKey(f.site.siteId,'bookings',f.record.transactionId),f.record);
+  const before=structuredClone([...f.rows]);const res=await admin(request({siteId:f.site.siteId,kind:'booking',transactionId:f.record.transactionId,action:'preview_confirmation'}));const body=await res.json();assert.equal(res.status,200);assert.match(body.html,/Alex/);assert.deepEqual([...f.rows],before);assert.equal(f.calls.length,0);
+ });

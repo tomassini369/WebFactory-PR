@@ -2,6 +2,8 @@ import { deleteGoogleEvent } from "../lib/google-calendar.mjs";
 import { clientCommerceStore, clientSiteStore, commerceKey, getClientSite } from "../lib/client-store.mjs";
 import { sendBusinessCommerceEmail, sendCustomerCommerceEmail, sendBookingConfirmationEmails } from "../lib/client-notifications.mjs";
 import { syncBookingCalendar, bookingCanSync } from "../lib/booking-calendar.mjs";
+import {finishBookingChange} from "../lib/booking-management.mjs";
+import {withBookingLock} from "../lib/booking-lock.mjs";
 
 export default async () => {
   const sitePointers = await clientSiteStore().list({ prefix: "sites/" });
@@ -15,7 +17,17 @@ export default async () => {
     for (const blob of (transactions.blobs || []).slice(0, 250)) {
       let record = await clientCommerceStore().get(blob.key, { type: "json" });
       if (!record || record.paymentStatus !== "paid") continue;
-      if (record.customerEmailSent && (record.businessEmailSent || !site.business?.email) && (record.kind !== "booking" || (record.googleEventId && (!record.customerCalendarInviteRequested || record.customerCalendarInviteStatus === "sent")) || !site.googleCalendar?.connected)) continue;
+      if(record.kind === "booking") {
+        // The booking is canonical after customer changes. Never restore stale paid transaction dates.
+        try { await withBookingLock(clientCommerceStore(),commerceKey(siteId,"booking-change-locks",record.transactionId),async()=>{
+          const bookingKey=commerceKey(siteId,"bookings",record.transactionId);
+          const canonical=await clientCommerceStore().get(bookingKey,{type:"json"});
+          if(canonical) await clientCommerceStore().setJSON(blob.key,canonical);
+          else await clientCommerceStore().setJSON(bookingKey,record,{onlyIfNew:true});
+        }); } catch { /* Another booking operation is active. */ }
+        continue;
+      }
+      if (record.customerEmailSent && (record.businessEmailSent || !site.business?.email) && (record.kind !== "booking" || (record.googleEventId && !record.calendarUpdatePending && (!record.customerCalendarInviteRequested || record.customerCalendarInviteStatus === "sent")) || !site.googleCalendar?.connected)) continue;
       attempted += 1;
       try {
         const finalKey = commerceKey(siteId, record.kind === "booking" ? "bookings" : "orders", record.transactionId);
@@ -31,18 +43,23 @@ export default async () => {
     // In-person appointments have no payment transaction: retry their calendar sync separately.
     const bookings = await clientCommerceStore().list({ prefix: `${siteId}/bookings/` });
     for (const blob of bookings.blobs || []) {
-      let record = await clientCommerceStore().get(blob.key, { type: "json" });
-      if (record?.status === "cancelled" && record.calendarCancellationPending && record.googleEventId) {
-        try {
-          await deleteGoogleEvent(siteId, record.googleCalendarId, record.googleEventId);
-          await clientCommerceStore().setJSON(blob.key, { ...record, calendarCancellationPending: false });
-        } catch { /* Keep retrying without restoring the cancelled appointment. */ }
-        continue;
-      }
-      if (record?.confirmationEmailRequested && bookingCanSync(record) && Date.parse(record.end) > Date.now()) record = await sendBookingConfirmationEmails(site,record,value=>clientCommerceStore().setJSON(blob.key,value));
-      if (!record || !bookingCanSync(record) || (record.googleEventId && (!record.customerCalendarInviteRequested || record.customerCalendarInviteStatus === "sent")) || Date.parse(record.end) < Date.now()) continue;
-      const synced = await syncBookingCalendar(site, record);
-      await clientCommerceStore().setJSON(blob.key, synced);
+      try { await withBookingLock(clientCommerceStore(),commerceKey(siteId,"booking-change-locks",blob.key.split('/').pop().replace(/\.json$/,'')),async()=>{
+        let record=await clientCommerceStore().get(blob.key,{type:"json"});
+        if(!record) return;
+        if(record.managementRevision && ((!record.changeCustomerEmailSent && record.customer?.email) || (!record.changeBusinessEmailSent && site.business?.email) || record.calendarUpdatePending || record.calendarCancellationPending)) record=await finishBookingChange(site,record);
+        if(record.status === "cancelled") {
+          if(record.calendarCancellationPending && record.googleEventId) {
+            try {await deleteGoogleEvent(siteId,record.googleCalendarId,record.googleEventId);await clientCommerceStore().setJSON(blob.key,{...record,calendarCancellationPending:false});} catch { /* Retry later. */ }
+          }
+          return;
+        }
+        if(!bookingCanSync(record) || Date.parse(record.end)<Date.now()) return;
+        if(!record.managementRevision && (record.confirmationEmailRequested || record.paymentStatus === "paid")) record=await sendBookingConfirmationEmails(site,record,value=>clientCommerceStore().setJSON(blob.key,value));
+        if(!record.googleEventId || record.calendarUpdatePending || (record.customerCalendarInviteRequested && record.customerCalendarInviteStatus !== "sent")) record=await syncBookingCalendar(site,record);
+        await clientCommerceStore().setJSON(blob.key,record);
+        const transactionKey=commerceKey(siteId,"transactions",record.transactionId);
+        if(await clientCommerceStore().get(transactionKey,{type:"json"})) await clientCommerceStore().setJSON(transactionKey,record);
+      }); } catch { /* Do not overwrite another booking operation. */ }
     }
     const holds = await clientCommerceStore().list({ prefix: `${siteId}/holds/` });
     for (const blob of holds.blobs || []) {

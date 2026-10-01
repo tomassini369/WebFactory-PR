@@ -76,6 +76,7 @@ export async function refreshGoogleToken(siteId) {
 export async function googleApi(siteId, path, options = {}) {
   const token = await refreshGoogleToken(siteId);
   const response = await fetch(`https://www.googleapis.com${path}`, {
+    signal: AbortSignal.timeout(15000),
     ...options,
     headers: { Authorization: `Bearer ${token.access_token}`, "Content-Type": "application/json", ...(options.headers || {}) },
   });
@@ -133,4 +134,12 @@ export async function deleteGoogleEvent(siteId, calendarId, eventId) {
   try {
     await googleApi(siteId, `/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events/${encodeURIComponent(eventId)}?sendUpdates=all`, { method: "DELETE" });
   } catch (error) { if (![404, 410].includes(error.status)) throw error; }
+}
+
+export async function updateBookingGoogleEvent(siteId, calendarId, eventId, record, timeZone) {
+  const path = `/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events/${encodeURIComponent(eventId)}`;
+  const current = await googleApi(siteId,path);
+  if (current.status === "cancelled" || current.extendedProperties?.private?.webfactoryTransactionId !== record.transactionId) throw new Error("Calendar appointment does not match.");
+  if (Date.parse(current.start?.dateTime) === Date.parse(record.start) && Date.parse(current.end?.dateTime) === Date.parse(record.end)) return current;
+  return googleApi(siteId,`${path}?sendUpdates=all`,{method:"PATCH",body:JSON.stringify({start:{dateTime:record.start,timeZone},end:{dateTime:record.end,timeZone},reminders:{useDefault:false,overrides:[{method:"popup",minutes:1440},{method:"popup",minutes:240}]}})});
 }

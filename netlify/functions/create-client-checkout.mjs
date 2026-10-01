@@ -1,5 +1,6 @@
 import { syncBookingCalendar } from "../lib/booking-calendar.mjs";
 import { sendBookingConfirmationEmails } from "../lib/client-notifications.mjs";
+import { bookingManageUrl } from "../lib/booking-email-template.mjs";
 import { bookingCalendarUrl } from "../lib/booking-calendar-export.mjs";
 import crypto from "node:crypto";
 import { createBookingHold } from "../lib/booking-engine.mjs";
@@ -129,7 +130,7 @@ export default async (req) => {
       transactionId, siteId: site.siteId, kind, customer, items, locationId, locationName: selectedLocation?.name || "", holdId: hold?.holdId || "",
       serviceId: hold?.serviceId || "", employeeId: hold?.employeeId || "", start: hold?.start || "", end: hold?.end || "",
       subtotal, tax: taxCents, amountTotal: subtotal + (site.taxConfig?.pricesIncludeTax ? 0 : taxCents), currency: "usd",
-      ...(kind === "booking" ? { customerCalendarInviteRequested: true, confirmationEmailRequested: true, calendarToken: crypto.randomBytes(32).toString("base64url") } : {}),
+      ...(kind === "booking" ? { language:lang, bookingCode:crypto.randomBytes(4).toString("hex").toUpperCase(), customerCalendarInviteRequested: true, confirmationEmailRequested: true, calendarToken: crypto.randomBytes(32).toString("base64url") } : {}),
       paymentStatus: inPerson ? "due" : "pending", status: inPerson ? "confirmed" : "payment_pending",
       createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
     };
@@ -148,7 +149,7 @@ export default async (req) => {
       record = await syncBookingCalendar(site, record);
       await clientCommerceStore().setJSON(commerceKey(site.siteId, kind === "booking" ? "bookings" : "orders", transactionId), record);
       record = await sendBookingConfirmationEmails(site,record, value => clientCommerceStore().setJSON(commerceKey(site.siteId,"bookings",transactionId),value));
-      return Response.json({ ok: true, calendarUrl:bookingCalendarUrl(record), paymentRequired: false, transactionId, status: record.status, calendarSyncStatus: record.calendarSyncStatus, ...(trackingToken ? { trackingUrl: `${publicBaseUrl()}/track/${trackingToken}` } : {}) });
+      return Response.json({ ok: true, calendarUrl:bookingCalendarUrl(record), manageUrl:bookingManageUrl(record), paymentRequired: false, transactionId, status: record.status, calendarSyncStatus: record.calendarSyncStatus, ...(trackingToken ? { trackingUrl: `${publicBaseUrl()}/track/${trackingToken}` } : {}) });
     }
 
     if(payload.paymentProvider === "ath_movil") {

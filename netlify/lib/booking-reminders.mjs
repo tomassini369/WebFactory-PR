@@ -1,11 +1,12 @@
 import crypto from "node:crypto";
 import { clientCommerceStore, commerceKey } from "./client-store.mjs";
+import { renderBookingEmail } from "./booking-email-template.mjs";
 import { sendEmail } from "./email.mjs";
 
 const validEmail = value => /^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(String(value || ""));
 export function dueBookingReminders(record, now = Date.now()) {
   if (record.kind !== "booking" || record.status !== "confirmed") return [];
-  const start = Date.parse(record.start), created = Date.parse(record.createdAt);
+  const start = Date.parse(record.start), created = Date.parse(record.rescheduledAt || record.createdAt);
   if (!Number.isFinite(start) || start <= now) return [];
   return [24, 4].filter(hours => {
     const due = start - hours * 3600000;
@@ -32,10 +33,8 @@ export async function sendBookingReminders(site, record, now = Date.now(), deadl
         // Recheck cancellation after claiming the reminder, immediately before sending.
         const current = await store.get(commerceKey(site.siteId, "bookings", record.transactionId), { type: "json" });
         if (!current || current.status !== "confirmed" || current.start !== record.start) { await store.delete(key); continue; }
-        const appointment = new Date(record.start).toLocaleString("es-PR", { timeZone: site.settings?.timezone || "America/Puerto_Rico", dateStyle: "full", timeStyle: "short" });
         await sendEmail({ category: "team", fromName: site.business?.name || "WebFactory Business", to: email,
-          subject: `${site.business?.name || "Business"} — recordatorio de cita (${hours} h)`,
-          text: `Recordatorio de reservación / Appointment reminder\n\n${record.customer?.name || "Cliente"} · ${record.items?.[0]?.name || "Cita"}\n${appointment}\nZona horaria: ${site.settings?.timezone || "America/Puerto_Rico"}\nConfirmación: ${record.transactionId}\n\nTu cita está confirmada. Contacta al negocio si necesitas cambiarla. / Your appointment is confirmed. Contact the business if you need to change it.`,
+          ...renderBookingEmail(site,record,{audience:email===record.customer?.email?.trim().toLowerCase()?"customer":"business",change:"reminder",hours}),
           headers: { "Message-ID": `<booking-reminder-${hash}@webfactorypr.com>` },
         });
         await store.setJSON(key, { status: "sent", sentAt: new Date().toISOString(), transactionId: record.transactionId, hours });

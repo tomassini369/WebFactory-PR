@@ -1,3 +1,5 @@
+import {renderBookingEmail} from "../lib/booking-email-template.mjs";
+import {finishBookingChange} from "../lib/booking-management.mjs";
 import { syncBookingCalendar, bookingCanSync } from "../lib/booking-calendar.mjs";
 import { assertSameOrigin, errorResponse, requireSiteAccess, requireSiteCapability } from "../lib/client-auth.mjs";
 import { clientCommerceStore, commerceKey } from "../lib/client-store.mjs";
@@ -39,6 +41,10 @@ export default async (req) => {
     const kind = payload.kind === "booking" ? "bookings" : "orders";
     const key = commerceKey(site.siteId, kind, payload.transactionId);
     let record = await clientCommerceStore().get(key, { type: "json" });
+    if(payload.action === "preview_confirmation" && record && !["confirmed","completed","cancelled"].includes(record.status)) throw Object.assign(new Error("Only confirmed or cancelled appointments have confirmations."),{status:409});
+    if(payload.action === "preview_confirmation" && kind === "bookings" && record) return Response.json({ok:true,html:renderBookingEmail(site,record,{change:record.status === "cancelled"?"cancelled":"confirmed"}).html},{headers:{"Cache-Control":"no-store"}});
+    const recordMetadata=record?.calendarToken ? await clientCommerceStore().getWithMetadata(key,{type:"json"}) : null;
+    if(recordMetadata?.data) record=recordMetadata.data;
     if (!record) throw Object.assign(new Error("Transaction not found."), { status: 404 });
     if (["employee", "cashier", "staff"].includes(membership?.role) && (site.business?.locations || []).length > 0 && !(membership.locationIds || []).includes(record.locationId)) {
       throw Object.assign(new Error("This account is not assigned to the order location."), { status: 403 });
@@ -50,11 +56,11 @@ export default async (req) => {
       if (!["received", "preparing", "ready", "completed"].includes(kitchenStatus)) throw Object.assign(new Error("Invalid kitchen status."), { status: 400 });
       record = { ...record, kitchenStatus, updatedAt: new Date().toISOString() };
     } else if (payload.action === "cancel" && kind === "bookings") {
-      if (record.googleEventId) {
+      if (record.googleEventId && !record.calendarToken) {
         try { await deleteGoogleEvent(site.siteId, record.googleCalendarId, record.googleEventId); record.calendarCancellationPending = false; }
         catch { record.calendarCancellationPending = true; }
       }
-      record = { ...record, status: "cancelled", cancelledAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+      record = { ...record, ...(record.calendarToken?{managementRevision:crypto.randomUUID(),managementChange:"cancelled",changeCustomerEmailSent:false,changeBusinessEmailSent:false,calendarCancellationPending:Boolean(record.googleEventId),calendarUpdatePending:false}:{}), status: "cancelled", cancelledAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
     } else if (payload.action === "invite_customer" && kind === "bookings") {
       if (!bookingCanSync(record) || Date.parse(record.end) <= Date.now()) throw Object.assign(new Error("Only active appointments can send invitations."), { status: 409 });
       record = await syncBookingCalendar(site, { ...record, customerCalendarInviteRequested: true });
@@ -184,9 +190,11 @@ export default async (req) => {
       throw Object.assign(new Error("Unsupported transaction action."), { status: 400 });
     }
     if (payload.action === "mark_paid" && kind === "bookings") record = await syncBookingCalendar(site, record);
-    await clientCommerceStore().setJSON(key, record);
+    const write=await clientCommerceStore().setJSON(key,record,recordMetadata?.etag?{onlyIfMatch:recordMetadata.etag}:{});
+    if(recordMetadata?.etag && !write.modified) throw Object.assign(new Error("The booking changed. Reload and try again."),{status:409});
     const transactionKey = commerceKey(site.siteId, "transactions", record.transactionId);
     if (await clientCommerceStore().get(transactionKey)) await clientCommerceStore().setJSON(transactionKey, record);
+    if(payload.action === "cancel" && record.calendarToken) record=await finishBookingChange(site,record);
     return Response.json({ ok: true, record }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) { return errorResponse(error); }
 };
