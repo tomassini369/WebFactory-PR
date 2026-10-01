@@ -1,6 +1,6 @@
 import crypto from "node:crypto";
 import { clientCommerceStore, clientEventStore, commerceKey, getClientSite, patchClientSite } from "../lib/client-store.mjs";
-import { createGoogleEvent } from "../lib/google-calendar.mjs";
+import { syncBookingCalendar } from "../lib/booking-calendar.mjs";
 import { createCustomerRecord, createInventoryMovement, createReceiptRecord } from "../lib/webfactory-v3-domain.mjs";
 import { getV3Record, putV3Record } from "../lib/webfactory-v3-store.mjs";
 
@@ -101,23 +101,9 @@ async function finalizeTransaction(event) {
   await clientCommerceStore().setJSON(finalKey, record);
   if (record.holdId) await clientCommerceStore().delete(commerceKey(siteId, "holds", record.holdId));
 
-  if (record.kind === "booking" && !record.googleEventId && site.googleCalendar?.connected) {
-    const employee = (site.employees || []).find((item) => item.id === record.employeeId);
-    try {
-      const calendarEvent = await createGoogleEvent(siteId, employee?.calendarId, {
-        summary: `${record.items?.[0]?.name || "Appointment"} — ${record.customer?.name || "Customer"}`,
-        description: `WebFactory booking ${record.transactionId}\nCustomer: ${record.customer?.email || ""}\nPhone: ${record.customer?.phone || ""}`,
-        start: { dateTime: record.start, timeZone: site.settings?.timezone || "America/Puerto_Rico" },
-        end: { dateTime: record.end, timeZone: site.settings?.timezone || "America/Puerto_Rico" },
-      });
-      if (calendarEvent?.id) {
-        record.googleEventId = calendarEvent.id;
-        record.googleCalendarId = employee.calendarId;
-        await clientCommerceStore().setJSON(finalKey, record);
-        await clientCommerceStore().setJSON(key, record);
-      }
-    } catch (error) { console.error("google-calendar-event", transactionId, error?.message || error); }
-  }
+  record = await syncBookingCalendar(site, record);
+  await clientCommerceStore().setJSON(finalKey, record);
+  await clientCommerceStore().setJSON(key, record);
 
   return { record, pending: false };
 }

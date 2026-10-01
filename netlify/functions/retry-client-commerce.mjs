@@ -1,6 +1,6 @@
 import { clientCommerceStore, clientSiteStore, commerceKey, getClientSite } from "../lib/client-store.mjs";
 import { sendBusinessCommerceEmail, sendCustomerCommerceEmail } from "../lib/client-notifications.mjs";
-import { createGoogleEvent } from "../lib/google-calendar.mjs";
+import { syncBookingCalendar, bookingCanSync } from "../lib/booking-calendar.mjs";
 
 export default async () => {
   const sitePointers = await clientSiteStore().list({ prefix: "sites/" });
@@ -18,16 +18,7 @@ export default async () => {
       attempted += 1;
       try {
         const finalKey = commerceKey(siteId, record.kind === "booking" ? "bookings" : "orders", record.transactionId);
-        if (record.kind === "booking" && !record.googleEventId && site.googleCalendar?.connected) {
-          const employee = (site.employees || []).find((item) => item.id === record.employeeId);
-          const event = await createGoogleEvent(siteId, employee?.calendarId, {
-            summary: `${record.items?.[0]?.name || "Appointment"} — ${record.customer?.name || "Customer"}`,
-            description: `WebFactory booking ${record.transactionId}`,
-            start: { dateTime: record.start, timeZone: site.settings?.timezone || "America/Puerto_Rico" },
-            end: { dateTime: record.end, timeZone: site.settings?.timezone || "America/Puerto_Rico" },
-          });
-          if (event?.id) { record.googleEventId = event.id; record.googleCalendarId = employee?.calendarId; }
-        }
+        record = await syncBookingCalendar(site, record);
         if (!record.customerEmailSent) { await sendCustomerCommerceEmail(site, record); record.customerEmailSent = true; }
         if (!record.businessEmailSent && site.business?.email) { await sendBusinessCommerceEmail(site, record); record.businessEmailSent = true; }
         record.emailsSentAt = new Date().toISOString();
@@ -35,6 +26,14 @@ export default async () => {
         await clientCommerceStore().setJSON(finalKey, record);
         completed += 1;
       } catch (error) { console.error("retry-client-commerce", record.transactionId, error?.message || error); }
+    }
+    // In-person appointments have no payment transaction: retry their calendar sync separately.
+    const bookings = await clientCommerceStore().list({ prefix: `${siteId}/bookings/` });
+    for (const blob of bookings.blobs || []) {
+      const record = await clientCommerceStore().get(blob.key, { type: "json" });
+      if (!record || !bookingCanSync(record) || record.googleEventId || Date.parse(record.end) < Date.now()) continue;
+      const synced = await syncBookingCalendar(site, record);
+      await clientCommerceStore().setJSON(blob.key, synced);
     }
     const holds = await clientCommerceStore().list({ prefix: `${siteId}/holds/` });
     for (const blob of holds.blobs || []) {
