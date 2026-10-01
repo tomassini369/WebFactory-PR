@@ -80,8 +80,8 @@ export default async(req)=>{
           account_onboarding:{
             collection_options:{fields:"eventually_due"},
             configurations:["merchant"],
-            return_url:`${base}/client-admin?stripe=returned`,
-            refresh_url:`${base}/client-admin?stripe=refresh`,
+            return_url:`${base}/client-admin?stripe=returned&siteId=${encodeURIComponent(site.siteId)}`,
+            refresh_url:`${base}/client-admin?stripe=refresh&siteId=${encodeURIComponent(site.siteId)}`,
           },
         },
       },
