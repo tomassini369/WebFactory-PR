@@ -67,6 +67,9 @@ html[data-wf-platform-theme="true"][data-wf-theme="dark"] .wf-pay-card .portal-l
 .ca-stripe-connection .ca-payment-status{flex-wrap:wrap;box-sizing:border-box}
 .ca-stripe-connection .ca-payment-status>div{min-width:0;overflow-wrap:anywhere}
 .ca-ath-configuration{margin-top:20px}
+.ca-dashboard .ca-sidebar .ca-business-id{background:#121C2E;color:#F7FAFF}
+.ca-dashboard .ca-sidebar .ca-business-id strong{color:#F7FAFF}
+.ca-dashboard .ca-sidebar .ca-business-id span{color:#B8C5D7}
 
 .wf-theme-toggle{
   width:58px;height:58px;padding:0;display:inline-flex;align-items:center;justify-content:center;
