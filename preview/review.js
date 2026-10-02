@@ -10,7 +10,7 @@ const update = (load) => {
   // These are built, isolated preview entries. No real backend is reachable
   // through either entry's fetch adapter. A srcdoc frame supplies a real mobile
   // layout viewport, so all existing media queries and reduced-motion work.
-  if (load) frame.srcdoc = pages[surface].replace('<head>', '<head><base target="_top">')
+  if (load) frame.srcdoc = pages[surface].replace('<head>', '<head><base href="/" target="_top">')
   history.replaceState(null, '', `?surface=${surface}&device=${device}`)
 }
 document.querySelectorAll('[data-surface]').forEach(button => button.addEventListener('click', () => { surface = button.dataset.surface; update(true) }))
