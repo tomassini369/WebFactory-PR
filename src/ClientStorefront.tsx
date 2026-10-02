@@ -1,3 +1,4 @@
+import {templateButtonInk} from './templateVisual'
 import CatalogCard from './TemplateCatalogCard'
 import TemplateLayout from './TemplateLayout'
 import { templateUi } from './templateI18n'
@@ -185,6 +186,7 @@ export default function ClientStorefront({slug,previewSite,previewLanguage='en'}
   const initials=(name:string)=>name.split(/\s+/).slice(0,2).map((part:string)=>part[0]||'').join('').toUpperCase()
   const styles={
     '--template-accent':site.design?.secondary||template?.accent||'#3C86F6',
+    '--template-button-ink':templateButtonInk(site.design?.secondary||template?.accent||'#3C86F6'),
     '--template-accent-2':template?.accent2||site.design?.secondary||'#4D96F3',
     '--template-dark':site.design?.primary||template?.dark||'#0B1529',
     '--template-cream':template?.cream||'#F3F6FB',

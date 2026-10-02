@@ -5,6 +5,7 @@ import { ThemeProvider } from './theme'
 import './styles.css'
 import './v3-system.css'
 import './theme.css'
+import './liquid-glass.css'
 
 const adminPwaRoutes: Record<string, string> = {
   '/webfactory-admin': '/manifest-webfactory-admin.webmanifest',

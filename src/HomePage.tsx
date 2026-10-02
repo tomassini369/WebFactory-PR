@@ -2,6 +2,8 @@ import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { AdaptiveLogo, ThemeToggle } from './theme'
 import { FeedbackPreferences } from './feedback/FeedbackPreferences'
 import './home-premium.css'
+import './home-apple.css'
+import { useSelectionPill } from './useSelectionPill'
 
 type Language = 'en' | 'es'
 
@@ -266,6 +268,7 @@ function QrShareDemo({ t }: { t: Copy }) {
 
 function InteractiveDemo({ t }: { t: Copy }) {
   const [tab, setTab] = useState(0)
+  const { group, pill } = useSelectionPill(`${tab}:${t.explore}`)
   const [quantity, setQuantity] = useState(0)
   const [professional, setProfessional] = useState('A')
   const [time, setTime] = useState('10:00 AM')
@@ -282,7 +285,7 @@ function InteractiveDemo({ t }: { t: Copy }) {
   const texts = [t.sellText, t.bookText, t.payText, t.manageText]
   const tabIcons = ['sales', 'bookings', 'payments', 'reports']
   return <div className="wf-demo" data-reveal>
-    <div className="wf-demo-tabs" role="tablist" aria-label={t.explore}>{t.tabs.map((label, i) => <button key={label} id={`wf-demo-tab-${i}`} role="tab" aria-selected={tab === i} aria-controls="wf-demo-panel" tabIndex={tab === i ? 0 : -1} onKeyDown={e => { if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { e.preventDefault(); const next = (i + (e.key === 'ArrowRight' ? 1 : t.tabs.length - 1)) % t.tabs.length; setTab(next); document.getElementById(`wf-demo-tab-${next}`)?.focus() } }} onClick={() => setTab(i)}><Icon name={tabIcons[i]} />{label}</button>)}<span className="wf-demo-badge">{t.sample}</span></div>
+    <div className="wf-demo-tabs"><div className="wf-demo-segments" ref={group} role="tablist" aria-label={t.explore}><span ref={pill} className="wf-selection-pill" aria-hidden="true" />{t.tabs.map((label, i) => <button key={label} id={`wf-demo-tab-${i}`} role="tab" aria-selected={tab === i} aria-controls="wf-demo-panel" tabIndex={tab === i ? 0 : -1} onKeyDown={e => { if (['ArrowRight', 'ArrowLeft', 'Home', 'End'].includes(e.key)) { e.preventDefault(); const next = e.key === 'Home' ? 0 : e.key === 'End' ? t.tabs.length - 1 : (i + (e.key === 'ArrowRight' ? 1 : t.tabs.length - 1)) % t.tabs.length; setTab(next); document.getElementById(`wf-demo-tab-${next}`)?.focus() } }} onClick={() => setTab(i)}><Icon name={tabIcons[i]} />{label}</button>)}</div><span className="wf-demo-badge">{t.sample}</span></div>
     <div className="wf-demo-content" id="wf-demo-panel" role="tabpanel" aria-labelledby={`wf-demo-tab-${tab}`} tabIndex={0} key={tab}>
       <div className="wf-demo-copy"><span className="wf-num">0{tab + 1}</span><h3>{titles[tab]}</h3><p>{texts[tab]}</p><small>{t.demoNote}</small></div>
       {tab === 0 && <div className="wf-demo-shop">
@@ -430,12 +433,7 @@ export default function HomePage({ lang, setLang }: { lang: Language, setLang: (
             <div className="wf-actions"><a className="wf-btn" href="/builder">{t.start}<span aria-hidden="true">↗</span></a><a className="wf-link" href="/templates">{t.templates} →</a></div>
             <p className="wf-trial">{t.trial}</p>
           </div>
-          <div className="wf-hero-visual">
-            <div className="wf-hero-stage" role="img" aria-label={t.heroAlt}><ControlFrame t={t} step={4} only /></div>
-            <div className="wf-float wf-float-a" aria-hidden="true"><Icon name="website" /><span>{t.modules[0]}<small>EN · ES</small></span></div>
-            <div className="wf-float wf-float-b" aria-hidden="true"><Icon name="bookings" /><span>{t.bookingSample}<small>10:00 AM · {t.confirmed}</small></span></div>
-            <div className="wf-float wf-float-c" aria-hidden="true"><Icon name="payments" /><span>{t.paid}<small>$45.00 · {t.sample}</small></span></div>
-          </div>
+
         </div>
         <a className="wf-scroll-cue" href="#recorrido"><span aria-hidden="true" />{t.scroll}</a>
       </section>

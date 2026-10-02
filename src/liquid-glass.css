@@ -1,0 +1,105 @@
+/* Restrained glass finish. No scroll handlers, filters on media, or layout changes. */
+:root{
+  --glass-card:rgba(255,255,255,.84);
+  --glass-chrome:rgba(244,249,255,.68);
+  --glass-solid:#f8fbff;
+  --glass-line:rgba(147,177,218,.42);
+  --glass-highlight:rgba(255,255,255,.78);
+  --glass-shadow:0 14px 36px -24px rgba(20,53,100,.28);
+  --glass-page:#f0f5fc;
+  --glass-glow:rgba(78,144,246,.16);
+}
+html[data-wf-theme=dark]{
+  --glass-card:rgba(17,29,49,.86);
+  --glass-chrome:rgba(13,25,45,.68);
+  --glass-solid:#111d31;
+  --glass-line:rgba(133,175,232,.23);
+  --glass-highlight:rgba(206,231,255,.18);
+  --glass-shadow:0 18px 46px -26px rgba(0,0,0,.65);
+  --glass-page:#080f1d;
+  --glass-glow:rgba(62,126,232,.2);
+}
+
+/* Color behind the panes makes translucency visible without competing with data. */
+html[data-wf-platform-theme=true][data-wf-theme] :is(.ca-page,.ca-dashboard,.wfa-login-page,.wfa-dashboard){
+  background:radial-gradient(ellipse at 92% 8%,var(--glass-glow),transparent 42rem),radial-gradient(ellipse at 12% 55%,var(--glass-glow),transparent 36rem),var(--glass-page);
+}
+html[data-wf-platform-theme=true][data-wf-theme] :is(.ca-login,.wfa-login,.ca-panel,.ca-card,.wfa-card,.wfa-stat,.ca-v3-metrics>article,.bcc-metrics>article,.bcc-card){
+  background:linear-gradient(145deg,rgba(255,255,255,.065),transparent 45%),var(--glass-card);
+  border-color:var(--glass-line);
+  box-shadow:inset 0 1px 0 var(--glass-highlight),var(--glass-shadow);
+  -webkit-backdrop-filter:blur(18px) saturate(135%);
+  backdrop-filter:blur(18px) saturate(135%);
+}
+html[data-wf-platform-theme=true][data-wf-theme] :is(.ca-sidebar,.wfa-sidebar){
+  background:linear-gradient(155deg,rgba(133,181,255,.12),transparent 40%),rgba(8,20,39,.9);
+  border-right:1px solid rgba(164,199,246,.2);
+  box-shadow:inset -1px 0 0 rgba(255,255,255,.06);
+  -webkit-backdrop-filter:blur(22px) saturate(145%);
+  backdrop-filter:blur(22px) saturate(145%);
+}
+html[data-wf-platform-theme=true][data-wf-theme] :is(.ca-sidebar,.wfa-sidebar) :is(.ca-nav-groups details,nav button.active){
+  background:linear-gradient(135deg,rgba(176,210,255,.11),rgba(95,154,234,.04));
+  border-color:rgba(166,200,246,.18);
+  box-shadow:inset 0 1px 0 rgba(226,241,255,.09);
+}
+html[data-wf-platform-theme=true][data-wf-theme] .bcc-hero{
+  background:linear-gradient(120deg,rgba(20,47,87,.94),rgba(36,78,139,.84));
+  border-color:rgba(159,197,249,.3);
+  box-shadow:inset 0 1px 0 rgba(223,239,255,.22),var(--glass-shadow);
+  -webkit-backdrop-filter:blur(18px) saturate(135%);
+  backdrop-filter:blur(18px) saturate(135%);
+}
+html[data-wf-platform-theme=true][data-wf-theme] .bcc-action-grid button{
+  background:linear-gradient(150deg,rgba(255,255,255,.08),transparent),var(--glass-card);
+  border-color:var(--glass-line);box-shadow:inset 0 1px 0 var(--glass-highlight),var(--glass-shadow);
+}
+html[data-wf-platform-theme=true][data-wf-theme] :is(.ca-work,.wfa-work) .wf-panel-tools{
+  background:var(--glass-chrome);border:1px solid var(--glass-line);border-radius:12px;
+  box-shadow:inset 0 1px 0 var(--glass-highlight);
+  -webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);
+}
+/* Expanded panels and form controls remain solid for long reading and data entry. */
+html[data-wf-platform-theme=true][data-wf-theme] :is(.ca-work,.wfa-work) .wf-panel-expanded{background:var(--glass-solid);-webkit-backdrop-filter:none;backdrop-filter:none}
+
+/* Homepage: glass on navigation and selected surfaces, never over the hero copy. */
+.wf-premium-home .wf-h-header.scrolled{
+  background:var(--glass-chrome);border-color:var(--glass-line);
+  box-shadow:inset 0 -1px 0 var(--glass-highlight),var(--glass-shadow);
+  -webkit-backdrop-filter:blur(22px) saturate(145%);backdrop-filter:blur(22px) saturate(145%);
+}
+.wf-premium-home :is(.wf-h-login,.wf-h-languages,.wf-demo-segments,.wf-tour-rail){
+  background:var(--glass-chrome);border-color:var(--glass-line);
+  box-shadow:inset 0 1px 0 var(--glass-highlight),0 4px 12px -8px rgba(0,0,0,.25);
+  -webkit-backdrop-filter:blur(12px) saturate(135%);backdrop-filter:blur(12px) saturate(135%);
+}
+.wf-premium-home :is(.wf-platform article,.wf-demo,.wf-pricing){
+  background:linear-gradient(145deg,rgba(255,255,255,.06),transparent 45%),var(--glass-card);
+  border-color:var(--glass-line);box-shadow:inset 0 1px 0 var(--glass-highlight),var(--glass-shadow);
+  -webkit-backdrop-filter:blur(16px) saturate(125%);backdrop-filter:blur(16px) saturate(125%);
+}
+.wf-premium-home .wf-platform{background:radial-gradient(ellipse at 85% 45%,var(--glass-glow),transparent 65%)}
+.wf-premium-home .wf-selection-pill{
+  background:linear-gradient(145deg,rgba(140,186,249,.15),transparent),var(--hp-elevated);
+  box-shadow:inset 0 1px 0 var(--glass-highlight),inset 0 0 0 1px var(--glass-line),0 3px 8px #0002;
+}
+.wf-premium-home .wf-hero.has-video .wf-hero-modules li{
+  background:linear-gradient(140deg,rgba(182,216,255,.1),transparent),rgba(10,19,36,.72);
+  border-color:rgba(173,207,253,.25);box-shadow:inset 0 1px 0 rgba(215,236,255,.13);
+  -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
+}
+
+/* Bounded blur on smaller devices; no animated filters or stacked glass cards. */
+@media(max-width:820px){
+  html[data-wf-platform-theme=true][data-wf-theme] :is(.ca-login,.wfa-login,.ca-panel,.ca-card,.wfa-card,.wfa-stat,.bcc-metrics>article,.bcc-card),
+  .wf-premium-home :is(.wf-platform article,.wf-demo,.wf-pricing){-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+}
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+  :root,html[data-wf-theme=dark]{--glass-card:var(--glass-solid);--glass-chrome:var(--glass-solid)}
+}
+@media(prefers-reduced-transparency:reduce),(prefers-contrast:more){
+  :root{--glass-card:var(--glass-solid);--glass-chrome:var(--glass-solid);--glass-glow:transparent}
+  html[data-wf-theme=dark]{--glass-card:var(--glass-solid);--glass-chrome:var(--glass-solid);--glass-glow:transparent}
+  html[data-wf-platform-theme=true][data-wf-theme] :is(.ca-login,.wfa-login,.ca-panel,.ca-card,.wfa-card,.wfa-stat,.ca-v3-metrics>article,.bcc-metrics>article,.bcc-card,.bcc-hero,.ca-sidebar,.wfa-sidebar,.wf-panel-tools),
+  .wf-premium-home :is(.wf-h-header.scrolled,.wf-h-login,.wf-h-languages,.wf-demo-segments,.wf-tour-rail,.wf-platform article,.wf-demo,.wf-pricing,.wf-hero.has-video .wf-hero-modules li){-webkit-backdrop-filter:none;backdrop-filter:none}
+}
