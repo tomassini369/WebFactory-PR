@@ -1,3 +1,4 @@
+import commerceAdmin from '../functions/client-commerce-admin.mjs';
 import test from "node:test";
 import assert from "node:assert/strict";
 import { getStore } from "@netlify/blobs";
@@ -155,4 +156,21 @@ test('ATH screen expiry and an empty provider search retain reserved stock',asyn
  assert.equal((await checkout(new Request(`https://webfactorypr.com/.netlify/functions/ath-checkout?token=${p.token}`))).status,410);
  t.mock.method(globalThis,'fetch',async()=>Response.json([]));assert.equal((await verify(request('ath-payment-status',{token:p.token,referenceNumber:'ath-unit-reference-123'}))).status,409);
  const current=await getClientSite(f.site.siteId);assert.equal(Object.values(current.stockReservations)[0].state,'held');assert.equal(publicClientSite(current).catalog[0].inventory,8);
+});
+
+test('administrative ATH recovery re-verifies payment after receipt failure without another stock decrement or customer total',async t=>{
+ const f=fixture(t),p=await prepare(f);t.mock.method(globalThis,'fetch',async()=>Response.json([payment(p.session)]));
+ const proto=Object.getPrototypeOf(clientCommerceStore()),write=proto.setJSON;let broken=true;
+ t.mock.method(proto,'setJSON',async function(key,value,options){if(key.includes('/v3/receipts/')&&broken){broken=false;throw new Error('receipt failed')};return write.call(this,key,value,options)});
+ assert.equal((await verify(request('ath-payment-status',{token:p.token,referenceNumber:'ath-unit-reference-123'}))).status,409);
+ assert.equal((await getClientSite(f.site.siteId)).catalog[0].inventory,8);
+ const body={siteId:f.site.siteId,kind:'order',transactionId:f.record.transactionId,action:'recover_ath'};
+ assert.equal((await commerceAdmin(request('client-commerce-admin',body,'https://attacker.invalid'))).status,403);
+ t.mock.method(globalThis,'fetch',async()=>Response.json([]));assert.equal((await commerceAdmin(request('client-commerce-admin',body))).status,409);assert.equal((await getClientSite(f.site.siteId)).catalog[0].inventory,8);
+ t.mock.method(globalThis,'fetch',async()=>Response.json([payment(p.session)]));
+ const response=await commerceAdmin(request('client-commerce-admin',body));assert.equal(response.status,200);const recovered=(await response.json()).record;
+ assert.equal(recovered.athFulfillmentNeedsReview,false);assert.equal(recovered.inventoryNeedsReview,false);assert.equal(recovered.commerceEmailNeedsReview,true);assert.ok(recovered.receiptId);
+ assert.equal((await getClientSite(f.site.siteId)).catalog[0].inventory,8);
+ const customers=[...f.rows.entries()].filter(([key])=>key.includes('/v3/customers/'));assert.equal(customers.length,1);assert.equal(customers[0][1].totalSpent,2000);assert.equal(customers[0][1].orderCount,1);
+ assert.equal((await commerceAdmin(request('client-commerce-admin',body))).status,409);
 });

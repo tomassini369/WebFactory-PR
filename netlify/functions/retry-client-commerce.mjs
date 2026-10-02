@@ -17,6 +17,7 @@ export default async () => {
     for (const blob of (transactions.blobs || []).slice(0, 250)) {
       let record = await clientCommerceStore().get(blob.key, { type: "json" });
       if (!record || record.paymentStatus !== "paid") continue;
+      if(record.commerceEmailNeedsReview||record.athFulfillmentNeedsReview)continue;
       if(record.kind==='order'&&(record.inventoryNeedsReview||record.status==='processing'||record.inventoryProtocol===1&&!record.inventoryAppliedAt))continue;
       if(record.kind === "booking") {
         // The booking is canonical after customer changes. Never restore stale paid transaction dates.

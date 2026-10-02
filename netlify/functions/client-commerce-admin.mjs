@@ -51,6 +51,11 @@ export default async (req) => {
       throw Object.assign(new Error("This account is not assigned to the order location."), { status: 403 });
     }
 
+    if(payload.action==='recover_ath'){
+      const {recoverAthOrder}=await import('../lib/ath-recovery.mjs');
+      const recovered=await recoverAthOrder(site,record,req.url);
+      return Response.json({ok:true,record:recovered},{headers:{'Cache-Control':'no-store'}});
+    }
     if (payload.action === "kitchen_status") {
       if (kind !== "orders" || !record.queueNumber) throw Object.assign(new Error("Kitchen updates are only available for paid food orders."), { status: 409 });
       const kitchenStatus = String(payload.kitchenStatus || "");
