@@ -12,7 +12,7 @@ export async function login(email:string,password:string):Promise<never> {
   // A full navigation restores the SDK from the newly issued cookies and avoids
   // reusing an older in-memory account after accepting an invitation.
   try { localStorage.removeItem('gotrue.user') } catch { /* Storage may be blocked. */ }
-  const destination=window.location.pathname==='/client-admin' ? '/client-admin' : '/webfactory-admin'
+  const destination=/^\/client-admin\/?$/.test(window.location.pathname) ? '/client-admin' : '/webfactory-admin'
   window.location.assign(destination)
   return new Promise<never>(()=>{})
 }
