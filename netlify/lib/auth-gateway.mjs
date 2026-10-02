@@ -1,11 +1,13 @@
 import { assertSameOrigin } from "./client-auth.mjs";
 import { validEmail } from "./platform-utils.mjs";
 
-const headers = { "Cache-Control": "no-store", "Referrer-Policy": "no-referrer" };
-const json = (body, status) => Response.json(body, { status, headers });
+export const authHeaders = { "Cache-Control": "no-store", "Referrer-Policy": "no-referrer" };
+export const authJson = (body, status = 200) => Response.json(body, { status, headers: authHeaders });
+const headers = authHeaders;
+const json = authJson;
 
 // Bound the stream itself: Content-Length can be missing or dishonest.
-async function readPayload(req) {
+export async function readAuthPayload(req) {
   if (!req.headers.get("content-type")?.toLowerCase().startsWith("application/json")) {
     throw Object.assign(new Error(), { status: 415 });
   }
@@ -39,7 +41,7 @@ export function createAuthGateway(action, identity) {
     let payload;
     try {
       assertSameOrigin(req);
-      payload = await readPayload(req);
+      payload = await readAuthPayload(req);
     } catch (error) {
       return json({ ok: false, message: "Request rejected." }, [403, 413, 415].includes(error.status) ? error.status : 400);
     }
