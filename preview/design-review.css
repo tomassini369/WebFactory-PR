@@ -1,0 +1,6 @@
+.design-review-banner{display:flex;justify-content:space-between;gap:12px;align-items:center;position:relative;z-index:1;padding:12px 24px;background:#142340;color:#d6e7ff;border-bottom:1px solid #3d5680;font:500 .8125rem/1.5 system-ui,sans-serif}
+.design-review-banner a{color:#fff;font-weight:650;white-space:nowrap;text-underline-offset:4px}
+.design-review-es{display:none}
+html[lang=es] .design-review-es{display:inline}
+html[lang=es] .design-review-en{display:none}
+@media(max-width:600px){.design-review-banner{padding:12px 18px;align-items:flex-start;font-size:.75rem}.design-review-banner>span{max-width:220px}}

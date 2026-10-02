@@ -2,6 +2,8 @@ import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { AdaptiveLogo, ThemeToggle } from './theme'
 import { FeedbackPreferences } from './feedback/FeedbackPreferences'
 import './home-premium.css'
+import './home-apple.css'
+import { useSelectionPill } from './useSelectionPill'
 
 type Language = 'en' | 'es'
 
@@ -266,6 +268,7 @@ function QrShareDemo({ t }: { t: Copy }) {
 
 function InteractiveDemo({ t }: { t: Copy }) {
   const [tab, setTab] = useState(0)
+  const { group, pill } = useSelectionPill(`${tab}:${t.explore}`)
   const [quantity, setQuantity] = useState(0)
   const [professional, setProfessional] = useState('A')
   const [time, setTime] = useState('10:00 AM')
@@ -282,7 +285,7 @@ function InteractiveDemo({ t }: { t: Copy }) {
   const texts = [t.sellText, t.bookText, t.payText, t.manageText]
   const tabIcons = ['sales', 'bookings', 'payments', 'reports']
   return <div className="wf-demo" data-reveal>
-    <div className="wf-demo-tabs" role="tablist" aria-label={t.explore}>{t.tabs.map((label, i) => <button key={label} id={`wf-demo-tab-${i}`} role="tab" aria-selected={tab === i} aria-controls="wf-demo-panel" tabIndex={tab === i ? 0 : -1} onKeyDown={e => { if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { e.preventDefault(); const next = (i + (e.key === 'ArrowRight' ? 1 : t.tabs.length - 1)) % t.tabs.length; setTab(next); document.getElementById(`wf-demo-tab-${next}`)?.focus() } }} onClick={() => setTab(i)}><Icon name={tabIcons[i]} />{label}</button>)}<span className="wf-demo-badge">{t.sample}</span></div>
+    <div className="wf-demo-tabs"><div className="wf-demo-segments" ref={group} role="tablist" aria-label={t.explore}><span ref={pill} className="wf-selection-pill" aria-hidden="true" />{t.tabs.map((label, i) => <button key={label} id={`wf-demo-tab-${i}`} role="tab" aria-selected={tab === i} aria-controls="wf-demo-panel" tabIndex={tab === i ? 0 : -1} onKeyDown={e => { if (['ArrowRight', 'ArrowLeft', 'Home', 'End'].includes(e.key)) { e.preventDefault(); const next = e.key === 'Home' ? 0 : e.key === 'End' ? t.tabs.length - 1 : (i + (e.key === 'ArrowRight' ? 1 : t.tabs.length - 1)) % t.tabs.length; setTab(next); document.getElementById(`wf-demo-tab-${next}`)?.focus() } }} onClick={() => setTab(i)}><Icon name={tabIcons[i]} />{label}</button>)}</div><span className="wf-demo-badge">{t.sample}</span></div>
     <div className="wf-demo-content" id="wf-demo-panel" role="tabpanel" aria-labelledby={`wf-demo-tab-${tab}`} tabIndex={0} key={tab}>
       <div className="wf-demo-copy"><span className="wf-num">0{tab + 1}</span><h3>{titles[tab]}</h3><p>{texts[tab]}</p><small>{t.demoNote}</small></div>
       {tab === 0 && <div className="wf-demo-shop">

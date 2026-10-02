@@ -1,0 +1,65 @@
+/* A working surface: meaningful hierarchy, comfortable labels and immediate
+   feedback. Scoped to the Control Center and its overview shell. */
+.bcc{font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-optical-sizing:auto;gap:24px;--bcc-line:#e0e7f1;--bcc-soft:#f3f6fb}
+html[data-wf-theme=dark] .bcc{--bcc-surface:#111b2d;--bcc-text:#f1f5fc;--bcc-muted:#a8b8ce;--bcc-line:#29374d;--bcc-soft:#172339}
+.bcc-hero{grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:24px;padding:28px 30px;min-height:0;border-radius:22px;background:linear-gradient(110deg,#0b1529,#163363);border:1px solid #3d5e914d;box-shadow:0 16px 40px -28px #0b152980}
+.bcc-hero h2{font-size:clamp(1.6rem,2.5vw,2.15rem);font-weight:650;letter-spacing:-.035em;line-height:1.12;margin:10px 0}
+.bcc-hero p{font-size:.9375rem;max-width:34rem;line-height:1.6}
+.bcc-eyebrow{font-size:.75rem;letter-spacing:.12em}
+.bcc-hero-actions{margin:0;align-items:center}
+.bcc-hero-actions button{border-radius:12px;font-size:.875rem;min-height:46px;padding:.75rem 1.1rem}
+.bcc button{touch-action:manipulation;-webkit-tap-highlight-color:transparent;transition:transform .2s cubic-bezier(.22,.8,.24,1),background .15s,box-shadow .2s}
+.bcc button:not(:disabled):active{transform:scale(.97);transition:transform 80ms ease-out}
+.bcc-metrics{gap:14px}
+.bcc-metrics article{padding:24px;border-radius:20px;border-color:var(--bcc-line);gap:12px;box-shadow:0 2px 8px #0b152903}
+.bcc-metrics small{font-size:.875rem;line-height:1.4}
+.bcc-metrics strong{font-size:clamp(1.7rem,2.5vw,2.3rem);font-weight:650;letter-spacing:-.04em;line-height:1.1}
+.bcc-metrics span{font-size:.75rem;line-height:1.5}
+.bcc .bcc-card{padding:24px;border-radius:22px;box-shadow:0 4px 20px -12px #0b152918}
+.bcc-card>header{gap:16px;margin:8px 0 24px}
+.bcc-card header small{font-size:.75rem;letter-spacing:.12em}
+.bcc h3{font-size:1.125rem;line-height:1.35;font-weight:650;letter-spacing:-.025em}
+.bcc-card header>strong{font-size:1.4rem;font-variant-numeric:tabular-nums}
+.bcc-card header button{min-height:44px;font-size:.875rem;border-radius:12px;padding:.6rem .85rem}
+.bcc-chart{gap:12px;height:175px}
+.bcc-chart>div{grid-template-rows:20px 130px 20px;gap:5px}
+.bcc-chart-track{background:var(--bcc-soft);border-radius:9px}
+.bcc-chart i{border-radius:9px;background:linear-gradient(180deg,#6aaaff,#2878ed)}
+.bcc-chart span,.bcc-chart small{font-size:.75rem}
+.bcc-note{font-size:.75rem;line-height:1.5;margin-top:22px}
+.bcc-bookings article{gap:16px;padding:18px 0}
+.bcc-bookings time{font-size:.75rem;min-width:92px;gap:5px}
+.bcc-bookings time b,.bcc-bookings strong{font-size:.9375rem;line-height:1.4}
+.bcc-bookings span{font-size:.8125rem;line-height:1.4}
+.bcc-section-title{margin-bottom:18px}
+.bcc-section-title>span{font-size:.8125rem;line-height:1.5}
+.bcc-action-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.bcc-action-grid button{min-height:130px;padding:20px;border-radius:18px;gap:10px;border-color:var(--bcc-line)}
+.bcc-action-icon{width:40px;height:40px;border-radius:12px;background:color-mix(in srgb,#3c86f6 10%,var(--bcc-surface));color:#2774e3}
+html[data-wf-theme=dark] .bcc-action-icon{color:#83b6ff}
+.bcc-action-icon svg{width:22px;height:22px}
+.bcc-action-grid strong{font-size:.9375rem;line-height:1.3}
+.bcc-action-grid small{font-size:.8125rem;line-height:1.5}
+.bcc-action-grid button:hover{transform:translateY(-2px);border-color:color-mix(in srgb,#3c86f6 40%,var(--bcc-line));box-shadow:0 10px 24px -16px #3c86f660}
+.bcc-activity{padding:18px 0}
+.bcc-activity strong,.bcc-activity b{font-size:.9375rem;line-height:1.4}
+.bcc-activity span{font-size:.8125rem;line-height:1.4}
+.bcc-training{border-radius:22px;padding:28px}
+.bcc-training h3{font-size:1.5rem;letter-spacing:-.035em}
+.bcc-training p{font-size:.9375rem;line-height:1.65}
+.bcc-training button{min-height:44px;border-radius:12px;font-size:.875rem;padding:.65rem 1rem}
+.bcc .wf-panel-tools{gap:6px;margin:0 0 12px;padding:4px;top:0;background:var(--bcc-surface);border-radius:12px}
+.bcc .wf-panel-tools button{min-height:36px;padding:7px 10px;font-size:.75rem;font-weight:600;opacity:1;border:1px solid var(--bcc-line);border-radius:9px;background:var(--bcc-soft);color:var(--bcc-muted)}
+.bcc .wf-panel-tools button:is([aria-pressed=true],[aria-expanded=false]){color:var(--bcc-text);border-color:#3c86f680;background:color-mix(in srgb,#3c86f6 12%,var(--bcc-surface))}
+.bcc .wf-panel-expanded{border-radius:24px!important;background:var(--bcc-surface)}
+.ca-dashboard:has(.bcc) .ca-work>header h1{font-size:1.625rem;font-weight:650;letter-spacing:-.035em}
+.ca-dashboard:has(.bcc) .ca-work>header small{font-size:.75rem;letter-spacing:.12em}
+.ca-dashboard:has(.bcc) .ca-nav-groups summary{font-size:.8125rem}
+.ca-dashboard:has(.bcc) .ca-sidebar .ca-nav-groups button{font-size:.875rem;font-weight:500;border-radius:10px}
+.ca-dashboard:has(.bcc) .ca-sidebar .ca-nav-groups button.active{background:#3c86f62e;box-shadow:inset 3px 0 #83b6ff}
+@media(hover:hover) and (pointer:fine){.bcc button:hover{filter:brightness(1.04)}}
+@media(max-width:1100px){.bcc-hero{grid-template-columns:1fr}.bcc-hero-actions{justify-content:flex-start}.bcc-action-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.bcc-metrics article{padding:20px}}
+@media(max-width:820px){.bcc{gap:18px}.bcc-hero{padding:24px}.bcc-insights,.bcc-bottom{gap:18px}.bcc .wf-panel-tools button{min-height:44px}.bcc-metrics{gap:12px}.bcc-action-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:480px){.bcc .bcc-card{padding:18px}.bcc-metrics article{padding:18px 14px}.bcc-metrics strong{font-size:1.75rem}.bcc-metrics small{font-size:.8125rem}.bcc-card>header{flex-wrap:wrap}.bcc-chart{gap:5px}.bcc-chart span{font-size:.6875rem}.bcc-action-grid button{padding:18px 14px}.bcc-hero-actions{width:100%;gap:8px}.bcc-hero-actions button{flex:1}.bcc .wf-panel-expanded{inset:8px!important;padding:18px!important}.bcc-section-title{gap:8px}.bcc-bookings time{min-width:85px}.ca-dashboard:has(.bcc) .ca-work>header h1{font-size:1.4rem}}
+@media(prefers-reduced-motion:reduce){.bcc button:not(:disabled):active{transform:none;background:var(--bcc-soft)}.bcc-hero-actions button:not(:disabled):active{background:#245bba}}
+@media(prefers-contrast:more){.bcc-metrics article,.bcc .bcc-card,.bcc-action-grid button{border-color:var(--bcc-muted)}.bcc .wf-panel-tools button{color:var(--bcc-text);border-color:var(--bcc-muted)}}
