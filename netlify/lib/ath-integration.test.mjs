@@ -12,14 +12,15 @@ import verify from "../functions/ath-payment-status.mjs";
 const publicToken = "unit-public-token-abcdefghijklmnop";
 const privateToken = "unit-private-token-abcdefghijklmnop";
 function fixture(t) {
-  const rows = new Map(); const calls = [];
+  const rows = new Map(); const calls = []; const versions=new Map(); let revision=0;
   globalThis.netlifyBlobsContext=Buffer.from(JSON.stringify({siteID:"unit-netlify-site",token:"unit-blobs-token",deployID:"unit-deploy"})).toString("base64");
   const storePrototype=Object.getPrototypeOf(getStore("unit-test"));
   t.mock.method(storePrototype, "get", async function(key) { return structuredClone(rows.get(`${this.name}/${key}`) || null); });
+  t.mock.method(storePrototype, "getWithMetadata",async function(key){const full=`${this.name}/${key}`;return rows.has(full)?{data:structuredClone(rows.get(full)),etag:versions.get(full)}:null});
   t.mock.method(storePrototype, "setJSON", async function(key, value, options = {}) {
     const fullKey = `${this.name}/${key}`;
-    if (options.onlyIfNew && rows.has(fullKey)) return { modified: false };
-    rows.set(fullKey, structuredClone(value)); return { modified: true, etag: "unit" };
+    if (options.onlyIfNew && rows.has(fullKey)||options.onlyIfMatch&&versions.get(fullKey)!==options.onlyIfMatch) return { modified: false };
+    rows.set(fullKey, structuredClone(value));versions.set(fullKey,String(++revision)); return { modified: true, etag: versions.get(fullKey) };
   });
   t.mock.method(storePrototype, "delete", async function(key) { rows.delete(`${this.name}/${key}`); });
   t.mock.method(storePrototype, "list", async function({ prefix = "" } = {}) {

@@ -1,3 +1,4 @@
+import { applyStockOperation,projectStockMovements } from '../lib/inventory-operations.mjs';
 import {renderBookingEmail} from "../lib/booking-email-template.mjs";
 import {finishBookingChange} from "../lib/booking-management.mjs";
 import { syncBookingCalendar, bookingCanSync } from "../lib/booking-calendar.mjs";
@@ -75,6 +76,7 @@ export default async (req) => {
         record.queueNumber = `Q${Date.parse(record.paidAt)}`;
       }
     } else if (payload.action === "complete") {
+      if(record.kind==='order'&&(record.inventoryNeedsReview||record.status==='processing'||(record.inventoryProtocol===1&&!record.inventoryAppliedAt))) throw Object.assign(new Error("Reconcile inventory before completing this order."),{status:409});
       if (!["paid","paid_in_person"].includes(record.paymentStatus)) throw Object.assign(new Error("Only paid transactions can be completed."), { status: 409 });
       record = { ...record, status: "completed", completedAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
 
@@ -152,28 +154,16 @@ export default async (req) => {
       };
 
       if (fullRefund && record.kind === "order" && !record.inventoryRestoredAt) {
-        const catalog = (site.catalog || []).map((item) => {
-          const purchased = (record.items || []).find((entry) => entry.id === item.id);
-          return purchased && item.type === "product" && item.trackInventory && item.inventory !== null && item.inventory !== undefined
-            ? { ...item, inventory: Number(item.inventory || 0) + Number(purchased.quantity || 1) }
-            : item;
-        });
-        const { patchClientSite } = await import("../lib/client-store.mjs");
-        await patchClientSite(site.siteId, { catalog });
-        for (const item of record.items || []) {
-          const catalogItem = (site.catalog || []).find((entry) => entry.id === item.id);
-          if (catalogItem?.type === "product" && catalogItem.trackInventory && catalogItem.inventory !== null && catalogItem.inventory !== undefined) {
-            const movement = createInventoryMovement({
-              siteId: site.siteId,
-              itemId: item.id,
-              quantityDelta: Math.max(1, Number(item.quantity || 1)),
-              reason: "refund",
-              referenceId: record.transactionId,
-            });
-            await putV3Record(site.siteId, "inventory-movements", movement.movementId, movement);
-          }
+        const currentSite=await (await import('../lib/client-store.mjs')).getClientSite(site.siteId);
+        const saleId=(await import('../lib/inventory-operations.mjs')).stockOperationId('sale',record.transactionId);
+        const original=currentSite?.stockOperations?.[saleId];
+        const restockItems=original?original.deltas.map(delta=>({id:delta.itemId,quantity:-delta.quantityDelta})):record.items;
+        if(restockItems.length&&((record.inventoryProtocol!==1&&!record.inventoryNeedsReview)||original)){
+          const applied=await applyStockOperation(site.siteId,{kind:'refund',referenceId:record.transactionId,items:restockItems,direction:1,reason:'refund'});
+          await projectStockMovements(site.siteId,applied.operation,clientCommerceStore());
         }
-        record.inventoryRestoredAt = new Date().toISOString();
+        if(record.inventoryProtocol!==1&&record.inventoryNeedsReview) record.inventoryRestockNeedsReview=true;
+        else record.inventoryRestoredAt = new Date().toISOString();
       }
 
       if (record.receiptId) {

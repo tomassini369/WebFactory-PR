@@ -1,10 +1,12 @@
+import { applyCustomerTransaction } from '../lib/customer-transactions.mjs';
+import { applyStockOperation,projectStockMovements } from '../lib/inventory-operations.mjs';
 import { withBookingLock } from "../lib/booking-lock.mjs";
 import crypto from "node:crypto";
 import { assertSameOrigin, errorResponse, requireSiteCapability } from "../lib/client-auth.mjs";
-import { clientCommerceStore, commerceKey, getClientSite, patchClientSite } from "../lib/client-store.mjs";
+import { clientCommerceStore, commerceKey, getClientSite } from "../lib/client-store.mjs";
 import { cleanText, validEmail } from "../lib/platform-utils.mjs";
-import { calculateTax, createCustomerRecord, createInventoryMovement, createReceiptRecord } from "../lib/webfactory-v3-domain.mjs";
-import { getV3Record, putV3Record } from "../lib/webfactory-v3-store.mjs";
+import { calculateTax, createReceiptRecord } from "../lib/webfactory-v3-domain.mjs";
+import { putV3Record } from "../lib/webfactory-v3-store.mjs";
 import { sendCustomerCommerceEmail, sendBusinessCommerceEmail } from "../lib/client-notifications.mjs";
 
 export default async (req) => {
@@ -47,6 +49,10 @@ export default async (req) => {
       };
     });
 
+    for (const field of ['discountCents','tipCents']) {
+      if (payload[field] !== undefined && (!Number.isSafeInteger(Number(payload[field])) || Number(payload[field]) < 0)) throw Object.assign(new Error('Discount and tip must be nonnegative integer cents.'), {status:400});
+    }
+    if (items.some(item => !Number.isSafeInteger(item.unitAmount))) throw Object.assign(new Error('Catalog price is invalid.'), {status:409});
     const subtotal = items.reduce((sum, item) => sum + item.unitAmount * item.quantity, 0);
     const discount = Math.max(0, Math.min(subtotal, Math.round(Number(payload.discountCents || 0))));
     const tip = Math.max(0, Math.round(Number(payload.tipCents || 0)));
@@ -69,6 +75,7 @@ export default async (req) => {
     }
 
     const total = Math.max(0, discountedBase + (site.taxConfig?.pricesIncludeTax ? 0 : tax) + tip);
+    if (!Number.isSafeInteger(total)) throw Object.assign(new Error('Sale total is invalid.'), {status:400});
     const paymentMethod = ["cash","manual_ath","other"].includes(payload.paymentMethod) ? payload.paymentMethod : "cash";
     const transactionId = `txn_${crypto.randomUUID()}`;
     const now = new Date().toISOString();
@@ -80,28 +87,10 @@ export default async (req) => {
     };
     if (customer.email && !validEmail(customer.email)) throw Object.assign(new Error("Customer email is invalid."), { status: 400 });
 
-    let customerId = "";
-    if (customer.email || customer.phone) {
-      const seed = createCustomerRecord({ siteId: site.siteId, customer });
-      const existing = await getV3Record(site.siteId, "customers", seed.customerId);
-      const record = createCustomerRecord({
-        siteId: site.siteId,
-        customer: {
-          ...customer,
-          totalSpent: Number(existing?.totalSpent || 0) + total,
-          orderCount: Number(existing?.orderCount || 0) + 1,
-          lastActivityAt: now,
-        },
-        existing,
-      });
-      record.totalSpent = Number(existing?.totalSpent || 0) + total;
-      record.orderCount = Number(existing?.orderCount || 0) + 1;
-      await putV3Record(site.siteId, "customers", record.customerId, record);
-      customerId = record.customerId;
-    }
-
+    let customerId = '';
     const record = {
       transactionId,
+      inventoryProtocol:1,
       siteId: site.siteId,
       kind: "order",
       source: "pos",
@@ -124,26 +113,14 @@ export default async (req) => {
       createdBy: cleanText(user.email || user.id, 320),
     };
 
-    const updatedCatalog = (site.catalog || []).map((catalogItem) => {
-      const sold = items.find((item) => item.id === catalogItem.id);
-      if (!sold || catalogItem.type !== "product" || !catalogItem.trackInventory || catalogItem.inventory === null || catalogItem.inventory === undefined) return catalogItem;
-      return { ...catalogItem, inventory: Number(catalogItem.inventory || 0) - sold.quantity };
-    });
-    await patchClientSite(site.siteId, { catalog: updatedCatalog });
-
-    for (const sold of items) {
-      const original = (site.catalog || []).find((item) => item.id === sold.id);
-      if (original?.type === "product" && original.trackInventory && original.inventory !== null && original.inventory !== undefined) {
-        const movement = createInventoryMovement({
-          siteId: site.siteId,
-          itemId: sold.id,
-          quantityDelta: -sold.quantity,
-          reason: "pos_sale",
-          referenceId: transactionId,
-        });
-        await putV3Record(site.siteId, "inventory-movements", movement.movementId, movement);
-      }
-    }
+    // Persist the transaction before the stock side effect so an interrupted
+    // sale still has a reference for administrative recovery.
+    await clientCommerceStore().setJSON(commerceKey(site.siteId,'transactions',transactionId),{...record,status:'processing'});
+    const applied=await applyStockOperation(site.siteId,{kind:'sale',referenceId:transactionId,items,reason:'pos_sale'});
+    await projectStockMovements(site.siteId,applied.operation,clientCommerceStore());
+    if(customer.email||customer.phone){const profile=await applyCustomerTransaction(site.siteId,record);customerId=profile.customerId;record.customerId=customerId;}
+    record.inventoryAppliedAt=applied.operation.appliedAt;
+    record.inventoryOperationId=applied.operation.id;
 
     const receipt = createReceiptRecord({ siteId: site.siteId, transaction: record });
     await putV3Record(site.siteId, "receipts", receipt.receiptId, receipt);

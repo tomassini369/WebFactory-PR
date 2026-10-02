@@ -74,3 +74,27 @@ test("a simultaneous or repeated POS attempt cannot create a second sale", async
   assert.equal((await getClientSite("shop")).catalog[0].inventory, 4);
   assert.equal([...f.rows.keys()].filter(key => key.includes("/v3/receipts/")).length, 1);
 });
+
+test('a stock movement failure after the catalog write is recovered without a second stock decrement',async t=>{
+  const f=fixture(t,5);await f.prepare();await clientCommerceStore().setJSON(commerceKey('shop','transactions','txn_shop'),{transactionId:'txn_shop',siteId:'shop',kind:'order',stripeAccountId:'acct_shop',amountTotal:100,paymentStatus:'pending',items:[{id:'last-item',quantity:1,unitAmount:100}],customer:{},createdAt:new Date().toISOString()});
+  const proto=Object.getPrototypeOf(clientCommerceStore()),base=proto.setJSON;let fail=true;t.mock.method(proto,'setJSON',async function(key,value,options){if(key.includes('/v3/inventory-movements/')&&fail){fail=false;throw new Error('movement write failed')};return base.call(this,key,value,options)});
+  assert.equal((await webhook(webhookRequest('evt_partial'))).status,500);assert.equal((await getClientSite('shop')).catalog[0].inventory,4);assert.equal((await webhook(webhookRequest('evt_partial'))).status,200);assert.equal((await getClientSite('shop')).catalog[0].inventory,4);assert.equal([...f.rows.keys()].filter(key=>key.includes('/v3/inventory-movements/')).length,1);
+});
+test('an artifact failure after customer totals retries without counting the payment twice',async t=>{
+  const f=fixture(t,5);await f.prepare();await clientCommerceStore().setJSON(commerceKey('shop','transactions','txn_shop'),{transactionId:'txn_shop',siteId:'shop',kind:'order',stripeAccountId:'acct_shop',amountTotal:100,paymentStatus:'pending',items:[{id:'last-item',quantity:1,unitAmount:100}],customer:{email:'fixture@example.com'},createdAt:new Date().toISOString()});
+  const proto=Object.getPrototypeOf(clientCommerceStore()),base=proto.setJSON;let fail=true;t.mock.method(proto,'setJSON',async function(key,value,options){if(key.includes('/v3/receipts/')&&fail){fail=false;throw new Error('receipt write failed')};return base.call(this,key,value,options)});
+  assert.equal((await webhook(webhookRequest('evt_customer_partial'))).status,500);assert.equal((await webhook(webhookRequest('evt_customer_partial'))).status,200);const customers=[...f.rows.entries()].filter(([key])=>key.includes('/v3/customers/'));assert.equal(customers.length,1);assert.equal(customers[0][1].data.totalSpent,100);assert.equal(customers[0][1].data.orderCount,1);assert.equal((await getClientSite('shop')).catalog[0].inventory,4);
+});
+test('a paid legacy transaction with unknown stock effects requires review instead of guessing a decrement',async t=>{const f=fixture(t,5);await f.prepare();await clientCommerceStore().setJSON(commerceKey('shop','transactions','txn_shop'),{transactionId:'txn_shop',siteId:'shop',kind:'order',stripeAccountId:'acct_shop',amountTotal:100,paymentStatus:'paid',items:[{id:'last-item',quantity:1,unitAmount:100}],customer:{}});assert.equal((await webhook(webhookRequest('evt_legacy'))).status,409);assert.equal((await getClientSite('shop')).catalog[0].inventory,5);assert.equal((await clientCommerceStore().get(commerceKey('shop','orders','txn_shop'))).inventoryNeedsReview,true);});
+test('stale business edits cannot overwrite a stock operation or erase its markers',async t=>{const f=fixture(t,5);await f.prepare();const original=await getClientSite('shop');await sale(saleRequest());const {saveClientSite,patchClientSite}=await import('./client-store.mjs');await assert.rejects(saveClientSite({...original,revision:Number(original.revision||0)+1,business:{name:'stale'}}),{status:409});await assert.rejects(patchClientSite('shop',{catalog:original.catalog},{expectedRevision:original.revision}),{status:409});const current=await getClientSite('shop');const copy={...current,revision:current.revision+1,business:{name:'new'}};delete copy.stockOperations;await saveClientSite(copy);const updated=await getClientSite('shop');assert.equal(updated.catalog[0].inventory,4);assert.equal(Object.keys(updated.stockOperations).length,1);});
+
+
+test('changed POS tips cannot reuse a completed attempt and invalid cents never change stock',async t=>{
+  const f=fixture(t,5);await f.prepare();
+  const request=tipCents=>new Request('https://webfactorypr.com/.netlify/functions/client-pos-sale-idempotent',{method:'POST',headers:{Origin:'https://webfactorypr.com','Content-Type':'application/json'},body:JSON.stringify({siteId:'shop',saleAttemptId:'attempt-money-12345',items:[{id:'last-item',quantity:1}],tipCents})});
+  assert.equal((await idempotentSale(request(0))).status,200);
+  assert.equal((await idempotentSale(request(100))).status,409);
+  const invalid=new Request('https://webfactorypr.com/.netlify/functions/client-pos-sale',{method:'POST',headers:{Origin:'https://webfactorypr.com','Content-Type':'application/json'},body:JSON.stringify({siteId:'shop',items:[{id:'last-item',quantity:1}],discountCents:'invalid'})});
+  assert.equal((await sale(invalid)).status,400);
+  assert.equal((await getClientSite('shop')).catalog[0].inventory,4);
+});

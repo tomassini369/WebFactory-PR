@@ -19,7 +19,7 @@ export default async(req)=>{
     const store=clientCommerceStore();
     const key=markerKey(site.siteId,saleAttemptId);
     return await withBookingLock(store, `locks/pos-attempt/${site.siteId}/${saleAttemptId}`, async()=>{
-    const fingerprint=crypto.createHash("sha256").update(JSON.stringify({items:payload.items,customer:payload.customer,discount:payload.discount,tip:payload.tip,paymentMethod:payload.paymentMethod})).digest("hex");
+    const fingerprint=crypto.createHash("sha256").update(JSON.stringify({items:payload.items,customer:payload.customer,discountCents:payload.discountCents,tipCents:payload.tipCents,paymentMethod:payload.paymentMethod})).digest("hex");
     const existing=await store.get(key,{type:"json"});
     if(existing?.fingerprint&&existing.fingerprint!==fingerprint)throw Object.assign(new Error("Use a new attempt ID for a changed sale."),{status:409});
     if(existing?.status==="uncertain")throw Object.assign(new Error("This sale requires review before retrying. Check orders and inventory in your portal."),{status:409});

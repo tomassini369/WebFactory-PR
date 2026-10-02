@@ -1,3 +1,5 @@
+import { applyCustomerTransaction } from './customer-transactions.mjs';
+import { applyStockOperation,projectStockMovements } from './inventory-operations.mjs';
 import { clientCommerceStore, commerceKey, getClientSite, patchClientSite } from "./client-store.mjs";
 import { createCustomerRecord, createInventoryMovement, createReceiptRecord } from "./webfactory-v3-domain.mjs";
 import { getV3Record, putV3Record } from "./webfactory-v3-store.mjs";
@@ -18,35 +20,18 @@ export async function settleAthPayment(session, payment) {
     throw athError("ATH payment is verified. The business is completing your order; contact it if this message persists.", 409);
   }
   const paidAt = new Date().toISOString();
-  record = { ...record, paymentStatus: "paid", status: "confirmed", paymentMethod: "ath_movil", paymentProvider: "ath_movil", athReferenceNumber: payment.referenceNumber, paidAt, updatedAt: paidAt };
+  record = { ...record, inventoryProtocol:1, paymentStatus: "paid", status: "confirmed", paymentMethod: "ath_movil", paymentProvider: "ath_movil", athReferenceNumber: payment.referenceNumber, paidAt, updatedAt: paidAt };
   await store.setJSON(key, record);
   try {
     const site = await getClientSite(session.siteId);
     if (!site) throw new Error("Business unavailable during fulfillment.");
-    const seed = createCustomerRecord({ siteId: site.siteId, customer: record.customer || {} });
-    const previous = await getV3Record(site.siteId, "customers", seed.customerId);
-    const customer = createCustomerRecord({ siteId: site.siteId, customer: record.customer || {}, existing: previous });
-    customer.totalSpent = Number(previous?.totalSpent || 0) + record.amountTotal;
-    customer.orderCount = Number(previous?.orderCount || 0) + (record.kind === "order" ? 1 : 0);
-    customer.bookingCount = Number(previous?.bookingCount || 0) + (record.kind === "booking" ? 1 : 0);
-    customer.lastActivityAt = paidAt;
-    await putV3Record(site.siteId, "customers", customer.customerId, customer);
+    const customer=await applyCustomerTransaction(site.siteId,record);
     record.customerId = customer.customerId;
     if (record.kind === "order") {
-      const catalog = (site.catalog || []).map((item) => {
-        const line = record.items?.find((row) => row.id === item.id);
-        return line && item.type === "product" && item.trackInventory && item.inventory !== null && item.inventory !== undefined
-          ? { ...item, inventory: Math.max(0, Number(item.inventory) - line.quantity) } : item;
-      });
-      await patchClientSite(site.siteId, { catalog });
-      for (const line of record.items || []) {
-        const original = site.catalog?.find((item) => item.id === line.id);
-        if (original?.type === "product" && original.trackInventory && original.inventory !== null && original.inventory !== undefined) {
-          const movement = createInventoryMovement({ siteId: site.siteId, itemId: line.id, quantityDelta: -line.quantity, reason: "ath_sale", referenceId: record.transactionId });
-          movement.movementId = `ath-${record.transactionId}-${line.id}`;
-          await putV3Record(site.siteId, "inventory-movements", movement.movementId, movement);
-        }
-      }
+      const applied=await applyStockOperation(site.siteId,{kind:'sale',referenceId:record.transactionId,items:record.items,reason:'ath_sale'});
+      await projectStockMovements(site.siteId,applied.operation,store);
+      record.inventoryAppliedAt=applied.operation.appliedAt;
+      record.inventoryOperationId=applied.operation.id;
       if (/restaurant|food|catering|bakery|cafe|comida|panader|cafeter|restaurante/i.test(site.business?.category || "")) {
         record.kitchenStatus = "received"; record.queueNumber = `Q${Date.parse(paidAt)}`;
       }

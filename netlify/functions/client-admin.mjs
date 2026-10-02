@@ -232,7 +232,8 @@ export default async (req) => {
     };
     if (section === "business" && value.email && !validEmail(value.email)) throw Object.assign(new Error("Business email is invalid."), { status: 400 });
 
-    const updated = await patchClientSite(site.siteId, { [section]: value });
+    if(section==='catalog'&&!Number.isInteger(payload.revision))throw Object.assign(new Error('Reload the portal before editing the catalog.'),{status:409});
+    const updated = await patchClientSite(site.siteId, { [section]: value },section==='catalog'?{expectedRevision:payload.revision}:{});
     return Response.json({ ok: true, site: updated, publicSite: publicClientSite(updated) }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
     return errorResponse(error);
