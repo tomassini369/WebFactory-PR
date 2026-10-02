@@ -1,3 +1,4 @@
+import { releaseInventory } from '../lib/inventory-reservations.mjs';
 import { applyCustomerTransaction } from '../lib/customer-transactions.mjs';
 import { applyStockOperation,projectStockMovements } from '../lib/inventory-operations.mjs';
 import { withBookingLock } from "../lib/booking-lock.mjs";
@@ -33,6 +34,9 @@ async function finalizeTransaction(event) {
   const site = await getClientSite(siteId);
   if (!record || !site) throw new Error("Client transaction or site was not found.");
   if (record.stripeAccountId !== event.account) throw new Error("Connected account does not match the transaction.");
+  if(record.stripeSessionId&&session.id&&record.stripeSessionId!==session.id)throw new Error('Checkout session does not match the transaction.');
+  if(record.inventoryReservationRequired&&!record.stripeSessionId&&session.id){record={...record,stripeSessionId:session.id};await clientCommerceStore().setJSON(key,record);}
+  if(['refunded','partially_refunded','expired'].includes(record.paymentStatus))return {record,pending:false};
   if (session.payment_status !== "paid") return { record, pending: true };
   if (Number(session.amount_total) !== Number(record.amountTotal) || String(session.currency).toLowerCase() !== "usd") throw new Error("Stripe amount or currency does not match the server record.");
 
@@ -55,12 +59,12 @@ async function finalizeTransaction(event) {
 
   if(record.kind==='order'&&!record.inventoryAppliedAt){
     try{
-      const applied=await applyStockOperation(siteId,{kind:'sale',referenceId:transactionId,items:record.items,reason:'sale'});
+      const applied=await applyStockOperation(siteId,{kind:'sale',referenceId:transactionId,items:record.items,reason:'sale',reservationRequired:record.inventoryReservationRequired===true});
       await projectStockMovements(siteId,applied.operation,clientCommerceStore());
       record={...record,inventoryAppliedAt:applied.operation.appliedAt,inventoryOperationId:applied.operation.id,status:record.status==='inventory_review_required'?'confirmed':record.status,inventoryNeedsReview:false};
       await clientCommerceStore().setJSON(key,record);
     }catch(error){
-      if(['INVENTORY_SHORTAGE','INVENTORY_PRODUCT_MISSING','INVENTORY_INVALID','INVENTORY_JOURNAL_FULL'].includes(error.code)){
+      if(['INVENTORY_SHORTAGE','INVENTORY_PRODUCT_MISSING','INVENTORY_INVALID','INVENTORY_JOURNAL_FULL','INVENTORY_RESERVATION_INVALID'].includes(error.code)){
         record={...record,status:'inventory_review_required',inventoryNeedsReview:true,inventoryIssue:error.code,updatedAt:new Date().toISOString()};
         await clientCommerceStore().setJSON(key,record);
         await clientCommerceStore().setJSON(commerceKey(siteId,'orders',transactionId),record);
@@ -113,6 +117,20 @@ export default async (req) => {
     if (previous?.completed) return Response.json({ received: true, duplicate: true });
     await clientEventStore().setJSON(key, { processing: true, updatedAt: new Date().toISOString(), type: event.type });
     const object = event.data?.object || {};
+    if(event.type==='checkout.session.expired'&&object.metadata?.flow==='webfactory_client_commerce'){
+      const siteId=object.metadata.site_id,transactionId=object.metadata.transaction_id;
+      const transactionKey=commerceKey(siteId,'transactions',transactionId);
+      const record=await clientCommerceStore().get(transactionKey,{type:'json'});
+      if(!record||record.stripeAccountId!==event.account||(record.stripeSessionId&&record.stripeSessionId!==object.id)||typeof object.id!=='string'||Number(object.amount_total)!==Number(record.amountTotal)||object.status!=='expired'||object.payment_status!=='unpaid')throw new Error('Expiration does not match the checkout.');
+      if(record.inventoryReservationRequired&&record.paymentStatus==='pending'){
+        await releaseInventory(siteId,transactionId);
+        const expired={...record,stripeSessionId:object.id,paymentStatus:'expired',status:'expired',updatedAt:new Date().toISOString()};
+        await clientCommerceStore().setJSON(transactionKey,expired);
+        await clientCommerceStore().setJSON(commerceKey(siteId,'orders',transactionId),expired);
+      }
+      await clientEventStore().setJSON(key,{completed:true,type:event.type,updatedAt:new Date().toISOString()});
+      return Response.json({received:true});
+    }
     const checkoutEvent = ["checkout.session.completed", "checkout.session.async_payment_succeeded"].includes(event.type) && object.metadata?.flow === "webfactory_client_commerce";
     const terminalEvent = event.type === "payment_intent.succeeded" && object.metadata?.flow === "webfactory_terminal";
     if (!checkoutEvent && !terminalEvent) {

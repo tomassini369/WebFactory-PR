@@ -1,3 +1,5 @@
+import { availableInventory } from '../lib/inventory-availability.mjs';
+import { createReservedStripeCheckout } from '../lib/reserved-stripe-checkout.mjs';
 import { syncBookingCalendar } from "../lib/booking-calendar.mjs";
 import { sendBookingConfirmationEmails } from "../lib/client-notifications.mjs";
 import { bookingManageUrl } from "../lib/booking-email-template.mjs";
@@ -49,7 +51,7 @@ function canonicalCart(site, requested, lang) {
     const item = (site.catalog || []).find((candidate) => candidate.id === entry.id && candidate.active !== false && !candidate.requiresAppointment);
     if (!item) throw Object.assign(new Error("A selected catalog item is unavailable."), { status: 409 });
     const quantity = Math.max(1, Math.min(20, Math.floor(Number(entry.quantity || 1))));
-    if (item.inventory !== null && item.inventory !== undefined && quantity > Number(item.inventory)) {
+    if (item.type==='product'&&item.trackInventory&&item.inventory!=null&&!item.allowBackorder&&quantity>Number(availableInventory(site,item))) {
       throw Object.assign(new Error(`${localizedText(item, lang, "name")} does not have enough inventory.`), { status: 409 });
     }
     return { id: item.id, name: localizedText(item, lang, "name"), description: localizedText(item, lang, "description"), quantity, unitAmount: Math.round(Number(item.price) * 100) };
@@ -188,6 +190,11 @@ export default async (req) => {
     items.forEach((item, index) => appendLine(params, index, item));
     if (taxCents > 0 && !site.taxConfig?.pricesIncludeTax) appendLine(params, items.length, { name: "Puerto Rico IVU", description: "", unitAmount: taxCents, quantity: 1 });
 
+    if(kind==='order'){
+      record.stripeAccountId=accountId;
+      const checkout=await createReservedStripeCheckout(site,record,params,{requestUrl:req.url});
+      return Response.json({ok:true,paymentRequired:true,checkoutUrl:checkout.checkoutUrl,transactionId},{headers:{'Cache-Control':'no-store'}});
+    }
     const response = await fetch("https://api.stripe.com/v1/checkout/sessions", {
       method: "POST",
       headers: {

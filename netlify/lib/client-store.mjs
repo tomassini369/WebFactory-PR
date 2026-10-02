@@ -1,3 +1,4 @@
+import { availableInventory, reservedQuantity } from './inventory-availability.mjs';
 import crypto from "node:crypto";
 import { getDeployStore, getStore } from "@netlify/blobs";
 import { cleanText } from "./platform-utils.mjs";
@@ -76,7 +77,15 @@ export async function saveClientSite(site) {
     if(Number(site.revision)!==Number(previous.data.revision||0)+1)throw Object.assign(new Error('Business changed. Reload before saving.'),{status:409});
     // Operation markers are server-owned and cannot be erased by another edit.
     site={...site,...(previous.data.stockOperations?{stockOperations:previous.data.stockOperations}:{})};
-  }else if(site.stockOperations)throw Object.assign(new Error('Inventory markers cannot be supplied when creating a business.'),{status:400});
+    if(previous.data.stockReservations)site={...site,stockReservations:previous.data.stockReservations};
+    for(const reservation of Object.values(previous.data.stockReservations||{})){
+      if(reservation.state!=='held')continue;
+      for(const line of reservation.lines||[]){
+        const item=(site.catalog||[]).find(item=>item.id===line.id);
+        if(!item||item.type!=='product'||!item.trackInventory||item.inventory==null||(!item.allowBackorder&&Number(item.inventory)<reservedQuantity(previous.data,line.id)))throw Object.assign(new Error('Resolve active stock reservations before changing this product.'),{status:409});
+      }
+    }
+  }else if(site.stockOperations||site.stockReservations)throw Object.assign(new Error('Inventory markers cannot be supplied when creating a business.'),{status:400});
   const saved=await store.setJSON(siteKey(site.siteId),site,previous?{onlyIfMatch:previous.etag}:{onlyIfNew:true});
   if(!saved.modified)throw Object.assign(new Error('Business changed. Reload before saving.'),{status:409});
   await clientSiteStore().setJSON(`slugs/${slugify(site.slug)}.json`, { siteId: site.siteId });
@@ -165,7 +174,7 @@ export function publicClientSite(site) {
       descriptionEs: item.descriptionEs || "",
       price: item.price,
       active: item.active !== false,
-      inventory: item.inventory,
+      inventory: availableInventory(site,item),
       requiresAppointment: Boolean(item.requiresAppointment),
       duration: Number(item.duration || 0),
       imageUrl: item.imageAssetKey

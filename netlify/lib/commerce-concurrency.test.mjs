@@ -98,3 +98,29 @@ test('changed POS tips cannot reuse a completed attempt and invalid cents never 
   assert.equal((await sale(invalid)).status,400);
   assert.equal((await getClientSite('shop')).catalog[0].inventory,4);
 });
+
+function expirationRequest(eventId,sessionId='cs_shop',status='expired'){
+  const created=Math.floor(Date.now()/1000),body=JSON.stringify({id:eventId,type:'checkout.session.expired',account:'acct_shop',created,data:{object:{id:sessionId,status,payment_status:'unpaid',amount_total:100,metadata:{flow:'webfactory_client_commerce',site_id:'shop',transaction_id:'txn_shop'}}}}),signature=crypto.createHmac('sha256','test-signing-secret').update(`${created}.${body}`).digest('hex');
+  return new Request('https://webfactorypr.com/.netlify/functions/stripe-connect-webhook',{method:'POST',headers:{'stripe-signature':`t=${created},v1=${signature}`},body});
+}
+async function prepareReservation(f){await f.prepare();await clientCommerceStore().setJSON(commerceKey('shop','transactions','txn_shop'),{transactionId:'txn_shop',siteId:'shop',kind:'order',stripeAccountId:'acct_shop',stripeSessionId:'cs_shop',inventoryProtocol:1,inventoryReservationRequired:true,paymentStatus:'pending',amountTotal:100,items:[{id:'last-item',quantity:1,unitAmount:100}],customer:{}});const {reserveInventory}=await import('./inventory-reservations.mjs');await reserveInventory('shop','txn_shop',[{id:'last-item',quantity:1}]);}
+test('only matching signed Stripe expirations release pending stock; delivery replay is harmless',async t=>{
+ const f=fixture(t,1);await prepareReservation(f);
+ assert.equal((await sale(saleRequest())).status,409);
+ assert.equal((await webhook(expirationRequest('evt_wrong','cs_other'))).status,500);
+ assert.equal((await sale(saleRequest())).status,409);
+ assert.equal((await webhook(expirationRequest('evt_expired'))).status,200);
+ assert.equal((await webhook(expirationRequest('evt_expired'))).status,200);
+ assert.equal((await clientCommerceStore().get(commerceKey('shop','transactions','txn_shop'))).paymentStatus,'expired');
+ assert.equal((await sale(saleRequest())).status,200);
+});
+test('paid webhook consumes a reservation; a later expiration never replenishes its sold units',async t=>{
+ const f=fixture(t,1);await prepareReservation(f);assert.equal((await webhook(webhookRequest('evt_reserved_paid'))).status,200);assert.equal((await getClientSite('shop')).catalog[0].inventory,0);
+ assert.equal((await webhook(expirationRequest('evt_late_expired'))).status,200);assert.equal((await getClientSite('shop')).catalog[0].inventory,0);assert.equal((await clientCommerceStore().get(commerceKey('shop','transactions','txn_shop'))).paymentStatus,'paid');
+});
+test('configuration edits preserve reservations and cannot remove or disable a reserved product',async t=>{
+ const f=fixture(t,2);await prepareReservation(f);const {patchClientSite}=await import('./client-store.mjs');
+ await assert.rejects(patchClientSite('shop',{catalog:[]}),{status:409});const site=await getClientSite('shop');
+ await assert.rejects(patchClientSite('shop',{catalog:site.catalog.map(item=>({...item,trackInventory:false}))}),{status:409});
+ await patchClientSite('shop',{business:{name:'Updated'}});assert.equal(Object.values((await getClientSite('shop')).stockReservations)[0].state,'held');
+});
