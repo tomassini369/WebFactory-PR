@@ -1,4 +1,5 @@
 import crypto from 'node:crypto';
+import { newTotpSecret,encryptTotp,decryptTotp,matchingTotpStep,totpUri,totpAvailable,totpKeyValue } from './mfa-totp.mjs';
 import { indexAuthExpiry } from './auth-expiry.mjs';
 import { getStore, getDeployStore } from '@netlify/blobs';
 import { withBookingLock } from './booking-lock.mjs';
@@ -24,10 +25,10 @@ export async function securityState(user,context,store=mfaStore(),mandatory=mfaR
   if(!user?.id)return {required:false,enrolled:false,verified:false,needsLogin:false};
   const token=context?.cookies?.get(PRIMARY_COOKIE);
   const [profile,session]=await Promise.all([store.get(profileKey(user),{type:'json'}),token ? store.get(sessionKey(user,token),{type:'json'}) : null]);
-  const enrolled=Boolean(profile?.credentials?.length);
+  const enrolled=Boolean(profile?.credentials?.length||profile?.totp);
   const validSession=session?.userId===user.id&&session.expiresAt>now;
   const verified=Boolean(validSession&&enrolled&&session.verifiedAt&&session.version===profile.version);
-  return {required:Boolean(mandatory||enrolled),enrolled,verified,needsLogin:!validSession,credentials:(profile?.credentials||[]).map(({id,label,createdAt})=>({id,label,createdAt})),recoveryCodesRemaining:profile?.codes?.length||0};
+  return {required:Boolean(mandatory||enrolled),enrolled,verified,needsLogin:!validSession,authenticatorEnrolled:Boolean(profile?.totp),authenticatorAvailable:totpAvailable(),credentials:(profile?.credentials||[]).map(({id,label,createdAt})=>({id,label,createdAt})),recoveryCodesRemaining:profile?.codes?.length||0};
 }
 
 export async function assertSecondFactor(user,context=globalThis.Netlify?.context,store=mfaStore(),mandatory=mfaRequiredByPolicy()){
@@ -46,7 +47,7 @@ export async function purgeAccountSecurity(user,store=mfaStore()){
   for(const {key} of blobs)await store.delete(key);
 }
 
-export function createMfaService(store,webAuthn,now=()=>Date.now()){
+export function createMfaService(store,webAuthn,now=()=>Date.now(),{totpKey=totpKeyValue}={}){
   async function sessionFor(user,context){
     const token=context.cookies.get(PRIMARY_COOKIE);
     const key=token&&sessionKey(user,token);
@@ -57,7 +58,7 @@ export function createMfaService(store,webAuthn,now=()=>Date.now()){
   async function grant(key,session,profile){await store.setJSON(key,{...session,version:profile.version,verifiedAt:now()});}
   async function freshProof(user,context,profile){
     const current=await sessionFor(user,context);
-    if(!profile||!current.session.verifiedAt||current.session.verifiedAt+300000<now()||current.session.version!==profile.version)throw reject('Verify your passkey or recovery code again.');
+    if(!profile||!current.session.verifiedAt||current.session.verifiedAt+300000<now()||current.session.version!==profile.version)throw reject('Verify your passkey, Authenticator or recovery code again.');
     return current;
   }
   async function consume(user,context,id,kind,origin){
@@ -74,7 +75,7 @@ export function createMfaService(store,webAuthn,now=()=>Date.now()){
     const current=await sessionFor(user,context);
     const profile=await store.get(profileKey(user),{type:'json'});
     if(kind==='register'){
-      if(profile?.credentials?.length)await freshProof(user,context,profile);
+      if(profile?.credentials?.length||profile?.totp)await freshProof(user,context,profile);
       else if(current.session.issuedAt+300000<now())throw reject('Sign in again before setting up security.');
       if((profile?.credentials?.length||0)>=5)throw reject('Up to five passkeys are supported.',400);
     }else if(!profile?.credentials?.length)throw reject('Set up a passkey first.',400);
@@ -96,7 +97,7 @@ export function createMfaService(store,webAuthn,now=()=>Date.now()){
       const rpID=new URL(origin).hostname;
       let codes;
       if(kind==='register'){
-        if(profile?.credentials?.length)await freshProof(user,context,profile);
+        if(profile?.credentials?.length||profile?.totp)await freshProof(user,context,profile);
         else if(current.session.issuedAt+300000<now())throw reject('Sign in again before setting up security.');
         const result=await webAuthn.verifyRegistrationResponse({response:payload.response,expectedChallenge:challenge.challenge,expectedOrigin:origin,expectedRPID:rpID,requireUserVerification:true});
         if(!result.verified||!result.registrationInfo?.userVerified)throw reject();
@@ -134,7 +135,7 @@ export function createMfaService(store,webAuthn,now=()=>Date.now()){
     return withBookingLock(store,`${userPrefix(user)}lock`,async()=>{
       const profile=await store.get(profileKey(user),{type:'json'});
       const current=await freshProof(user,context,profile);
-      if(profile.credentials.length<=1)throw reject('Add a replacement passkey before removing the last one.',400);
+      if(profile.credentials.length<=1&&!profile.totp)throw reject('Add a replacement passkey or Authenticator before removing the last one.',400);
       if(!profile.credentials.some(c=>c.id===id))throw reject('Passkey not found.',404);
       profile.credentials=profile.credentials.filter(c=>c.id!==id);
       profile.version=crypto.randomUUID();
@@ -154,5 +155,74 @@ export function createMfaService(store,webAuthn,now=()=>Date.now()){
       return {ok:true,recoveryCodes:codes};
     });
   }
-  return {options,verify,recover,remove,rotateCodes};
+  async function setupProof(user,context,profile){
+    if(profile?.credentials?.length||profile?.totp)return freshProof(user,context,profile);
+    const current=await sessionFor(user,context);
+    if(current.session.issuedAt+300000<now())throw reject('Sign in again before setting up security.');
+    return current;
+  }
+  function sameOrigin(profile,origin){if(profile?.origin&&profile.origin!==origin)throw reject('Use the original portal address for security verification.',403);}
+  async function beginTotp(user,context,origin){
+    return withBookingLock(store,`${userPrefix(user)}lock`,async()=>{
+      const profile=await store.get(profileKey(user),{type:'json'}),current=await setupProof(user,context,profile);
+      sameOrigin(profile,origin);if(profile?.totp)throw reject('Authenticator is already configured.',409);
+      const secret=newTotpSecret(),encrypted=encryptTotp(secret,user.id,origin,totpKey()),challengeId=crypto.randomBytes(32).toString('base64url');
+      const key=`${userPrefix(user)}challenges/${challengeId}.json`,expiresAt=now()+300000;
+      await indexAuthExpiry(store,key,expiresAt);
+      await store.setJSON(key,{kind:'totp',origin,primaryHash:hash(current.token),version:profile?.version||null,encrypted,expiresAt});
+      return {secret,uri:totpUri(secret,user.email,origin),challengeId,expiresAt};
+    });
+  }
+  async function pendingTotp(user,current,challengeId,origin){
+    if(typeof challengeId!=='string'||!/^[-a-zA-Z0-9_]{43}$/.test(challengeId))throw reject();
+    const key=`${userPrefix(user)}challenges/${challengeId}.json`,record=await store.get(key,{type:'json'});
+    if(!record||record.kind!=='totp'||record.consumed||record.expiresAt<=now()||record.origin!==origin||record.primaryHash!==hash(current.token))throw reject('Authenticator setup expired or invalid.');
+    return {key,record};
+  }
+  async function checkTotp(user,secret,code,lastUsedStep=-1){
+    const key=`${userPrefix(user)}totp-attempts.json`,previous=await store.get(key,{type:'json'});
+    const attempts=previous?.expiresAt>now()?previous:{failures:0,expiresAt:now()+300000};
+    if(!Number.isSafeInteger(attempts.failures)||attempts.failures<0)throw reject('Authenticator security is unavailable.',503);
+    if(attempts.failures>=5)throw reject('Too many Authenticator attempts. Try again later.',429);
+    const step=matchingTotpStep(secret,code,now(),lastUsedStep);
+    if(step===null){await indexAuthExpiry(store,key,attempts.expiresAt);await store.setJSON(key,{...attempts,failures:attempts.failures+1});throw reject('Invalid or already used Authenticator code.');}
+    await store.delete(key);return step;
+  }
+  async function confirmTotp(user,context,challengeId,code,origin){
+    return withBookingLock(store,`${userPrefix(user)}lock`,async()=>{
+      let profile=await store.get(profileKey(user),{type:'json'});sameOrigin(profile,origin);
+      const current=await setupProof(user,context,profile),pending=await pendingTotp(user,current,challengeId,origin);
+      if((profile?.version||null)!==pending.record.version||profile?.totp)throw reject('Security settings changed. Try again.',409);
+      const secret=decryptTotp(pending.record.encrypted,user.id,origin,totpKey()),step=await checkTotp(user,secret,code);
+      let codes;
+      if(!profile){codes=Array.from({length:10},()=>crypto.randomBytes(16).toString('hex'));profile={origin,credentials:[],codes:codes.map(hash)};}
+      profile.version=crypto.randomUUID();profile.totp={encrypted:pending.record.encrypted,lastUsedStep:step,createdAt:new Date(now()).toISOString()};
+      // Save the factor/replay marker before granting the session. An uncertain
+      // response requires a new time step, never accepting the same code twice.
+      await store.setJSON(profileKey(user),profile);await store.delete(pending.key);
+      await grant(current.key,current.session,profile);return {ok:true,...(codes?{recoveryCodes:codes}:{})};
+    });
+  }
+  async function authenticateTotp(user,context,code,origin){
+    return withBookingLock(store,`${userPrefix(user)}lock`,async()=>{
+      const current=await sessionFor(user,context),profile=await store.get(profileKey(user),{type:'json'});sameOrigin(profile,origin);
+      if(!profile?.totp)throw reject('Set up Authenticator first.',400);
+      if(!Number.isSafeInteger(profile.totp.lastUsedStep)||profile.totp.lastUsedStep<0)throw reject('Authenticator security is unavailable.',503);
+      const secret=decryptTotp(profile.totp.encrypted,user.id,origin,totpKey());
+      profile.totp.lastUsedStep=await checkTotp(user,secret,code,profile.totp.lastUsedStep);
+      await store.setJSON(profileKey(user),profile);await grant(current.key,current.session,profile);return {ok:true};
+    });
+  }
+  async function cancelTotp(user,context,challengeId,origin){
+    return withBookingLock(store,`${userPrefix(user)}lock`,async()=>{const current=await sessionFor(user,context),pending=await pendingTotp(user,current,challengeId,origin);await store.delete(pending.key);return {ok:true}});
+  }
+  async function removeTotp(user,context,origin){
+    return withBookingLock(store,`${userPrefix(user)}lock`,async()=>{
+      const profile=await store.get(profileKey(user),{type:'json'});sameOrigin(profile,origin);const current=await freshProof(user,context,profile);
+      if(!profile?.totp)throw reject('Authenticator is not configured.',404);
+      if(!profile.credentials?.length)throw reject('Add a passkey before removing Authenticator.',400);
+      delete profile.totp;profile.version=crypto.randomUUID();await store.setJSON(profileKey(user),profile);await grant(current.key,current.session,profile);return {ok:true};
+    });
+  }
+  return {options,verify,recover,remove,rotateCodes,beginTotp,confirmTotp,authenticateTotp,cancelTotp,removeTotp};
 }

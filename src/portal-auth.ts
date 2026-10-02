@@ -1,5 +1,5 @@
 import type { User as IdentityUser } from '@netlify/identity'
-export type User=IdentityUser & {mfa?:{required:boolean;enrolled:boolean;verified:boolean;needsLogin:boolean;credentials?:Array<{id:string;label:string;createdAt:string}>;recoveryCodesRemaining?:number}}
+export type User=IdentityUser & {mfa?:{required:boolean;enrolled:boolean;verified:boolean;needsLogin:boolean;authenticatorEnrolled?:boolean;authenticatorAvailable?:boolean;credentials?:Array<{id:string;label:string;createdAt:string}>;recoveryCodesRemaining?:number}}
 
 type AuthResult={ok:boolean;user?:User|null}
 const listeners=new Set<(event:string,user:User|null)=>void>()

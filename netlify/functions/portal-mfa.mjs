@@ -13,6 +13,15 @@ export default async (req, context) => {
     const origin=new URL(req.url).origin;
     if(!origin.startsWith('https://'))return authJson({ok:false,message:'Secure origin required.'},403);
     const service=createMfaService(mfaStore(),await import('@simplewebauthn/server'));
+    if(payload.action==='totp-setup'){
+      const setup=await service.beginTotp(user,context,origin);
+      const {default:QR}=await import('qrcode');
+      return authJson({ok:true,...setup,qr:await QR.toDataURL(setup.uri,{errorCorrectionLevel:'M',margin:4,width:300})});
+    }
+    if(payload.action==='totp-confirm')return authJson(await service.confirmTotp(user,context,payload.challengeId,payload.code,origin));
+    if(payload.action==='totp-verify')return authJson(await service.authenticateTotp(user,context,payload.code,origin));
+    if(payload.action==='totp-cancel')return authJson(await service.cancelTotp(user,context,payload.challengeId,origin));
+    if(payload.action==='totp-remove')return authJson(await service.removeTotp(user,context,origin));
     if(payload.action==='register-options')return authJson({ok:true,...await service.options(user,context,'register',origin)});
     if(payload.action==='authenticate-options')return authJson({ok:true,...await service.options(user,context,'authenticate',origin)});
     if(payload.action==='register-verify')return authJson(await service.verify(user,context,payload,'register',origin));
@@ -22,7 +31,7 @@ export default async (req, context) => {
     if(payload.action==='remove')return authJson(await service.remove(user,context,payload.id));
     return authJson({ok:false,message:'Unsupported security action.'},400);
   } catch(error) {
-    return authJson({ok:false,message:'Security verification failed. Sign in again or use a recovery code.'},[400,401,403,404,409,413,415].includes(error?.status)?error.status:400);
+    return authJson({ok:false,message:'Security verification failed. Check your code, sign in again or use a recovery code.'},[400,401,403,404,409,413,415,429,503].includes(error?.status)?error.status:400);
   }
 };
 export const config={rateLimit:{windowLimit:10,windowSize:180,aggregateBy:['ip']}};

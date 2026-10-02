@@ -21,7 +21,7 @@ export async function cleanupAuthExpiry(store,{now=Date.now(),clock=Date.now,bud
             if(summary.scanned>=maxRecords||clock()-started>=budgetMs){summary.paused=true;return summary;}
             summary.scanned++;
             const index=await store.get(indexKey,{type:'json'});
-            const match=/^(users\/[a-f0-9]{64}\/)(?:sessions\/[a-f0-9]{64}|challenges\/[-a-zA-Z0-9_]{43})\.json$/.exec(index?.key||'');
+            const match=/^(users\/[a-f0-9]{64}\/)(?:sessions\/[a-f0-9]{64}|challenges\/[-a-zA-Z0-9_]{43}|totp-attempts)\.json$/.exec(index?.key||'');
             if(!match||!Number.isFinite(index.expiresAt)||index.expiresAt>now){summary.invalid++;continue;}
             try{
               await withBookingLock(store,`${match[1]}lock`,async()=>{
