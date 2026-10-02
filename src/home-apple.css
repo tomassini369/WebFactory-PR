@@ -77,3 +77,11 @@
   .wf-premium-home :is(button,a.wf-btn,a.wf-h-login):active{transform:none;background:var(--hp-elevated)}
   .wf-premium-home .wf-btn:active{background:#1260ce}
 }
+
+/* Leave the original hero video unobstructed; the Control Center stays in the tour. */
+.wf-premium-home .wf-hero-grid{grid-template-columns:minmax(0,1fr)}
+.wf-premium-home .wf-hero-copy{max-width:580px}
+.wf-premium-home .wf-hero.has-video .wf-hero-scrim{background:linear-gradient(90deg,rgba(4,9,20,.76) 0%,rgba(4,9,20,.56) 34%,rgba(4,9,20,.12) 67%,rgba(4,9,20,.22) 100%),linear-gradient(180deg,rgba(4,9,20,.2),transparent 25%,transparent 75%,rgba(4,9,20,.55))}
+@media(max-width:960px){
+ .wf-premium-home .wf-hero.has-video .wf-hero-scrim{background:linear-gradient(180deg,rgba(4,9,20,.48),rgba(4,9,20,.58) 60%,rgba(4,9,20,.68))}
+}

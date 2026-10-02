@@ -433,12 +433,7 @@ export default function HomePage({ lang, setLang }: { lang: Language, setLang: (
             <div className="wf-actions"><a className="wf-btn" href="/builder">{t.start}<span aria-hidden="true">↗</span></a><a className="wf-link" href="/templates">{t.templates} →</a></div>
             <p className="wf-trial">{t.trial}</p>
           </div>
-          <div className="wf-hero-visual">
-            <div className="wf-hero-stage" role="img" aria-label={t.heroAlt}><ControlFrame t={t} step={4} only /></div>
-            <div className="wf-float wf-float-a" aria-hidden="true"><Icon name="website" /><span>{t.modules[0]}<small>EN · ES</small></span></div>
-            <div className="wf-float wf-float-b" aria-hidden="true"><Icon name="bookings" /><span>{t.bookingSample}<small>10:00 AM · {t.confirmed}</small></span></div>
-            <div className="wf-float wf-float-c" aria-hidden="true"><Icon name="payments" /><span>{t.paid}<small>$45.00 · {t.sample}</small></span></div>
-          </div>
+
         </div>
         <a className="wf-scroll-cue" href="#recorrido"><span aria-hidden="true" />{t.scroll}</a>
       </section>
