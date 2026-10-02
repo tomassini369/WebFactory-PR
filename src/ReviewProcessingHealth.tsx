@@ -1,0 +1,15 @@
+import { useEffect,useState,useRef } from 'react'
+import { PortalPanel } from './PortalPanel'
+import { withAuthRetry } from './auth-retry'
+type Health={lastRunAt:string;sent:number;uncertain:number;errors:number;requestsVisited:number;sitesVisited:number;paused:boolean;providerConfigured:boolean}
+export default function ReviewProcessingHealth({lang}:{lang:'es'|'en'}){
+  const es=lang==='es', [data,setData]=useState<{enabled:boolean;health:Health|null}|null>(null),[error,setError]=useState('')
+  const revision=useRef(0)
+  const load=async()=>{const current=++revision.current;setError('');try{const result=await withAuthRetry(async()=>{const response=await fetch('/.netlify/functions/review-processing-health',{credentials:'same-origin',cache:'no-store'});if(!response.ok)throw new Error(es?'No se pudo consultar el proceso.':'Unable to check processing.');return response.json()});if(current===revision.current)setData(result)}catch(e){if(current===revision.current)setError(e instanceof Error?e.message:'Unable to check processing.')}}
+  useEffect(()=>{void load();return()=>{revision.current++}},[])
+  return <PortalPanel className="wfa-card"><header><div><small>{es?'AUTOMATIZACIÓN DE RESEÑAS':'REVIEW AUTOMATION'}</small><h2>{es?'Último lote procesado':'Last processing batch'}</h2></div><button onClick={()=>void load()}>{es?'Actualizar estado':'Refresh status'}</button></header>{error&&<p role="alert">{error}</p>}
+    {data&&!data.enabled&&<p className="wfa-note">{es?'Los envíos programados están desactivados en esta vista previa.':'Scheduled deliveries are disabled in this preview.'}</p>}
+    {data?.health?<>{data.enabled&&(data.health.errors>0||data.health.uncertain>0||Date.now()-Date.parse(data.health.lastRunAt)>30*60000)&&<p role="alert">{es?'Revisa el proceso: hay incidencias o el último lote está atrasado.':'Check processing: there are issues or the latest batch is overdue.'}</p>}<p>{new Date(data.health.lastRunAt).toLocaleString(es?'es-PR':'en-US')}</p><dl><div><dt>{es?'Solicitudes revisadas':'Requests checked'}</dt><dd>{data.health.requestsVisited}</dd></div><div><dt>{es?'Aceptadas por el proveedor':'Accepted by provider'}</dt><dd>{data.health.sent}</dd></div><div><dt>{es?'Entregas inciertas':'Uncertain deliveries'}</dt><dd>{data.health.uncertain}</dd></div><div><dt>{es?'Errores':'Errors'}</dt><dd>{data.health.errors}</dd></div></dl>{!data.health.providerConfigured&&<p role="alert">{es?'El proveedor de correo requiere configuración.':'The email provider requires configuration.'}</p>}</>:data&&<p>{es?'Todavía no hay un lote registrado.':'No processing batch has been recorded yet.'}</p>}
+    <p className="wfa-note">{es?'Las entregas inciertas requieren revisar al proveedor antes de considerar otro envío. Estos contadores describen el último lote; no acreditan entrega en la bandeja del destinatario.':'Uncertain deliveries require checking the provider before considering another send. These counts describe the last batch; they do not confirm inbox delivery.'}</p>
+  </PortalPanel>
+}
