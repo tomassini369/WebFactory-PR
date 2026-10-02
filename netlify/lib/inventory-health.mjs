@@ -3,6 +3,7 @@ import { clientCommerceStore,commerceKey,getClientSite } from './client-store.mj
 import { withBookingLock } from './booking-lock.mjs';
 import { stockOperationId } from './inventory-operations.mjs';
 import { inventoryFingerprint,inventoryLines } from './inventory-availability.mjs';
+import { findStockOperation } from './inventory-archive.mjs';
 
 const fail=(message,status=409)=>Object.assign(new Error(message),{status});
 const validId=id=>typeof id==='string'&&/^[a-zA-Z0-9_-]{1,180}$/.test(id);
@@ -51,7 +52,7 @@ export async function inventoryHealth(site,{store=clientCommerceStore(),clock=Da
   const operationCount=Object.keys(site.stockOperations||{}).length,reservationCount=Object.keys(site.stockReservations||{}).length;
   const journalBytes=Buffer.byteLength(JSON.stringify(site.stockOperations||{}))+Buffer.byteLength(JSON.stringify(site.stockReservations||{}));
   const review=reservations.filter(row=>row.issues.length).sort((a,b)=>(b.ageHours??Number.MAX_SAFE_INTEGER)-(a.ageHours??Number.MAX_SAFE_INTEGER));
-  return {checkedAt:new Date(started).toISOString(),heldCount:held.length,reviewCount:review.length,reservations:review.slice(0,50),hiddenReviewCount:Math.max(0,review.length-50),journal:{operationCount,reservationCount,bytes:journalBytes,nearCapacity:operationCount>=4000||reservationCount>=4000||journalBytes>=1600000,atCapacity:operationCount>=5000||reservationCount>=5000||journalBytes>2*1024*1024},pos:{pointerCount:pointers.length,cleanupEligibleCount:pointers.filter(row=>row.cleanupEligible).length,reviewCount:pointers.filter(row=>!row.cleanupEligible).length,rows:pointers.slice(0,50),hiddenCount:Math.max(0,pointers.length-50)}};
+  return {checkedAt:new Date(started).toISOString(),heldCount:held.length,reviewCount:review.length,reservations:review.slice(0,50),hiddenReviewCount:Math.max(0,review.length-50),journal:{operationCount,reservationCount,archivedOperations:Number(site.inventoryArchive?.operationCount||0),archivedReservations:Number(site.inventoryArchive?.reservationCount||0),bytes:journalBytes,nearCapacity:operationCount>=4000||reservationCount>=4000||journalBytes>=1600000,atCapacity:operationCount>=5000||reservationCount>=5000||journalBytes>2*1024*1024},pos:{pointerCount:pointers.length,cleanupEligibleCount:pointers.filter(row=>row.cleanupEligible).length,reviewCount:pointers.filter(row=>!row.cleanupEligible).length,rows:pointers.slice(0,50),hiddenCount:Math.max(0,pointers.length-50)}};
 }
 
 async function posPointerStatus(site,id,store){
@@ -59,7 +60,7 @@ async function posPointerStatus(site,id,store){
   const row={transactionId:id,status:'reconciliation_required',cleanupEligible:false};
   if(!record||record.siteId!==site.siteId||record.transactionId!==id||record.source!=='pos'){row.status='missing_transaction';return row}
   if(record.status!=='completed'||record.paymentStatus!=='paid_in_person'||record.inventoryProtocol!==1||!record.inventoryAppliedAt||record.inventoryNeedsReview||!validId(record.receiptId))return row;
-  const operation=site.stockOperations?.[stockOperationId('sale',id)];
+  const operation=await findStockOperation(site,stockOperationId('sale',id),store);
   if(!operation||operation.id!==record.inventoryOperationId||operation.referenceId!==id||operation.kind!=='sale')return row;
   try{if(operation.fingerprint!==digest({kind:'sale',referenceId:id,lines:inventoryLines(record.items),direction:-1})||operation.appliedAt!==record.inventoryAppliedAt)return row}catch{return row}
   const [order,receipt]=await Promise.all([store.get(commerceKey(site.siteId,'orders',id),{type:'json'}),store.get(`${site.siteId}/v3/receipts/${record.receiptId}.json`,{type:'json'})]);
@@ -97,7 +98,7 @@ export async function snapshotInventoryJournal(siteId,savedBy,{store=clientComme
   return withBookingLock(store,`locks/commerce/${siteId}`,async()=>{
     const site=await getClientSite(siteId);
     if(!site||site.siteId!==siteId)throw fail('Business not found.',404);
-    const payload={siteId,stockOperations:site.stockOperations||{},stockReservations:site.stockReservations||{}};
+    const payload={siteId,stockOperations:site.stockOperations||{},stockReservations:site.stockReservations||{},inventoryArchive:site.inventoryArchive||null};
     if(Buffer.byteLength(JSON.stringify(payload))>2300000)throw fail('Journal requires a staged export.',413);
     const checksum=digest(payload),key=commerceKey(siteId,'inventory-journal-snapshots',checksum);
     await store.setJSON(key,{siteId,schemaVersion:1,savedAt:new Date().toISOString(),savedBy,siteRevision:site.revision,payload,checksum},{onlyIfNew:true});

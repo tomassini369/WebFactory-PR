@@ -78,6 +78,8 @@ export async function saveClientSite(site) {
     // Operation markers are server-owned and cannot be erased by another edit.
     site={...site,...(previous.data.stockOperations?{stockOperations:previous.data.stockOperations}:{})};
     if(previous.data.stockReservations)site={...site,stockReservations:previous.data.stockReservations};
+    if(previous.data.inventoryArchive)site={...site,inventoryArchive:previous.data.inventoryArchive};
+    else if(site.inventoryArchive)throw Object.assign(new Error('Inventory archive metadata is server-owned.'),{status:400});
     for(const reservation of Object.values(previous.data.stockReservations||{})){
       if(reservation.state!=='held')continue;
       for(const line of reservation.lines||[]){
@@ -85,7 +87,7 @@ export async function saveClientSite(site) {
         if(!item||item.type!=='product'||!item.trackInventory||item.inventory==null||(!item.allowBackorder&&Number(item.inventory)<reservedQuantity(previous.data,line.id)))throw Object.assign(new Error('Resolve active stock reservations before changing this product.'),{status:409});
       }
     }
-  }else if(site.stockOperations||site.stockReservations)throw Object.assign(new Error('Inventory markers cannot be supplied when creating a business.'),{status:400});
+  }else if(site.stockOperations||site.stockReservations||site.inventoryArchive)throw Object.assign(new Error('Inventory markers cannot be supplied when creating a business.'),{status:400});
   const saved=await store.setJSON(siteKey(site.siteId),site,previous?{onlyIfMatch:previous.etag}:{onlyIfNew:true});
   if(!saved.modified)throw Object.assign(new Error('Business changed. Reload before saving.'),{status:409});
   await clientSiteStore().setJSON(`slugs/${slugify(site.slug)}.json`, { siteId: site.siteId });

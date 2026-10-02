@@ -516,3 +516,125 @@ test('a lost snapshot write response can retry the same verified copy without du
  assert.equal([...f.rows.keys()].filter(key=>key.includes('/inventory-journal-snapshots/')).length,1);
  assert.equal(Object.values((await getClientSite('shop')).stockReservations)[0].state,'held');
 });
+
+async function ageInventoryJournal(){
+ const site=await getClientSite('shop'),old=new Date(Date.now()-40*86400000).toISOString();
+ for(const operation of Object.values(site.stockOperations||{}))operation.appliedAt=old;
+ for(const reservation of Object.values(site.stockReservations||{})){if(reservation.state==='consumed')reservation.consumedAt=old;if(reservation.state==='released')reservation.releasedAt=old}
+ await clientSiteStore().setJSON('sites/shop.json',site);return old;
+}
+async function archiveShop(options={}){const {archiveInventoryBatch}=await import('./inventory-archive.mjs');return archiveInventoryBatch('shop','owner@example.invalid',options)}
+test('archived sale and consumed reservation replay without selling or reserving a second unit',async t=>{
+ const f=fixture(t,3);await prepareReservation(f);const {applyStockOperation}=await import('./inventory-operations.mjs');const {reserveInventory,releaseInventory}=await import('./inventory-reservations.mjs');
+ const operation={kind:'sale',referenceId:'txn_shop',items:[{id:'last-item',quantity:1}],reservationRequired:true};await applyStockOperation('shop',operation);await ageInventoryJournal();
+ const result=await archiveShop();assert.equal(result.archivedOperations,1);assert.equal(result.archivedReservations,1);
+ let site=await getClientSite('shop');assert.equal(Object.keys(site.stockOperations).length,0);assert.equal(Object.keys(site.stockReservations).length,0);assert.equal(site.catalog[0].inventory,2);
+ assert.equal((await applyStockOperation('shop',operation)).reused,true);assert.equal((await getClientSite('shop')).catalog[0].inventory,2);
+ await assert.rejects(applyStockOperation('shop',{...operation,items:[{id:'last-item',quantity:2}]}),{status:409});
+ await assert.rejects(reserveInventory('shop','txn_shop',operation.items),{status:409});assert.equal(await releaseInventory('shop','txn_shop'),false);
+ assert.equal((await archiveShop()).archivedOperations,0);assert.equal((await getClientSite('shop')).inventoryArchive.operationCount,1);
+});
+test('archive keeps held reservations and recent operations in the active journal',async t=>{
+ const f=fixture(t,3);await prepareReservation(f);const {applyStockOperation}=await import('./inventory-operations.mjs');await applyStockOperation('shop',{kind:'adjustment',referenceId:'recent_adjustment',items:[{id:'last-item',quantity:1}],direction:1});
+ const before=await getClientSite('shop');assert.equal((await archiveShop()).archivedOperations,0);assert.deepEqual(await getClientSite('shop'),before);
+ assert.equal(Object.values((await getClientSite('shop')).stockReservations)[0].state,'held');
+});
+test('archived released reservations cannot be reused and a new checkout remains available',async t=>{
+ const f=fixture(t,2);await prepareReservation(f);const {releaseInventory,reserveInventory}=await import('./inventory-reservations.mjs');await releaseInventory('shop','txn_shop');await ageInventoryJournal();
+ assert.equal((await archiveShop()).archivedReservations,1);assert.equal(await releaseInventory('shop','txn_shop'),false);
+ await assert.rejects(reserveInventory('shop','txn_shop',[{id:'last-item',quantity:1}]),{status:409});
+ await reserveInventory('shop','new_checkout',[{id:'last-item',quantity:1}]);assert.equal(Object.values((await getClientSite('shop')).stockReservations)[0].state,'held');assert.equal((await getClientSite('shop')).catalog[0].inventory,2);
+});
+test('an archived refund can be repeated without restoring stock twice',async t=>{
+ const f=fixture(t,2);await f.prepare();const {applyStockOperation}=await import('./inventory-operations.mjs');const operation={kind:'sale',referenceId:'sale_for_refund',items:[{id:'last-item',quantity:1}]};
+ await applyStockOperation('shop',operation);await applyStockOperation('shop',{...operation,kind:'refund',direction:1});await ageInventoryJournal();assert.equal((await archiveShop()).archivedOperations,2);
+ assert.equal((await applyStockOperation('shop',{...operation,kind:'refund',direction:1})).reused,true);assert.equal((await getClientSite('shop')).catalog[0].inventory,2);
+ const {findStockOperation}=await import('./inventory-archive.mjs');const {stockOperationId}=await import('./inventory-operations.mjs');assert.equal((await findStockOperation(await getClientSite('shop'),stockOperationId('sale','sale_for_refund'))).deltas[0].quantityDelta,-1);
+});
+test('missing archived evidence blocks an old sale instead of guessing it never happened',async t=>{
+ const f=fixture(t,3);await f.prepare();const {applyStockOperation}=await import('./inventory-operations.mjs');const operation={kind:'sale',referenceId:'missing_archive',items:[{id:'last-item',quantity:1}]};
+ await applyStockOperation('shop',operation);await ageInventoryJournal();await archiveShop();const key=[...f.rows.keys()].find(key=>key.includes('/inventory-archive-records/'));f.rows.delete(key);
+ await assert.rejects(applyStockOperation('shop',operation),{status:503});assert.equal((await getClientSite('shop')).catalog[0].inventory,2);
+});
+test('a missing or altered archive index fails closed before a new operation in that bucket',async t=>{
+ const f=fixture(t,3);await f.prepare();const {applyStockOperation,stockOperationId}=await import('./inventory-operations.mjs');const original={kind:'sale',referenceId:'bucket_source',items:[{id:'last-item',quantity:1}]};
+ await applyStockOperation('shop',original);await ageInventoryJournal();await archiveShop();const key=[...f.rows.keys()].find(key=>key.includes('/inventory-archive-index/')),saved=structuredClone(f.rows.get(key));
+ f.rows.get(key).data.entries={};await assert.rejects(applyStockOperation('shop',original),{status:503});f.rows.set(key,saved);
+ const bucket=stockOperationId('sale','bucket_source').slice(0,2);let reference;for(let i=0;i<10000;i++){if(stockOperationId('sale',`new-${i}`).startsWith(bucket)){reference=`new-${i}`;break}}assert.ok(reference);f.rows.delete(key);
+ await assert.rejects(applyStockOperation('shop',{...original,referenceId:reference}),{status:503});assert.equal((await getClientSite('shop')).catalog[0].inventory,2);
+});
+test('failed archive copying leaves every active marker intact and retry verifies the same immutable evidence',async t=>{
+ const f=fixture(t,3);await f.prepare();const {applyStockOperation}=await import('./inventory-operations.mjs');await applyStockOperation('shop',{kind:'sale',referenceId:'copy_failure',items:[{id:'last-item',quantity:1}]});await ageInventoryJournal();const before=await getClientSite('shop');
+ const proto=Object.getPrototypeOf(clientCommerceStore()),write=proto.setJSON;let broken=true;
+ t.mock.method(proto,'setJSON',async function(key,value,options){const result=await write.call(this,key,value,options);if(key.includes('/inventory-archive-records/')&&broken){broken=false;throw new Error('copy response lost')};return result});
+ await assert.rejects(archiveShop());assert.deepEqual(await getClientSite('shop'),before);assert.equal((await archiveShop()).archivedOperations,1);assert.equal([...f.rows.keys()].filter(key=>key.includes('/inventory-archive-records/')).length,1);
+});
+test('a concurrent site edit prevents archive pruning while preserving copied evidence for retry',async t=>{
+ const f=fixture(t,3);await f.prepare();const {applyStockOperation}=await import('./inventory-operations.mjs');await applyStockOperation('shop',{kind:'sale',referenceId:'cas_failure',items:[{id:'last-item',quantity:1}]});await ageInventoryJournal();const before=await getClientSite('shop');
+ const proto=Object.getPrototypeOf(clientCommerceStore()),write=proto.setJSON;let race=true;
+ t.mock.method(proto,'setJSON',async function(key,value,options){if(key==='sites/shop.json'&&value.inventoryArchive&&race){race=false;await write.call(this,key,{...before,revision:before.revision+1,business:{name:'concurrent edit'}})}return write.call(this,key,value,options)});
+ await assert.rejects(archiveShop(),{status:409});assert.equal(Object.keys((await getClientSite('shop')).stockOperations).length,1);assert.equal((await getClientSite('shop')).business.name,'concurrent edit');
+ assert.equal((await archiveShop()).archivedOperations,1);assert.equal((await getClientSite('shop')).business.name,'concurrent edit');
+});
+test('a lost final archive commit response can retry without deleting or counting the same evidence twice',async t=>{
+ const f=fixture(t,3);await f.prepare();const {applyStockOperation}=await import('./inventory-operations.mjs');await applyStockOperation('shop',{kind:'sale',referenceId:'commit_failure',items:[{id:'last-item',quantity:1}]});await ageInventoryJournal();
+ const proto=Object.getPrototypeOf(clientCommerceStore()),write=proto.setJSON;let broken=true;t.mock.method(proto,'setJSON',async function(key,value,options){const result=await write.call(this,key,value,options);if(key==='sites/shop.json'&&value.inventoryArchive&&broken){broken=false;throw new Error('commit response lost')};return result});
+ await assert.rejects(archiveShop());assert.equal((await archiveShop()).archivedOperations,0);assert.equal((await getClientSite('shop')).inventoryArchive.operationCount,1);
+ assert.equal((await applyStockOperation('shop',{kind:'sale',referenceId:'commit_failure',items:[{id:'last-item',quantity:1}]})).reused,true);
+});
+test('business edits cannot disable or replace the server-owned archive index',async t=>{
+ const f=fixture(t,3);await f.prepare();const {applyStockOperation}=await import('./inventory-operations.mjs');await applyStockOperation('shop',{kind:'sale',referenceId:'retained_index',items:[{id:'last-item',quantity:1}]});await ageInventoryJournal();await archiveShop();
+ const site=await getClientSite('shop'),{saveClientSite}=await import('./client-store.mjs');const altered={...site,revision:site.revision+1,business:{name:'legitimate edit'},inventoryArchive:{version:1,buckets:{},operationCount:0,reservationCount:0}};
+ await saveClientSite(altered);assert.deepEqual((await getClientSite('shop')).inventoryArchive,site.inventoryArchive);
+ assert.equal((await applyStockOperation('shop',{kind:'sale',referenceId:'retained_index',items:[{id:'last-item',quantity:1}]})).reused,true);
+});
+test('old webhook retries and in-person cancellations remain safe after their inventory evidence is archived',async t=>{
+ const f=fixture(t,3);await prepareReservation(f);assert.equal((await webhook(webhookRequest('evt_before_archive'))).status,200);await ageInventoryJournal();await archiveShop();
+ assert.equal((await webhook(webhookRequest('evt_after_archive'))).status,200);assert.equal((await getClientSite('shop')).catalog[0].inventory,2);
+ assert.equal((await webhook(asyncCheckoutRequest('evt_fail_after_archive'))).status,200);assert.equal((await getClientSite('shop')).catalog[0].inventory,2);
+});
+test('archive maintenance is bounded, excludes invalid consumed evidence, and respects its time budget',async t=>{
+ const f=fixture(t);await prepareReservation(f);const site=await getClientSite('shop');const row=Object.values(site.stockReservations)[0];row.state='consumed';row.consumedAt=new Date(Date.now()-40*86400000).toISOString();await clientSiteStore().setJSON('sites/shop.json',site);
+ const result=await archiveShop();assert.equal(result.archivedReservations,0);assert.equal(result.skippedCount,1);assert.equal(Object.keys((await getClientSite('shop')).stockReservations).length,1);
+ let tick=0;const now=Date.now();await assert.rejects(archiveShop({clock:()=>now+(tick+=100),budgetMs:50}),{status:503});
+});
+test('archival frees space from a full 5000-operation journal in a bounded 50-record batch',async t=>{
+ const f=fixture(t,3);await f.prepare();const site=await getClientSite('shop'),old=new Date(Date.now()-40*86400000).toISOString();
+ site.stockOperations={};for(let i=0;i<5000;i++){const referenceId=`historical-${i}`,id=crypto.createHash('sha256').update(`adjustment:${referenceId}`).digest('hex');site.stockOperations[id]={id,kind:'adjustment',referenceId,fingerprint:crypto.createHash('sha256').update(JSON.stringify({kind:'adjustment',referenceId,lines:[{id:'last-item',quantity:1}],direction:1})).digest('hex'),deltas:[],appliedAt:old}}
+ await clientSiteStore().setJSON('sites/shop.json',site);const {applyStockOperation}=await import('./inventory-operations.mjs');
+ await assert.rejects(applyStockOperation('shop',{kind:'sale',referenceId:'after_capacity',items:[{id:'last-item',quantity:1}]}),{status:503});
+ const result=await archiveShop();assert.equal(result.archivedOperations,50);assert.equal(result.remainingEligible,4950);
+ assert.equal(Object.keys((await getClientSite('shop')).stockOperations).length,4950);assert.equal((await getClientSite('shop')).catalog[0].inventory,3);
+ await applyStockOperation('shop',{kind:'sale',referenceId:'after_capacity',items:[{id:'last-item',quantity:1}]});assert.equal((await getClientSite('shop')).catalog[0].inventory,2);
+});
+test('pay-at-business cancellation and payment replays use their archived closed reservations',async t=>{
+ const f=fixture(t,3);await preparePayAtBusiness(f);const cancelled=await placeInPersonOrder(),paid=await placeInPersonOrder();
+ assert.equal((await commerceAdmin(orderAction(cancelled,'cancel_in_person'))).status,200);assert.equal((await commerceAdmin(orderAction(paid,'mark_paid'))).status,200);
+ await ageInventoryJournal();const result=await archiveShop();assert.equal(result.archivedReservations,2);assert.equal(result.archivedOperations,1);
+ assert.equal((await commerceAdmin(orderAction(cancelled,'cancel_in_person'))).status,200);assert.equal((await commerceAdmin(orderAction(cancelled,'mark_paid'))).status,409);
+ assert.equal((await commerceAdmin(orderAction(paid,'mark_paid'))).status,200);assert.equal((await getClientSite('shop')).catalog[0].inventory,2);
+});
+test('POS recovery and auxiliary cleanup can verify stock evidence after archival',async t=>{
+ const f=fixture(t,3);await f.prepare();const response=await sale(saleRequest());const {record}=await response.json(),id=record.transactionId;const old=await ageInventoryJournal();
+ const store=clientCommerceStore();for(const group of ['orders','transactions']){const key=commerceKey('shop',group,id);await store.setJSON(key,{...await store.get(key),inventoryAppliedAt:old})}
+ await archiveShop();await store.setJSON(commerceKey('shop','pos-processing',id),{transactionId:id});
+ assert.equal((await healthForShop()).pos.cleanupEligibleCount,1);
+ const {recoverPosOrder}=await import('./pos-recovery.mjs');await recoverPosOrder('shop',id);assert.equal((await getClientSite('shop')).catalog[0].inventory,2);
+});
+test('archival endpoint requires catalog permissions and returns private batch counts',async t=>{
+ const f=fixture(t,3);await f.prepare();await sale(saleRequest());await ageInventoryJournal();const {default:handler}=await import('../functions/client-inventory-health.mjs');
+ const req=(origin='https://webfactorypr.com')=>new Request('https://webfactorypr.com/.netlify/functions/client-inventory-health',{method:'POST',headers:{Origin:origin,'Content-Type':'application/json'},body:JSON.stringify({siteId:'shop',action:'archive_journal'})});
+ assert.equal((await handler(req('https://foreign.invalid'))).status,403);
+ globalThis.netlifyIdentityContext={user:{email:'other@example.invalid',app_metadata:{}}};assert.equal((await handler(req())).status,403);
+ globalThis.netlifyIdentityContext={user:{email:'owner@example.invalid',app_metadata:{}}};const response=await handler(req());assert.equal(response.status,200);assert.equal(response.headers.get('Cache-Control'),'no-store');assert.equal((await response.json()).archivedOperations,1);
+});
+test('a corrupted archive copy cannot publish its index or prune active inventory evidence',async t=>{
+ const f=fixture(t,3);await f.prepare();const {applyStockOperation}=await import('./inventory-operations.mjs');await applyStockOperation('shop',{kind:'sale',referenceId:'corrupt_copy',items:[{id:'last-item',quantity:1}]});await ageInventoryJournal();const before=await getClientSite('shop');
+ const proto=Object.getPrototypeOf(clientCommerceStore()),write=proto.setJSON;t.mock.method(proto,'setJSON',async function(key,value,options){return write.call(this,key,key.includes('/inventory-archive-records/')?{...value,value:{...value.value,fingerprint:'corrupted'}}:value,options)});
+ await assert.rejects(archiveShop(),{status:503});assert.deepEqual(await getClientSite('shop'),before);
+});
+test('a repeated delayed-payment failure safely projects its already archived released reservation',async t=>{
+ const f=fixture(t,3);await prepareReservation(f);assert.equal((await webhook(asyncCheckoutRequest('evt_failed_before_archive'))).status,200);await ageInventoryJournal();assert.equal((await archiveShop()).archivedReservations,1);
+ assert.equal((await webhook(asyncCheckoutRequest('evt_failed_after_archive'))).status,200);
+ const site=await getClientSite('shop');assert.equal(Object.keys(site.stockReservations).length,0);assert.equal(site.catalog[0].inventory,3);assert.equal((await clientCommerceStore().get(commerceKey('shop','transactions','txn_shop'))).paymentStatus,'failed');
+});

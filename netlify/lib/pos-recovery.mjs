@@ -1,5 +1,6 @@
 import { clientCommerceStore,commerceKey,getClientSite } from './client-store.mjs';
 import { withBookingLock } from './booking-lock.mjs';
+import { findStockOperation } from './inventory-archive.mjs';
 import { applyStockOperation,projectStockMovements,stockOperationId } from './inventory-operations.mjs';
 import { applyCustomerTransaction } from './customer-transactions.mjs';
 import { createReceiptRecord } from './webfactory-v3-domain.mjs';
@@ -14,7 +15,7 @@ export async function recoverPosOrder(siteId,transactionId){
     let record=await store.get(key,{type:'json'});
     if(record.inventoryProtocol!==1||record.paymentStatus!=='paid_in_person'||record.kind!=='order'||!['processing','completed'].includes(record.status))throw fail('This sale requires manual reconciliation.');
     const site=await getClientSite(siteId);
-    if(!site?.stockOperations?.[stockOperationId('sale',transactionId)])throw fail('Original stock movement is unconfirmed. Reconcile cash and inventory before another sale.');
+    if(!await findStockOperation(site,stockOperationId('sale',transactionId)))throw fail('Original stock movement is unconfirmed. Reconcile cash and inventory before another sale.');
     let marker;
     if(record.posAttemptId){
       marker=await store.get(commerceKey(siteId,'pos-attempts',record.posAttemptId),{type:'json'});

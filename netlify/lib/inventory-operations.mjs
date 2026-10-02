@@ -1,6 +1,7 @@
 import crypto from 'node:crypto';
 import { clientSiteStore,siteKey } from './client-store.mjs';
 import { reservationId, inventoryFingerprint, reservedQuantity } from './inventory-availability.mjs';
+import { archivedInventoryMarker,findStockReservation } from './inventory-archive.mjs';
 const fail=(message,status=409,code)=>Object.assign(new Error(message),{status,code});
 export const stockOperationId=(kind,reference)=>crypto.createHash('sha256').update(`${kind}:${reference}`).digest('hex');
 
@@ -14,10 +15,10 @@ export async function applyStockOperation(siteId,{kind,referenceId,items,directi
   if(!source?.data||source.data.siteId!==siteId)throw fail('Business inventory not found.',404);
   if(!source.etag)throw fail('Inventory concurrency metadata unavailable.',503);
   const site=source.data,operations=site.stockOperations||{};
-  const existing=Object.hasOwn(operations,id)?operations[id]:null;
+  const existing=Object.hasOwn(operations,id)?operations[id]:await archivedInventoryMarker(site,'operation',id);
   if(existing){if(existing.fingerprint!==fingerprint)throw fail('Inventory operation was reused with different items.');return {site,operation:existing,reused:true};}
   if(Object.keys(operations).length>=5000)throw fail('Inventory journal requires archival before new operations.',503,'INVENTORY_JOURNAL_FULL');
-  const reservation=kind==='sale'?site.stockReservations?.[reservationId(referenceId)]:null;
+  const reservation=kind==='sale'?await findStockReservation(site,referenceId):null;
   if(reservationRequired&&!reservation)throw fail('Inventory reservation is missing.',409,'INVENTORY_RESERVATION_INVALID');
   if(reservation&&(reservation.state!=='held'||reservation.fingerprint!==inventoryFingerprint(items)))throw fail('Inventory reservation requires reconciliation.',409,'INVENTORY_RESERVATION_INVALID');
   const deltas=[];

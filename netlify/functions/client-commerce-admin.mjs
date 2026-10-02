@@ -1,6 +1,7 @@
 import { listPosProcessing,recoverPosOrder } from '../lib/pos-recovery.mjs';
 import { manageInPersonOrder } from '../lib/in-person-orders.mjs';
 import { withBookingLock } from '../lib/booking-lock.mjs';
+import { findStockOperation } from '../lib/inventory-archive.mjs';
 import { applyStockOperation,projectStockMovements } from '../lib/inventory-operations.mjs';
 import {renderBookingEmail} from "../lib/booking-email-template.mjs";
 import {finishBookingChange} from "../lib/booking-management.mjs";
@@ -169,7 +170,7 @@ export default async (req) => {
       if (fullRefund && record.kind === "order" && !record.inventoryRestoredAt) {
         const currentSite=await (await import('../lib/client-store.mjs')).getClientSite(site.siteId);
         const saleId=(await import('../lib/inventory-operations.mjs')).stockOperationId('sale',record.transactionId);
-        const original=currentSite?.stockOperations?.[saleId];
+        const original=await findStockOperation(currentSite,saleId);
         const restockItems=original?original.deltas.map(delta=>({id:delta.itemId,quantity:-delta.quantityDelta})):record.items;
         if(restockItems.length&&((record.inventoryProtocol!==1&&!record.inventoryNeedsReview)||original)){
           const applied=await applyStockOperation(site.siteId,{kind:'refund',referenceId:record.transactionId,items:restockItems,direction:1,reason:'refund'});

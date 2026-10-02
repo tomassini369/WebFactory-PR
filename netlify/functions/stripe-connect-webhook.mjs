@@ -1,4 +1,5 @@
 import { releaseInventory } from '../lib/inventory-reservations.mjs';
+import { findStockReservation } from '../lib/inventory-archive.mjs';
 import { applyCustomerTransaction } from '../lib/customer-transactions.mjs';
 import { applyStockOperation,projectStockMovements } from '../lib/inventory-operations.mjs';
 import { withBookingLock } from "../lib/booking-lock.mjs";
@@ -134,7 +135,7 @@ export default async (req) => {
         if(record.inventoryAppliedAt||record.v3ArtifactsCreatedAt||record.inventoryNeedsReview)throw Object.assign(new Error('Checkout requires reconciliation.'),{status:409});
         if(record.inventoryReservationRequired){
           const site=await getClientSite(siteId);
-          const reservation=Object.values(site?.stockReservations||{}).find(value=>value.referenceId===transactionId);
+          const reservation=await findStockReservation(site,transactionId);
           if(!reservation||reservation.provider!=='stripe_checkout'||!['held','released'].includes(reservation.state))throw Object.assign(new Error('Reservation requires reconciliation.'),{status:409});
           await releaseInventory(siteId,transactionId);
         }

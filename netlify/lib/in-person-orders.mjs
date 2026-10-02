@@ -6,6 +6,7 @@ import { applyStockOperation, projectStockMovements, stockOperationId } from './
 import { applyCustomerTransaction } from './customer-transactions.mjs';
 import { createReceiptRecord } from './webfactory-v3-domain.mjs';
 import { putV3Record } from './webfactory-v3-store.mjs';
+import { findStockOperation,findStockReservation } from './inventory-archive.mjs';
 
 const fail=message=>Object.assign(new Error(message),{status:409});
 const keys=(siteId,id)=>({transaction:commerceKey(siteId,'transactions',id),order:commerceKey(siteId,'orders',id)});
@@ -33,9 +34,9 @@ export async function manageInPersonOrder(siteId,transactionId,action,{lockHeld=
     if(!record||record.siteId!==siteId||record.transactionId!==transactionId||record.kind!=='order'||record.source!=='in_person_order'||record.inventoryProtocol!==1||!record.inventoryReservationRequired)throw fail('This order requires manual inventory reconciliation.');
     if(!['mark_paid','cancel_in_person'].includes(action))throw fail('Unsupported in-person order action.');
     const site=await getClientSite(siteId);
-    const reservation=site?.stockReservations?.[reservationId(transactionId)];
+    const reservation=await findStockReservation(site,transactionId);
     if(action==='cancel_in_person'){
-      if(!['due','cancelled'].includes(record.paymentStatus)||record.inventoryAppliedAt||site?.stockOperations?.[stockOperationId('sale',transactionId)])throw fail('A paid or consumed order cannot release its reservation.');
+      if(!['due','cancelled'].includes(record.paymentStatus)||record.inventoryAppliedAt||await findStockOperation(site,stockOperationId('sale',transactionId)))throw fail('A paid or consumed order cannot release its reservation.');
       if(reservation&&(reservation.provider!=='in_person'||reservation.fingerprint!==inventoryFingerprint(record.items)||!['held','released'].includes(reservation.state)))throw fail('Reservation requires reconciliation.');
       if(reservation)await releaseInventory(siteId,transactionId);
       const now=new Date().toISOString();

@@ -1,5 +1,6 @@
 import { clientSiteStore, siteKey } from './client-store.mjs';
 import { reservationId, inventoryLines, inventoryFingerprint, reservedQuantity } from './inventory-availability.mjs';
+import { findStockReservation } from './inventory-archive.mjs';
 
 const fail = (message,status=409) => Object.assign(new Error(message),{status});
 export async function reserveInventory(siteId, referenceId, items, store=clientSiteStore(), provider='stripe_checkout') {
@@ -8,7 +9,7 @@ export async function reserveInventory(siteId, referenceId, items, store=clientS
   const source = await store.getWithMetadata(siteKey(siteId),{type:'json'});
   if (!source?.etag || source.data?.siteId !== siteId) throw fail('Inventory unavailable.',503);
   const site=source.data, key=reservationId(referenceId), fingerprint=inventoryFingerprint(items);
-  const existing=site.stockReservations?.[key];
+  const existing=await findStockReservation(site,referenceId);
   if (existing) {
     if (existing.fingerprint !== fingerprint || existing.state !== 'held' || (existing.provider&&existing.provider!==provider)) throw fail('This reservation cannot be reused.');
     return existing;
@@ -36,7 +37,7 @@ export async function reserveInventory(siteId, referenceId, items, store=clientS
 export async function releaseInventory(siteId,referenceId,store=clientSiteStore()) {
   const source=await store.getWithMetadata(siteKey(siteId),{type:'json'});
   if (!source?.etag||source.data?.siteId!==siteId) throw fail('Inventory unavailable.',503);
-  const site=source.data,key=reservationId(referenceId),reservation=site.stockReservations?.[key];
+  const site=source.data,key=reservationId(referenceId),reservation=await findStockReservation(site,referenceId);
   if (!reservation || reservation.state==='released') return false;
   if (reservation.state!=='held') return false;
   const now=new Date().toISOString();
