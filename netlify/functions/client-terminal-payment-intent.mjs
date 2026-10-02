@@ -1,11 +1,9 @@
+import { createReservedTerminalIntent } from '../lib/reserved-terminal-intent.mjs';
 import crypto from "node:crypto";
 import { assertSameOrigin, errorResponse, requireSiteCapability } from "../lib/client-auth.mjs";
-import { clientCommerceStore, commerceKey } from "../lib/client-store.mjs";
 import { cleanText, validEmail } from "../lib/platform-utils.mjs";
 import { calculateTax } from "../lib/webfactory-v3-domain.mjs";
 import { assertStripeWriteAllowed } from "../lib/stripe-runtime.mjs";
-
-function env(name){return globalThis.Netlify?.env?.get(name)||"";}
 
 export default async(req)=>{
   try{
@@ -23,6 +21,9 @@ export default async(req)=>{
     };
     if(customer.email&&!validEmail(customer.email))throw Object.assign(new Error("Customer email is invalid."),{status:400});
 
+    const ids=new Set();
+    for(const entry of requested){const quantity=Number(entry.quantity??1);if(!entry.id||ids.has(entry.id)||!Number.isSafeInteger(quantity)||quantity<1||quantity>100)throw Object.assign(new Error('Use unique products and whole quantities.'),{status:400});ids.add(entry.id);}
+    for(const field of ['discountCents','tipCents'])if(payload[field]!==undefined&&(!Number.isSafeInteger(Number(payload[field]))||Number(payload[field])<0))throw Object.assign(new Error('Discount and tip must be nonnegative integer cents.'),{status:400});
     const items=requested.map((entry)=>{
       const item=(site.catalog||[]).find((candidate)=>candidate.id===entry.id&&candidate.active!==false);
       if(!item)throw Object.assign(new Error("A selected item is unavailable."),{status:409});
@@ -45,38 +46,24 @@ export default async(req)=>{
       tax+=Number(calculateTax({amountCents:lineAfterDiscount,taxable:item.taxable,taxRateOverride:item.taxRateOverride,config:site.taxConfig||{}}).taxCents||0);
     }
     const total=Math.max(0,discountedBase+(site.taxConfig?.pricesIncludeTax?0:tax)+tip);
-    if(total<=0)throw Object.assign(new Error("Terminal payment total must be greater than $0."),{status:400});
+    if(!Number.isSafeInteger(total)||total<=0)throw Object.assign(new Error("Terminal payment total must be greater than $0."),{status:400});
 
     const accountId=cleanText(site.paymentRules?.stripeConnectedAccountId,180);
     if(!accountId||!site.paymentRules?.methods?.stripe)throw Object.assign(new Error("Stripe is not connected for this business."),{status:409});
     assertStripeWriteAllowed({ requestUrl: req.url });
 
-    const transactionId=`txn_${crypto.randomUUID()}`;
-    const params=new URLSearchParams();
-    params.set("amount",String(total));
-    params.set("currency","usd");
-    params.append("payment_method_types[]","card_present");
-    params.set("capture_method","automatic");
-    params.set("description",`WebFactory POS · ${items.length} item${items.length===1?"":"s"}`);
-    params.set("metadata[flow]","webfactory_terminal");
-    params.set("metadata[site_id]",site.siteId);
-    params.set("metadata[transaction_id]",transactionId);
-    params.set("metadata[kind]","order");
-    params.set("metadata[source]","tap_to_pay");
-
-    const response=await fetch("https://api.stripe.com/v1/payment_intents",{method:"POST",headers:{Authorization:`Bearer ${env("STRIPE_SECRET_KEY")}`,"Stripe-Account":accountId,"Content-Type":"application/x-www-form-urlencoded","Idempotency-Key":`terminal-intent-${transactionId}`},body:params});
-    const intent=await response.json();
-    if(!response.ok)throw new Error(intent?.error?.message||"Terminal PaymentIntent could not be created.");
-
+    const attemptId=payload.saleAttemptId;
+    if(attemptId!==undefined&&(typeof attemptId!=='string'||!/^[A-Za-z0-9_-]{8,120}$/.test(attemptId)))throw Object.assign(new Error('A valid sale attempt ID is required.'),{status:400});
+    const transactionId=attemptId?`txn_terminal_${attemptId}`:`txn_${crypto.randomUUID()}`;
     const now=new Date().toISOString();
     const record={
       transactionId,siteId:site.siteId,kind:"order",source:"tap_to_pay",customer,
       items:items.map(({taxable,taxRateOverride,...item})=>item),
       subtotal,discounts:discount,tax,tip,amountTotal:total,currency:"usd",
       paymentStatus:"pending",status:"payment_pending",createdAt:now,updatedAt:now,
-      createdBy:cleanText(user.email||user.id,320),stripeAccountId:accountId,stripePaymentIntentId:intent.id,
+      createdBy:cleanText(user.email||user.id,320),stripeAccountId:accountId,
     };
-    await clientCommerceStore().setJSON(commerceKey(site.siteId,"transactions",transactionId),record);
+    const {intent}=await createReservedTerminalIntent(record,{requestUrl:req.url});
     return Response.json({ok:true,transactionId,paymentIntentId:intent.id,clientSecret:intent.client_secret||""},{headers:{"Cache-Control":"no-store"}});
   }catch(error){return errorResponse(error);}
 };

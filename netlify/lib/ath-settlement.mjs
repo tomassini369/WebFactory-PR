@@ -1,8 +1,8 @@
 import { applyCustomerTransaction } from './customer-transactions.mjs';
 import { applyStockOperation,projectStockMovements } from './inventory-operations.mjs';
 import { clientCommerceStore, commerceKey, getClientSite, patchClientSite } from "./client-store.mjs";
-import { createCustomerRecord, createInventoryMovement, createReceiptRecord } from "./webfactory-v3-domain.mjs";
-import { getV3Record, putV3Record } from "./webfactory-v3-store.mjs";
+import { createReceiptRecord } from "./webfactory-v3-domain.mjs";
+import { putV3Record } from "./webfactory-v3-store.mjs";
 import { syncBookingCalendar } from "./booking-calendar.mjs";
 import { sendCustomerCommerceEmail, sendBusinessCommerceEmail } from "./client-notifications.mjs";
 import { athError } from "./ath-domain.mjs";
@@ -28,7 +28,7 @@ export async function settleAthPayment(session, payment) {
     const customer=await applyCustomerTransaction(site.siteId,record);
     record.customerId = customer.customerId;
     if (record.kind === "order") {
-      const applied=await applyStockOperation(site.siteId,{kind:'sale',referenceId:record.transactionId,items:record.items,reason:'ath_sale'});
+      const applied=await applyStockOperation(site.siteId,{kind:'sale',referenceId:record.transactionId,items:record.items,reason:'ath_sale',reservationRequired:record.inventoryReservationRequired===true});
       await projectStockMovements(site.siteId,applied.operation,store);
       record.inventoryAppliedAt=applied.operation.appliedAt;
       record.inventoryOperationId=applied.operation.id;
@@ -57,7 +57,7 @@ export async function settleAthPayment(session, payment) {
     return record;
   } catch {
     // Retain proof of payment and flag partial fulfillment instead of replaying financial side effects.
-    const needsReview = { ...record, athFulfillmentNeedsReview: true, updatedAt: new Date().toISOString() };
+    const needsReview = { ...record, athFulfillmentNeedsReview: true, ...(record.kind==='order'&&!record.inventoryAppliedAt?{inventoryNeedsReview:true}:{}), updatedAt: new Date().toISOString() };
     await store.setJSON(key, needsReview);
     await store.setJSON(commerceKey(session.siteId,record.kind === "booking" ? "bookings" : "orders",record.transactionId),needsReview);
     throw athError("ATH payment was verified, but the business must finish processing the order. Contact the business with your payment reference.", 409);

@@ -1,3 +1,6 @@
+import Stripe from 'stripe';
+import terminalSale from '../functions/client-terminal-payment-intent.mjs';
+import verifyReservation from '../functions/client-stock-reservations.mjs';
 import idempotentSale from "../functions/client-pos-sale-idempotent.mjs";
 import test from "node:test";
 import assert from "node:assert/strict";
@@ -123,4 +126,33 @@ test('configuration edits preserve reservations and cannot remove or disable a r
  await assert.rejects(patchClientSite('shop',{catalog:[]}),{status:409});const site=await getClientSite('shop');
  await assert.rejects(patchClientSite('shop',{catalog:site.catalog.map(item=>({...item,trackInventory:false}))}),{status:409});
  await patchClientSite('shop',{business:{name:'Updated'}});assert.equal(Object.values((await getClientSite('shop')).stockReservations)[0].state,'held');
+});
+
+function terminalEventRequest(eventId,type='payment_intent.succeeded',intentId='pi_terminal_shop'){
+ const created=Math.floor(Date.now()/1000),body=JSON.stringify({id:eventId,type,account:'acct_shop',created,data:{object:{id:intentId,status:type==='payment_intent.canceled'?'canceled':'succeeded',amount:100,amount_received:type==='payment_intent.canceled'?0:100,currency:'usd',metadata:{flow:'webfactory_terminal',site_id:'shop',transaction_id:'txn_shop'}}}}),signature=crypto.createHmac('sha256','test-signing-secret').update(`${created}.${body}`).digest('hex');
+ return new Request('https://webfactorypr.com/.netlify/functions/stripe-connect-webhook',{method:'POST',headers:{'stripe-signature':`t=${created},v1=${signature}`},body});
+}
+async function prepareTerminalReservation(f){await f.prepare();await clientCommerceStore().setJSON(commerceKey('shop','transactions','txn_shop'),{transactionId:'txn_shop',siteId:'shop',kind:'order',source:'tap_to_pay',stripeAccountId:'acct_shop',stripePaymentIntentId:'pi_terminal_shop',inventoryProtocol:1,inventoryReservationRequired:true,paymentStatus:'pending',amountTotal:100,items:[{id:'last-item',quantity:1,unitAmount:100}],customer:{}});const {reserveInventory}=await import('./inventory-reservations.mjs');await reserveInventory('shop','txn_shop',[{id:'last-item',quantity:1}],undefined,'stripe_terminal');}
+test('Terminal cancellation releases stock only for a matching signed canceled intent',async t=>{
+ const f=fixture(t,1);await prepareTerminalReservation(f);assert.equal((await sale(saleRequest())).status,409);
+ assert.equal((await webhook(terminalEventRequest('evt_cancel_wrong','payment_intent.canceled','pi_other'))).status,500);assert.equal((await sale(saleRequest())).status,409);
+ assert.equal((await webhook(terminalEventRequest('evt_terminal_cancel','payment_intent.canceled'))).status,200);assert.equal((await webhook(terminalEventRequest('evt_terminal_cancel','payment_intent.canceled'))).status,200);
+ assert.equal((await clientCommerceStore().get(commerceKey('shop','transactions','txn_shop'))).paymentStatus,'cancelled');assert.equal((await sale(saleRequest())).status,200);
+});
+test('Terminal payment consumes its reservation once and later cancellation never restores sold stock',async t=>{
+ const f=fixture(t,1);await prepareTerminalReservation(f);assert.equal((await webhook(terminalEventRequest('evt_terminal_paid'))).status,200);assert.equal((await webhook(terminalEventRequest('evt_terminal_paid_again'))).status,200);assert.equal((await getClientSite('shop')).catalog[0].inventory,0);
+ assert.equal((await webhook(terminalEventRequest('evt_terminal_cancel_after_paid','payment_intent.canceled'))).status,200);assert.equal((await getClientSite('shop')).catalog[0].inventory,0);assert.equal((await clientCommerceStore().get(commerceKey('shop','transactions','txn_shop'))).paymentStatus,'paid');
+});
+
+test('Terminal API reserves before returning a secret and reconciliation reads only confirmed canceled intents',async t=>{
+ const f=fixture(t,1);f.site.paymentRules={methods:{stripe:true},stripeConnectedAccountId:'acct_shop'};await f.prepare();globalThis.Netlify.env.get=name=>name==='STRIPE_SECRET_KEY'?'sk_test_fixture':name==='STRIPE_CONNECT_WEBHOOK_SECRET'?'test-signing-secret':'';
+ let creates=0,status='requires_payment_method',metadata,amount;
+ t.mock.method(Stripe.resources.PaymentIntents.prototype,'create',async params=>{creates++;metadata=params.metadata;amount=params.amount;assert.equal(Object.values((await getClientSite('shop')).stockReservations)[0].state,'held');return {id:'pi_api_terminal',client_secret:'unit-client-secret',amount,currency:'usd',status,metadata};});
+ t.mock.method(Stripe.resources.PaymentIntents.prototype,'retrieve',async()=>({id:'pi_api_terminal',amount,amount_received:0,currency:'usd',status,metadata,client_secret:'unit-client-secret'}));
+ const request=()=>new Request('https://webfactorypr.com/.netlify/functions/client-terminal-payment-intent',{method:'POST',headers:{Origin:'https://webfactorypr.com','Content-Type':'application/json'},body:JSON.stringify({siteId:'shop',saleAttemptId:'terminal-api-12345',items:[{id:'last-item',quantity:1}]})});
+ const result=await terminalSale(request());assert.equal(result.status,200);const body=await result.json();assert.equal(body.clientSecret,'unit-client-secret');assert.equal((await terminalSale(request())).status,200);assert.equal(creates,1);
+ assert.equal([...f.rows.values()].some(row=>JSON.stringify(row.data).includes('unit-client-secret')),false);assert.equal((await sale(saleRequest())).status,409);
+ const check=()=>new Request('https://webfactorypr.com/.netlify/functions/client-stock-reservations',{method:'POST',headers:{Origin:'https://webfactorypr.com','Content-Type':'application/json'},body:JSON.stringify({siteId:'shop',transactionId:body.transactionId})});
+ assert.equal((await (await verifyReservation(check())).json()).released,false);assert.equal((await sale(saleRequest())).status,409);
+ status='canceled';assert.equal((await (await verifyReservation(check())).json()).released,true);assert.equal((await sale(saleRequest())).status,200);
 });

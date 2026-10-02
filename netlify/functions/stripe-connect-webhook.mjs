@@ -36,7 +36,9 @@ async function finalizeTransaction(event) {
   if (record.stripeAccountId !== event.account) throw new Error("Connected account does not match the transaction.");
   if(record.stripeSessionId&&session.id&&record.stripeSessionId!==session.id)throw new Error('Checkout session does not match the transaction.');
   if(record.inventoryReservationRequired&&!record.stripeSessionId&&session.id){record={...record,stripeSessionId:session.id};await clientCommerceStore().setJSON(key,record);}
-  if(['refunded','partially_refunded','expired'].includes(record.paymentStatus))return {record,pending:false};
+  if(['refunded','partially_refunded','expired','cancelled'].includes(record.paymentStatus))return {record,pending:false};
+  if(record.stripePaymentIntentId&&session.payment_intent&&record.stripePaymentIntentId!==session.payment_intent)throw new Error('PaymentIntent does not match the transaction.');
+  if(record.source==='tap_to_pay'&&!record.stripePaymentIntentId&&session.payment_intent){record={...record,stripePaymentIntentId:session.payment_intent};await clientCommerceStore().setJSON(key,record);}
   if (session.payment_status !== "paid") return { record, pending: true };
   if (Number(session.amount_total) !== Number(record.amountTotal) || String(session.currency).toLowerCase() !== "usd") throw new Error("Stripe amount or currency does not match the server record.");
 
@@ -117,6 +119,19 @@ export default async (req) => {
     if (previous?.completed) return Response.json({ received: true, duplicate: true });
     await clientEventStore().setJSON(key, { processing: true, updatedAt: new Date().toISOString(), type: event.type });
     const object = event.data?.object || {};
+    if(event.type==='payment_intent.canceled'&&object.metadata?.flow==='webfactory_terminal'){
+      const siteId=object.metadata.site_id,transactionId=object.metadata.transaction_id,transactionKey=commerceKey(siteId,'transactions',transactionId);
+      const record=await clientCommerceStore().get(transactionKey,{type:'json'});
+      if(!record||record.source!=='tap_to_pay'||record.stripeAccountId!==event.account||(record.stripePaymentIntentId&&record.stripePaymentIntentId!==object.id)||typeof object.id!=='string'||Number(object.amount)!==Number(record.amountTotal)||object.currency!=='usd'||object.status!=='canceled'||Number(object.amount_received)!==0)throw new Error('Cancellation does not match the Terminal payment.');
+      if(record.inventoryReservationRequired&&record.paymentStatus==='pending'){
+        await releaseInventory(siteId,transactionId);
+        const cancelled={...record,stripePaymentIntentId:object.id,paymentStatus:'cancelled',status:'cancelled',updatedAt:new Date().toISOString()};
+        await clientCommerceStore().setJSON(transactionKey,cancelled);
+        await clientCommerceStore().setJSON(commerceKey(siteId,'orders',transactionId),cancelled);
+      }
+      await clientEventStore().setJSON(key,{completed:true,type:event.type,updatedAt:new Date().toISOString()});
+      return Response.json({received:true});
+    }
     if(event.type==='checkout.session.expired'&&object.metadata?.flow==='webfactory_client_commerce'){
       const siteId=object.metadata.site_id,transactionId=object.metadata.transaction_id;
       const transactionKey=commerceKey(siteId,'transactions',transactionId);

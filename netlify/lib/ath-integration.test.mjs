@@ -39,7 +39,7 @@ async function prepare(f) {
   const site = await configureAth(f.site, { publicToken, privateToken });
   const result = await createAthCheckout(site, f.record, { requestUrl: "https://webfactorypr.com/.netlify/functions/create-client-checkout", returnUrl: "/sites/business-a", lang: "es" });
   const token = new URL(result.checkoutUrl).searchParams.get("token");
-  return { site, token, ...await getAthSession(token) };
+  return { site:await getClientSite(site.siteId), token, ...await getAthSession(token) };
 }
 function request(path, body, origin = "https://webfactorypr.com") {
   return new Request(`https://webfactorypr.com/.netlify/functions/${path}`, { method: "POST", headers: { Origin: origin, "Content-Type": "application/json" }, body: JSON.stringify(body) });
@@ -136,4 +136,23 @@ test("disconnecting ATH removes its saved tokens without altering Stripe", async
   assert.equal(disconnected.paymentRules.stripeConnectedAccountId, f.site.paymentRules.stripeConnectedAccountId);
   assert.equal(await clientOAuthStore().get(`ath/tokens/${f.site.siteId}.json`), null);
   assert.equal((await checkout(new Request(`https://webfactorypr.com/.netlify/functions/ath-checkout?token=${p.token}`))).status, 409);
+});
+
+test('ATH checkout reserves its products before exposing the payment page and consumes the hold only after verification',async t=>{
+ const f=fixture(t),p=await prepare(f);const before=await getClientSite(f.site.siteId),reservation=Object.values(before.stockReservations)[0];
+ assert.equal(before.catalog[0].inventory,10);assert.equal(reservation.provider,'ath_movil');assert.equal(reservation.state,'held');assert.equal(publicClientSite(before).catalog[0].inventory,8);assert.equal(p.record.inventoryReservationRequired,true);
+ t.mock.method(globalThis,'fetch',async()=>Response.json([payment(p.session)]));assert.equal((await verify(request('ath-payment-status',{token:p.token,referenceNumber:'ath-unit-reference-123'}))).status,200);
+ const after=await getClientSite(f.site.siteId);assert.equal(after.catalog[0].inventory,8);assert.equal(Object.values(after.stockReservations)[0].state,'consumed');
+});
+test('ATH cannot open a checkout for stock already reserved and creates no exposed payment session on shortage',async t=>{
+ const f=fixture(t);await clientSiteStore().setJSON(`sites/${f.site.siteId}.json`,f.site);const site=await configureAth(f.site,{publicToken,privateToken});
+ const {reserveInventory}=await import('./inventory-reservations.mjs');await reserveInventory(site.siteId,'other-payment',[{id:'product',quantity:10}]);
+ await assert.rejects(createAthCheckout(site,f.record,{requestUrl:'https://webfactorypr.com/.netlify/functions/create-client-checkout'}),{status:409});
+ assert.equal([...f.rows.keys()].filter(key=>key.includes('/ath/sessions/')).length,0);assert.equal(f.calls.length,0);
+});
+test('ATH screen expiry and an empty provider search retain reserved stock',async t=>{
+ const f=fixture(t),p=await prepare(f);await clientOAuthStore().setJSON(p.storageKey,{...p.session,checkoutExpiresAt:'2000-01-01T00:00:00.000Z'});
+ assert.equal((await checkout(new Request(`https://webfactorypr.com/.netlify/functions/ath-checkout?token=${p.token}`))).status,410);
+ t.mock.method(globalThis,'fetch',async()=>Response.json([]));assert.equal((await verify(request('ath-payment-status',{token:p.token,referenceNumber:'ath-unit-reference-123'}))).status,409);
+ const current=await getClientSite(f.site.siteId);assert.equal(Object.values(current.stockReservations)[0].state,'held');assert.equal(publicClientSite(current).catalog[0].inventory,8);
 });
