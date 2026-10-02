@@ -14,6 +14,7 @@ export default async req=>{
     const result=await withBookingLock(clientCommerceStore(),`locks/commerce/${site.siteId}`,async()=>{
       const key=commerceKey(site.siteId,'transactions',payload.transactionId);
       const record=await clientCommerceStore().get(key,{type:'json'});
+      if(record?.source==='in_person_order')throw Object.assign(new Error('Manage or cancel this unpaid order from Orders; no Stripe payment exists.'),{status:409});
       if(record?.paymentProvider==='ath_movil')throw Object.assign(new Error('ATH reserves require reconciliation in ATH Business; screen expiration is not a confirmed cancellation.'),{status:409});
       assertStripeWriteAllowed({requestUrl:req.url}); // Never contact live payments from preview.
       if(!record?.inventoryReservationRequired||record.paymentStatus!=='pending')throw Object.assign(new Error('This checkout requires provider reconciliation.'),{status:409});

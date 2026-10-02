@@ -1,4 +1,5 @@
 import { availableInventory } from '../lib/inventory-availability.mjs';
+import { createInPersonOrder } from '../lib/in-person-orders.mjs';
 import { createReservedStripeCheckout } from '../lib/reserved-stripe-checkout.mjs';
 import { syncBookingCalendar } from "../lib/booking-calendar.mjs";
 import { sendBookingConfirmationEmails } from "../lib/client-notifications.mjs";
@@ -157,6 +158,10 @@ export default async (req) => {
       await clientCommerceStore().setJSON(`tracking/${trackingHash}.json`, { siteId: site.siteId, transactionId });
     }
     if (inPerson) {
+      if(kind==='order'){
+        record=await createInPersonOrder(site,record);
+        return Response.json({ok:true,paymentRequired:false,transactionId,status:record.status,...(trackingToken?{trackingUrl:`${publicBaseUrl()}/track/${trackingToken}`}:{})},{headers:{'Cache-Control':'no-store'}});
+      }
       record = await syncBookingCalendar(site, record);
       await clientCommerceStore().setJSON(commerceKey(site.siteId, kind === "booking" ? "bookings" : "orders", transactionId), record);
       record = await sendBookingConfirmationEmails(site,record, value => clientCommerceStore().setJSON(commerceKey(site.siteId,"bookings",transactionId),value));

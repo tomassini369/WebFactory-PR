@@ -285,3 +285,128 @@ test('a consumed reservation with inconsistent pending payment is preserved for 
  assert.equal(Object.values((await getClientSite('shop')).stockReservations)[0].state,'consumed');
  assert.equal((await getClientSite('shop')).catalog[0].inventory,0);
 });
+
+async function preparePayAtBusiness(f){
+ f.site.servicePlan={billingModel:'complimentary'};f.site.paymentRules.productPayment='in_person';await f.prepare();
+}
+function inPersonCheckoutRequest(origin='https://webfactorypr.com'){
+ return new Request('https://webfactorypr.com/.netlify/functions/create-client-checkout',{method:'POST',headers:{Origin:origin,'Content-Type':'application/json'},body:JSON.stringify({siteId:'shop',items:[{id:'last-item',quantity:1}],customer:{name:'Fixture',email:'fixture@example.invalid'}})});
+}
+function orderAction(transactionId,action,origin='https://webfactorypr.com'){
+ return new Request('https://webfactorypr.com/.netlify/functions/client-commerce-admin',{method:'POST',headers:{Origin:origin,'Content-Type':'application/json'},body:JSON.stringify({siteId:'shop',kind:'order',transactionId,action})});
+}
+async function placeInPersonOrder(){
+ const {default:createCheckout}=await import('../functions/create-client-checkout.mjs');
+ const response=await createCheckout(inPersonCheckoutRequest());assert.equal(response.status,200);
+ return (await response.json()).transactionId;
+}
+test('pay-at-business checkout reserves stock without reducing physical inventory or creating a receipt',async t=>{
+ const f=fixture(t);await preparePayAtBusiness(f);
+ t.mock.method(globalThis,'fetch',async()=>{throw new Error('No provider network calls permitted')});
+ const transactionId=await placeInPersonOrder();
+ const record=await clientCommerceStore().get(commerceKey('shop','orders',transactionId));
+ assert.equal(record.paymentStatus,'due');assert.equal(record.status,'confirmed');assert.equal(record.inventoryReservationRequired,true);
+ assert.equal((await getClientSite('shop')).catalog[0].inventory,1);
+ assert.equal(Object.values((await getClientSite('shop')).stockReservations)[0].provider,'in_person');
+ assert.equal((await sale(saleRequest())).status,409);
+ assert.equal([...f.rows.keys()].filter(key=>key.includes('/v3/receipts/')).length,0);
+});
+test('two public pay-at-business requests cannot both reserve the last unit',async t=>{
+ const f=fixture(t);await preparePayAtBusiness(f);
+ const {default:createCheckout}=await import('../functions/create-client-checkout.mjs');
+ const responses=await Promise.all([createCheckout(inPersonCheckoutRequest()),createCheckout(inPersonCheckoutRequest())]);
+ assert.deepEqual(responses.map(r=>r.status).sort(),[200,409]);
+ assert.equal(Object.values((await getClientSite('shop')).stockReservations).filter(r=>r.state==='held').length,1);
+});
+test('recording received payment consumes the original reservation and creates one receipt and customer contribution',async t=>{
+ const f=fixture(t,2);await preparePayAtBusiness(f);const id=await placeInPersonOrder();
+ const first=await commerceAdmin(orderAction(id,'mark_paid'));assert.equal(first.status,200);const paid=(await first.json()).record;
+ assert.equal(paid.paymentStatus,'paid_in_person');assert.ok(paid.inventoryAppliedAt);assert.ok(paid.receiptId);
+ assert.equal((await commerceAdmin(orderAction(id,'mark_paid'))).status,200);
+ assert.equal((await getClientSite('shop')).catalog[0].inventory,1);
+ assert.equal(Object.values((await getClientSite('shop')).stockReservations)[0].state,'consumed');
+ const customers=[...f.rows.entries()].filter(([key])=>key.includes('/v3/customers/'));assert.equal(customers.length,1);assert.equal(customers[0][1].data.orderCount,1);assert.equal(customers[0][1].data.totalSpent,paid.amountTotal);
+ assert.equal([...f.rows.keys()].filter(key=>key.includes('/v3/receipts/')).length,1);
+ assert.equal((await commerceAdmin(orderAction(id,'cancel_in_person'))).status,409);
+ assert.equal((await commerceAdmin(orderAction(id,'complete'))).status,200);
+ assert.equal((await clientCommerceStore().get(commerceKey('shop','orders',id))).status,'completed');
+});
+test('canceling an unpaid order releases only its own reserved units and cannot later record payment',async t=>{
+ const f=fixture(t,2);await preparePayAtBusiness(f);const id=await placeInPersonOrder(),other=await placeInPersonOrder();
+ assert.equal((await commerceAdmin(orderAction(id,'cancel_in_person'))).status,200);
+ assert.equal((await commerceAdmin(orderAction(id,'cancel_in_person'))).status,200);
+ assert.equal((await commerceAdmin(orderAction(id,'mark_paid'))).status,409);
+ const reservations=Object.values((await getClientSite('shop')).stockReservations);
+ assert.equal(reservations.find(r=>r.referenceId===id).state,'released');assert.equal(reservations.find(r=>r.referenceId===other).state,'held');
+ assert.equal((await getClientSite('shop')).catalog[0].inventory,2);
+ assert.equal((await sale(saleRequest())).status,200);
+ assert.equal((await sale(saleRequest())).status,409);
+});
+test('a receipt failure after in-person payment resumes the same order without charging, decrementing or counting twice',async t=>{
+ const f=fixture(t,2);await preparePayAtBusiness(f);const id=await placeInPersonOrder();
+ const proto=Object.getPrototypeOf(clientCommerceStore()),write=proto.setJSON;let broken=true;
+ t.mock.method(proto,'setJSON',async function(key,value,options){if(key.includes('/v3/receipts/')&&broken){broken=false;throw new Error('receipt write failed')};return write.call(this,key,value,options)});
+ assert.equal((await commerceAdmin(orderAction(id,'mark_paid'))).status,500);
+ const pending=await clientCommerceStore().get(commerceKey('shop','transactions',id));assert.equal(pending.paymentStatus,'paid_in_person');assert.equal(pending.status,'processing');
+ assert.equal((await commerceAdmin(orderAction(id,'cancel_in_person'))).status,409);
+ assert.equal((await commerceAdmin(orderAction(id,'mark_paid'))).status,200);
+ const record=await clientCommerceStore().get(commerceKey('shop','orders',id));assert.equal(record.paidAt,pending.paidAt);
+ assert.equal((await getClientSite('shop')).catalog[0].inventory,1);
+ assert.equal([...f.rows.values()].filter(row=>row.data.customerId&&row.data.appliedTransactions)[0].data.orderCount,1);
+ assert.equal([...f.rows.keys()].filter(key=>key.includes('/v3/receipts/')).length,1);
+});
+test('a partial creation after reservation stays visible and can be canceled safely',async t=>{
+ const f=fixture(t);await preparePayAtBusiness(f);
+ const proto=Object.getPrototypeOf(clientCommerceStore()),write=proto.setJSON;let broken=true;
+ t.mock.method(proto,'setJSON',async function(key,value,options){if(key.includes('/orders/')&&value.status==='confirmed'&&broken){broken=false;throw new Error('order projection failed')};return write.call(this,key,value,options)});
+ const {default:createCheckout}=await import('../functions/create-client-checkout.mjs');
+ assert.equal((await createCheckout(inPersonCheckoutRequest())).status,500);
+ const orders=[...f.rows.values()].map(row=>row.data).filter(record=>record.source==='in_person_order');const id=orders[0].transactionId;
+ assert.equal((await sale(saleRequest())).status,409);
+ assert.equal((await commerceAdmin(orderAction(id,'cancel_in_person'))).status,200);
+ assert.equal((await sale(saleRequest())).status,200);
+});
+test('a lost cancellation projection retries without restoring physical inventory',async t=>{
+ const f=fixture(t);await preparePayAtBusiness(f);const id=await placeInPersonOrder();
+ const proto=Object.getPrototypeOf(clientCommerceStore()),write=proto.setJSON;let broken=true;
+ t.mock.method(proto,'setJSON',async function(key,value,options){if(key===commerceKey('shop','orders',id)&&value.status==='cancelled'&&broken){broken=false;throw new Error('cancel projection failed')};return write.call(this,key,value,options)});
+ assert.equal((await commerceAdmin(orderAction(id,'cancel_in_person'))).status,500);
+ assert.equal((await commerceAdmin(orderAction(id,'mark_paid'))).status,409);
+ assert.equal((await commerceAdmin(orderAction(id,'cancel_in_person'))).status,200);
+ assert.equal((await clientCommerceStore().get(commerceKey('shop','orders',id))).status,'cancelled');
+ assert.equal((await getClientSite('shop')).catalog[0].inventory,1);
+});
+test('legacy unpaid orders without reservation proof require reconciliation instead of guessing a sale',async t=>{
+ const f=fixture(t);await f.prepare();await clientCommerceStore().setJSON(commerceKey('shop','orders','legacy_due'),{siteId:'shop',transactionId:'legacy_due',kind:'order',paymentStatus:'due',status:'confirmed',items:[{id:'last-item',quantity:1}],amountTotal:100});
+ assert.equal((await commerceAdmin(orderAction('legacy_due','mark_paid'))).status,409);
+ assert.equal((await getClientSite('shop')).catalog[0].inventory,1);
+});
+test('order payment and cancellation preserve authentication, origin, role and location guards',async t=>{
+ const f=fixture(t);await preparePayAtBusiness(f);const id=await placeInPersonOrder();
+ assert.equal((await commerceAdmin(orderAction(id,'cancel_in_person','https://untrusted.invalid'))).status,403);
+ globalThis.netlifyIdentityContext={user:null};assert.equal((await commerceAdmin(orderAction(id,'mark_paid'))).status,401);
+ globalThis.netlifyIdentityContext={user:{email:'stranger@example.invalid',sub:'stranger',app_metadata:{}}};assert.equal((await commerceAdmin(orderAction(id,'cancel_in_person'))).status,403);
+ globalThis.netlifyIdentityContext={user:{email:'owner@example.invalid',sub:'owner',app_metadata:{}}};
+ const site=await getClientSite('shop');await clientSiteStore().setJSON('sites/shop.json',{...site,business:{locations:[{id:'other',active:true}]},members:[{email:'owner@example.invalid',role:'cashier',locationIds:['other']}]});
+ assert.equal((await commerceAdmin(orderAction(id,'mark_paid'))).status,403);
+ assert.equal(Object.values((await getClientSite('shop')).stockReservations)[0].state,'held');
+});
+test('simultaneous payment and cancellation cannot both succeed for one reserved order',async t=>{
+ const f=fixture(t);await preparePayAtBusiness(f);const id=await placeInPersonOrder();
+ const responses=await Promise.all([commerceAdmin(orderAction(id,'mark_paid')),commerceAdmin(orderAction(id,'cancel_in_person'))]);
+ assert.deepEqual(responses.map(r=>r.status).sort(),[200,409]);
+ const record=await clientCommerceStore().get(commerceKey('shop','transactions',id));const site=await getClientSite('shop');
+ const reservation=Object.values(site.stockReservations)[0];
+ assert.equal(reservation.state,record.paymentStatus==='paid_in_person'?'consumed':'released');
+ assert.equal(site.catalog[0].inventory,record.paymentStatus==='paid_in_person'?0:1);
+});
+test('a stock movement projection failure resumes after atomic consumption without another decrement',async t=>{
+ const f=fixture(t,2);await preparePayAtBusiness(f);const id=await placeInPersonOrder();
+ const proto=Object.getPrototypeOf(clientCommerceStore()),write=proto.setJSON;let broken=true;
+ t.mock.method(proto,'setJSON',async function(key,value,options){if(key.includes('/v3/inventory-movements/')&&broken){broken=false;throw new Error('movement projection failed')};return write.call(this,key,value,options)});
+ assert.equal((await commerceAdmin(orderAction(id,'mark_paid'))).status,500);
+ assert.equal((await getClientSite('shop')).catalog[0].inventory,1);
+ assert.equal((await commerceAdmin(orderAction(id,'mark_paid'))).status,200);
+ assert.equal((await getClientSite('shop')).catalog[0].inventory,1);
+ assert.equal([...f.rows.keys()].filter(key=>key.includes('/v3/inventory-movements/')).length,1);
+});

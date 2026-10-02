@@ -1,4 +1,6 @@
 import { listPosProcessing,recoverPosOrder } from '../lib/pos-recovery.mjs';
+import { manageInPersonOrder } from '../lib/in-person-orders.mjs';
+import { withBookingLock } from '../lib/booking-lock.mjs';
 import { applyStockOperation,projectStockMovements } from '../lib/inventory-operations.mjs';
 import {renderBookingEmail} from "../lib/booking-email-template.mjs";
 import {finishBookingChange} from "../lib/booking-management.mjs";
@@ -42,6 +44,7 @@ export default async (req) => {
     const requestedCapability = payload.action === "recover_pos" ? "pos" : payload.action === "refund" ? "refunds" : payload.action === "kitchen_status" ? "kitchen" : (payload.kind === "booking" ? "bookings" : "orders");
     const { site, membership } = await requireSiteCapability(payload.siteId, requestedCapability);
     const kind = payload.kind === "booking" ? "bookings" : "orders";
+    const run=async()=>{
     const key = commerceKey(site.siteId, kind, payload.transactionId);
     let record = await clientCommerceStore().get(key, { type: "json" });
     if(payload.action==='recover_pos')record=await clientCommerceStore().get(commerceKey(site.siteId,'transactions',payload.transactionId),{type:'json'});
@@ -55,6 +58,7 @@ export default async (req) => {
     }
 
     if(payload.action==='recover_pos')return Response.json(await recoverPosOrder(site.siteId,record.transactionId),{headers:{'Cache-Control':'no-store'}});
+    if(kind==='orders'&&['mark_paid','cancel_in_person'].includes(payload.action))return Response.json({ok:true,record:await manageInPersonOrder(site.siteId,record.transactionId,payload.action,{lockHeld:true})},{headers:{'Cache-Control':'no-store'}});
     if(payload.action==='recover_ath'){
       const {recoverAthOrder}=await import('../lib/ath-recovery.mjs');
       const recovered=await recoverAthOrder(site,record,req.url);
@@ -196,5 +200,7 @@ export default async (req) => {
     if (await clientCommerceStore().get(transactionKey)) await clientCommerceStore().setJSON(transactionKey, record);
     if(payload.action === "cancel" && record.calendarToken) record=await finishBookingChange(site,record);
     return Response.json({ ok: true, record }, { headers: { "Cache-Control": "no-store" } });
+    };
+    return kind==='bookings'||['recover_pos','recover_ath'].includes(payload.action)?await run():await withBookingLock(clientCommerceStore(),`locks/commerce/${site.siteId}`,run);
   } catch (error) { return errorResponse(error); }
 };

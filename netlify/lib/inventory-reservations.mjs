@@ -3,7 +3,7 @@ import { reservationId, inventoryLines, inventoryFingerprint, reservedQuantity }
 
 const fail = (message,status=409) => Object.assign(new Error(message),{status});
 export async function reserveInventory(siteId, referenceId, items, store=clientSiteStore(), provider='stripe_checkout') {
-  if(!['stripe_checkout','stripe_terminal','ath_movil'].includes(provider))throw fail('Invalid reservation provider.',400);
+  if(!['stripe_checkout','stripe_terminal','ath_movil','in_person'].includes(provider))throw fail('Invalid reservation provider.',400);
   if (typeof referenceId !== 'string' || !referenceId || referenceId.length > 180) throw fail('Invalid reservation reference.',400);
   const source = await store.getWithMetadata(siteKey(siteId),{type:'json'});
   if (!source?.etag || source.data?.siteId !== siteId) throw fail('Inventory unavailable.',503);
