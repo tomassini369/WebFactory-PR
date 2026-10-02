@@ -18,3 +18,46 @@ const req=(body,origin='https://preview.example.com')=>new Request('https://prev
 test('drill endpoint refuses production, cross-origin requests and unauthorized users before storage access',async()=>{let storeCalls=0,authCalls=0;const handler=createRestoreDrillHandler({authorize:async()=>{authCalls++;throw Object.assign(new Error('not authorized'),{status:401})},createStore:()=>{storeCalls++;return memory()}});const preview={deploy:{context:'deploy-preview',published:false}};assert.equal((await handler(req({}),{deploy:{context:'production',published:true}})).status,403);assert.equal((await handler(req({},'https://attacker.example'),preview)).status,403);assert.equal((await handler(req({}),preview)).status,401);assert.equal(storeCalls,0);assert.equal(authCalls,1);});
 test('authorized preview drill uses bounded JSON and returns a private summary, never customer records',async()=>{const {backup}=await fixture();const handler=createRestoreDrillHandler({authorize:async()=>{},createStore:()=>memory()}),preview={deploy:{context:'deploy-preview',published:false}};const result=await handler(req(backup),preview);assert.equal(result.status,200);assert.equal(result.headers.get('Cache-Control'),'no-store');assert.equal((await result.json()).verifiedRecords,6);const tooBig=await handler(req({text:'a'.repeat(MAX_BACKUP_BYTES)}),preview);assert.equal(tooBig.status,413);});
 test('corruption and time limits never leave temporary records or a false success',async()=>{const {backup}=await fixture();const target=memory();let tick=0;await assert.rejects(runRestoreDrill(backup,target,{clock:()=>tick+=100,budgetMs:150}),{status:503});assert.equal(target.data.size,0);const handler=createRestoreDrillHandler({authorize:async()=>{},createStore:()=>memory()});const result=await handler(new Request('https://preview.example.com',{method:'POST',headers:{Origin:'https://preview.example.com','Content-Type':'application/json'},body:'{broken'}),{deploy:{context:'deploy-preview',published:false}});assert.equal(result.status,400);});
+
+async function archivedFixture(){
+  const crypto=await import('node:crypto');
+  const hash=value=>crypto.createHash('sha256').update(JSON.stringify(value)).digest('hex');
+  const backup=structuredClone((await fixture()).backup),id='ab'+'1'.repeat(62),reservationId='cd'+'2'.repeat(62);
+  backup.site.inventoryArchive={version:1,buckets:{},operationCount:1,reservationCount:1};
+  for(const [type,markerId,value] of [['operation',id,{kind:'sale',referenceId:'archived-sale',deltas:[]}],['reservation',reservationId,{state:'released',referenceId:'archived-reservation',lines:[]}]]){
+    const record={schemaVersion:1,siteId:site.siteId,type,id:markerId,value},checksum=hash(record),bucket=markerId.slice(0,2);
+    const index={schemaVersion:1,siteId:site.siteId,bucket,entries:{[`${type}:${markerId}`]:checksum}},indexChecksum=hash(index);
+    backup.site.inventoryArchive.buckets[bucket]=indexChecksum;
+    backup.commerce.push({key:`${site.siteId}/inventory-archive-records/${type}-${markerId}-${checksum}.json`,value:record},{key:`${site.siteId}/inventory-archive-index/${bucket}-${indexChecksum}.json`,value:index});
+  }
+  return reseal(backup);
+}
+test('archive restoration proves operation and reservation lookups against isolated copies',async()=>{
+  const backup=await archivedFixture(),target=memory();
+  const result=await runRestoreDrill(backup,target);
+  assert.equal(result.archiveIndexes,2);assert.equal(result.archiveOperations,1);assert.equal(result.archiveReservations,1);
+  assert.equal(result.verifiedRecords,10);assert.equal(target.data.size,0);
+});
+test('resealed backups reject missing, modified or reordered published archive evidence before writes',async()=>{
+  const source=await archivedFixture();
+  for(const mutate of [b=>b.commerce.splice(2,1),b=>b.commerce.splice(3,1),b=>{b.commerce[2].value.value.kind='refund'},b=>{b.site.inventoryArchive.operationCount=2},b=>{b.commerce[3].value=Object.fromEntries(Object.entries(b.commerce[3].value).reverse())},b=>{b.site.inventoryArchive.buckets.ab='f'.repeat(64)}]){
+    const backup=structuredClone(source);mutate(backup);const target=memory();
+    await assert.rejects(runRestoreDrill(reseal(backup),target),/archive/);assert.equal(target.data.size,0);
+  }
+});
+test('export refuses an incomplete published archive but permits unreferenced prepared copies',async()=>{
+  const backup=await archivedFixture();
+  const stores={events:memory(),assets:memory(),commerce:memory(backup.commerce.map(row=>[row.key,row.value]))};
+  stores.commerce.data.set(`${site.siteId}/inventory-archive-index/prepared-orphan.json`,{prepared:true});
+  const tenant=await buildTenantBackup(backup.site,stores);
+  assert.equal(validateBackup(createSiteBackup(tenant,'admin')).archives[0].operations,1);
+  stores.commerce.data.delete(backup.commerce[2].key);
+  await assert.rejects(buildTenantBackup(backup.site,stores),/archive/);
+});
+test('restore rejects storage that changes archive property order and cleans every temporary record',async()=>{
+  const backup=await archivedFixture(),target=memory(),get=target.get;
+  target.get=async key=>{const value=await get(key);return key.includes('inventory-archive-index/')?Object.fromEntries(Object.entries(value).reverse()):value};
+  await assert.rejects(runRestoreDrill(backup,target),/archive/);assert.equal(target.data.size,0);
+});
+
+function reseal(backup){const {integrity,...payload}=backup;return sealBackup(payload);}

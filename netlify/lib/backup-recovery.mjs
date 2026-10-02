@@ -1,4 +1,6 @@
 import crypto from 'node:crypto';
+import { validateBackupArchive } from './backup-inventory-archive.mjs';
+import { archivedInventoryMarker } from './inventory-archive.mjs';
 import { emailHash,normalizeEmail,slugify } from './client-store.mjs';
 
 export const MAX_BACKUP_BYTES=4*1024*1024;
@@ -48,6 +50,8 @@ export async function buildTenantBackup(site,stores,{clock=Date.now,deadline=clo
   }
   check();
   const v3Collections=Object.fromEntries(collections.map(group=>[group,commerce.filter(row=>row.key.startsWith(`${site.siteId}/v3/${group}/`)).map(row=>row.value)]));
+  validateBackupArchive(site,commerce);
+  check();
   return {siteId:site.siteId,site,policyAndPreferenceRecords,commerce,v3Collections,assets};
 }
 
@@ -65,7 +69,7 @@ export function validateBackup(backup,{maxRecords=5000}={}){
   if(backup.scope!=='business-records-and-asset-manifest'||backup.snapshotConsistency!=='non-transactional')throw fail('Unsupported backup scope.');
   const tenants=backup.exportVersion==='webfactory-v3-site-backup-2'?[backup]:backup.tenants;
   if(!Array.isArray(tenants)||tenants.length>100||backup.tenantCount!==undefined&&backup.tenantCount!==tenants.length)throw fail('Invalid backup tenant count.');
-  const seenTenants=new Set(),entries=[],seenKeys=new Set();let assetCount=0;
+  const seenTenants=new Set(),entries=[],seenKeys=new Set(),archives=[];let assetCount=0;
   function add(store,key,value){const compound=`${store}:${key}`;if(seenKeys.has(compound))throw fail('Duplicate backup record.');seenKeys.add(compound);entries.push({store,key,value});if(entries.length>maxRecords)throw fail('Backup exceeds the restore drill record limit. Validate offline or use a staged recovery workflow.',413);}
   for(const tenant of tenants){
     const id=tenant.siteId;
@@ -78,12 +82,13 @@ export function validateBackup(backup,{maxRecords=5000}={}){
       if(!Array.isArray(tenant[field]))throw fail('Missing business backup records.');
       for(const row of tenant[field]){if(typeof row?.key!=='string'||!row.key.startsWith(`${id}/`)||row.key.length>500||row.key.split('/').some(part=>!part||part==='.'||part==='..')||row.value===undefined||row.value?.siteId&&row.value.siteId!==id)throw fail('Backup record crosses a business boundary.');add(store,row.key,row.value);}
     }
+    archives.push({site:tenant.site,...validateBackupArchive(tenant.site,tenant.commerce)});
     if(!Array.isArray(tenant.assets))throw fail('Missing asset manifest.');
     const assetKeys=new Set();
     for(const asset of tenant.assets){if(typeof asset?.key!=='string'||!asset.key.startsWith(`sites/${id}/`)||assetKeys.has(asset.key)||asset.key.split('/').some(part=>part==='.'||part==='..'))throw fail('Invalid asset manifest.');assetKeys.add(asset.key);assetCount++;}
     for(const group of collections){const values=tenant.commerce.filter(row=>row.key.startsWith(`${id}/v3/${group}/`)).map(row=>row.value);if(canonical(values)!==canonical(tenant.v3Collections?.[group]))throw fail('Backup collection disagrees with raw records.');}
   }
-  return {entries,tenantCount:tenants.length,recordCount:entries.length,assetManifestCount:assetCount,checksum:backup.integrity.digest};
+  return {entries,archives,tenantCount:tenants.length,recordCount:entries.length,assetManifestCount:assetCount,checksum:backup.integrity.digest};
 }
 
 // The caller supplies a dedicated drill store. Live stores are never passed here.
@@ -100,7 +105,19 @@ export async function runRestoreDrill(backup,store,{clock=Date.now,maxRecords=10
       const restored=await store.get(key,{type:'json'});
       if(digest(restored)!==digest(entry.value))throw fail('Restored record integrity check failed.',409);
     }
-    report={ok:true,isolated:true,tenantCount:validated.tenantCount,verifiedRecords:validated.recordCount,assetManifestCount:validated.assetManifestCount,checksum:validated.checksum,elapsedMs:clock()-started,scope:'business-records-only',assetFilesRestored:false,externalIntegrationsRestored:false,snapshotConsistency:'non-transactional'};
+    let archiveIndexes=0,archiveOperations=0,archiveReservations=0;
+    for(const archive of validated.archives){
+      const restoredSite=await store.get(`${prefix}sites/sites/${archive.site.siteId}.json`,{type:'json'});
+      const restoredCommerce={get:(key,options)=>store.get(`${prefix}commerce/${key}`,options)};
+      for(const marker of archive.markers){
+        if(clock()-started>budgetMs)throw fail('Restore drill exceeded its time budget.',503);
+        const value=await archivedInventoryMarker(restoredSite,marker.type,marker.id,restoredCommerce);
+        if(digest(value)!==digest(marker.value))throw fail('Restored archive lookup failed.',409);
+      }
+      archiveIndexes+=archive.indexes;archiveOperations+=archive.operations;archiveReservations+=archive.reservations;
+    }
+    if(clock()-started>budgetMs)throw fail('Restore drill exceeded its time budget.',503);
+    report={ok:true,isolated:true,archiveIndexes,archiveOperations,archiveReservations,tenantCount:validated.tenantCount,verifiedRecords:validated.recordCount,assetManifestCount:validated.assetManifestCount,checksum:validated.checksum,elapsedMs:clock()-started,scope:'business-records-only',assetFilesRestored:false,externalIntegrationsRestored:false,snapshotConsistency:'non-transactional'};
   }finally{
     // No success response until every temporary business record is removed.
     const removed=await Promise.allSettled(written.map(key=>store.delete(key)));
