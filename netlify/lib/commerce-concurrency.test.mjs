@@ -184,3 +184,104 @@ test('a completed POS sale with a lost attempt-marker response is listed and lin
  const listing=await commerceAdmin(new Request('https://webfactorypr.com/.netlify/functions/client-commerce-admin?siteId=shop'));const pending=(await listing.json()).orders.find(record=>record.posRecoveryNeeded);assert.ok(pending);assert.equal(pending.status,'completed');
  const {recoverPosOrder}=await import('./pos-recovery.mjs');const recovered=await recoverPosOrder('shop',pending.transactionId);const repeated=await idempotentSale(request());assert.equal(repeated.status,200);assert.equal((await repeated.json()).receiptId,recovered.receiptId);assert.equal((await getClientSite('shop')).catalog[0].inventory,2);assert.equal([...f.rows.keys()].filter(key=>key.includes('/v3/receipts/')).length,1);
 });
+
+function asyncCheckoutRequest(eventId,type='checkout.session.async_payment_failed',overrides={},account='acct_shop'){
+ const created=Math.floor(Date.now()/1000);
+ const object={id:'cs_shop',status:'complete',payment_status:'unpaid',currency:'usd',amount_total:100,payment_intent:'pi_shop',metadata:{flow:'webfactory_client_commerce',site_id:'shop',transaction_id:'txn_shop'},...overrides};
+ const body=JSON.stringify({id:eventId,type,account,created,data:{object}});
+ const signature=crypto.createHmac('sha256','test-signing-secret').update(`${created}.${body}`).digest('hex');
+ return new Request('https://webfactorypr.com/.netlify/functions/stripe-connect-webhook',{method:'POST',headers:{'stripe-signature':`t=${created},v1=${signature}`},body});
+}
+test('an unpaid completed checkout retains stock until its signed delayed-payment failure, and replays release once',async t=>{
+ const f=fixture(t);await prepareReservation(f);
+ assert.equal((await webhook(asyncCheckoutRequest('evt_processing','checkout.session.completed'))).status,200);
+ assert.equal((await sale(saleRequest())).status,409);
+ assert.equal((await webhook(asyncCheckoutRequest('evt_failed'))).status,200);
+ assert.equal((await webhook(asyncCheckoutRequest('evt_failed'))).status,200);
+ assert.equal((await webhook(asyncCheckoutRequest('evt_failed_again'))).status,200);
+ const record=await clientCommerceStore().get(commerceKey('shop','transactions','txn_shop'));
+ assert.equal(record.paymentStatus,'failed');assert.equal(record.status,'payment_failed');
+ assert.equal((await clientCommerceStore().get(commerceKey('shop','orders','txn_shop'))).paymentStatus,'failed');
+ assert.equal((await getClientSite('shop')).catalog[0].inventory,1);
+ assert.equal(Object.values((await getClientSite('shop')).stockReservations)[0].state,'released');
+ assert.equal([...f.rows.keys()].filter(key=>key.includes('/v3/receipts/')).length,0);
+ assert.equal((await sale(saleRequest())).status,200);
+});
+test('delayed failure rejects foreign accounts, sessions, amounts, currencies, states and unsigned events',async t=>{
+ const f=fixture(t);await prepareReservation(f);
+ const variants=[{id:'cs_other'},{amount_total:101},{currency:'eur'},{status:'open'},{payment_status:'paid'}];
+ for(const [i,variant] of variants.entries())assert.equal((await webhook(asyncCheckoutRequest(`evt_invalid_${i}`,undefined,variant))).status,500);
+ assert.equal((await webhook(asyncCheckoutRequest('evt_wrong_account',undefined,{},'acct_other'))).status,500);
+ const unsigned=asyncCheckoutRequest('evt_unsigned');unsigned.headers.delete('stripe-signature');assert.equal((await webhook(unsigned)).status,400);
+ const record=await clientCommerceStore().get(commerceKey('shop','transactions','txn_shop'));
+ await clientCommerceStore().setJSON(commerceKey('shop','transactions','txn_shop'),{...record,stripePaymentIntentId:'pi_other'});
+ assert.equal((await webhook(asyncCheckoutRequest('evt_wrong_intent'))).status,500);
+ await clientCommerceStore().setJSON(commerceKey('shop','transactions','txn_shop'),{...record,stripeSessionId:''});
+ assert.equal((await webhook(asyncCheckoutRequest('evt_unknown_session'))).status,500);
+ assert.equal(Object.values((await getClientSite('shop')).stockReservations)[0].state,'held');
+ assert.equal((await sale(saleRequest())).status,409);
+});
+test('a delayed failure after payment cannot release consumed stock or erase its receipt',async t=>{
+ const f=fixture(t);await prepareReservation(f);
+ assert.equal((await webhook(asyncCheckoutRequest('evt_async_paid','checkout.session.async_payment_succeeded',{payment_status:'paid'}))).status,200);
+ const receipt=(await clientCommerceStore().get(commerceKey('shop','transactions','txn_shop'))).receiptId;
+ assert.equal((await webhook(asyncCheckoutRequest('evt_late_failed'))).status,200);
+ const record=await clientCommerceStore().get(commerceKey('shop','transactions','txn_shop'));
+ assert.equal(record.paymentStatus,'paid');assert.equal(record.receiptId,receipt);
+ assert.equal((await getClientSite('shop')).catalog[0].inventory,0);
+ assert.equal(Object.values((await getClientSite('shop')).stockReservations)[0].state,'consumed');
+});
+test('failed order projection retries after transaction persistence without another inventory change',async t=>{
+ const f=fixture(t);await prepareReservation(f);
+ const proto=Object.getPrototypeOf(clientCommerceStore()),write=proto.setJSON;let broken=true;
+ t.mock.method(proto,'setJSON',async function(key,value,options){if(key===commerceKey('shop','orders','txn_shop')&&broken){broken=false;throw new Error('order projection failed')};return write.call(this,key,value,options)});
+ assert.equal((await webhook(asyncCheckoutRequest('evt_projection_failure'))).status,500);
+ const first=await clientCommerceStore().get(commerceKey('shop','transactions','txn_shop'));
+ assert.equal(first.paymentStatus,'failed');
+ assert.equal((await webhook(asyncCheckoutRequest('evt_projection_failure'))).status,200);
+ assert.equal((await clientCommerceStore().get(commerceKey('shop','orders','txn_shop'))).paymentFailedAt,first.paymentFailedAt);
+ assert.equal((await getClientSite('shop')).catalog[0].inventory,1);
+});
+test('payment reported after a failed and released checkout requires review without fulfilling sold stock',async t=>{
+ const f=fixture(t);await prepareReservation(f);
+ assert.equal((await webhook(asyncCheckoutRequest('evt_failed_first'))).status,200);
+ assert.equal((await sale(saleRequest())).status,200);
+ assert.equal((await webhook(asyncCheckoutRequest('evt_paid_after_failure','checkout.session.async_payment_succeeded',{payment_status:'paid'}))).status,409);
+ const record=await clientCommerceStore().get(commerceKey('shop','orders','txn_shop'));
+ assert.equal(record.paymentStatus,'failed');assert.equal(record.status,'payment_review_required');assert.equal(record.inventoryNeedsReview,true);
+ assert.equal((await getClientSite('shop')).catalog[0].inventory,0);
+ assert.equal([...f.rows.keys()].filter(key=>key.includes('/v3/receipts/')).length,1);
+});
+test('failed delayed booking projects its failure and removes only its own temporary hold',async t=>{
+ const f=fixture(t);await f.prepare();
+ await clientCommerceStore().setJSON(commerceKey('shop','transactions','txn_shop'),{siteId:'shop',transactionId:'txn_shop',kind:'booking',stripeAccountId:'acct_shop',stripeSessionId:'cs_shop',amountTotal:100,paymentStatus:'pending',holdId:'hold_shop'});
+ await clientCommerceStore().setJSON(commerceKey('shop','holds','hold_shop'),{holdId:'hold_shop'});
+ await clientCommerceStore().setJSON(commerceKey('shop','holds','hold_other'),{holdId:'hold_other'});
+ assert.equal((await webhook(asyncCheckoutRequest('evt_booking_failed'))).status,200);
+ assert.equal((await clientCommerceStore().get(commerceKey('shop','bookings','txn_shop'))).paymentStatus,'failed');
+ assert.equal(await clientCommerceStore().get(commerceKey('shop','holds','hold_shop')),null);
+ assert.ok(await clientCommerceStore().get(commerceKey('shop','holds','hold_other')));
+});
+
+test('failure delivery recovers after releasing stock but failing the transaction write',async t=>{
+ const f=fixture(t);await prepareReservation(f);
+ const proto=Object.getPrototypeOf(clientCommerceStore()),write=proto.setJSON;let broken=true;
+ t.mock.method(proto,'setJSON',async function(key,value,options){if(key===commerceKey('shop','transactions','txn_shop')&&value.paymentStatus==='failed'&&broken){broken=false;throw new Error('failed transaction write')};return write.call(this,key,value,options)});
+ assert.equal((await webhook(asyncCheckoutRequest('evt_txn_write_failure'))).status,500);
+ assert.equal((await clientCommerceStore().get(commerceKey('shop','transactions','txn_shop'))).paymentStatus,'pending');
+ assert.equal(Object.values((await getClientSite('shop')).stockReservations)[0].state,'released');
+ assert.equal((await webhook(asyncCheckoutRequest('evt_txn_write_failure'))).status,200);
+ assert.equal((await clientCommerceStore().get(commerceKey('shop','orders','txn_shop'))).paymentStatus,'failed');
+ const completed=await webhook(asyncCheckoutRequest('evt_completed_after_failure','checkout.session.completed'));
+ assert.equal(completed.status,200);assert.equal((await completed.json()).pending,false);
+ assert.equal((await getClientSite('shop')).catalog[0].inventory,1);
+});
+test('a consumed reservation with inconsistent pending payment is preserved for reconciliation',async t=>{
+ const f=fixture(t);await prepareReservation(f);
+ const {applyStockOperation}=await import('./inventory-operations.mjs');
+ await applyStockOperation('shop',{kind:'sale',referenceId:'txn_shop',items:[{id:'last-item',quantity:1}],reason:'sale',reservationRequired:true});
+ assert.equal((await webhook(asyncCheckoutRequest('evt_consumed_but_pending'))).status,409);
+ assert.equal((await clientCommerceStore().get(commerceKey('shop','transactions','txn_shop'))).paymentStatus,'pending');
+ assert.equal(Object.values((await getClientSite('shop')).stockReservations)[0].state,'consumed');
+ assert.equal((await getClientSite('shop')).catalog[0].inventory,0);
+});

@@ -39,8 +39,14 @@ async function finalizeTransaction(event) {
   if(['refunded','partially_refunded','expired','cancelled'].includes(record.paymentStatus))return {record,pending:false};
   if(record.stripePaymentIntentId&&session.payment_intent&&record.stripePaymentIntentId!==session.payment_intent)throw new Error('PaymentIntent does not match the transaction.');
   if(record.source==='tap_to_pay'&&!record.stripePaymentIntentId&&session.payment_intent){record={...record,stripePaymentIntentId:session.payment_intent};await clientCommerceStore().setJSON(key,record);}
-  if (session.payment_status !== "paid") return { record, pending: true };
+  if (session.payment_status !== "paid") return { record, pending: record.paymentStatus!=='failed' };
   if (Number(session.amount_total) !== Number(record.amountTotal) || String(session.currency).toLowerCase() !== "usd") throw new Error("Stripe amount or currency does not match the server record.");
+  if(record.paymentStatus==='failed'){
+    record={...record,status:'payment_review_required',inventoryNeedsReview:true,inventoryIssue:'PAYMENT_AFTER_FAILED_CHECKOUT',updatedAt:new Date().toISOString()};
+    await clientCommerceStore().setJSON(key,record);
+    await clientCommerceStore().setJSON(commerceKey(siteId,record.kind==='booking'?'bookings':'orders',transactionId),record);
+    throw Object.assign(new Error('Payment after a failed checkout requires reconciliation.'),{status:409});
+  }
 
   if(record.kind==='order'&&record.paymentStatus==='paid'&&!record.inventoryProtocol&&!record.inventoryAppliedAt){
     if(record.v3ArtifactsCreatedAt)record={...record,inventoryAppliedAt:record.v3ArtifactsCreatedAt,inventoryLegacyAssumed:true};
@@ -119,6 +125,28 @@ export default async (req) => {
     if (previous?.completed) return Response.json({ received: true, duplicate: true });
     await clientEventStore().setJSON(key, { processing: true, updatedAt: new Date().toISOString(), type: event.type });
     const object = event.data?.object || {};
+    if(event.type==='checkout.session.async_payment_failed'&&object.metadata?.flow==='webfactory_client_commerce'){
+      const siteId=object.metadata.site_id,transactionId=object.metadata.transaction_id;
+      const transactionKey=commerceKey(siteId,'transactions',transactionId);
+      const record=await clientCommerceStore().get(transactionKey,{type:'json'});
+      if(!record||record.siteId!==siteId||record.transactionId!==transactionId||!['order','booking'].includes(record.kind)||record.stripeAccountId!==event.account||!record.stripeSessionId||record.stripeSessionId!==object.id||Number(object.amount_total)!==Number(record.amountTotal)||object.currency!=='usd'||object.status!=='complete'||object.payment_status!=='unpaid'||(record.stripePaymentIntentId&&record.stripePaymentIntentId!==object.payment_intent))throw new Error('Failure does not match the checkout.');
+      if(['pending','failed'].includes(record.paymentStatus)){
+        if(record.inventoryAppliedAt||record.v3ArtifactsCreatedAt||record.inventoryNeedsReview)throw Object.assign(new Error('Checkout requires reconciliation.'),{status:409});
+        if(record.inventoryReservationRequired){
+          const site=await getClientSite(siteId);
+          const reservation=Object.values(site?.stockReservations||{}).find(value=>value.referenceId===transactionId);
+          if(!reservation||reservation.provider!=='stripe_checkout'||!['held','released'].includes(reservation.state))throw Object.assign(new Error('Reservation requires reconciliation.'),{status:409});
+          await releaseInventory(siteId,transactionId);
+        }
+        const now=new Date().toISOString();
+        const failed={...record,stripePaymentIntentId:object.payment_intent||record.stripePaymentIntentId||'',paymentStatus:'failed',status:'payment_failed',paymentFailedAt:record.paymentFailedAt||now,paymentFailureEventId:record.paymentFailureEventId||event.id,confirmationEmailPending:false,updatedAt:now};
+        await clientCommerceStore().setJSON(transactionKey,failed);
+        await clientCommerceStore().setJSON(commerceKey(siteId,record.kind==='booking'?'bookings':'orders',transactionId),failed);
+        if(record.holdId)await clientCommerceStore().delete(commerceKey(siteId,'holds',record.holdId));
+      }
+      await clientEventStore().setJSON(key,{completed:true,type:event.type,transactionId,updatedAt:new Date().toISOString()});
+      return Response.json({received:true,transactionId});
+    }
     if(event.type==='payment_intent.canceled'&&object.metadata?.flow==='webfactory_terminal'){
       const siteId=object.metadata.site_id,transactionId=object.metadata.transaction_id,transactionKey=commerceKey(siteId,'transactions',transactionId);
       const record=await clientCommerceStore().get(transactionKey,{type:'json'});

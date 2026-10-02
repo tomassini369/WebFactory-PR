@@ -31,7 +31,7 @@ export async function reserveInventory(siteId, referenceId, items, store=clientS
   return reservation;
 }
 
-// Call only after authenticating a Stripe expiration or verifying provider state.
+// Call only after authenticating a definitive provider failure/cancellation/expiration.
 // A local clock, cancel URL, network error or unpaid completed session is NOT proof.
 export async function releaseInventory(siteId,referenceId,store=clientSiteStore()) {
   const source=await store.getWithMetadata(siteKey(siteId),{type:'json'});
