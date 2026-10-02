@@ -93,7 +93,15 @@ export function validateBackup(backup,{maxRecords=5000}={}){
 
 // The caller supplies a dedicated drill store. Live stores are never passed here.
 export async function runRestoreDrill(backup,store,{clock=Date.now,maxRecords=100,budgetMs=30000}={}){
-  const started=clock(),validated=validateBackup(backup,{maxRecords});
+  const started=clock(),validated=validateBackup(backup,{maxRecords}),validatedAt=clock();
+  const storageOperations={reads:0,writes:0,deletes:0};
+  const sourceStore=store;
+  store={
+    get:async(...args)=>{storageOperations.reads++;return sourceStore.get(...args)},
+    setJSON:async(...args)=>{storageOperations.writes++;return sourceStore.setJSON(...args)},
+    delete:async(...args)=>{storageOperations.deletes++;return sourceStore.delete(...args)},
+  };
+  let cleanupStarted=validatedAt;
   const prefix=`drills/${crypto.randomUUID()}/`,written=[];
   let report;
   try{
@@ -119,9 +127,17 @@ export async function runRestoreDrill(backup,store,{clock=Date.now,maxRecords=10
     if(clock()-started>budgetMs)throw fail('Restore drill exceeded its time budget.',503);
     report={ok:true,isolated:true,archiveIndexes,archiveOperations,archiveReservations,tenantCount:validated.tenantCount,verifiedRecords:validated.recordCount,assetManifestCount:validated.assetManifestCount,checksum:validated.checksum,elapsedMs:clock()-started,scope:'business-records-only',assetFilesRestored:false,externalIntegrationsRestored:false,snapshotConsistency:'non-transactional'};
   }finally{
-    // No success response until every temporary business record is removed.
-    const removed=await Promise.allSettled(written.map(key=>store.delete(key)));
+    // Strong consistency allows checking actual absence, not just delete responses.
+    cleanupStarted=clock();
+    const removed=[];
+    for(let i=0;i<written.length;i+=5){
+      removed.push(...await Promise.allSettled(written.slice(i,i+5).map(async key=>{
+        await store.delete(key);
+        if(await store.get(key,{type:'json'})!==null)throw fail('Temporary record remains after deletion.',503);
+      })));
+    }
     if(removed.some(item=>item.status==='rejected')){console.error('backup-drill-cleanup',JSON.stringify({prefix,failed:removed.filter(item=>item.status==='rejected').length}));throw fail('Temporary drill cleanup failed. Administrative cleanup is required.',503);}
   }
-  return {...report,elapsedMs:clock()-started,temporaryRecordsRemoved:true};
+  const finished=clock();
+  return {...report,elapsedMs:finished-started,timings:{validationMs:validatedAt-started,recoveryMs:cleanupStarted-validatedAt,cleanupMs:finished-cleanupStarted},storageOperations,temporaryRecordsRemoved:true,cleanupVerified:true};
 }

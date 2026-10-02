@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { buildTenantBackup,createSiteBackup,createAllBackup,sealBackup,validateBackup,runRestoreDrill,backupResponse,MAX_BACKUP_BYTES } from './backup-recovery.mjs';
+import { createBackupDrillFixture } from './backup-drill-fixture.mjs';
 import { createRestoreDrillHandler } from './restore-drill-handler.mjs';
 function memory(rows=[]){const data=new Map(rows);return {data,async get(key){return structuredClone(data.get(key)??null)},async setJSON(key,value){data.set(key,structuredClone(value))},async getMetadata(key){return data.has(key)?{metadata:{contentType:'image/png'}}:null},async delete(key){data.delete(key)},list({prefix}){const keys=[...data.keys()].filter(key=>key.startsWith(prefix));return (async function*(){for(let i=0;i<keys.length;i+=3)yield {blobs:keys.slice(i,i+3).map(key=>({key,etag:'version'}))};})()}};}
 const site={siteId:'business-1',slug:'business-one',members:[{email:'OWNER@example.com',role:'owner'}],business:{name:'Test fixture'},revision:7};
@@ -56,8 +57,63 @@ test('export refuses an incomplete published archive but permits unreferenced pr
 });
 test('restore rejects storage that changes archive property order and cleans every temporary record',async()=>{
   const backup=await archivedFixture(),target=memory(),get=target.get;
-  target.get=async key=>{const value=await get(key);return key.includes('inventory-archive-index/')?Object.fromEntries(Object.entries(value).reverse()):value};
+  target.get=async key=>{const value=await get(key);return value&&key.includes('inventory-archive-index/')?Object.fromEntries(Object.entries(value).reverse()):value};
   await assert.rejects(runRestoreDrill(backup,target),/archive/);assert.equal(target.data.size,0);
 });
 
 function reseal(backup){const {integrity,...payload}=backup;return sealBackup(payload);}
+
+
+test('controlled fixture restores archived evidence, reports storage operations and verifies deletion',async()=>{
+  const backup=createBackupDrillFixture(),target=memory([['unrelated/keep.json',{keep:true}]]),validated=validateBackup(backup);
+  const report=await runRestoreDrill(backup,target);
+  assert.ok(validated.recordCount<=100);assert.equal(report.archiveOperations,3);assert.equal(report.archiveReservations,2);
+  assert.equal(report.cleanupVerified,true);assert.equal(report.storageOperations.writes,validated.recordCount);
+  assert.equal(report.storageOperations.deletes,validated.recordCount);
+  assert.equal(report.storageOperations.reads,validated.recordCount*2+1+10);
+  assert.deepEqual([...target.data.keys()],['unrelated/keep.json']);
+  assert.equal(report.elapsedMs,report.timings.validationMs+report.timings.recoveryMs+report.timings.cleanupMs);
+});
+test('synthetic preview mode uses authorized session and reports actual deploy provenance without business records',async()=>{
+  let authCalls=0;const store=memory();
+  const handler=createRestoreDrillHandler({authorize:async()=>{authCalls++},createStore:()=>store});
+  const response=await handler(req({mode:'synthetic'}),{deploy:{context:'deploy-preview',published:false,id:'controlled-preview-id'}});
+  assert.equal(response.status,200);assert.equal(response.headers.get('Cache-Control'),'no-store');
+  const report=await response.json();assert.equal(authCalls,1);assert.equal(report.source,'synthetic-fixture');assert.equal(report.deployId,'controlled-preview-id');assert.equal(report.deployContext,'deploy-preview');assert.equal(report.archiveOperations,3);assert.equal(report.cleanupVerified,true);assert.ok(Number.isFinite(Date.parse(report.completedAt)));assert.equal(report.entries,undefined);assert.equal(report.site,undefined);assert.equal(store.data.size,0);
+});
+test('synthetic drill never bypasses production, origin, administrator or MFA authorization',async()=>{
+  let created=0;const handler=createRestoreDrillHandler({authorize:async()=>{throw Object.assign(new Error('MFA required'),{status:403})},createStore:()=>{created++;return memory()}});
+  const preview={deploy:{context:'deploy-preview',published:false}};
+  for(const context of [{deploy:{context:'production',published:true}},{deploy:{context:'branch-deploy',published:false}},preview])assert.equal((await handler(req({mode:'synthetic'}),context)).status,403);
+  assert.equal((await handler(req({mode:'synthetic'},'https://foreign.example'),preview)).status,403);assert.equal(created,0);
+});
+test('synthetic mode rejects extra input and unknown modes before creating a store',async()=>{
+  let created=0;const handler=createRestoreDrillHandler({authorize:async()=>{},createStore:()=>{created++;return memory()}}),preview={deploy:{context:'deploy-preview',published:false}};
+  for(const body of [{mode:'synthetic',siteId:'real-business'},{mode:'synthetic',backup:{}},{mode:'other'}])assert.equal((await handler(req(body),preview)).status,400);
+  assert.equal(created,0);
+});
+test('successful delete responses with remaining objects cannot produce a successful report',async()=>{
+  const target=memory(),deleted=[];target.delete=async key=>{deleted.push(key)};
+  const backup=createBackupDrillFixture();await assert.rejects(runRestoreDrill(backup,target),{status:503});
+  assert.equal(deleted.length,validateBackup(backup).recordCount);
+});
+test('cleanup verification failure still attempts deletion for every temporary record',async()=>{
+  const target=memory(),get=target.get,del=target.delete;let deletions=0;
+  target.delete=async key=>{deletions++;await del(key)};
+  target.get=async key=>{const value=await get(key);if(value===null)throw new Error('verification unavailable');return value};
+  const backup=createBackupDrillFixture();await assert.rejects(runRestoreDrill(backup,target),{status:503});
+  assert.equal(target.data.size,0);assert.equal(deletions,validateBackup(backup).recordCount);
+});
+
+
+test('offline validation prints archive totals without exposing restored business or marker values',async()=>{
+  const {mkdtemp,writeFile,rm}=await import('node:fs/promises');
+  const {tmpdir}=await import('node:os');const {join}=await import('node:path');const {execFileSync}=await import('node:child_process');const {fileURLToPath}=await import('node:url');
+  const directory=await mkdtemp(join(tmpdir(),'wf-backup-summary-'));
+  try{
+    const backup=createBackupDrillFixture();backup.site.privateValue='DO-NOT-PRINT-BUSINESS-DATA';
+    const path=join(directory,'backup.json');await writeFile(path,JSON.stringify(reseal(backup)));
+    const output=execFileSync(process.execPath,[fileURLToPath(new URL('../../scripts/validate-backup.mjs',import.meta.url)),path],{encoding:'utf8'});
+    const report=JSON.parse(output);assert.deepEqual(report.archiveCounts,{indexes:5,operations:3,reservations:2});assert.equal(report.archives,undefined);assert.equal(report.entries,undefined);assert.ok(!output.includes('DO-NOT-PRINT'));assert.ok(!output.includes('Synthetic customer'));
+  }finally{await rm(directory,{recursive:true,force:true})}
+});
