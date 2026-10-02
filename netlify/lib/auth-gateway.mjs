@@ -7,7 +7,7 @@ const headers = authHeaders;
 const json = authJson;
 
 // Bound the stream itself: Content-Length can be missing or dishonest.
-export async function readAuthPayload(req) {
+export async function readAuthPayload(req, maxBytes = 8192) {
   if (!req.headers.get("content-type")?.toLowerCase().startsWith("application/json")) {
     throw Object.assign(new Error(), { status: 415 });
   }
@@ -20,7 +20,7 @@ export async function readAuthPayload(req) {
       const { done, value } = await reader.read();
       if (done) break;
       size += value.byteLength;
-      if (size > 8192) {
+      if (size > maxBytes) {
         await reader.cancel();
         throw Object.assign(new Error(), { status: 413 });
       }
@@ -30,8 +30,10 @@ export async function readAuthPayload(req) {
   const bytes = new Uint8Array(size);
   let offset = 0;
   for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.length; }
-  const payload = JSON.parse(new TextDecoder().decode(bytes));
-  if (!payload || typeof payload !== "object" || Array.isArray(payload)) throw new Error();
+  let payload;
+  try { payload = JSON.parse(new TextDecoder().decode(bytes)); }
+  catch { throw Object.assign(new Error('Invalid JSON payload.'), { status: 400 }); }
+  if (!payload || typeof payload !== "object" || Array.isArray(payload)) throw Object.assign(new Error('Invalid JSON payload.'),{status:400});
   return payload;
 }
 

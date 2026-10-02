@@ -1,4 +1,5 @@
 import crypto from 'node:crypto';
+import { indexAuthExpiry } from './auth-expiry.mjs';
 import { getStore, getDeployStore } from '@netlify/blobs';
 import { withBookingLock } from './booking-lock.mjs';
 
@@ -14,6 +15,7 @@ const profileKey=user=>`${userPrefix(user)}profile.json`;
 export async function issuePrimarySession(user,context,store=mfaStore(),now=Date.now()){
   if(!user?.id||!user?.email)throw reject();
   const token=crypto.randomBytes(32).toString('base64url');
+  await indexAuthExpiry(store,sessionKey(user,token),now+8*3600000);
   await store.setJSON(sessionKey(user,token),{issuedAt:now,expiresAt:now+8*3600000,userId:user.id});
   context.cookies.set({name:PRIMARY_COOKIE,value:token,httpOnly:true,secure:true,sameSite:'Lax',path:'/',maxAge:8*3600});
 }
@@ -81,6 +83,7 @@ export function createMfaService(store,webAuthn,now=()=>Date.now()){
     const credentials=profile?.credentials||[];
     const data=kind==='register' ? await webAuthn.generateRegistrationOptions({rpName:'WebFactory PR',rpID,userName:user.email,userID:new Uint8Array(Buffer.from(hash(user.id),'hex')),attestationType:'none',authenticatorSelection:{residentKey:'preferred',userVerification:'required'},excludeCredentials:credentials.map(({id,transports})=>({id,transports})),timeout:60000}) : await webAuthn.generateAuthenticationOptions({rpID,userVerification:'required',allowCredentials:credentials.map(({id,transports})=>({id,transports})),timeout:60000});
     const id=crypto.randomBytes(32).toString('base64url');
+    await indexAuthExpiry(store,`${userPrefix(user)}challenges/${id}.json`,now()+300000);
     await store.setJSON(`${userPrefix(user)}challenges/${id}.json`,{challenge:data.challenge,kind,origin,primaryHash:hash(current.token),version:profile?.version||null,expiresAt:now()+300000});
     return {options:data,challengeId:id};
   }
