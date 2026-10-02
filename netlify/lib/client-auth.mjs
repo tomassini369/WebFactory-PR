@@ -86,7 +86,7 @@ export const SITE_ROLE_CAPABILITIES = {
 };
 
 export function siteRoleCapabilities(role = "") {
-  return SITE_ROLE_CAPABILITIES[role] || [];
+  return Object.hasOwn(SITE_ROLE_CAPABILITIES, role) ? SITE_ROLE_CAPABILITIES[role] : [];
 }
 
 export function membershipHasCapability(membership, capability) {

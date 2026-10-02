@@ -62,7 +62,7 @@ Los registros nuevos de políticas, preferencias y facturación están agrupados
 | Favicon, iconos y SEO de la home | Ya existentes; se conservan |
 | 404 y enlaces legales | 404 real para rutas desconocidas; rutas SPA conocidas siguen funcionando; se corrige el enlace a `/refund-policy` |
 | Accesibilidad | Nombres accesibles en contacto, estados anunciados, políticas con diálogo nativo y foco visible. **Pendiente:** auditoría completa WCAG 2.2, teclado y lector de pantalla; no se declara conformidad total |
-| Antispam | Rate limit existente más honeypot en contacto; negocio sin entitlement público no recibe mensajes |
+| Antispam | Rate limits corregidos a ventanas admitidas por Netlify (máximo 180 segundos), más honeypot en contacto; negocio sin entitlement público no recibe mensajes |
 | Consultas eficientes | Cocina evita polling oculto y consultas superpuestas; lecturas fuertes también en preview; caché público existente se conserva |
 | Concurrencia y reintentos | Bloqueos compartidos entre POS y finalización de Stripe; intentos POS protegidos y ligados a su contenido; un error interno deja el intento incierto para revisión antes de repetir |
 | Webhooks duplicados | Contención devuelve error reintentable en lugar de confirmar un evento aún no procesado; se prueba entrega simultánea y otro evento para el mismo pago |
@@ -90,3 +90,15 @@ Los registros nuevos de políticas, preferencias y facturación están agrupados
 - [FTC: CAN-SPAM](https://www.ftc.gov/business-guidance/resources/can-spam-act-compliance-guide-business)
 - [Copyright Office: agentes DMCA](https://www.copyright.gov/dmca-directory/)
 - [WCAG 2.2](https://www.w3.org/TR/WCAG22/)
+
+## Segunda entrega: protección del acceso
+
+- Login de ambos portales e inicio de sesión posterior a una invitación pasan por un endpoint del servidor con CSRF, cuerpo máximo de 8 KB, errores genéricos y 10 solicitudes por minuto/IP. No se reintentan automáticamente contraseñas.
+- Recuperación desde los logins usa un endpoint con 5 solicitudes por 180 segundos/IP y respuesta idéntica para emails conocidos, desconocidos o inválidos. No se devuelven tokens ni detalles del proveedor en JSON.
+- El login del servidor utiliza `@netlify/identity`, seguido de navegación completa para restaurar la sesión desde sus cookies. **Las cookies del SDK y la sesión hidratada siguen accesibles a JavaScript; esto no completa HttpOnly.** Invitaciones, recovery y refresh todavía requieren la migración integral pendiente.
+- Se corrigen tres reglas previas con ventanas de 3600 segundos, que excedían el máximo nativo de 180. Los límites nativos pueden tardar hasta 10 segundos en bloquear; no se presentan como un contador transaccional inmediato.
+- Se niegan nombres heredados del prototipo como roles (`constructor`, `toString`, `__proto__`).
+- **Pendiente del proveedor:** los endpoints directos de Identity siguen existiendo; sus límites y la política de contraseñas deben verificarse además de estos gateways. Esta entrega no afirma impedir todo ataque distribuido ni toda enumeración temporal.
+- **MFA:** no se encontró una API de enrolamiento/verificación MFA en el SDK instalado. La documentación distingue 2FA de las cuentas del equipo Netlify de la autenticación de usuarios de los portales. Antes de habilitar MFA se necesita una integración administrada compatible, con enrolamiento y recuperación verificados y aplicación en cada endpoint privado.
+
+Referencias: [Identity en Functions](https://docs.netlify.com/manage/security/secure-access-to-sites/identity/use-identity-in-functions/), [rate limits y límite de 180 segundos](https://docs.netlify.com/manage/security/secure-access-to-sites/rate-limiting/), [2FA del equipo Netlify](https://docs.netlify.com/manage/security/secure-netlify-access/enforce-2fa/).

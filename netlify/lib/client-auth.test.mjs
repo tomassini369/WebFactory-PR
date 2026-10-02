@@ -32,6 +32,10 @@ test("unknown or missing roles have no permissions", () => {
   assert.deepEqual(siteRoleCapabilities("unknown"), []);
   assert.deepEqual(siteRoleCapabilities(), []);
   assert.equal(membershipHasCapability({}, "billing"), false);
+  for (const role of ["constructor", "toString", "__proto__"]) {
+    assert.deepEqual(siteRoleCapabilities(role), []);
+    assert.equal(membershipHasCapability({ role }, "billing"), false);
+  }
 });
 
 test("every client role can view and share its public business QR", () => {

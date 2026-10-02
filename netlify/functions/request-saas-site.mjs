@@ -248,7 +248,7 @@ export default async (req) => {
 export const config = {
   rateLimit: {
     windowLimit: 5,
-    windowSize: 3600,
+    windowSize: 180,
     aggregateBy: ["ip"],
   },
 };
