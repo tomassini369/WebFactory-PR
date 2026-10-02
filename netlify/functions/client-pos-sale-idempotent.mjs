@@ -1,3 +1,5 @@
+import crypto from "node:crypto";
+import { withBookingLock } from "../lib/booking-lock.mjs";
 import { assertSameOrigin, errorResponse, requireSiteCapability } from "../lib/client-auth.mjs";
 import { clientCommerceStore, commerceKey } from "../lib/client-store.mjs";
 import { cleanText } from "../lib/platform-utils.mjs";
@@ -16,7 +18,11 @@ export default async(req)=>{
 
     const store=clientCommerceStore();
     const key=markerKey(site.siteId,saleAttemptId);
+    return await withBookingLock(store, `locks/pos-attempt/${site.siteId}/${saleAttemptId}`, async()=>{
+    const fingerprint=crypto.createHash("sha256").update(JSON.stringify({items:payload.items,customer:payload.customer,discount:payload.discount,tip:payload.tip,paymentMethod:payload.paymentMethod})).digest("hex");
     const existing=await store.get(key,{type:"json"});
+    if(existing?.fingerprint&&existing.fingerprint!==fingerprint)throw Object.assign(new Error("Use a new attempt ID for a changed sale."),{status:409});
+    if(existing?.status==="uncertain")throw Object.assign(new Error("This sale requires review before retrying. Check orders and inventory in your portal."),{status:409});
     if(existing?.status==="completed"&&existing?.response){
       return Response.json(existing.response,{headers:{"Cache-Control":"no-store"}});
     }
@@ -27,6 +33,7 @@ export default async(req)=>{
     await store.setJSON(key,{
       siteId:site.siteId,
       saleAttemptId,
+      fingerprint,
       status:"processing",
       createdAt:new Date().toISOString(),
       updatedAt:new Date().toISOString(),
@@ -39,6 +46,7 @@ export default async(req)=>{
       await store.setJSON(key,{
         siteId:site.siteId,
         saleAttemptId,
+        fingerprint,
         status:"completed",
         transactionId:body.record?.transactionId||"",
         receiptId:body.receiptId||"",
@@ -50,12 +58,16 @@ export default async(req)=>{
       await store.setJSON(key,{
         siteId:site.siteId,
         saleAttemptId,
-        status:"failed",
+        fingerprint,
+        status:response.status>=500?"uncertain":"failed",
         response:body,
         createdAt:existing?.createdAt||new Date().toISOString(),
         updatedAt:new Date().toISOString(),
       });
     }
     return response;
+    });
   }catch(error){return errorResponse(error);}
 };
+
+export const config={rateLimit:{windowLimit:20,windowSize:60,aggregateBy:["ip"]}};

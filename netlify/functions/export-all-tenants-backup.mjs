@@ -1,5 +1,5 @@
 import { requirePlatformAdmin, errorResponse } from "../lib/client-auth.mjs";
-import { clientAssetStore, clientCommerceStore, clientSiteStore } from "../lib/client-store.mjs";
+import { clientAssetStore, clientEventStore, clientCommerceStore, clientSiteStore } from "../lib/client-store.mjs";
 import { listV3Records } from "../lib/webfactory-v3-store.mjs";
 
 async function readPrefix(store, prefix) {
@@ -41,13 +41,14 @@ export default async (req) => {
     const tenants = [];
 
     for (const site of sites) {
+      const policyAndPreferenceRecords = await readPrefix(clientEventStore(), `${site.siteId}/`);
       const commerce = await readPrefix(clientCommerceStore(), `${site.siteId}/`);
       const v3Collections = {};
       for (const collection of ["customers","receipts","payment-links","inventory-movements","review-requests"]) {
         v3Collections[collection] = await listV3Records(site.siteId, collection, { limit: 1000 });
       }
       const assets = await assetManifest(site.siteId);
-      tenants.push({ siteId: site.siteId, site, commerce, v3Collections, assets });
+      tenants.push({ siteId: site.siteId, site, policyAndPreferenceRecords, commerce, v3Collections, assets });
     }
 
     const payload = {

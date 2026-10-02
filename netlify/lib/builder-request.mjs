@@ -1,3 +1,4 @@
+import { sanitizePolicies } from "./publication-review.mjs";
 import { cleanText, validEmail } from "./platform-utils.mjs";
 
 const TEMPLATE_CATALOG = {
@@ -144,6 +145,7 @@ export function sanitizeBuilderRequest(payload) {
       phone: cleanText(client.phone || b.phone, 80),
     },
     business: {
+      policies: sanitizePolicies(b.policies),
       name: businessName,
       nameEn: cleanText(b.nameEn || b.name, 180),
       nameEs: cleanText(b.nameEs, 180),

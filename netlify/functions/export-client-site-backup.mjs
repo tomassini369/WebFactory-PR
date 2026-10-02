@@ -1,5 +1,5 @@
 import { requirePlatformAdmin, errorResponse } from "../lib/client-auth.mjs";
-import { clientAssetStore, clientCommerceStore, clientSiteStore, getClientSite } from "../lib/client-store.mjs";
+import { clientAssetStore, clientEventStore, clientCommerceStore, clientSiteStore, getClientSite } from "../lib/client-store.mjs";
 import { cleanText } from "../lib/platform-utils.mjs";
 import { listV3Records } from "../lib/webfactory-v3-store.mjs";
 
@@ -33,6 +33,7 @@ export default async (req) => {
     const site = await getClientSite(siteId);
     if (!site) throw Object.assign(new Error("Client site not found."), { status: 404 });
 
+    const policyAndPreferenceRecords = await readPrefix(clientEventStore(), `${siteId}/`);
     const commerce = await readPrefix(clientCommerceStore(), `${siteId}/`);
     const v3Collections = {};
     for (const collection of ["customers","receipts","payment-links","inventory-movements","review-requests"]) {
@@ -41,6 +42,7 @@ export default async (req) => {
     const assets = await assetManifest(siteId);
 
     const payload = {
+      policyAndPreferenceRecords,
       exportVersion: "webfactory-v3-site-backup-1",
       exportedAt: new Date().toISOString(),
       exportedBy: admin.email,

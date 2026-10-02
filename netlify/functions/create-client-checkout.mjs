@@ -10,7 +10,7 @@ import { siteEntitlement } from "../lib/subscription-billing.mjs";
 import { assertStripeWriteAllowed } from "../lib/stripe-runtime.mjs";
 import { calculateTax } from "../lib/webfactory-v3-domain.mjs";
 import { createAthCheckout } from "../lib/ath-movil.mjs";
-import { assertSameOrigin } from "../lib/client-auth.mjs";
+import { assertSameOrigin, errorResponse } from "../lib/client-auth.mjs";
 
 function env(name) { return globalThis.Netlify?.env?.get(name) || ""; }
 
@@ -37,6 +37,14 @@ function localizedText(item, lang, field) {
 
 function canonicalCart(site, requested, lang) {
   if (!Array.isArray(requested) || requested.length === 0 || requested.length > 20) throw Object.assign(new Error("Choose between 1 and 20 catalog items."), { status: 400 });
+  const ids = new Set();
+  for (const entry of requested) {
+    const quantity = Number(entry.quantity ?? 1);
+    if (!entry.id || ids.has(entry.id) || !Number.isInteger(quantity) || quantity < 1 || quantity > 20) {
+      throw Object.assign(new Error("Use unique catalog items and quantities between 1 and 20."), { status: 400 });
+    }
+    ids.add(entry.id);
+  }
   return requested.map((entry) => {
     const item = (site.catalog || []).find((candidate) => candidate.id === entry.id && candidate.active !== false && !candidate.requiresAppointment);
     if (!item) throw Object.assign(new Error("A selected catalog item is unavailable."), { status: 409 });
@@ -68,6 +76,7 @@ export default async (req) => {
       name: cleanText(payload.customer?.name, 180),
       email: cleanText(payload.customer?.email, 320),
       phone: cleanText(payload.customer?.phone, 80),
+      reviewOptIn: payload.customer?.reviewOptIn === true,
     };
     if (!customer.name || !validEmail(customer.email)) throw Object.assign(new Error("Customer name and a valid email are required."), { status: 400 });
 
@@ -197,7 +206,7 @@ export default async (req) => {
     await clientCommerceStore().setJSON(commerceKey(site.siteId, "transactions", transactionId), record);
     return Response.json({ ok: true, paymentRequired: true, checkoutUrl: session.url, transactionId }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
-    return Response.json({ ok: false, message: error?.message || "Checkout could not be prepared." }, { status: Number(error?.status || 500), headers: { "Cache-Control": "no-store" } });
+    return errorResponse(error);
   }
 };
 

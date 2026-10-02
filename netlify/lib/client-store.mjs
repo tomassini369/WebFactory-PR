@@ -9,7 +9,7 @@ function isProduction() {
 function scopedStore(name) {
   return isProduction()
     ? getStore(name, { consistency: "strong" })
-    : getDeployStore(name);
+    : getDeployStore(name, { consistency: "strong" });
 }
 
 export const clientSiteStore = () => scopedStore("webfactory-client-sites");
@@ -116,6 +116,7 @@ export function publicClientSite(site) {
     status: site.status,
     revision: site.revision,
     business: {
+      policies: site.business?.policies || {},
       name: site.business?.name || "",
       nameEn: site.business?.nameEn || site.business?.name || "",
       nameEs: site.business?.nameEs || "",

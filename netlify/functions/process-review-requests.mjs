@@ -1,24 +1,35 @@
-import { clientSiteStore, getClientSite } from "../lib/client-store.mjs";
+import { reviewEmailEligible, unsubscribeUrl } from "../lib/marketing-preferences.mjs";
+import { withBookingLock } from "../lib/booking-lock.mjs";
+import { clientEventStore } from "../lib/client-store.mjs";
+import { clientSiteStore, clientCommerceStore, getClientSite } from "../lib/client-store.mjs";
 import { sendEmail } from "../lib/email.mjs";
 import { listV3Records, putV3Record } from "../lib/webfactory-v3-store.mjs";
 
 export default async () => {
+  const startedAt = Date.now();
   const sitePointers = await clientSiteStore().list({ prefix: "sites/" });
   let attempted = 0;
   let sent = 0;
 
   for (const pointer of (sitePointers.blobs || []).slice(0, 100)) {
+    if (Date.now() - startedAt > 35000) break;
     const siteId = pointer.key.replace(/^sites\//, "").replace(/\.json$/, "");
     const site = await getClientSite(siteId);
     if (!site?.reviewSettings?.enabled) continue;
 
     const requests = await listV3Records(siteId, "review-requests", { limit: 500 });
     for (const request of requests) {
+      if (Date.now() - startedAt > 35000) break;
       if (request.status !== "pending") continue;
       if (Date.parse(request.dueAt || "") > Date.now()) continue;
       if (!request.customer?.email || !request.reviewUrl) continue;
+      if (!await reviewEmailEligible(site, request)) continue;
       attempted += 1;
       try {
+        await withBookingLock(clientEventStore(), `locks/review-email/${siteId}/${request.reviewRequestId}`, async () => {
+        const current = await clientCommerceStore().get(`${siteId}/v3/review-requests/${request.reviewRequestId}.json`, { type: "json" });
+        if (current?.status !== "pending" || !await reviewEmailEligible(site, current)) return;
+        const optOutUrl = await unsubscribeUrl(siteId, request.customer.email);
         const es = site.settings?.locale === "es";
         const businessName = (es ? (site.business?.nameEs || site.business?.name || site.business?.nameEn) : (site.business?.nameEn || site.business?.name || site.business?.nameEs)) || (es ? "el negocio" : "the business");
         const customerName = request.customer?.name || (es ? "hola" : "there");
@@ -45,7 +56,8 @@ export default async () => {
           fromName: businessName,
           to: request.customer.email,
           subject: es ? `¿Cómo fue tu experiencia con ${businessName}?` : `How was your experience with ${businessName}?`,
-          text,
+          text: `${text}\n\n${site.reviewSettings.postalAddress}\n${es ? "Cancelar emails de reseñas" : "Unsubscribe from review emails"}: ${optOutUrl}`,
+          headers: { "List-Unsubscribe": `<${optOutUrl}>`, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" },
         });
 
         await putV3Record(siteId, "review-requests", request.reviewRequestId, {
@@ -55,10 +67,14 @@ export default async () => {
           updatedAt: new Date().toISOString(),
         });
         sent += 1;
+        });
       } catch (error) {
+        if (error?.status === 409) continue;
+        const current = await clientCommerceStore().get(`${siteId}/v3/review-requests/${request.reviewRequestId}.json`, { type: "json" });
+        if (current?.status !== "pending") continue;
         console.error("process-review-requests", request.reviewRequestId, error?.message || error);
         await putV3Record(siteId, "review-requests", request.reviewRequestId, {
-          ...request,
+          ...current,
           attempts: Number(request.attempts || 0) + 1,
           lastError: String(error?.message || error).slice(0, 500),
           updatedAt: new Date().toISOString(),

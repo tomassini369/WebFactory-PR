@@ -94,6 +94,7 @@ export default async (req) => {
           customer: {
             name: record.customer?.name || "",
             email: record.customer?.email || "",
+            reviewOptIn: record.customer?.reviewOptIn === true,
           },
           reviewUrl: settings.reviewUrl,
           status: "pending",

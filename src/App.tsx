@@ -51,7 +51,7 @@ function App(){
     const clientAdminRoute = /^\/client-admin\/?$/.test(window.location.pathname)
   const webFactoryAdminRoute = /^\/webfactory-admin\/?$/.test(window.location.pathname)
   const identityInviteRoute = /^#invite_token=/.test(window.location.hash)
-  const identityRecoveryRoute = /^#recovery_token=/.test(window.location.hash)
+  const identityRecoveryRoute = /^#recovery_token=/.test(window.location.hash) || /^\/password-recovery\/?$/.test(window.location.pathname)
   const clientSiteMatch = window.location.pathname.match(/^\/sites\/([^/]+)\/?$/)
   const paymentLinkMatch = window.location.pathname.match(/^\/pay\/([^/]+)\/([^/]+)\/?$/)
   const trackingMatch = window.location.pathname.match(/^\/track\/([^/]+)\/?$/)
@@ -76,6 +76,7 @@ function App(){
   if (templatesRoute) return <><header className="header"><a href="/" className="logo"><AdaptiveLogo alt="WebFactory PR"/></a><div className="header-actions"><a className="btn secondary desktop-cta" href="/client-admin">Log In</a><a className="btn secondary desktop-cta" href="/">{lang==='es'?'Volver al inicio':'Back to home'}</a><div className="langs"><button className={lang==='en'?'active':''} onClick={()=>setLang('en')}>EN</button><button className={lang==='es'?'active':''} onClick={()=>setLang('es')}>ES</button><ThemeToggle/></div></div></header><RouteView><TemplatesPage lang={lang}/></RouteView></>
   if (builderRoute) return <><header className="header"><a href="/" className="logo"><AdaptiveLogo alt="WebFactory PR"/></a><div className="header-actions"><a className="btn secondary desktop-cta" href="/client-admin">Log In</a><a className="btn secondary desktop-cta" href="/">{lang==='es'?'Volver al inicio':'Back to home'}</a><div className="langs"><button className={lang==='en'?'active':''} onClick={()=>setLang('en')}>EN</button><button className={lang==='es'?'active':''} onClick={()=>setLang('es')}>ES</button><ThemeToggle/></div></div></header><main className="standalone-builder"><section className="section white builder"><div className="shell">{builderEditSiteId?<RouteView><SiteRedesignBuilder lang={lang} siteId={builderEditSiteId}/></RouteView>:<><div className="builder-head"><Heading data={t.builder}/><div className="builder-price"><strong>7 días</strong><span>{lang==='es'?'gratis · sin tarjeta':'free · no card'}</span></div></div><RouteView><WebFactoryBuilder lang={lang}/></RouteView></>}</div></section></main></>
 
+  if(window.location.pathname!=='/')return <main className="cs-state"><h1>404 · {lang==='es'?'Página no encontrada':'Page not found'}</h1><p>{lang==='es'?'El enlace no existe o cambió.':'This link does not exist or has changed.'}</p><a className="btn" href="/">{lang==='es'?'Volver a WebFactory PR':'Return to WebFactory PR'}</a></main>
   return <HomePage lang={lang} setLang={setLang}/>
 }
 

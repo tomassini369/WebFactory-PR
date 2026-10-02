@@ -1,3 +1,4 @@
+import { withBookingLock } from "../lib/booking-lock.mjs";
 import { sendBookingConfirmationEmails } from "../lib/client-notifications.mjs";
 import crypto from "node:crypto";
 import { clientCommerceStore, clientEventStore, commerceKey, getClientSite, patchClientSite } from "../lib/client-store.mjs";
@@ -119,10 +120,10 @@ export default async (req) => {
     const rawBody = await req.text();
     if (!validSignature(rawBody, req.headers.get("stripe-signature"), env("STRIPE_CONNECT_WEBHOOK_SECRET"))) return new Response("Invalid Stripe signature", { status: 400 });
     const event = JSON.parse(rawBody);
+    return await withBookingLock(clientCommerceStore(), `locks/commerce/${event.data?.object?.metadata?.site_id || event.id}`, async () => {
     const key = `events/${event.id}.json`;
     const previous = await clientEventStore().get(key, { type: "json" });
     if (previous?.completed) return Response.json({ received: true, duplicate: true });
-    if (previous?.processing && Date.parse(previous.updatedAt || "") > Date.now() - 5 * 60_000) return Response.json({ received: true, processing: true });
     await clientEventStore().setJSON(key, { processing: true, updatedAt: new Date().toISOString(), type: event.type });
     const object = event.data?.object || {};
     const checkoutEvent = ["checkout.session.completed", "checkout.session.async_payment_succeeded"].includes(event.type) && object.metadata?.flow === "webfactory_client_commerce";
@@ -146,8 +147,9 @@ export default async (req) => {
     const result = await finalizeTransaction(normalizedEvent);
     await clientEventStore().setJSON(key, { completed: !result.pending, pending: result.pending, transactionId: result.record.transactionId, updatedAt: new Date().toISOString() });
     return Response.json({ received: true, transactionId: result.record.transactionId, pending: result.pending });
+    });
   } catch (error) {
-    console.error("stripe-connect-webhook", error);
-    return Response.json({ received: false, message: error?.message || "Webhook processing failed." }, { status: 500 });
+    if (error?.status !== 409) console.error("stripe-connect-webhook", error);
+    return Response.json({ received: false, message: "Webhook processing failed. Retry this event." }, { status: error?.status === 409 ? 409 : 500 });
   }
 };

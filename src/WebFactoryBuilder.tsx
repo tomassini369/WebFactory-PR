@@ -1,3 +1,4 @@
+import './business-policies.css'
 import type {StorefrontSite} from './ClientStorefront'
 import StorefrontPreview from './StorefrontPreview'
 import { useEffect, useMemo, useState, type CSSProperties, type Dispatch, type SetStateAction } from 'react'
@@ -73,6 +74,7 @@ type PaymentConfiguration = {
 
 type BuilderState = {
   business: {
+    policies?: {privacy:string;terms:string;refund:string}
     name: string
     nameEn?: string
     nameEs?: string
@@ -884,7 +886,13 @@ function PaymentsStep({state,setState,lang}:{state:BuilderState;setState:Dispatc
   )
 }
 
-function FinalStep({state,setStep,lang,complimentaryInviteToken,trialInviteToken}:{state:BuilderState;setStep:(step:number)=>void;lang:Language;complimentaryInviteToken:string;trialInviteToken:string}) {
+function FinalStep({state,setStep,lang,complimentaryInviteToken,trialInviteToken,onPoliciesChange}:{state:BuilderState;setStep:(step:number)=>void;lang:Language;complimentaryInviteToken:string;trialInviteToken:string;onPoliciesChange:(value:{privacy:string;terms:string;refund:string})=>void}) {
+  const policies=state.business.policies||{privacy:'',terms:'',refund:''}
+  const setPolicies=onPoliciesChange
+  const [review,setReview]=useState({termsAccepted:false,contentReviewed:false,policiesReviewed:false})
+  const commerceEnabled=state.features.cart!==false||state.features.bookings
+  const policiesReady=(!(commerceEnabled||state.features.form)||Boolean(policies.privacy.trim()))&&(!commerceEnabled||Boolean(policies.terms.trim()&&policies.refund.trim()))
+  const reviewReady=Object.values(review).every(Boolean)&&policiesReady
   const [checkoutError,setCheckoutError] = useState('')
   const [checkingOut,setCheckingOut] = useState(false)
   const [created,setCreated] = useState<{portalUrl:string;publicUrl:string}|null>(null)
@@ -896,7 +904,7 @@ function FinalStep({state,setStep,lang,complimentaryInviteToken,trialInviteToken
   const customerReady = Boolean(state.business.name.trim() && state.business.contactName.trim() && emailValid)
   const paymentReady = Object.values(state.payments.methods).some(Boolean)
   const selectedTemplate = templateConfigs.find((template)=>template.slug===state.design.templateSlug)
-  const canCheckout = Boolean(customerReady && paymentReady && state.business.slug.trim() && !missingUpload && !checkingOut)
+  const canCheckout = Boolean(customerReady && paymentReady && state.business.slug.trim() && !missingUpload && !checkingOut && reviewReady)
 
   const startCheckout = async () => {
     if (!canCheckout) return
@@ -914,13 +922,14 @@ function FinalStep({state,setStep,lang,complimentaryInviteToken,trialInviteToken
           locale:lang,
           complimentaryInviteToken,
           trialInviteToken,
+          publicationReview:{...review,version:'2026-10-02'},
           orderData:{
             client:{
               name:state.business.contactName,
               email:state.business.email,
               phone:state.business.phone,
             },
-            business,
+            business:{...business,policies},
             design:state.design,
             features:state.features,
             catalog,
@@ -955,6 +964,15 @@ function FinalStep({state,setStep,lang,complimentaryInviteToken,trialInviteToken
         <article><span>{lang==='es'?'Horarios':'Hours'}</span><strong>{Object.values(state.hours).filter((day)=>day.enabled).length} {lang==='es'?'días abiertos':'open days'}</strong><small>{lang==='es'?'Disponibilidad general':'General availability'}</small><button onClick={()=>setStep(5)}>{lang==='es'?'Editar':'Edit'}</button></article>
         <article><span>{lang==='es'?'Pagos del website':'Website payments'}</span><strong>{Object.values(state.payments.methods).filter(Boolean).length} {lang==='es'?'métodos':'methods'}</strong><small>{state.payments.bookingPayment==='deposit'?`${state.payments.bookingDepositPercent}% ${lang==='es'?'depósito para citas':'booking deposit'}`:state.payments.bookingPayment}</small><button onClick={()=>setStep(6)}>{lang==='es'?'Editar':'Edit'}</button></article>
       </div>
+      <section className="wf-publication-review">
+        <h4>{lang==='es'?'Revisión antes de publicar':'Review before publication'}</h4>
+        <p>{lang==='es'?'Añade las políticas de tu negocio. Se mostrarán a tus clientes en tu página y junto a los formularios y pagos. Define tus reglas reales de cancelación, devolución y tratamiento de datos.':'Add your business policies. Customers will see them on your website and beside forms and payments. Describe your actual cancellation, return, and data handling rules.'}</p>
+        {(['privacy','terms','refund'] as const).map(key=><label className="wf-field" key={key}><span>{key==='privacy'?(lang==='es'?'Privacidad del negocio':'Business privacy notice'):key==='terms'?(lang==='es'?'Términos de compra y servicio':'Purchase and service terms'):(lang==='es'?'Devoluciones, cancelaciones y depósitos':'Returns, cancellations and deposits')}</span><textarea rows={4} maxLength={12000} value={policies[key]} onChange={e=>setPolicies({...policies,[key]:e.target.value})}/></label>)}
+        <label className="wf-review-check"><input type="checkbox" checked={review.contentReviewed} onChange={e=>setReview({...review,contentReviewed:e.target.checked})}/><span>{lang==='es'?'Revisé los datos, precios y afirmaciones; tengo derechos sobre las fotos y el logo. No publiqué reseñas ficticias como reales.':'I reviewed the details, prices, and claims; I have rights to the photos and logo. I have not presented fictional reviews as real.'}</span></label>
+        <label className="wf-review-check"><input type="checkbox" checked={review.policiesReviewed} onChange={e=>setReview({...review,policiesReviewed:e.target.checked})}/><span>{lang==='es'?'Las políticas corresponden a mi negocio y revisé su uso de datos, pagos y cancelaciones.':'The policies apply to my business and I reviewed its data use, payments, and cancellation rules.'}</span></label>
+        <label className="wf-review-check"><input type="checkbox" checked={review.termsAccepted} onChange={e=>setReview({...review,termsAccepted:e.target.checked})}/><span>{lang==='es'?'Acepto los':'I accept the'} <a href="/terms" target="_blank" rel="noreferrer">{lang==='es'?'Términos de WebFactory':'WebFactory Terms'}</a> {lang==='es'?'y soy un adulto autorizado para representar este negocio.':'and am an adult authorized to represent this business.'} <a href="/privacy" target="_blank" rel="noreferrer">{lang==='es'?'Privacidad':'Privacy'}</a> · <a href="/refund-policy" target="_blank" rel="noreferrer">{lang==='es'?'Reembolsos':'Refunds'}</a></span></label>
+        {!policiesReady&&<p>{lang==='es'?'Completa privacidad para formularios; añade términos y cancelaciones para ventas o reservaciones.':'Complete privacy for forms; add terms and cancellation rules for sales or bookings.'}</p>}
+      </section>
       {!customerReady && <div className="wf-checkout-warning">{lang==='es'?'Completa el nombre del cliente, nombre del negocio y un email válido.':'Enter the customer name, business name, and a valid email.'}</div>}
       {!state.business.slug.trim() && <div className="wf-checkout-warning">{lang==='es'?'Escoge el enlace preferido de tu website.':'Choose your preferred website link.'}</div>}
       {!paymentReady && <div className="wf-checkout-warning">{lang==='es'?'Selecciona al menos un método de pago para la página del negocio.':'Select at least one payment method for the business page.'}</div>}
@@ -1081,7 +1099,7 @@ export default function WebFactoryBuilder({lang}:{lang:Language}) {
     <TeamStep key="team" state={state} setState={setState} lang={lang}/>,
     <HoursStep key="hours" state={state} setState={setState} lang={lang}/>,
     <PaymentsStep key="payments" state={state} setState={setState} lang={lang}/>,
-    <FinalStep key="preview" state={state} setStep={setStep} lang={lang} complimentaryInviteToken={complimentaryInviteToken} trialInviteToken={trialInviteToken}/>,
+    <FinalStep key="preview" state={state} setStep={setStep} lang={lang} complimentaryInviteToken={complimentaryInviteToken} trialInviteToken={trialInviteToken} onPoliciesChange={policies=>setState(current=>({...current,business:{...current.business,policies}}))}/>,
   ][step]
 
   return (

@@ -19,7 +19,7 @@ const copy={
     client:'Ir al portal de cliente',
     invalid:'El enlace de recuperación no es válido o ya expiró.',
     mismatch:'Las contraseñas no coinciden.',
-    short:'Usa una contraseña de al menos 8 caracteres.',
+    short:'Usa una contraseña de al menos 15 caracteres.',
     failure:'No se pudo restablecer la contraseña.'
   },
   en:{
@@ -35,7 +35,7 @@ const copy={
     client:'Go to client portal',
     invalid:'This recovery link is invalid or has expired.',
     mismatch:'Passwords do not match.',
-    short:'Use a password with at least 8 characters.',
+    short:'Use a password with at least 15 characters.',
     failure:'The password could not be reset.'
   }
 }
@@ -62,7 +62,7 @@ export default function PasswordRecoveryPage(){
 
   const save=async()=>{
     setError('')
-    if(password.length<8)return setError(t.short)
+    if(password.length<15)return setError(t.short)
     if(password!==confirm)return setError(t.mismatch)
     setBusy(true)
     try{
@@ -70,7 +70,7 @@ export default function PasswordRecoveryPage(){
       setUser(current)
       setDone(true)
       history.replaceState(null,'','/password-recovery')
-    }catch(e){setError(e instanceof Error?e.message:t.failure)}finally{setBusy(false)}
+    }catch{setError(t.failure)}finally{setBusy(false)}
   }
 
   return <main className="ca-page">

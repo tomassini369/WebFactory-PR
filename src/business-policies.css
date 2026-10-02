@@ -1,0 +1,19 @@
+.business-policy-links{display:flex;flex-wrap:wrap;align-items:center;gap:.65rem;font-size:.82rem}
+.business-policy-links>button{appearance:none;border:0;background:transparent;color:inherit;font:inherit;text-decoration:underline;cursor:pointer;padding:.45rem 0;min-height:36px}
+.business-policy-links a{color:inherit;text-decoration:underline}
+.business-policy-dialog{width:min(680px,calc(100vw - 32px));max-height:80dvh;padding:24px;border:1px solid #d0d5dd;border-radius:20px;background:#fff;color:#172033;box-shadow:0 20px 80px #0004;overflow:auto}
+.business-policy-dialog::backdrop{background:#0b1529a6}
+.business-policy-dialog header{display:flex;justify-content:space-between;align-items:flex-start;gap:16px}
+.business-policy-dialog header button{min-width:44px;min-height:44px;font-size:24px;background:#eef1f5;color:#172033;border:0;border-radius:12px;cursor:pointer}
+.business-policy-dialog h2{margin:.4rem 0 1rem;font-size:1.5rem}
+.business-policy-text{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.65}
+.customer-data-notice{font-size:.82rem;line-height:1.5;opacity:.85}
+.wf-publication-review{padding:24px;margin:24px 0;border:1px solid var(--wf-border,#d0d5dd);border-radius:20px}
+.wf-publication-review h4{margin-top:0;font-size:1.2rem}
+.wf-review-check,.ca-renewal-consent{display:flex!important;align-items:flex-start;gap:12px;margin:16px 0;line-height:1.6}
+.wf-review-check input,.ca-renewal-consent input{flex:0 0 auto;width:20px!important;height:20px!important;margin-top:4px}
+.wf-publication-review a,.ca-renewal-consent a{text-decoration:underline;color:inherit}
+
+.cs-checkout label.check{display:flex;align-items:flex-start;gap:12px;line-height:1.5}
+.cs-checkout label.check input{width:20px;height:20px;flex:0 0 auto}
+.business-policy-links :is(button,a):focus-visible,.business-policy-dialog button:focus-visible,.wf-review-check input:focus-visible{outline:3px solid #3786ff;outline-offset:3px}

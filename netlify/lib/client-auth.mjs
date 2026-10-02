@@ -26,17 +26,30 @@ function env(name) {
   return globalThis.Netlify?.env?.get(name) || "";
 }
 
+export function isPlatformAdmin(user, ownerEmail = env("WEBFACTORY_ADMIN_EMAIL") || env("WEBFACTORY_ORDER_EMAIL")) {
+  const roles = new Set([
+    ...(Array.isArray(user?.roles) ? user.roles : []),
+    ...(Array.isArray(user?.app_metadata?.roles) ? user.app_metadata.roles : []),
+    user?.role,
+  ].filter(Boolean));
+  return roles.has("admin") || roles.has("webfactory_owner") || Boolean(
+    normalizeEmail(ownerEmail) && normalizeEmail(user?.email) === normalizeEmail(ownerEmail)
+  );
+}
+
+// Membership is resolved from the authenticated identity, never from request fields.
+export function authorizeSiteUser(user, site, roles = ["owner", "manager", "employee", "cashier"]) {
+  const email = normalizeEmail(user?.email);
+  const membership = (site?.members || []).find(member => normalizeEmail(member.email) === email);
+  if (!email || (!isPlatformAdmin(user) && (!membership || !roles.includes(membership.role)))) {
+    throw Object.assign(new Error("You do not have access to this business."), { status: 403 });
+  }
+  return { user, site, membership: membership || { email, role: "admin" } };
+}
+
 export async function requirePlatformAdmin() {
   const user = await requireClientUser();
-  const roles = new Set([
-    ...(Array.isArray(user.roles) ? user.roles : []),
-    ...(Array.isArray(user.app_metadata?.roles) ? user.app_metadata.roles : []),
-    user.role,
-  ].filter(Boolean));
-  const ownerEmail = normalizeEmail(env("WEBFACTORY_ADMIN_EMAIL") || env("WEBFACTORY_ORDER_EMAIL"));
-  const authorized = roles.has("admin") || roles.has("webfactory_owner") || (
-    ownerEmail && normalizeEmail(user.email) === ownerEmail
-  );
+  const authorized = isPlatformAdmin(user);
   if (!authorized) {
     const error = new Error("This account is not authorized for the WebFactory Control Center.");
     error.status = 403;
@@ -59,15 +72,7 @@ export async function requireSiteAccess(siteId, roles = ["owner", "manager", "em
     error.status = 404;
     throw error;
   }
-  const email = normalizeEmail(user.email);
-  const membership = (site.members || []).find((member) => normalizeEmail(member.email) === email);
-  const platformAdmin = (user.roles || []).includes("admin") || user.role === "admin";
-  if (!platformAdmin && (!membership || !roles.includes(membership.role || "owner"))) {
-    const error = new Error("You do not have access to this business.");
-    error.status = 403;
-    throw error;
-  }
-  return { user, site, membership: membership || { email, role: "admin" } };
+  return authorizeSiteUser(user, site, roles);
 }
 
 
@@ -80,12 +85,12 @@ export const SITE_ROLE_CAPABILITIES = {
   admin: ["overview","website","orders","bookings","customers","catalog","employees","payments","pos","marketing","analytics","integrations","settings","billing","refunds"],
 };
 
-export function siteRoleCapabilities(role = "employee") {
-  return SITE_ROLE_CAPABILITIES[role] || SITE_ROLE_CAPABILITIES.employee;
+export function siteRoleCapabilities(role = "") {
+  return SITE_ROLE_CAPABILITIES[role] || [];
 }
 
 export function membershipHasCapability(membership, capability) {
-  return siteRoleCapabilities(membership?.role || "employee").includes(capability);
+  return siteRoleCapabilities(membership?.role || "").includes(capability);
 }
 
 export async function requireSiteCapability(siteId, capability) {
@@ -99,10 +104,11 @@ export async function requireSiteCapability(siteId, capability) {
 }
 
 export function errorResponse(error) {
-  const status = Number(error?.status || 500);
+  const requested = Number(error?.status);
+  const status = Number.isInteger(requested) && requested >= 400 && requested <= 599 ? requested : 500;
   if (status >= 500) console.error("client-api", error);
   return Response.json(
-    { ok: false, message: error?.message || "Unexpected server error." },
+    { ok: false, message: status >= 500 ? "The request could not be completed. Please try again later." : (error?.message || "Request rejected.") },
     { status, headers: { "Cache-Control": "no-store" } },
   );
 }

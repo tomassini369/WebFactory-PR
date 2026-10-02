@@ -1,6 +1,7 @@
+import { withBookingLock } from "../lib/booking-lock.mjs";
 import crypto from "node:crypto";
 import { assertSameOrigin, errorResponse, requireSiteCapability } from "../lib/client-auth.mjs";
-import { clientCommerceStore, commerceKey, patchClientSite } from "../lib/client-store.mjs";
+import { clientCommerceStore, commerceKey, getClientSite, patchClientSite } from "../lib/client-store.mjs";
 import { cleanText, validEmail } from "../lib/platform-utils.mjs";
 import { calculateTax, createCustomerRecord, createInventoryMovement, createReceiptRecord } from "../lib/webfactory-v3-domain.mjs";
 import { getV3Record, putV3Record } from "../lib/webfactory-v3-store.mjs";
@@ -11,11 +12,21 @@ export default async (req) => {
     if (req.method !== "POST") return Response.json({ ok: false, message: "Method not allowed." }, { status: 405 });
     assertSameOrigin(req);
     const payload = await req.json();
-    const { site, user } = await requireSiteCapability(payload.siteId, "pos");
+    let { site, user } = await requireSiteCapability(payload.siteId, "pos");
+    return await withBookingLock(clientCommerceStore(), `locks/commerce/${site.siteId}`, async () => {
+    site = await getClientSite(site.siteId);
 
     const requested = Array.isArray(payload.items) ? payload.items.slice(0, 50) : [];
     if (!requested.length) throw Object.assign(new Error("Add at least one item to the sale."), { status: 400 });
 
+  const ids = new Set();
+  for (const entry of requested) {
+    const quantity = Number(entry.quantity ?? 1);
+    if (!entry.id || ids.has(entry.id) || !Number.isInteger(quantity) || quantity < 1 || quantity > 20) {
+      throw Object.assign(new Error("Use unique catalog items and quantities between 1 and 20."), { status: 400 });
+    }
+    ids.add(entry.id);
+  }
     const items = requested.map((entry) => {
       const item = (site.catalog || []).find((candidate) => candidate.id === entry.id && candidate.active !== false);
       if (!item) throw Object.assign(new Error("A selected item is unavailable."), { status: 409 });
@@ -65,6 +76,7 @@ export default async (req) => {
       name: cleanText(payload.customer?.name, 180),
       email: cleanText(payload.customer?.email, 320).toLowerCase(),
       phone: cleanText(payload.customer?.phone, 80),
+      reviewOptIn: payload.customer?.reviewOptIn === true,
     };
     if (customer.email && !validEmail(customer.email)) throw Object.assign(new Error("Customer email is invalid."), { status: 400 });
 
@@ -162,7 +174,7 @@ export default async (req) => {
         siteId: site.siteId,
         transactionId,
         kind: "order",
-        customer: { name: customer.name || "", email: customer.email },
+        customer: { name: customer.name || "", email: customer.email, reviewOptIn: customer.reviewOptIn === true },
         reviewUrl: reviewSettings.reviewUrl,
         status: "pending",
         dueAt: new Date(Date.now() + Math.max(0, Number(reviewSettings.delayHours ?? 2)) * 3600000).toISOString(),
@@ -176,6 +188,7 @@ export default async (req) => {
     await clientCommerceStore().setJSON(commerceKey(site.siteId, "transactions", transactionId), record);
 
     return Response.json({ ok: true, record, receiptId: receipt.receiptId }, { headers: { "Cache-Control": "no-store" } });
+    });
   } catch (error) {
     return errorResponse(error);
   }
