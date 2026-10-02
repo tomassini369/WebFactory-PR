@@ -410,3 +410,109 @@ test('a stock movement projection failure resumes after atomic consumption witho
  assert.equal((await getClientSite('shop')).catalog[0].inventory,1);
  assert.equal([...f.rows.keys()].filter(key=>key.includes('/v3/inventory-movements/')).length,1);
 });
+
+async function healthForShop(options={}){
+ const {inventoryHealth}=await import('./inventory-health.mjs');return inventoryHealth(await getClientSite('shop'),options);
+}
+test('inventory health flags old holds without releasing stock or altering their transactions',async t=>{
+ const f=fixture(t);await prepareReservation(f);const site=await getClientSite('shop');
+ Object.values(site.stockReservations)[0].createdAt=new Date(Date.now()-3*3600000).toISOString();await clientSiteStore().setJSON('sites/shop.json',site);
+ const before=structuredClone([...f.rows.entries()]);const report=await healthForShop();
+ assert.equal(report.heldCount,1);assert.equal(report.reviewCount,1);assert.ok(report.reservations[0].issues.includes('age_review'));
+ assert.deepEqual([...f.rows.entries()],before);assert.equal((await sale(saleRequest())).status,409);
+});
+test('fresh reservations have no age warning while missing provider or transaction evidence is reported',async t=>{
+ const f=fixture(t);await prepareReservation(f);assert.equal((await healthForShop()).reviewCount,0);
+ let record=await clientCommerceStore().get(commerceKey('shop','transactions','txn_shop'));await clientCommerceStore().setJSON(commerceKey('shop','transactions','txn_shop'),{...record,stripeSessionId:''});
+ assert.ok((await healthForShop()).reservations[0].issues.includes('provider_reference_missing'));
+ await clientCommerceStore().delete(commerceKey('shop','transactions','txn_shop'));assert.ok((await healthForShop()).reservations[0].issues.includes('missing_transaction'));
+});
+test('health exposes mismatched products and invalid dates without pretending expiration is proven',async t=>{
+ const f=fixture(t,2);await prepareReservation(f);const site=await getClientSite('shop');Object.values(site.stockReservations)[0].createdAt='bad-date';await clientSiteStore().setJSON('sites/shop.json',site);
+ const record=await clientCommerceStore().get(commerceKey('shop','transactions','txn_shop'));await clientCommerceStore().setJSON(commerceKey('shop','transactions','txn_shop'),{...record,items:[{id:'last-item',quantity:2}],paymentStatus:'paid'});
+ const report=await healthForShop();assert.equal(report.reservations[0].ageHours,null);assert.deepEqual(report.reservations[0].issues.sort(),['invalid_date','items_mismatch','payment_reconciliation'].sort());
+ assert.equal(Object.values((await getClientSite('shop')).stockReservations)[0].state,'held');
+});
+test('health applies provider-specific review ages and retains both in-person and Terminal holds',async t=>{
+ const f=fixture(t,2);await preparePayAtBusiness(f);const id=await placeInPersonOrder();await prepareTerminalReservation(f);
+ // prepareTerminalReservation resets site; retain its hold and add one in-person order.
+ const {reserveInventory}=await import('./inventory-reservations.mjs');
+ const original=await clientCommerceStore().get(commerceKey('shop','transactions',id));await reserveInventory('shop',id,original.items,undefined,'in_person');
+ const site=await getClientSite('shop');for(const row of Object.values(site.stockReservations))row.createdAt=new Date(Date.now()-3*3600000).toISOString();await clientSiteStore().setJSON('sites/shop.json',site);
+ assert.equal((await healthForShop()).reviewCount,0);
+ for(const row of Object.values(site.stockReservations))row.createdAt=new Date(Date.now()-25*3600000).toISOString();await clientSiteStore().setJSON('sites/shop.json',site);
+ assert.equal((await healthForShop()).reviewCount,2);
+ assert.ok(Object.values((await getClientSite('shop')).stockReservations).every(row=>row.state==='held'));
+});
+test('health refuses deadline or pointer-cap overruns rather than returning a partial clean report',async t=>{
+ const f=fixture(t);await prepareReservation(f);let ticks=0;
+ await assert.rejects(healthForShop({clock:()=>ticks+=100,budgetMs:50}),{status:503});
+ await clientCommerceStore().setJSON(commerceKey('shop','pos-processing','unknown_one'),{transactionId:'unknown_one'});
+ await clientCommerceStore().setJSON(commerceKey('shop','pos-processing','unknown_two'),{transactionId:'unknown_two'});
+ await assert.rejects(healthForShop({maxPointers:1}),{status:503});
+});
+test('missing or malformed POS pointers remain for reconciliation and cannot be cleaned',async t=>{
+ const f=fixture(t);await f.prepare();const store=clientCommerceStore();
+ await store.setJSON(commerceKey('shop','pos-processing','unknown'),{transactionId:'unknown'});
+ await store.setJSON(commerceKey('shop','pos-processing','mismatch'),{transactionId:'other'});
+ const report=await healthForShop();assert.equal(report.pos.pointerCount,2);assert.equal(report.pos.cleanupEligibleCount,0);assert.equal(report.pos.reviewCount,2);
+ const {cleanupCompletedPosPointer}=await import('./inventory-health.mjs');await assert.rejects(cleanupCompletedPosPointer('shop','unknown'),{status:409});
+ assert.ok(await store.get(commerceKey('shop','pos-processing','unknown')));
+});
+test('only a completed proven POS pointer is removed while sale, stock marker, receipt and customer remain',async t=>{
+ const f=fixture(t,2);await f.prepare();const response=await sale(saleRequest());assert.equal(response.status,200);const body=await response.json();const id=body.record.transactionId;
+ await clientCommerceStore().setJSON(commerceKey('shop','pos-processing',id),{transactionId:id});
+ const report=await healthForShop();assert.equal(report.pos.cleanupEligibleCount,1);
+ const {cleanupCompletedPosPointer}=await import('./inventory-health.mjs');assert.equal((await cleanupCompletedPosPointer('shop',id)).removed,true);
+ assert.equal((await cleanupCompletedPosPointer('shop',id)).alreadyAbsent,true);
+ assert.equal((await getClientSite('shop')).catalog[0].inventory,1);
+ assert.ok(await clientCommerceStore().get(commerceKey('shop','transactions',id)));assert.ok(await clientCommerceStore().get(`shop/v3/receipts/${body.receiptId}.json`));
+ assert.equal(Object.keys((await getClientSite('shop')).stockOperations).length,1);
+});
+test('a completed POS transaction with an uncertain original attempt never loses its recovery pointer',async t=>{
+ const f=fixture(t);await f.prepare();const payload={siteId:'shop',saleAttemptId:'health-attempt-123',items:[{id:'last-item',quantity:1}],paymentMethod:'cash'};
+ const request=new Request('https://webfactorypr.com/.netlify/functions/client-pos-sale-idempotent',{method:'POST',headers:{Origin:'https://webfactorypr.com','Content-Type':'application/json'},body:JSON.stringify(payload)});
+ const response=await idempotentSale(request);assert.equal(response.status,200);const {record}=await response.json(),id=record.transactionId;
+ const store=clientCommerceStore();await store.setJSON(commerceKey('shop','pos-processing',id),{transactionId:id});
+ assert.equal((await healthForShop()).pos.cleanupEligibleCount,1);
+ const marker=await store.get(commerceKey('shop','pos-attempts',record.posAttemptId));await store.setJSON(commerceKey('shop','pos-attempts',record.posAttemptId),{...marker,status:'uncertain'});
+ assert.equal((await healthForShop()).pos.cleanupEligibleCount,0);
+ const {cleanupCompletedPosPointer}=await import('./inventory-health.mjs');await assert.rejects(cleanupCompletedPosPointer('shop',id),{status:409});
+ assert.ok(await store.get(commerceKey('shop','pos-processing',id)));
+});
+test('journal snapshots verify persisted content and reuse the same copy without freeing active capacity',async t=>{
+ const f=fixture(t);await prepareReservation(f);const before=await getClientSite('shop');const {snapshotInventoryJournal}=await import('./inventory-health.mjs');
+ const first=await snapshotInventoryJournal('shop','owner@example.invalid'),again=await snapshotInventoryJournal('shop','owner@example.invalid');
+ assert.equal(first.checksum,again.checksum);assert.equal(first.activeJournalUnchanged,true);assert.equal(first.reservationCount,1);
+ assert.equal([...f.rows.keys()].filter(key=>key.includes('/inventory-journal-snapshots/')).length,1);assert.deepEqual(await getClientSite('shop'),before);
+ const key=[...f.rows.keys()].find(key=>key.includes('/inventory-journal-snapshots/'));f.rows.get(key).data.payload.stockReservations={};
+ await assert.rejects(snapshotInventoryJournal('shop','owner@example.invalid'),{status:503});assert.deepEqual(await getClientSite('shop'),before);
+});
+test('inventory maintenance endpoint enforces private caching, role, tenant, origin and bounded JSON',async t=>{
+ const f=fixture(t);await prepareReservation(f);const {default:handler}=await import('../functions/client-inventory-health.mjs');
+ const get=()=>new Request('https://webfactorypr.com/.netlify/functions/client-inventory-health?siteId=shop');
+ const result=await handler(get());assert.equal(result.status,200);assert.equal(result.headers.get('Cache-Control'),'no-store');
+ const post=(body,origin='https://webfactorypr.com')=>new Request('https://webfactorypr.com/.netlify/functions/client-inventory-health',{method:'POST',headers:{Origin:origin,'Content-Type':'application/json'},body:JSON.stringify(body)});
+ assert.equal((await handler(post({siteId:'shop',action:'snapshot_journal'},'https://untrusted.invalid'))).status,403);
+ assert.equal((await handler(post({siteId:'shop',padding:'x'.repeat(9000)}))).status,413);
+ assert.equal((await handler(post({siteId:'shop',action:'snapshot_journal'}))).status,200);
+ globalThis.netlifyIdentityContext={user:{email:'foreign@example.invalid',app_metadata:{}}};assert.equal((await handler(get())).status,403);
+ globalThis.netlifyIdentityContext={user:{email:'owner@example.invalid',app_metadata:{}}};const site=await getClientSite('shop');await clientSiteStore().setJSON('sites/shop.json',{...site,members:[{email:'owner@example.invalid',role:'cashier'}]});assert.equal((await handler(get())).status,403);
+ globalThis.netlifyIdentityContext={user:null};assert.equal((await handler(get())).status,401);
+});
+test('changed receipt or original stock evidence blocks cleanup even after an eligible report',async t=>{
+ const f=fixture(t);await f.prepare();const response=await sale(saleRequest());const {record}=await response.json(),id=record.transactionId;const store=clientCommerceStore();
+ await store.setJSON(commerceKey('shop','pos-processing',id),{transactionId:id});assert.equal((await healthForShop()).pos.cleanupEligibleCount,1);
+ const receiptKey=`shop/v3/receipts/${record.receiptId}.json`,receipt=await store.get(receiptKey);await store.setJSON(receiptKey,{...receipt,siteId:'foreign'});
+ const {cleanupCompletedPosPointer}=await import('./inventory-health.mjs');await assert.rejects(cleanupCompletedPosPointer('shop',id),{status:409});
+ await store.setJSON(receiptKey,receipt);const site=await getClientSite('shop');Object.values(site.stockOperations)[0].fingerprint='changed';await clientSiteStore().setJSON('sites/shop.json',site);
+ await assert.rejects(cleanupCompletedPosPointer('shop',id),{status:409});assert.ok(await store.get(commerceKey('shop','pos-processing',id)));
+});
+test('a lost snapshot write response can retry the same verified copy without duplicating history',async t=>{
+ const f=fixture(t);await prepareReservation(f);const proto=Object.getPrototypeOf(clientCommerceStore()),write=proto.setJSON;let broken=true;
+ t.mock.method(proto,'setJSON',async function(key,value,options){const result=await write.call(this,key,value,options);if(key.includes('/inventory-journal-snapshots/')&&broken){broken=false;throw new Error('snapshot response lost')};return result});
+ const {snapshotInventoryJournal}=await import('./inventory-health.mjs');await assert.rejects(snapshotInventoryJournal('shop','owner@example.invalid'));
+ assert.equal((await snapshotInventoryJournal('shop','owner@example.invalid')).activeJournalUnchanged,true);
+ assert.equal([...f.rows.keys()].filter(key=>key.includes('/inventory-journal-snapshots/')).length,1);
+ assert.equal(Object.values((await getClientSite('shop')).stockReservations)[0].state,'held');
+});
