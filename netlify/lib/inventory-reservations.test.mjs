@@ -58,6 +58,8 @@ test('checkout holds stock before contacting Stripe and reuses an existing resul
   const options={requestUrl:'https://deploy-preview-57--webfactorypr.netlify.app',store:commerce,client,reserve:(site,id,lines)=>reserveInventory(site,id,lines,stock)};
   await createReservedStripeCheckout({siteId:'shop'},record(),params(),options);await createReservedStripeCheckout({siteId:'shop'},record(),params(),options);assert.equal(calls,1);
   await assert.rejects(createReservedStripeCheckout({siteId:'shop'},{...record(),amountTotal:200},params(),options),{status:409});
+  await assert.rejects(createReservedStripeCheckout({siteId:'shop'},{...record(),tip:100,discounts:100},params(),options),{status:409});
+  await assert.rejects(createReservedStripeCheckout({siteId:'shop'},{...record(),stripeAccountId:'acct_other'},params(),options),{status:409});
 });
 test('uncertain Stripe response retains stock and retries identical persisted parameters and key',async t=>{
   context(t);

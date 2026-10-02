@@ -19,7 +19,7 @@ export function checkoutParameters(params){
 export async function createReservedStripeCheckout(site,record,params,{requestUrl,store=clientCommerceStore(),client, reserve=reserveInventory}={}){
   assertStripeWriteAllowed({requestUrl});
   if(record.kind!=='order'||record.siteId!==site.siteId||!record.stripeAccountId||!Number.isSafeInteger(record.amountTotal)||record.amountTotal<=0)throw fail('Invalid inventory checkout.',400);
-  const fingerprint=crypto.createHash('sha256').update(JSON.stringify({items:record.items,customer:record.customer,amountTotal:record.amountTotal})).digest('hex');
+  const fingerprint=crypto.createHash('sha256').update(JSON.stringify({items:record.items,customer:record.customer,amountTotal:record.amountTotal,discounts:record.discounts,tax:record.tax,tip:record.tip,currency:record.currency,stripeAccountId:record.stripeAccountId})).digest('hex');
   return withBookingLock(store,`locks/commerce/${site.siteId}`,async()=>{
     const key=commerceKey(site.siteId,'transactions',record.transactionId);
     const previous=await store.get(key,{type:'json'});
