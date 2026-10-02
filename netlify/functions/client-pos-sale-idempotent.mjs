@@ -54,6 +54,7 @@ export default async(req)=>{
         createdAt:existing?.createdAt||new Date().toISOString(),
         updatedAt:new Date().toISOString(),
       });
+      if(body.record?.transactionId)await store.delete(commerceKey(site.siteId,'pos-processing',body.record.transactionId));
     }else{
       await store.setJSON(key,{
         siteId:site.siteId,

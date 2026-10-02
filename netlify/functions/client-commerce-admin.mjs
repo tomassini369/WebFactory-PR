@@ -1,3 +1,4 @@
+import { listPosProcessing,recoverPosOrder } from '../lib/pos-recovery.mjs';
 import { applyStockOperation,projectStockMovements } from '../lib/inventory-operations.mjs';
 import {renderBookingEmail} from "../lib/booking-email-template.mjs";
 import {finishBookingChange} from "../lib/booking-management.mjs";
@@ -29,19 +30,21 @@ export default async (req) => {
     if (req.method === "GET") {
       const siteId = new URL(req.url).searchParams.get("siteId") || "";
       const { site, membership } = await requireSiteAccess(siteId);
-      const [orders, bookings] = await Promise.all([listRecords(siteId, "orders"), listRecords(siteId, "bookings")]);
+      const [orders, bookings, pendingPos] = await Promise.all([listRecords(siteId, "orders"), listRecords(siteId, "bookings"),listPosProcessing(siteId)]);
+      const mergedOrders=[...new Map([...orders,...pendingPos].map(record=>[record.transactionId,record])).values()];
       const limited = ["employee", "cashier", "staff"].includes(membership?.role) && (site.business?.locations || []).length > 0;
       const visible = (records) => limited ? records.filter((record) => (membership.locationIds || []).includes(record.locationId)) : records;
-      return Response.json({ ok: true, orders: visible(orders), bookings: visible(bookings) }, { headers: { "Cache-Control": "no-store" } });
+      return Response.json({ ok: true, orders: visible(mergedOrders), bookings: visible(bookings) }, { headers: { "Cache-Control": "no-store" } });
     }
     if (req.method !== "POST") return Response.json({ ok: false, message: "Method not allowed." }, { status: 405 });
     assertSameOrigin(req);
     const payload = await req.json();
-    const requestedCapability = payload.action === "refund" ? "refunds" : payload.action === "kitchen_status" ? "kitchen" : (payload.kind === "booking" ? "bookings" : "orders");
+    const requestedCapability = payload.action === "recover_pos" ? "pos" : payload.action === "refund" ? "refunds" : payload.action === "kitchen_status" ? "kitchen" : (payload.kind === "booking" ? "bookings" : "orders");
     const { site, membership } = await requireSiteCapability(payload.siteId, requestedCapability);
     const kind = payload.kind === "booking" ? "bookings" : "orders";
     const key = commerceKey(site.siteId, kind, payload.transactionId);
     let record = await clientCommerceStore().get(key, { type: "json" });
+    if(payload.action==='recover_pos')record=await clientCommerceStore().get(commerceKey(site.siteId,'transactions',payload.transactionId),{type:'json'});
     if(payload.action === "preview_confirmation" && record && !["confirmed","completed","cancelled"].includes(record.status)) throw Object.assign(new Error("Only confirmed or cancelled appointments have confirmations."),{status:409});
     if(payload.action === "preview_confirmation" && kind === "bookings" && record) return Response.json({ok:true,html:renderBookingEmail(site,record,{change:record.status === "cancelled"?"cancelled":"confirmed"}).html},{headers:{"Cache-Control":"no-store"}});
     const recordMetadata=record?.calendarToken ? await clientCommerceStore().getWithMetadata(key,{type:"json"}) : null;
@@ -51,6 +54,7 @@ export default async (req) => {
       throw Object.assign(new Error("This account is not assigned to the order location."), { status: 403 });
     }
 
+    if(payload.action==='recover_pos')return Response.json(await recoverPosOrder(site.siteId,record.transactionId),{headers:{'Cache-Control':'no-store'}});
     if(payload.action==='recover_ath'){
       const {recoverAthOrder}=await import('../lib/ath-recovery.mjs');
       const recovered=await recoverAthOrder(site,record,req.url);

@@ -1,3 +1,4 @@
+import commerceAdmin from '../functions/client-commerce-admin.mjs';
 import Stripe from 'stripe';
 import terminalSale from '../functions/client-terminal-payment-intent.mjs';
 import verifyReservation from '../functions/client-stock-reservations.mjs';
@@ -24,6 +25,7 @@ function fixture(t, inventory = 1) {
     if ((options.onlyIfNew && previous) || (options.onlyIfMatch && previous?.etag !== options.onlyIfMatch)) return { modified: false };
     rows.set(full, { data: structuredClone(value), etag: String(++revision) }); return { modified: true };
   });
+  t.mock.method(proto,'list',function({prefix='',paginate=false}={}){const page={blobs:[...rows.keys()].filter(key=>key.startsWith(`${this.name}/${prefix}`)).map(key=>({key:key.slice(this.name.length+1)}))};return paginate?(async function*(){yield page})():Promise.resolve(page)});
   t.mock.method(proto, "delete", async function(key) { rows.delete(`${this.name}/${key}`) });
   const site = { siteId: "shop", slug: "shop", business: {}, members: [{ email: "owner@example.invalid", role: "owner" }], catalog: [{ id: "last-item", name: "Product", type: "product", price: 1, active: true, inventory, trackInventory: true }], settings: {}, paymentRules: {}, taxConfig: {} };
   return { rows, site, prepare: () => clientSiteStore().setJSON(`sites/${site.siteId}.json`, site) };
@@ -155,4 +157,30 @@ test('Terminal API reserves before returning a secret and reconciliation reads o
  const check=()=>new Request('https://webfactorypr.com/.netlify/functions/client-stock-reservations',{method:'POST',headers:{Origin:'https://webfactorypr.com','Content-Type':'application/json'},body:JSON.stringify({siteId:'shop',transactionId:body.transactionId})});
  assert.equal((await (await verifyReservation(check())).json()).released,false);assert.equal((await sale(saleRequest())).status,409);
  status='canceled';assert.equal((await (await verifyReservation(check())).json()).released,true);assert.equal((await sale(saleRequest())).status,200);
+});
+
+test('interrupted POS recovery reconstructs one receipt and reconnects the original attempt without another sale',async t=>{
+ const f=fixture(t,3);await f.prepare();const proto=Object.getPrototypeOf(clientCommerceStore()),write=proto.setJSON;let broken=true;
+ t.mock.method(proto,'setJSON',async function(key,value,options){if(key.includes('/v3/receipts/')&&broken){broken=false;throw new Error('receipt failed')};return write.call(this,key,value,options)});
+ const payload={siteId:'shop',saleAttemptId:'recover-pos-12345',items:[{id:'last-item',quantity:1}],paymentMethod:'cash',customer:{email:'fixture@example.com'}};
+ const request=()=>new Request('https://webfactorypr.com/.netlify/functions/client-pos-sale-idempotent',{method:'POST',headers:{Origin:'https://webfactorypr.com','Content-Type':'application/json'},body:JSON.stringify(payload)});
+ assert.equal((await idempotentSale(request())).status,500);assert.equal((await getClientSite('shop')).catalog[0].inventory,2);
+ const listing=await commerceAdmin(new Request('https://webfactorypr.com/.netlify/functions/client-commerce-admin?siteId=shop'));assert.equal(listing.status,200);const pending=(await listing.json()).orders.find(record=>record.status==='processing');assert.ok(pending);
+ const action=()=>new Request('https://webfactorypr.com/.netlify/functions/client-commerce-admin',{method:'POST',headers:{Origin:'https://webfactorypr.com','Content-Type':'application/json'},body:JSON.stringify({siteId:'shop',kind:'order',transactionId:pending.transactionId,action:'recover_pos'})});
+ assert.equal((await commerceAdmin(action())).status,200);assert.equal((await idempotentSale(request())).status,200);assert.equal((await getClientSite('shop')).catalog[0].inventory,2);
+ const customers=[...f.rows.entries()].filter(([key])=>key.includes('/v3/customers/'));assert.equal(customers.length,1);assert.equal(customers[0][1].data.orderCount,1);
+ assert.equal([...f.rows.keys()].filter(key=>key.includes('/v3/receipts/')).length,1);assert.equal([...f.rows.keys()].filter(key=>key.includes('/pos-processing/')).length,0);
+});
+test('POS recovery refuses an interrupted record without the original inventory operation',async t=>{
+ const f=fixture(t,2);await f.prepare();await clientCommerceStore().setJSON(commerceKey('shop','transactions','txn_unknown'),{siteId:'shop',transactionId:'txn_unknown',kind:'order',source:'pos',inventoryProtocol:1,paymentStatus:'paid_in_person',status:'processing',items:[{id:'last-item',quantity:1}],customer:{},amountTotal:100});
+ const {recoverPosOrder}=await import('./pos-recovery.mjs');await assert.rejects(recoverPosOrder('shop','txn_unknown'),{status:409});assert.equal((await getClientSite('shop')).catalog[0].inventory,2);assert.equal([...f.rows.keys()].filter(key=>key.includes('/v3/receipts/')).length,0);
+});
+
+test('a completed POS sale with a lost attempt-marker response is listed and linked back to the same receipt',async t=>{
+ const f=fixture(t,3);await f.prepare();const proto=Object.getPrototypeOf(clientCommerceStore()),write=proto.setJSON;let broken=true;
+ t.mock.method(proto,'setJSON',async function(key,value,options){if(key.includes('/pos-attempts/')&&value.status==='completed'&&broken){broken=false;throw new Error('attempt marker failed')};return write.call(this,key,value,options)});
+ const request=()=>new Request('https://webfactorypr.com/.netlify/functions/client-pos-sale-idempotent',{method:'POST',headers:{Origin:'https://webfactorypr.com','Content-Type':'application/json'},body:JSON.stringify({siteId:'shop',saleAttemptId:'lost-marker-12345',items:[{id:'last-item',quantity:1}],paymentMethod:'cash'})});
+ assert.equal((await idempotentSale(request())).status,500);
+ const listing=await commerceAdmin(new Request('https://webfactorypr.com/.netlify/functions/client-commerce-admin?siteId=shop'));const pending=(await listing.json()).orders.find(record=>record.posRecoveryNeeded);assert.ok(pending);assert.equal(pending.status,'completed');
+ const {recoverPosOrder}=await import('./pos-recovery.mjs');const recovered=await recoverPosOrder('shop',pending.transactionId);const repeated=await idempotentSale(request());assert.equal(repeated.status,200);assert.equal((await repeated.json()).receiptId,recovered.receiptId);assert.equal((await getClientSite('shop')).catalog[0].inventory,2);assert.equal([...f.rows.keys()].filter(key=>key.includes('/v3/receipts/')).length,1);
 });

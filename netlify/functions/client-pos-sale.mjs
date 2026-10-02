@@ -91,6 +91,8 @@ export default async (req) => {
     const record = {
       transactionId,
       inventoryProtocol:1,
+      posAttemptId:cleanText(payload.saleAttemptId,120).replace(/[^a-zA-Z0-9_-]/g,''),
+      posAttemptFingerprint:crypto.createHash('sha256').update(JSON.stringify({items:payload.items,customer:payload.customer,discountCents:payload.discountCents,tipCents:payload.tipCents,paymentMethod:payload.paymentMethod})).digest('hex'),
       siteId: site.siteId,
       kind: "order",
       source: "pos",
@@ -115,6 +117,7 @@ export default async (req) => {
 
     // Persist the transaction before the stock side effect so an interrupted
     // sale still has a reference for administrative recovery.
+    await clientCommerceStore().setJSON(commerceKey(site.siteId,'pos-processing',transactionId),{transactionId});
     await clientCommerceStore().setJSON(commerceKey(site.siteId,'transactions',transactionId),{...record,status:'processing'});
     const applied=await applyStockOperation(site.siteId,{kind:'sale',referenceId:transactionId,items,reason:'pos_sale'});
     await projectStockMovements(site.siteId,applied.operation,clientCommerceStore());
@@ -164,6 +167,7 @@ export default async (req) => {
     await clientCommerceStore().setJSON(commerceKey(site.siteId, "orders", transactionId), record);
     await clientCommerceStore().setJSON(commerceKey(site.siteId, "transactions", transactionId), record);
 
+    if(!record.posAttemptId)await clientCommerceStore().delete(commerceKey(site.siteId,'pos-processing',transactionId));
     return Response.json({ ok: true, record, receiptId: receipt.receiptId }, { headers: { "Cache-Control": "no-store" } });
     });
   } catch (error) {
