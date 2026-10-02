@@ -1,3 +1,4 @@
+import {templateButtonInk} from './templateVisual'
 import CatalogCard from './TemplateCatalogCard'
 import TemplateLayout from './TemplateLayout'
 import { useEffect, useMemo, useState, type CSSProperties } from 'react'
@@ -92,6 +93,7 @@ function TemplateSite({ slug }: { slug: string }) {
 
   const styles = {
     '--template-accent': config.accent,
+    '--template-button-ink':templateButtonInk(config.accent),
     '--template-accent-2': config.accent2,
     '--template-dark': config.dark,
     '--template-cream': config.cream,

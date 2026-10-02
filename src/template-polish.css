@@ -1,0 +1,39 @@
+/* Shared by Templates, Builder preview and generated storefronts. Brand colors stay local. */
+.template-site{font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;--template-polish-line:color-mix(in srgb,var(--template-dark) 14%,transparent)}
+.template-site .template-header{background:rgba(255,255,255,.86);border-color:var(--template-polish-line);box-shadow:inset 0 -1px 0 #ffffffb3,0 8px 30px -24px #0004;-webkit-backdrop-filter:blur(18px) saturate(135%);backdrop-filter:blur(18px) saturate(135%)}
+.template-site .template-header nav a{display:inline-flex;align-items:center;min-height:44px;font-weight:600}
+.template-site .template-brand{line-height:1.35;overflow-wrap:anywhere}
+.template-site .template-hero-content h1{line-height:1.02;font-weight:650;text-wrap:balance;overflow-wrap:anywhere;letter-spacing:-.045em}
+.template-site .template-hero-content>span{color:#edf1f6;line-height:1.65;max-width:58ch}
+.template-site :is(.template-section-heading h2,.template-story-copy h2,.template-booking-showcase h2,.template-contact h2){line-height:1.06;letter-spacing:-.04em;font-weight:650;text-wrap:balance;overflow-wrap:anywhere}
+.template-site.visual-luxury :is(.template-hero-content h1,.template-section-heading h2,.template-story-copy h2,.template-booking-showcase h2,.template-contact h2){font-weight:500}
+.template-site :is(button,a){-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+.template-site :is(.template-solid,.template-outline,.template-glass,.template-cart-button){min-height:44px;font-size:.8125rem;font-weight:650;transition:transform .18s ease,background .18s ease,box-shadow .18s ease}
+.template-site :is(.template-solid,.template-outline,.template-glass,.template-cart-button):not(:disabled):active{transform:scale(.97);transition-duration:80ms}
+.template-site .template-solid,.template-site .template-cart-button b{color:var(--template-button-ink,#fff)}
+.template-site .template-solid{box-shadow:inset 0 1px 0 #ffffff3d,0 8px 22px -14px color-mix(in srgb,var(--template-accent) 65%,transparent)}
+.template-site :is(.template-glass,.template-hero-meta){background:linear-gradient(145deg,#ffffff16,transparent 50%),rgba(12,18,24,.58);border-color:#ffffff40;box-shadow:inset 0 1px 0 #ffffff30,0 16px 38px -28px #0009;-webkit-backdrop-filter:blur(14px) saturate(125%);backdrop-filter:blur(14px) saturate(125%)}
+.template-site .template-hero-meta small{color:#d6dee7}
+.template-site .template-hero-meta :is(strong,a){line-height:1.5;overflow-wrap:anywhere;color:#fff}
+.template-site .template-hero-meta:empty{display:none}
+.template-site :is(.template-catalog-card,.template-team-grid article,.template-catalog-gateway,.template-showcase-card){border-color:var(--template-polish-line);box-shadow:inset 0 1px 0 #ffffffc7,0 12px 34px -24px color-mix(in srgb,var(--template-dark) 35%,transparent)}
+.template-site :is(.template-catalog-card h3,.template-team-grid h3){font-weight:650;line-height:1.35;letter-spacing:-.025em}
+.template-site :is(.template-catalog-modal,.template-detail-modal,.template-booking-modal,.template-cart-drawer){background:#fff;border:1px solid var(--template-polish-line)}
+.template-site :is(input,textarea,select){font-size:16px;min-height:44px}
+.template-site :is(.template-story-copy p,.template-section-heading p){line-height:1.75}
+.template-site .template-story-copy p{color:#d6dee7}
+.template-site.visual-minimal .template-story-copy p{color:#52606e}
+.template-site.visual-minimal :is(.template-catalog-card,.template-team-grid article,.template-catalog-gateway,.template-showcase-card){box-shadow:none}
+@media(max-width:760px){
+ .template-site .template-hero-content h1{font-size:clamp(2.5rem,10.5vw,4.8rem)}
+ .template-site :is(.template-section-heading h2,.template-story-copy h2,.template-booking-showcase h2,.template-contact h2){font-size:clamp(2rem,8vw,3.5rem)}
+ .template-site :is(.template-glass,.template-hero-meta,.template-header){-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+ .template-site .template-header-actions{gap:6px}
+ .template-site .template-hero-meta div{padding:14px 16px}
+}
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){.template-site .template-header{background:#fff}.template-site :is(.template-glass,.template-hero-meta){background:#14202bea}}
+@media(prefers-reduced-transparency:reduce),(prefers-contrast:more){
+ .template-site .template-header{background:#fff;-webkit-backdrop-filter:none;backdrop-filter:none}
+ .template-site :is(.template-glass,.template-hero-meta){background:#14202b;-webkit-backdrop-filter:none;backdrop-filter:none}
+}
+@media(prefers-reduced-motion:reduce){.template-site *, .template-site *::before,.template-site *::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}.template-site :is(.template-solid,.template-outline,.template-glass,.template-cart-button):not(:disabled):active{transform:none}}

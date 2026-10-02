@@ -441,6 +441,7 @@ function BusinessStep({state,setState,lang,lockedEmail}:{state:BuilderState;setS
         </select>
       </label>
       <div className="wf-bilingual-grid">
+        <p className="wf-editorial-hint">{lang==='es'?'Para un resultado como el Template, usa una descripción breve que explique qué ofreces y a quién ayudas. Las fotos, el catálogo y el equipo completan la presentación.':'For a polished result like the Template, write a short description of what you offer and who you help. Photos, catalog and team complete the presentation.'}</p>
         <label className="wf-field"><span>Business description · English</span><textarea rows={4} value={state.business.descriptionEn ?? state.business.description} onChange={(event)=>setState((current)=>({...current,business:{...current.business,description:event.target.value,descriptionEn:event.target.value}}))} /></label>
         <label className="wf-field"><span>Descripción del negocio · Español</span><textarea rows={4} value={state.business.descriptionEs ?? ''} onChange={(event)=>setBusiness('descriptionEs',event.target.value)} /></label>
       </div>
@@ -476,6 +477,7 @@ function BusinessStep({state,setState,lang,lockedEmail}:{state:BuilderState;setS
       <div className="wf-step-intro compact"><small>{lang==='es'?'FOTOS DE LA PLANTILLA':'TEMPLATE PHOTOS'}</small><h3>{lang==='es'?'Usa las fotos reales de tu negocio.':'Use your real business photos.'}</h3><p>{lang==='es'?'La composición del Template se conserva; solo reemplazamos las imágenes de muestra.':'The Template composition is preserved; only the sample photography is replaced.'}</p></div>
       <label className="wf-upload">
         <input type="file" accept="image/png,image/jpeg,image/webp,image/heic,image/heif" disabled={uploadingLogo} onChange={(event)=>uploadHero(event.target.files?.[0])} />
+        <small>{lang==='es'?'Elige una foto horizontal, nítida y con espacio libre para el texto. El preview muestra cómo se recorta en móvil.':'Choose a clear landscape photo with space for text. Preview shows how it crops on mobile.'}</small>
         <span>{state.business.heroAssetKey?(lang==='es'?'✓ Imagen principal guardada':'✓ Hero image saved'):(lang==='es'?'Subir imagen principal / Hero':'Upload main / Hero image')}</span>
         <small>{lang==='es'?'Mantendrá el encuadre y estilo visual del Template seleccionado.':'It will preserve the framing and visual style of the selected Template.'}</small>
       </label>

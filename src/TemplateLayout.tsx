@@ -2,6 +2,7 @@ import { useState, type ReactNode, type CSSProperties } from 'react'
 import type { TemplateConfig, TemplateItem } from './templateData'
 import type { TemplateLanguage, TemplateUi } from './templateI18n'
 import './template-preview.css'
+import './template-polish.css'
 
 type Props = {
  config: TemplateConfig; ui: {[K in keyof TemplateUi]: TemplateUi[K] extends string ? string : TemplateUi[K]}; language: TemplateLanguage; setLanguage: (language: TemplateLanguage) => void;
