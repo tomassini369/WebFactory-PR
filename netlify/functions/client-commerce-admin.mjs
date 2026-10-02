@@ -1,3 +1,8 @@
+import { listPosProcessing,recoverPosOrder } from '../lib/pos-recovery.mjs';
+import { manageInPersonOrder } from '../lib/in-person-orders.mjs';
+import { withBookingLock } from '../lib/booking-lock.mjs';
+import { findStockOperation } from '../lib/inventory-archive.mjs';
+import { applyStockOperation,projectStockMovements } from '../lib/inventory-operations.mjs';
 import {renderBookingEmail} from "../lib/booking-email-template.mjs";
 import {finishBookingChange} from "../lib/booking-management.mjs";
 import { syncBookingCalendar, bookingCanSync } from "../lib/booking-calendar.mjs";
@@ -28,19 +33,22 @@ export default async (req) => {
     if (req.method === "GET") {
       const siteId = new URL(req.url).searchParams.get("siteId") || "";
       const { site, membership } = await requireSiteAccess(siteId);
-      const [orders, bookings] = await Promise.all([listRecords(siteId, "orders"), listRecords(siteId, "bookings")]);
+      const [orders, bookings, pendingPos] = await Promise.all([listRecords(siteId, "orders"), listRecords(siteId, "bookings"),listPosProcessing(siteId)]);
+      const mergedOrders=[...new Map([...orders,...pendingPos].map(record=>[record.transactionId,record])).values()];
       const limited = ["employee", "cashier", "staff"].includes(membership?.role) && (site.business?.locations || []).length > 0;
       const visible = (records) => limited ? records.filter((record) => (membership.locationIds || []).includes(record.locationId)) : records;
-      return Response.json({ ok: true, orders: visible(orders), bookings: visible(bookings) }, { headers: { "Cache-Control": "no-store" } });
+      return Response.json({ ok: true, orders: visible(mergedOrders), bookings: visible(bookings) }, { headers: { "Cache-Control": "no-store" } });
     }
     if (req.method !== "POST") return Response.json({ ok: false, message: "Method not allowed." }, { status: 405 });
     assertSameOrigin(req);
     const payload = await req.json();
-    const requestedCapability = payload.action === "refund" ? "refunds" : payload.action === "kitchen_status" ? "kitchen" : (payload.kind === "booking" ? "bookings" : "orders");
+    const requestedCapability = payload.action === "recover_pos" ? "pos" : payload.action === "refund" ? "refunds" : payload.action === "kitchen_status" ? "kitchen" : (payload.kind === "booking" ? "bookings" : "orders");
     const { site, membership } = await requireSiteCapability(payload.siteId, requestedCapability);
     const kind = payload.kind === "booking" ? "bookings" : "orders";
+    const run=async()=>{
     const key = commerceKey(site.siteId, kind, payload.transactionId);
     let record = await clientCommerceStore().get(key, { type: "json" });
+    if(payload.action==='recover_pos')record=await clientCommerceStore().get(commerceKey(site.siteId,'transactions',payload.transactionId),{type:'json'});
     if(payload.action === "preview_confirmation" && record && !["confirmed","completed","cancelled"].includes(record.status)) throw Object.assign(new Error("Only confirmed or cancelled appointments have confirmations."),{status:409});
     if(payload.action === "preview_confirmation" && kind === "bookings" && record) return Response.json({ok:true,html:renderBookingEmail(site,record,{change:record.status === "cancelled"?"cancelled":"confirmed"}).html},{headers:{"Cache-Control":"no-store"}});
     const recordMetadata=record?.calendarToken ? await clientCommerceStore().getWithMetadata(key,{type:"json"}) : null;
@@ -50,6 +58,13 @@ export default async (req) => {
       throw Object.assign(new Error("This account is not assigned to the order location."), { status: 403 });
     }
 
+    if(payload.action==='recover_pos')return Response.json(await recoverPosOrder(site.siteId,record.transactionId),{headers:{'Cache-Control':'no-store'}});
+    if(kind==='orders'&&['mark_paid','cancel_in_person'].includes(payload.action))return Response.json({ok:true,record:await manageInPersonOrder(site.siteId,record.transactionId,payload.action,{lockHeld:true})},{headers:{'Cache-Control':'no-store'}});
+    if(payload.action==='recover_ath'){
+      const {recoverAthOrder}=await import('../lib/ath-recovery.mjs');
+      const recovered=await recoverAthOrder(site,record,req.url);
+      return Response.json({ok:true,record:recovered},{headers:{'Cache-Control':'no-store'}});
+    }
     if (payload.action === "kitchen_status") {
       if (kind !== "orders" || !record.queueNumber) throw Object.assign(new Error("Kitchen updates are only available for paid food orders."), { status: 409 });
       const kitchenStatus = String(payload.kitchenStatus || "");
@@ -75,6 +90,7 @@ export default async (req) => {
         record.queueNumber = `Q${Date.parse(record.paidAt)}`;
       }
     } else if (payload.action === "complete") {
+      if(record.kind==='order'&&(record.inventoryNeedsReview||record.status==='processing'||(record.inventoryProtocol===1&&!record.inventoryAppliedAt))) throw Object.assign(new Error("Reconcile inventory before completing this order."),{status:409});
       if (!["paid","paid_in_person"].includes(record.paymentStatus)) throw Object.assign(new Error("Only paid transactions can be completed."), { status: 409 });
       record = { ...record, status: "completed", completedAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
 
@@ -94,6 +110,7 @@ export default async (req) => {
           customer: {
             name: record.customer?.name || "",
             email: record.customer?.email || "",
+            reviewOptIn: record.customer?.reviewOptIn === true,
           },
           reviewUrl: settings.reviewUrl,
           status: "pending",
@@ -151,28 +168,16 @@ export default async (req) => {
       };
 
       if (fullRefund && record.kind === "order" && !record.inventoryRestoredAt) {
-        const catalog = (site.catalog || []).map((item) => {
-          const purchased = (record.items || []).find((entry) => entry.id === item.id);
-          return purchased && item.type === "product" && item.trackInventory && item.inventory !== null && item.inventory !== undefined
-            ? { ...item, inventory: Number(item.inventory || 0) + Number(purchased.quantity || 1) }
-            : item;
-        });
-        const { patchClientSite } = await import("../lib/client-store.mjs");
-        await patchClientSite(site.siteId, { catalog });
-        for (const item of record.items || []) {
-          const catalogItem = (site.catalog || []).find((entry) => entry.id === item.id);
-          if (catalogItem?.type === "product" && catalogItem.trackInventory && catalogItem.inventory !== null && catalogItem.inventory !== undefined) {
-            const movement = createInventoryMovement({
-              siteId: site.siteId,
-              itemId: item.id,
-              quantityDelta: Math.max(1, Number(item.quantity || 1)),
-              reason: "refund",
-              referenceId: record.transactionId,
-            });
-            await putV3Record(site.siteId, "inventory-movements", movement.movementId, movement);
-          }
+        const currentSite=await (await import('../lib/client-store.mjs')).getClientSite(site.siteId);
+        const saleId=(await import('../lib/inventory-operations.mjs')).stockOperationId('sale',record.transactionId);
+        const original=await findStockOperation(currentSite,saleId);
+        const restockItems=original?original.deltas.map(delta=>({id:delta.itemId,quantity:-delta.quantityDelta})):record.items;
+        if(restockItems.length&&((record.inventoryProtocol!==1&&!record.inventoryNeedsReview)||original)){
+          const applied=await applyStockOperation(site.siteId,{kind:'refund',referenceId:record.transactionId,items:restockItems,direction:1,reason:'refund'});
+          await projectStockMovements(site.siteId,applied.operation,clientCommerceStore());
         }
-        record.inventoryRestoredAt = new Date().toISOString();
+        if(record.inventoryProtocol!==1&&record.inventoryNeedsReview) record.inventoryRestockNeedsReview=true;
+        else record.inventoryRestoredAt = new Date().toISOString();
       }
 
       if (record.receiptId) {
@@ -196,5 +201,7 @@ export default async (req) => {
     if (await clientCommerceStore().get(transactionKey)) await clientCommerceStore().setJSON(transactionKey, record);
     if(payload.action === "cancel" && record.calendarToken) record=await finishBookingChange(site,record);
     return Response.json({ ok: true, record }, { headers: { "Cache-Control": "no-store" } });
+    };
+    return kind==='bookings'||['recover_pos','recover_ath'].includes(payload.action)?await run():await withBookingLock(clientCommerceStore(),`locks/commerce/${site.siteId}`,run);
   } catch (error) { return errorResponse(error); }
 };

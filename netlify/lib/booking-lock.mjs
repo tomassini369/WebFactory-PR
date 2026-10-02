@@ -6,7 +6,7 @@ export async function withBookingLock(store, key, action) {
     const previous=await store.getWithMetadata(key,{type:"json"});
     if (previous?.etag && Number(previous.data?.expiresAt)<Date.now()) claim=await store.setJSON(key,value,{onlyIfMatch:previous.etag});
   }
-  if (!claim.modified) throw Object.assign(new Error("Another booking update is in progress. Please try again. / Hay otra actualización en curso. Inténtalo nuevamente."),{status:409});
+  if (!claim.modified) throw Object.assign(new Error("Another update is in progress. Please try again. / Hay otra actualización en curso. Inténtalo nuevamente."),{status:409});
   try { return await action(); }
   finally { const current=await store.get(key,{type:"json"}); if(current?.owner===owner) await store.delete(key); }
 }

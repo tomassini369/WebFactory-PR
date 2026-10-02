@@ -1,4 +1,5 @@
 import Stripe from "stripe";
+import { purgeAccountSecurity } from "./mfa-security.mjs";
 import { admin } from "@netlify/identity";
 import { clientAssetStore, clientCommerceStore, clientEventStore, clientOAuthStore, clientSiteStore, emailHash, getClientSite, normalizeEmail, saveClientSite, siteKey, slugify } from "./client-store.mjs";
 import { decryptToken } from "./google-calendar.mjs";
@@ -163,5 +164,6 @@ export async function removeUserFromSite(site,email){
 export async function deleteIdentityUser(user){
   if(!user?.id)return false;
   await admin.deleteUser({ id: user.id });
+  await purgeAccountSecurity(user);
   return true;
 }

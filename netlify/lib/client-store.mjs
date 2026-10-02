@@ -1,3 +1,4 @@
+import { availableInventory, reservedQuantity } from './inventory-availability.mjs';
 import crypto from "node:crypto";
 import { getDeployStore, getStore } from "@netlify/blobs";
 import { cleanText } from "./platform-utils.mjs";
@@ -9,7 +10,7 @@ function isProduction() {
 function scopedStore(name) {
   return isProduction()
     ? getStore(name, { consistency: "strong" })
-    : getDeployStore(name);
+    : getDeployStore(name, { consistency: "strong" });
 }
 
 export const clientSiteStore = () => scopedStore("webfactory-client-sites");
@@ -59,7 +60,7 @@ export function siteKey(siteId) {
 export async function getClientSite(siteId) {
   if (!siteId) return null;
   const site = await clientSiteStore().get(siteKey(siteId), { type: "json" });
-  return site ? {...site, design: normalizeSiteDesign(site.design || {})} : null;
+  return site ? {...site, revision:Number(site.revision||0), design: normalizeSiteDesign(site.design || {})} : null;
 }
 
 export async function getClientSiteBySlug(slug) {
@@ -69,7 +70,26 @@ export async function getClientSiteBySlug(slug) {
 
 export async function saveClientSite(site) {
   if (!site?.siteId || !site?.slug) throw new Error("Client site requires siteId and slug.");
-  await clientSiteStore().setJSON(siteKey(site.siteId), site);
+  const store=clientSiteStore();
+  const previous=await store.getWithMetadata(siteKey(site.siteId),{type:'json'});
+  if(previous){
+    if(!previous.etag)throw Object.assign(new Error('Business concurrency metadata unavailable.'),{status:503});
+    if(Number(site.revision)!==Number(previous.data.revision||0)+1)throw Object.assign(new Error('Business changed. Reload before saving.'),{status:409});
+    // Operation markers are server-owned and cannot be erased by another edit.
+    site={...site,...(previous.data.stockOperations?{stockOperations:previous.data.stockOperations}:{})};
+    if(previous.data.stockReservations)site={...site,stockReservations:previous.data.stockReservations};
+    if(previous.data.inventoryArchive)site={...site,inventoryArchive:previous.data.inventoryArchive};
+    else if(site.inventoryArchive)throw Object.assign(new Error('Inventory archive metadata is server-owned.'),{status:400});
+    for(const reservation of Object.values(previous.data.stockReservations||{})){
+      if(reservation.state!=='held')continue;
+      for(const line of reservation.lines||[]){
+        const item=(site.catalog||[]).find(item=>item.id===line.id);
+        if(!item||item.type!=='product'||!item.trackInventory||item.inventory==null||(!item.allowBackorder&&Number(item.inventory)<reservedQuantity(previous.data,line.id)))throw Object.assign(new Error('Resolve active stock reservations before changing this product.'),{status:409});
+      }
+    }
+  }else if(site.stockOperations||site.stockReservations||site.inventoryArchive)throw Object.assign(new Error('Inventory markers cannot be supplied when creating a business.'),{status:400});
+  const saved=await store.setJSON(siteKey(site.siteId),site,previous?{onlyIfMatch:previous.etag}:{onlyIfNew:true});
+  if(!saved.modified)throw Object.assign(new Error('Business changed. Reload before saving.'),{status:409});
   await clientSiteStore().setJSON(`slugs/${slugify(site.slug)}.json`, { siteId: site.siteId });
   for (const member of site.members || []) {
     const email = normalizeEmail(member.email);
@@ -83,9 +103,10 @@ export async function saveClientSite(site) {
   return site;
 }
 
-export async function patchClientSite(siteId, patch) {
+export async function patchClientSite(siteId, patch, {expectedRevision} = {}) {
   const current = await getClientSite(siteId);
   if (!current) throw new Error("Client site was not found.");
+  if(expectedRevision!==undefined&&Number(expectedRevision)!==Number(current.revision||0))throw Object.assign(new Error('Business changed. Reload before saving.'),{status:409});
   return saveClientSite({
     ...current,
     ...patch,
@@ -116,6 +137,7 @@ export function publicClientSite(site) {
     status: site.status,
     revision: site.revision,
     business: {
+      policies: site.business?.policies || {},
       name: site.business?.name || "",
       nameEn: site.business?.nameEn || site.business?.name || "",
       nameEs: site.business?.nameEs || "",
@@ -154,7 +176,7 @@ export function publicClientSite(site) {
       descriptionEs: item.descriptionEs || "",
       price: item.price,
       active: item.active !== false,
-      inventory: item.inventory,
+      inventory: availableInventory(site,item),
       requiresAppointment: Boolean(item.requiresAppointment),
       duration: Number(item.duration || 0),
       imageUrl: item.imageAssetKey

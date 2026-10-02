@@ -167,7 +167,7 @@ export function billingStateFor(event, current = {}) {
     migrationEligible: false,
     stripeCustomerId: object.customer || current.stripeCustomerId || "",
     stripeSubscriptionId: subscriptionIdFor(event) || current.stripeSubscriptionId || "",
-    currentPeriodEnd: object.current_period_end ? new Date(object.current_period_end * 1000).toISOString() : (current.currentPeriodEnd || ""),
+    currentPeriodEnd: (object.items?.data?.[0]?.current_period_end || object.current_period_end) ? new Date((object.items?.data?.[0]?.current_period_end || object.current_period_end) * 1000).toISOString() : (current.currentPeriodEnd || ""),
     cancelAtPeriodEnd: typeof object.cancel_at_period_end === "boolean"
       ? object.cancel_at_period_end
       : Boolean(current.cancelAtPeriodEnd),

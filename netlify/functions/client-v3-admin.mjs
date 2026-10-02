@@ -1,3 +1,4 @@
+import { applyStockOperation,projectStockMovements } from '../lib/inventory-operations.mjs';
 import { assertSameOrigin, errorResponse, requireSiteAccess, requireSiteCapability } from "../lib/client-auth.mjs";
 import { cleanText } from "../lib/platform-utils.mjs";
 import { createCustomerRecord, createInventoryMovement, createPaymentLinkRecord } from "../lib/webfactory-v3-domain.mjs";
@@ -89,22 +90,11 @@ export default async (req) => {
       const item = (inventorySite.catalog || []).find((entry) => entry.id === itemId && entry.type === "product");
       if (!item) throw Object.assign(new Error("Product not found."), { status: 404 });
       if (!item.trackInventory) throw Object.assign(new Error("Enable inventory tracking before making adjustments."), { status: 409 });
-      const current = Number(item.inventory ?? 0);
-      const next = current + delta;
-      if (next < 0 && !item.allowBackorder) throw Object.assign(new Error("Inventory cannot go below zero while backorder is disabled."), { status: 409 });
-
-      const catalog = (inventorySite.catalog || []).map((entry) => entry.id === itemId ? { ...entry, inventory: next } : entry);
-      const { patchClientSite } = await import("../lib/client-store.mjs");
-      const updatedSite = await patchClientSite(inventorySite.siteId, { catalog });
-      const movement = createInventoryMovement({
-        siteId: inventorySite.siteId,
-        itemId,
-        quantityDelta: delta,
-        reason: cleanText(payload.reason || "manual_adjustment", 80),
-        referenceId: cleanText(payload.referenceId || user.email || user.id, 160),
-      });
-      await putV3Record(inventorySite.siteId, "inventory-movements", movement.movementId, movement);
-      return Response.json({ ok: true, site: updatedSite, movement }, { headers: { "Cache-Control": "no-store" } });
+      const adjustmentId=cleanText(payload.adjustmentId,120);
+      if(!/^[a-zA-Z0-9_-]{8,120}$/.test(adjustmentId))throw Object.assign(new Error('A stable adjustment ID is required.'),{status:400});
+      const applied=await applyStockOperation(inventorySite.siteId,{kind:'adjustment',referenceId:adjustmentId,items:[{id:itemId,quantity:Math.abs(delta)}],direction:delta>0?1:-1,reason:cleanText(payload.reason||'manual_adjustment',80)});
+      await projectStockMovements(inventorySite.siteId,applied.operation,(await import('../lib/client-store.mjs')).clientCommerceStore());
+      return Response.json({ok:true,site:applied.site,operationId:applied.operation.id,reused:applied.reused},{headers:{'Cache-Control':'no-store'}});
     }
 
     if (action === "upsert_customer") {

@@ -21,7 +21,13 @@ export async function getV3Record(siteId, collection, id) {
 
 export async function putV3Record(siteId, collection, id, value) {
   const record = { ...value, siteId: safeSiteId(siteId) };
-  await clientCommerceStore().setJSON(v3Key(siteId, collection, id), record);
+  const store=clientCommerceStore(),key=v3Key(siteId,collection,id);
+  if(collection==='customers'){
+    const previous=await store.getWithMetadata(key,{type:'json'});
+    if(previous&&(!previous.etag||JSON.stringify(previous.data.appliedTransactions||{})!==JSON.stringify(record.appliedTransactions||{})))throw Object.assign(new Error('Customer totals changed. Reload before editing.'),{status:409});
+    const result=await store.setJSON(key,record,previous?{onlyIfMatch:previous.etag}:{onlyIfNew:true});
+    if(!result.modified)throw Object.assign(new Error('Customer changed. Reload before editing.'),{status:409});
+  }else await store.setJSON(key,record);
   return record;
 }
 

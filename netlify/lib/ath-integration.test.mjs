@@ -1,3 +1,4 @@
+import commerceAdmin from '../functions/client-commerce-admin.mjs';
 import test from "node:test";
 import assert from "node:assert/strict";
 import { getStore } from "@netlify/blobs";
@@ -12,14 +13,15 @@ import verify from "../functions/ath-payment-status.mjs";
 const publicToken = "unit-public-token-abcdefghijklmnop";
 const privateToken = "unit-private-token-abcdefghijklmnop";
 function fixture(t) {
-  const rows = new Map(); const calls = [];
+  const rows = new Map(); const calls = []; const versions=new Map(); let revision=0;
   globalThis.netlifyBlobsContext=Buffer.from(JSON.stringify({siteID:"unit-netlify-site",token:"unit-blobs-token",deployID:"unit-deploy"})).toString("base64");
   const storePrototype=Object.getPrototypeOf(getStore("unit-test"));
   t.mock.method(storePrototype, "get", async function(key) { return structuredClone(rows.get(`${this.name}/${key}`) || null); });
+  t.mock.method(storePrototype, "getWithMetadata",async function(key){const full=`${this.name}/${key}`;return rows.has(full)?{data:structuredClone(rows.get(full)),etag:versions.get(full)}:null});
   t.mock.method(storePrototype, "setJSON", async function(key, value, options = {}) {
     const fullKey = `${this.name}/${key}`;
-    if (options.onlyIfNew && rows.has(fullKey)) return { modified: false };
-    rows.set(fullKey, structuredClone(value)); return { modified: true, etag: "unit" };
+    if (options.onlyIfNew && rows.has(fullKey)||options.onlyIfMatch&&versions.get(fullKey)!==options.onlyIfMatch) return { modified: false };
+    rows.set(fullKey, structuredClone(value));versions.set(fullKey,String(++revision)); return { modified: true, etag: versions.get(fullKey) };
   });
   t.mock.method(storePrototype, "delete", async function(key) { rows.delete(`${this.name}/${key}`); });
   t.mock.method(storePrototype, "list", async function({ prefix = "" } = {}) {
@@ -38,7 +40,7 @@ async function prepare(f) {
   const site = await configureAth(f.site, { publicToken, privateToken });
   const result = await createAthCheckout(site, f.record, { requestUrl: "https://webfactorypr.com/.netlify/functions/create-client-checkout", returnUrl: "/sites/business-a", lang: "es" });
   const token = new URL(result.checkoutUrl).searchParams.get("token");
-  return { site, token, ...await getAthSession(token) };
+  return { site:await getClientSite(site.siteId), token, ...await getAthSession(token) };
 }
 function request(path, body, origin = "https://webfactorypr.com") {
   return new Request(`https://webfactorypr.com/.netlify/functions/${path}`, { method: "POST", headers: { Origin: origin, "Content-Type": "application/json" }, body: JSON.stringify(body) });
@@ -135,4 +137,40 @@ test("disconnecting ATH removes its saved tokens without altering Stripe", async
   assert.equal(disconnected.paymentRules.stripeConnectedAccountId, f.site.paymentRules.stripeConnectedAccountId);
   assert.equal(await clientOAuthStore().get(`ath/tokens/${f.site.siteId}.json`), null);
   assert.equal((await checkout(new Request(`https://webfactorypr.com/.netlify/functions/ath-checkout?token=${p.token}`))).status, 409);
+});
+
+test('ATH checkout reserves its products before exposing the payment page and consumes the hold only after verification',async t=>{
+ const f=fixture(t),p=await prepare(f);const before=await getClientSite(f.site.siteId),reservation=Object.values(before.stockReservations)[0];
+ assert.equal(before.catalog[0].inventory,10);assert.equal(reservation.provider,'ath_movil');assert.equal(reservation.state,'held');assert.equal(publicClientSite(before).catalog[0].inventory,8);assert.equal(p.record.inventoryReservationRequired,true);
+ t.mock.method(globalThis,'fetch',async()=>Response.json([payment(p.session)]));assert.equal((await verify(request('ath-payment-status',{token:p.token,referenceNumber:'ath-unit-reference-123'}))).status,200);
+ const after=await getClientSite(f.site.siteId);assert.equal(after.catalog[0].inventory,8);assert.equal(Object.values(after.stockReservations)[0].state,'consumed');
+});
+test('ATH cannot open a checkout for stock already reserved and creates no exposed payment session on shortage',async t=>{
+ const f=fixture(t);await clientSiteStore().setJSON(`sites/${f.site.siteId}.json`,f.site);const site=await configureAth(f.site,{publicToken,privateToken});
+ const {reserveInventory}=await import('./inventory-reservations.mjs');await reserveInventory(site.siteId,'other-payment',[{id:'product',quantity:10}]);
+ await assert.rejects(createAthCheckout(site,f.record,{requestUrl:'https://webfactorypr.com/.netlify/functions/create-client-checkout'}),{status:409});
+ assert.equal([...f.rows.keys()].filter(key=>key.includes('/ath/sessions/')).length,0);assert.equal(f.calls.length,0);
+});
+test('ATH screen expiry and an empty provider search retain reserved stock',async t=>{
+ const f=fixture(t),p=await prepare(f);await clientOAuthStore().setJSON(p.storageKey,{...p.session,checkoutExpiresAt:'2000-01-01T00:00:00.000Z'});
+ assert.equal((await checkout(new Request(`https://webfactorypr.com/.netlify/functions/ath-checkout?token=${p.token}`))).status,410);
+ t.mock.method(globalThis,'fetch',async()=>Response.json([]));assert.equal((await verify(request('ath-payment-status',{token:p.token,referenceNumber:'ath-unit-reference-123'}))).status,409);
+ const current=await getClientSite(f.site.siteId);assert.equal(Object.values(current.stockReservations)[0].state,'held');assert.equal(publicClientSite(current).catalog[0].inventory,8);
+});
+
+test('administrative ATH recovery re-verifies payment after receipt failure without another stock decrement or customer total',async t=>{
+ const f=fixture(t),p=await prepare(f);t.mock.method(globalThis,'fetch',async()=>Response.json([payment(p.session)]));
+ const proto=Object.getPrototypeOf(clientCommerceStore()),write=proto.setJSON;let broken=true;
+ t.mock.method(proto,'setJSON',async function(key,value,options){if(key.includes('/v3/receipts/')&&broken){broken=false;throw new Error('receipt failed')};return write.call(this,key,value,options)});
+ assert.equal((await verify(request('ath-payment-status',{token:p.token,referenceNumber:'ath-unit-reference-123'}))).status,409);
+ assert.equal((await getClientSite(f.site.siteId)).catalog[0].inventory,8);
+ const body={siteId:f.site.siteId,kind:'order',transactionId:f.record.transactionId,action:'recover_ath'};
+ assert.equal((await commerceAdmin(request('client-commerce-admin',body,'https://attacker.invalid'))).status,403);
+ t.mock.method(globalThis,'fetch',async()=>Response.json([]));assert.equal((await commerceAdmin(request('client-commerce-admin',body))).status,409);assert.equal((await getClientSite(f.site.siteId)).catalog[0].inventory,8);
+ t.mock.method(globalThis,'fetch',async()=>Response.json([payment(p.session)]));
+ const response=await commerceAdmin(request('client-commerce-admin',body));assert.equal(response.status,200);const recovered=(await response.json()).record;
+ assert.equal(recovered.athFulfillmentNeedsReview,false);assert.equal(recovered.inventoryNeedsReview,false);assert.equal(recovered.commerceEmailNeedsReview,true);assert.ok(recovered.receiptId);
+ assert.equal((await getClientSite(f.site.siteId)).catalog[0].inventory,8);
+ const customers=[...f.rows.entries()].filter(([key])=>key.includes('/v3/customers/'));assert.equal(customers.length,1);assert.equal(customers[0][1].totalSpent,2000);assert.equal(customers[0][1].orderCount,1);
+ assert.equal((await commerceAdmin(request('client-commerce-admin',body))).status,409);
 });

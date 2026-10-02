@@ -1,0 +1,8 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import nodemailer from 'nodemailer';
+import { sendEmail } from './email.mjs';
+function environment(t){const before=globalThis.Netlify;globalThis.Netlify={env:{get:name=>({WEBFACTORY_EMAIL_PROVIDER:'gmail',WEBFACTORY_GMAIL_USER:'fixture@example.com',WEBFACTORY_GMAIL_APP_PASSWORD:'test-fixture-secret'})[name]}};t.after(()=>{globalThis.Netlify=before});}
+test('bounded review mail closes the SMTP transport on timeout without retrying',async t=>{environment(t);let calls=0,closed=0;t.mock.method(nodemailer,'createTransport',options=>{assert.equal(options.socketTimeout,1000);return {sendMail:()=>{calls++;return new Promise(()=>{})},close:()=>closed++}});await assert.rejects(sendEmail({to:'recipient@example.com',subject:'Fixture',text:'Fixture',timeoutMs:1000}),/time budget/);assert.equal(calls,1);assert.ok(closed>=1);});
+test('acknowledged delivery and immediate failure both close their own transport',async t=>{environment(t);let closed=0;t.mock.method(nodemailer,'createTransport',()=>({sendMail:async()=>({accepted:['recipient@example.com']}),close:()=>closed++}));assert.equal((await sendEmail({to:'recipient@example.com',subject:'Fixture',text:'Fixture',timeoutMs:1000})).accepted.length,1);assert.equal(closed,1);});
+test('immediate SMTP failure closes its transport and propagates uncertainty to the caller',async t=>{environment(t);let closed=0;t.mock.method(nodemailer,'createTransport',()=>({sendMail:async()=>{throw new Error('fixture failure')},close:()=>closed++}));await assert.rejects(sendEmail({to:'recipient@example.com',subject:'Fixture',text:'Fixture',timeoutMs:1000}),/fixture failure/);assert.equal(closed,1);});

@@ -1,3 +1,6 @@
+import { availableInventory } from '../lib/inventory-availability.mjs';
+import { createInPersonOrder } from '../lib/in-person-orders.mjs';
+import { createReservedStripeCheckout } from '../lib/reserved-stripe-checkout.mjs';
 import { syncBookingCalendar } from "../lib/booking-calendar.mjs";
 import { sendBookingConfirmationEmails } from "../lib/client-notifications.mjs";
 import { bookingManageUrl } from "../lib/booking-email-template.mjs";
@@ -10,7 +13,7 @@ import { siteEntitlement } from "../lib/subscription-billing.mjs";
 import { assertStripeWriteAllowed } from "../lib/stripe-runtime.mjs";
 import { calculateTax } from "../lib/webfactory-v3-domain.mjs";
 import { createAthCheckout } from "../lib/ath-movil.mjs";
-import { assertSameOrigin } from "../lib/client-auth.mjs";
+import { assertSameOrigin, errorResponse } from "../lib/client-auth.mjs";
 
 function env(name) { return globalThis.Netlify?.env?.get(name) || ""; }
 
@@ -37,11 +40,19 @@ function localizedText(item, lang, field) {
 
 function canonicalCart(site, requested, lang) {
   if (!Array.isArray(requested) || requested.length === 0 || requested.length > 20) throw Object.assign(new Error("Choose between 1 and 20 catalog items."), { status: 400 });
+  const ids = new Set();
+  for (const entry of requested) {
+    const quantity = Number(entry.quantity ?? 1);
+    if (!entry.id || ids.has(entry.id) || !Number.isInteger(quantity) || quantity < 1 || quantity > 20) {
+      throw Object.assign(new Error("Use unique catalog items and quantities between 1 and 20."), { status: 400 });
+    }
+    ids.add(entry.id);
+  }
   return requested.map((entry) => {
     const item = (site.catalog || []).find((candidate) => candidate.id === entry.id && candidate.active !== false && !candidate.requiresAppointment);
     if (!item) throw Object.assign(new Error("A selected catalog item is unavailable."), { status: 409 });
     const quantity = Math.max(1, Math.min(20, Math.floor(Number(entry.quantity || 1))));
-    if (item.inventory !== null && item.inventory !== undefined && quantity > Number(item.inventory)) {
+    if (item.type==='product'&&item.trackInventory&&item.inventory!=null&&!item.allowBackorder&&quantity>Number(availableInventory(site,item))) {
       throw Object.assign(new Error(`${localizedText(item, lang, "name")} does not have enough inventory.`), { status: 409 });
     }
     return { id: item.id, name: localizedText(item, lang, "name"), description: localizedText(item, lang, "description"), quantity, unitAmount: Math.round(Number(item.price) * 100) };
@@ -68,6 +79,7 @@ export default async (req) => {
       name: cleanText(payload.customer?.name, 180),
       email: cleanText(payload.customer?.email, 320),
       phone: cleanText(payload.customer?.phone, 80),
+      reviewOptIn: payload.customer?.reviewOptIn === true,
     };
     if (!customer.name || !validEmail(customer.email)) throw Object.assign(new Error("Customer name and a valid email are required."), { status: 400 });
 
@@ -146,6 +158,10 @@ export default async (req) => {
       await clientCommerceStore().setJSON(`tracking/${trackingHash}.json`, { siteId: site.siteId, transactionId });
     }
     if (inPerson) {
+      if(kind==='order'){
+        record=await createInPersonOrder(site,record);
+        return Response.json({ok:true,paymentRequired:false,transactionId,status:record.status,...(trackingToken?{trackingUrl:`${publicBaseUrl()}/track/${trackingToken}`}:{})},{headers:{'Cache-Control':'no-store'}});
+      }
       record = await syncBookingCalendar(site, record);
       await clientCommerceStore().setJSON(commerceKey(site.siteId, kind === "booking" ? "bookings" : "orders", transactionId), record);
       record = await sendBookingConfirmationEmails(site,record, value => clientCommerceStore().setJSON(commerceKey(site.siteId,"bookings",transactionId),value));
@@ -179,6 +195,11 @@ export default async (req) => {
     items.forEach((item, index) => appendLine(params, index, item));
     if (taxCents > 0 && !site.taxConfig?.pricesIncludeTax) appendLine(params, items.length, { name: "Puerto Rico IVU", description: "", unitAmount: taxCents, quantity: 1 });
 
+    if(kind==='order'){
+      record.stripeAccountId=accountId;
+      const checkout=await createReservedStripeCheckout(site,record,params,{requestUrl:req.url});
+      return Response.json({ok:true,paymentRequired:true,checkoutUrl:checkout.checkoutUrl,transactionId},{headers:{'Cache-Control':'no-store'}});
+    }
     const response = await fetch("https://api.stripe.com/v1/checkout/sessions", {
       method: "POST",
       headers: {
@@ -197,7 +218,7 @@ export default async (req) => {
     await clientCommerceStore().setJSON(commerceKey(site.siteId, "transactions", transactionId), record);
     return Response.json({ ok: true, paymentRequired: true, checkoutUrl: session.url, transactionId }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
-    return Response.json({ ok: false, message: error?.message || "Checkout could not be prepared." }, { status: Number(error?.status || 500), headers: { "Cache-Control": "no-store" } });
+    return errorResponse(error);
   }
 };
 

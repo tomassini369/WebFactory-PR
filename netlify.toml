@@ -92,6 +92,116 @@
   status = 200
 
 [[redirects]]
-  from = "/*"
+  from = "/builder"
   to = "/index.html"
   status = 200
+
+[[redirects]]
+  from = "/builder/"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/templates"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/templates/"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/templates/:slug"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/templates/:slug/"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/sites/:slug"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/sites/:slug/"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/pay/:slug/:token"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/pay/:slug/:token/"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/track/:token"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/track/:token/"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/privacy"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/privacy/"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/terms"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/terms/"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/refund-policy"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/refund-policy/"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/password-recovery"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/password-recovery/"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/preview-review"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/template-parity-preview"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/*"
+  to = "/404.html"
+  status = 404

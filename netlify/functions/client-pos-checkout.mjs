@@ -1,6 +1,5 @@
-import crypto from "node:crypto";
+import { createReservedStripeCheckout } from '../lib/reserved-stripe-checkout.mjs';
 import { assertSameOrigin, errorResponse, requireSiteCapability } from "../lib/client-auth.mjs";
-import { clientCommerceStore, commerceKey } from "../lib/client-store.mjs";
 import { cleanText, publicBaseUrl, validEmail } from "../lib/platform-utils.mjs";
 import { calculateTax } from "../lib/webfactory-v3-domain.mjs";
 import { assertStripeWriteAllowed } from "../lib/stripe-runtime.mjs";
@@ -38,6 +37,9 @@ export default async(req)=>{
     };
     if(!customer.name||!validEmail(customer.email))throw Object.assign(new Error("Customer name and valid email are required for remote card payment."),{status:400});
 
+    const ids=new Set();
+    for(const entry of requested){const quantity=Number(entry.quantity??1);if(!entry.id||ids.has(entry.id)||!Number.isSafeInteger(quantity)||quantity<1||quantity>100)throw Object.assign(new Error('Use unique items and whole quantities.'),{status:400});ids.add(entry.id);}
+    for(const field of ['discountCents','tipCents'])if(payload[field]!==undefined&&(!Number.isSafeInteger(Number(payload[field]))||Number(payload[field])<0))throw Object.assign(new Error('Discount and tip require nonnegative integer cents.'),{status:400});
     const items=requested.map((entry)=>{
       const item=(site.catalog||[]).find((candidate)=>candidate.id===entry.id&&candidate.active!==false);
       if(!item)throw Object.assign(new Error("A selected item is unavailable."),{status:409});
@@ -60,7 +62,7 @@ export default async(req)=>{
       tax+=Number(calculateTax({amountCents:lineAfterDiscount,taxable:item.taxable,taxRateOverride:item.taxRateOverride,config:site.taxConfig||{}}).taxCents||0);
     }
     const total=Math.max(0,discountedBase+(site.taxConfig?.pricesIncludeTax?0:tax)+tip);
-    if(total<=0)throw Object.assign(new Error("Card checkout total must be greater than $0."),{status:400});
+    if(!Number.isSafeInteger(total)||total<=0)throw Object.assign(new Error("Card checkout total must be greater than $0."),{status:400});
     const saleAttemptId=cleanText(payload.saleAttemptId,120).replace(/[^a-zA-Z0-9_-]/g,"");
     if(saleAttemptId.length<8)throw Object.assign(new Error("A valid sale attempt ID is required."),{status:400});
 
@@ -70,8 +72,6 @@ export default async(req)=>{
     if(await verifyMerchantCapability(accountId)!=="active")throw Object.assign(new Error("Finish Stripe verification before accepting card payments."),{status:409});
 
     const transactionId=`txn_pos_${saleAttemptId}`;
-    const existing=await clientCommerceStore().get(commerceKey(site.siteId,"transactions",transactionId),{type:"json"});
-    if(existing?.checkoutUrl&&existing?.source==="pos_remote")return Response.json({ok:true,transactionId,checkoutUrl:existing.checkoutUrl,reused:true},{headers:{"Cache-Control":"no-store"}});
     const params=new URLSearchParams();
     params.set("mode","payment");
     params.set("success_url",`${publicBaseUrl()}/client-admin?pos=success&session_id={CHECKOUT_SESSION_ID}`);
@@ -85,19 +85,15 @@ export default async(req)=>{
     params.set("metadata[source]","pos_remote");
     appendLine(params,0,{name:`WebFactory POS sale · ${items.length} item${items.length===1?"":"s"}`,unitAmount:total,quantity:1});
 
-    const response=await fetch("https://api.stripe.com/v1/checkout/sessions",{method:"POST",headers:{Authorization:`Bearer ${env("STRIPE_SECRET_KEY")}`,"Stripe-Account":accountId,"Stripe-Version":"2026-07-29.dahlia","Content-Type":"application/x-www-form-urlencoded","Idempotency-Key":`pos-checkout-${site.siteId}-${saleAttemptId}`},body:params});
-    const session=await response.json();
-    if(!response.ok)throw new Error(session?.error?.message||"POS checkout could not be created.");
-
     const now=new Date().toISOString();
     const record={
       transactionId,siteId:site.siteId,kind:"order",source:"pos_remote",customer,
       items:items.map(({taxable,taxRateOverride,...item})=>item),
       subtotal,discounts:discount,tax,tip,amountTotal:total,currency:"usd",
       paymentStatus:"pending",status:"payment_pending",createdAt:now,updatedAt:now,
-      createdBy:cleanText(user.email||user.id,320),stripeAccountId:accountId,stripeSessionId:session.id,checkoutUrl:session.url,
+      createdBy:cleanText(user.email||user.id,320),stripeAccountId:accountId,
     };
-    await clientCommerceStore().setJSON(commerceKey(site.siteId,"transactions",transactionId),record);
-    return Response.json({ok:true,transactionId,checkoutUrl:session.url},{headers:{"Cache-Control":"no-store"}});
+    const checkout=await createReservedStripeCheckout(site,record,params,{requestUrl:req.url});
+    return Response.json({ok:true,transactionId,checkoutUrl:checkout.checkoutUrl},{headers:{'Cache-Control':'no-store'}});
   }catch(error){return errorResponse(error);}
 };

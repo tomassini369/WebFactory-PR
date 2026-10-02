@@ -1,3 +1,4 @@
+import { sanitizePolicies } from "../lib/publication-review.mjs";
 import { assertSameOrigin, authorizedSites, errorResponse, requireSiteAccess, siteRoleCapabilities } from "../lib/client-auth.mjs";
 import { normalizeEmail, patchClientSite, publicClientSite } from "../lib/client-store.mjs";
 import { cleanText, validEmail } from "../lib/platform-utils.mjs";
@@ -24,6 +25,7 @@ function sanitizeBusiness(value = {}, current = {}) {
     : [];
   return {
     ...current,
+    policies: sanitizePolicies(value.policies ?? current.policies),
     name: cleanText(value.nameEn ?? value.name ?? current.nameEn ?? current.name, 180),
     nameEn: cleanText(value.nameEn ?? value.name ?? current.nameEn ?? current.name, 180),
     nameEs: cleanText(value.nameEs ?? current.nameEs, 180),
@@ -155,7 +157,7 @@ export default async (req) => {
     const payload = await req.json();
     const section = cleanText(payload.section, 40);
     if (!allowedSections.has(section)) throw Object.assign(new Error("Invalid settings section."), { status: 400 });
-    const { site, membership } = await requireSiteAccess(payload.siteId, ["owner", "manager"]);
+    const { user, site, membership } = await requireSiteAccess(payload.siteId, ["owner", "manager"]);
     if (membership.role === "staff") throw Object.assign(new Error("Staff cannot change business settings."), { status: 403 });
     if (section === "business" && !["active", "trialing", "trial", "complimentary"].includes(site.servicePlan?.subscriptionStatus)) {
       const incoming = payload.value || {};
@@ -209,11 +211,16 @@ export default async (req) => {
     }
     if (section === "reviewSettings") value = {
       enabled: Boolean(payload.value?.enabled),
+      postalAddress: cleanText(payload.value?.postalAddress, 500),
       delayHours: Math.max(0, Math.min(720, Number(payload.value?.delayHours ?? 2))),
       reviewUrl: cleanText(payload.value?.reviewUrl, 1500),
       includeOrders: payload.value?.includeOrders !== false,
       includeBookings: payload.value?.includeBookings !== false,
     };
+
+    if (section === "reviewSettings" && value.enabled && (!value.postalAddress || !/^https:\/\//.test(value.reviewUrl))) {
+      throw Object.assign(new Error("Add a valid postal address and an HTTPS review link before enabling review emails."), { status: 400 });
+    }
 
     if (section === "settings") value = {
       ...site.settings,
@@ -225,7 +232,8 @@ export default async (req) => {
     };
     if (section === "business" && value.email && !validEmail(value.email)) throw Object.assign(new Error("Business email is invalid."), { status: 400 });
 
-    const updated = await patchClientSite(site.siteId, { [section]: value });
+    if(section==='catalog'&&!Number.isInteger(payload.revision))throw Object.assign(new Error('Reload the portal before editing the catalog.'),{status:409});
+    const updated = await patchClientSite(site.siteId, { [section]: value },section==='catalog'?{expectedRevision:payload.revision}:{});
     return Response.json({ ok: true, site: updated, publicSite: publicClientSite(updated) }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
     return errorResponse(error);

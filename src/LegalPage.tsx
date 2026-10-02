@@ -5,7 +5,7 @@ import { AdaptiveLogo, ThemeToggle } from './theme'
 type Language='en'|'es'
 type LegalKind='privacy'|'terms'|'refund'
 
-const updated={en:'Effective: September 21, 2026 · Last updated: September 21, 2026',es:'Vigente: 21 de septiembre de 2026 · Última actualización: 21 de septiembre de 2026'}
+const updated={en:'Effective: September 21, 2026 · Last updated: October 2, 2026',es:'Vigente: 21 de septiembre de 2026 · Última actualización: 2 de octubre de 2026'}
 
 const copy={
   en:{
@@ -21,6 +21,7 @@ const copy={
           'Account and identity information, such as name, email address, authentication identifiers, business name, account role, and portal access information.',
           'Business configuration information, including contact details, website content, bilingual copy, catalog items, prices, staff information, schedules, booking settings, social links, Google Maps links, payment settings, logos, photographs, and uploaded files.',
           'Commerce and booking information, including customer name, email, phone number, selected products or services, quantities, appointment time, assigned employee, payment status, transaction identifiers, refund status, and related operational records.',
+          'Business policy text, publication review records, recurring-billing acceptance records, and optional review email preferences, including unsubscribe records. Review email consent is separate from purchases and transactional notices.',
           'Technical and security information generated when the service is used, such as request metadata, authentication/session information, error records, revision data, security events, and service-readiness information.',
           'Integration information required to operate services such as Stripe and Google Calendar. WebFactory does not ask users to enter complete card numbers, Stripe secret keys, banking passwords, or 2FA codes into WebFactory forms.'
         ]],
@@ -50,6 +51,7 @@ const copy={
           'Information is retained while needed to operate an active account or website and for reasonable periods afterward when necessary for security, dispute handling, fraud prevention, backup recovery, accounting, or legal obligations. No Internet service can guarantee absolute security.'
         ]],
         ['9. Your choices and requests',[
+          'You can decline optional review emails at checkout and unsubscribe through any review email. This does not stop purchase receipts or booking notices.',
           'Portal users can edit much of their business information directly. You may also contact WebFactory to request access, correction, deletion, or other assistance concerning personal information associated with your WebFactory account, subject to security verification and applicable retention obligations.',
           'Businesses are responsible for responding to privacy requests from their own customers when the request concerns the business’s commercial relationship, products, services, or records.'
         ]],
@@ -84,7 +86,7 @@ const copy={
         ]],
         ['4. Billing and renewals',[
           'Subscription checkout and recurring billing are processed by Stripe. A paid subscription renews according to the billing interval selected unless it is canceled before the next renewal.',
-          'Until a self-service cancellation control is available in the portal, account owners may request subscription cancellation by contacting billing@webfactorypr.com. Cancellation does not automatically erase business records or customer transaction history.',
+          'Account owners can stop future subscription renewals in the client portal under WebFactory Plan. For billing assistance, contact billing@webfactorypr.com. Cancellation does not automatically erase business records or customer transaction history.',
           'If a renewal fails, Stripe may retry payment. WebFactory may restrict or unpublish service when a subscription becomes unpaid, canceled, paused, or otherwise no longer entitled to public service.'
         ]],
         ['5. Business sales and merchant responsibility',[
@@ -156,7 +158,7 @@ const copy={
         ]],
         ['3. Canceling future renewals',[
           'Canceling a subscription stops future renewal charges but does not automatically refund the current paid billing period. Unless otherwise required by law or specifically stated by WebFactory, access may continue through the end of the already-paid period.',
-          'Until self-service subscription cancellation is available in the client portal, the account owner can request cancellation at billing@webfactorypr.com. Requests should be sent before the next renewal date.'
+          'The account owner can cancel future renewals in the client portal under WebFactory Plan before the next renewal date. Contact billing@webfactorypr.com if you need assistance.'
         ]],
         ['4. Failed, past-due, or interrupted payments',[
           'A failed payment is not a refund. Stripe may retry a failed renewal. WebFactory may keep service available during a payment-retry state and may later restrict publication if the subscription becomes unpaid, paused, or canceled.'
@@ -191,6 +193,7 @@ const copy={
           'Información de cuenta e identidad, como nombre, email, identificadores de autenticación, nombre del negocio, rol de cuenta e información de acceso al portal.',
           'Información de configuración comercial, incluyendo datos de contacto, contenido del website, contenido bilingüe, catálogo, precios, equipo, horarios, reservaciones, enlaces sociales, Google Maps, configuraciones de pago, logos, fotografías y archivos subidos.',
           'Información de comercio y reservaciones, incluyendo nombre, email y teléfono del comprador, productos o servicios seleccionados, cantidades, fecha y hora de cita, empleado asignado, estado del pago, identificadores de transacción, reembolsos y registros operacionales relacionados.',
+          'Textos de políticas del negocio, registros de revisión antes de publicar, aceptación de renovaciones y preferencias opcionales de emails de reseñas, incluyendo bajas. La aceptación de estos emails se separa de las compras y de los avisos transaccionales.',
           'Información técnica y de seguridad generada durante el uso del servicio, como metadatos de solicitudes, información de sesión/autenticación, errores, revisiones, eventos de seguridad y estado de las integraciones.',
           'Información de integración necesaria para operar servicios como Stripe y Google Calendar. WebFactory no solicita que introduzcas números completos de tarjeta, llaves secretas de Stripe, contraseñas bancarias o códigos 2FA en los formularios de WebFactory.'
         ]],
@@ -220,6 +223,7 @@ const copy={
           'La información se conserva mientras sea necesaria para operar una cuenta o website activo y durante periodos razonables posteriores cuando sea necesario para seguridad, disputas, prevención de fraude, recuperación, contabilidad u obligaciones legales. Ningún servicio de Internet puede garantizar seguridad absoluta.'
         ]],
         ['9. Tus opciones y solicitudes',[
+          'Puedes rechazar emails opcionales de reseñas al comprar y darte de baja mediante cualquier email de reseña. Esto no detiene recibos de compra ni avisos de reservaciones.',
           'Los usuarios del portal pueden editar gran parte de la información de su negocio directamente. También puedes contactar a WebFactory para solicitar acceso, corrección, eliminación u otra asistencia relacionada con información personal de tu cuenta, sujeto a verificación de seguridad y obligaciones aplicables de retención.',
           'Los negocios son responsables de responder solicitudes de privacidad de sus propios clientes cuando la solicitud se relaciona con la relación comercial, productos, servicios o registros del negocio.'
         ]],
@@ -254,7 +258,7 @@ const copy={
         ]],
         ['4. Facturación y renovaciones',[
           'El checkout de suscripción y la facturación recurrente se procesan mediante Stripe. La suscripción pagada se renueva según el intervalo seleccionado a menos que se cancele antes de la próxima renovación.',
-          'Mientras no exista una opción de cancelación automática dentro del portal, el titular puede solicitar cancelación escribiendo a billing@webfactorypr.com. Cancelar no elimina automáticamente registros comerciales ni historial de transacciones.',
+          'El titular puede detener futuras renovaciones desde el portal del cliente, en Plan WebFactory. Para asistencia de facturación, escribe a billing@webfactorypr.com. Cancelar no elimina automáticamente registros comerciales ni historial de transacciones.',
           'Si una renovación falla, Stripe puede reintentar el cobro. WebFactory puede restringir o despublicar el servicio cuando la suscripción quede impaga, cancelada, pausada o sin derecho de publicación.'
         ]],
         ['5. Ventas del negocio y responsabilidad comercial',[
@@ -326,7 +330,7 @@ const copy={
         ]],
         ['3. Cancelar futuras renovaciones',[
           'Cancelar una suscripción detiene renovaciones futuras pero no reembolsa automáticamente el periodo ya pagado. Salvo que la ley exija otra cosa o WebFactory lo indique específicamente, el acceso puede continuar hasta finalizar el periodo pagado.',
-          'Mientras no exista cancelación automática en el portal, el titular puede solicitar cancelación en billing@webfactorypr.com. La solicitud debe enviarse antes de la próxima fecha de renovación.'
+          'El titular puede cancelar futuras renovaciones desde Plan WebFactory en el portal, antes de la próxima fecha de renovación. Para asistencia, escribe a billing@webfactorypr.com.'
         ]],
         ['4. Pagos fallidos o vencidos',[
           'Un pago fallido no constituye un reembolso. Stripe puede reintentar una renovación fallida. WebFactory puede mantener el servicio durante un estado de reintento y posteriormente restringir la publicación si la suscripción queda impaga, pausada o cancelada.'

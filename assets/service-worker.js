@@ -1,4 +1,4 @@
-const CACHE_NAME = "webfactory-pr-v7";
+const CACHE_NAME = "webfactory-pr-v8";
 
 const ADMIN_SHELLS = {
   "/webfactory-admin": "./webfactory-admin/index.html",

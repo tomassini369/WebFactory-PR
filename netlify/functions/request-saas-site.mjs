@@ -1,3 +1,4 @@
+import { publicationReview } from "../lib/publication-review.mjs";
 import crypto from "node:crypto";
 import { admin, requestPasswordRecovery } from "@netlify/identity";
 import { assertSameOrigin, errorResponse } from "../lib/client-auth.mjs";
@@ -99,6 +100,7 @@ export default async (req) => {
     } catch (error) {
       throw Object.assign(error, { status: 400 });
     }
+    const review = publicationReview(payload, order);
     const ownerEmail = normalizeEmail(order.client.email);
     const complimentaryInviteToken = cleanText(payload.complimentaryInviteToken, 200);
     const trialInviteToken = cleanText(payload.trialInviteToken, 200);
@@ -172,6 +174,7 @@ export default async (req) => {
       }));
       site = await saveClientSite({
         siteId,
+        publicationReview: review,
         sourceDraftId: order.draftId,
         slug: requestedSlug,
         status: complimentaryInvite ? "active" : "setup_pending",
@@ -245,7 +248,7 @@ export default async (req) => {
 export const config = {
   rateLimit: {
     windowLimit: 5,
-    windowSize: 3600,
+    windowSize: 180,
     aggregateBy: ["ip"],
   },
 };

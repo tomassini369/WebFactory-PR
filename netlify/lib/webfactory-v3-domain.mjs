@@ -80,6 +80,7 @@ export function createCustomerRecord({ siteId, customer = {}, existing = null, n
     totalSpent: moneyCents(existing?.totalSpent ?? customer.totalSpent),
     orderCount: Math.max(0, Number(existing?.orderCount ?? customer.orderCount ?? 0)),
     bookingCount: Math.max(0, Number(existing?.bookingCount ?? customer.bookingCount ?? 0)),
+    appliedTransactions: existing?.appliedTransactions || {},
     lastActivityAt: customer.lastActivityAt || existing?.lastActivityAt || now,
     createdAt: existing?.createdAt || customer.createdAt || now,
     updatedAt: now,

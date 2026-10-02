@@ -1,3 +1,4 @@
+import { reserveInventory } from './inventory-reservations.mjs';
 import crypto from "node:crypto";
 import { clientOAuthStore, clientCommerceStore, commerceKey, patchClientSite } from "./client-store.mjs";
 import { assertAthAmount, athError, athReady, encryptAthCredentials, decryptAthCredentials, validateAthCredentials } from "./ath-domain.mjs";
@@ -33,9 +34,15 @@ export async function createAthCheckout(site, record, { lang = "en", returnUrl =
     metadata1: crypto.randomUUID(), metadata2: crypto.createHash("sha256").update(site.siteId).digest("hex").slice(0, 40),
     lang: lang === "es" ? "es" : "en", returnUrl, checkoutExpiresAt: new Date(Date.now() + 30 * 60000).toISOString(), expiresAt: new Date(Date.now() + 7 * 86400000).toISOString(), createdAt: new Date().toISOString() };
   const checkoutUrl = new URL(`/.netlify/functions/ath-checkout?token=${token}`, requestUrl).href;
+  record={...record,paymentProvider:'ath_movil',paymentMethod:'ath_movil',...(record.kind==='order'?{inventoryProtocol:1,inventoryReservationRequired:true}:{})};
+  const pendingKey=commerceKey(site.siteId,'transactions',record.transactionId);
+  const pending=await clientCommerceStore().setJSON(pendingKey,record,{onlyIfNew:true});
+  if(!pending.modified)throw athError('This ATH checkout already exists. Reconcile it before creating another.',409);
+  if(record.kind==='order')await reserveInventory(site.siteId,record.transactionId,record.items,undefined,'ath_movil');
   await clientOAuthStore().setJSON(`ath/sessions/${site.siteId}/${hash}.json`, session);
   await clientOAuthStore().setJSON(`ath/session-index/${hash}.json`, { siteId: site.siteId });
   await clientCommerceStore().setJSON(commerceKey(site.siteId, "transactions", record.transactionId), { ...record, paymentProvider: "ath_movil", paymentMethod: "ath_movil", athSessionHash: hash, checkoutUrl });
+  if(record.kind==='order')await clientCommerceStore().setJSON(commerceKey(site.siteId,'orders',record.transactionId),{...record,athSessionHash:hash,checkoutUrl});
   return { ok: true, paymentRequired: true, checkoutUrl, transactionId: record.transactionId, provider: "ath_movil" };
 }
 
