@@ -4,6 +4,7 @@ import ClientAdminPage from '../src/ClientAdminPage'
 import '../src/styles.css'
 import '../src/v3-system.css'
 import '../src/theme.css'
+import '../src/liquid-glass.css'
 import './design-review.css'
 const previewStyle=document.createElement('style');previewStyle.textContent='.wf-theme-toggle.floating{display:none}';document.head.append(previewStyle);
 const today=new Date();const date=(offset:number)=>new Date(today.getTime()+offset*86400000).toISOString();
