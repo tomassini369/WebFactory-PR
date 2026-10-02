@@ -2,14 +2,20 @@ import { assertSameOrigin } from "./client-auth.mjs";
 import { authHeaders, authJson, readAuthPayload } from "./auth-gateway.mjs";
 import { publicIdentityUser, upgradeIdentityCookies, withHttpOnlyIdentityCookies } from "./http-only-auth.mjs";
 
-export function createPortalSession(identity) {
+export function createPortalSession(identity, security) {
   return async (req, context) => {
     try {
-      if (req.method === "GET") return authJson({ ok: true, user: publicIdentityUser(await identity.getUser()) });
+      if (req.method === "GET") {
+        const current = await identity.getUser();
+        const user = publicIdentityUser(current);
+        if (user && security) user.mfa = await security.status(current, context);
+        return authJson({ ok: true, user });
+      }
       if (req.method !== "POST") return new Response(null, { status: 405, headers: { ...authHeaders, Allow: "GET, POST" } });
       assertSameOrigin(req);
       const payload = await readAuthPayload(req);
       if (payload.action === "logout") {
+        if (security) await security.revoke(await identity.getUser(), context);
         await identity.logout();
         return authJson({ ok: true });
       }

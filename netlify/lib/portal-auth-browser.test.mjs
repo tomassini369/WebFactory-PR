@@ -51,14 +51,14 @@ test("browser session reads coalesce, renew before reading, and never access tok
 });
 
 test("recovery callback survives repeated React effects and remains only in memory", async t => {
-  const b = await browserAuth(t,[{body:{ok:true,user:{id:"id",email:"a@example.com"}}}],"#recovery_token=email-link-secret");
+  const b = await browserAuth(t,[{body:{ok:true,user:{id:"id",email:"a@example.com"}}},{body:{ok:true,user:{id:"id",email:"a@example.com",mfa:{required:true,verified:false}}}}],"#recovery_token=email-link-secret");
   assert.deepEqual(await b.api.handleAuthCallback(),await b.api.handleAuthCallback());
   assert.deepEqual(b.historyCalls,["/password-recovery"]);
   await b.api.updateUser({password:"a long password for testing"});
   assert.deepEqual(b.requests[0].payload,{action:"recovery",token:"email-link-secret",password:"a long password for testing"});
   assert.equal(await b.api.handleAuthCallback(),null);
   await assert.rejects(b.api.updateUser({password:"another long password"}));
-  assert.equal(b.requests.length,1);
+  assert.equal(b.requests.length,2);
 });
 
 test("failed logout preserves UI auth; successful logout broadcasts no private data", async t => {

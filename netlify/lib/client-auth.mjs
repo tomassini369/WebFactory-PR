@@ -1,5 +1,6 @@
 import { getUser } from "@netlify/identity";
 import { getClientSite, normalizeEmail, sitesForEmail } from "./client-store.mjs";
+import { assertSecondFactor } from "./mfa-security.mjs";
 
 export function assertSameOrigin(req) {
   if (["GET", "HEAD", "OPTIONS"].includes(req.method)) return;
@@ -19,6 +20,7 @@ export async function requireClientUser() {
     error.status = 401;
     throw error;
   }
+  await assertSecondFactor(user);
   return user;
 }
 

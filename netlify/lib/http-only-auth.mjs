@@ -1,4 +1,5 @@
 const identityCookieNames = new Set(["nf_jwt", "nf_refresh"]);
+const protectedCookieNames = new Set([...identityCookieNames, "__Host-wf-session"]);
 
 function secureOptions(options) {
   const { domain: _domain, ...rest } = options;
@@ -14,7 +15,7 @@ export async function withHttpOnlyIdentityCookies(context, operation) {
   const original = cookies.set;
   const pending = new Map();
   const protectedSet = options => {
-    if (identityCookieNames.has(options.name)) pending.set(options.name, secureOptions(options));
+    if (protectedCookieNames.has(options.name)) pending.set(options.name, secureOptions(options));
     else original.call(cookies, options);
   };
   cookies.set = protectedSet;

@@ -1,6 +1,7 @@
 import { assertSameOrigin } from "./client-auth.mjs";
 import { authHeaders, authJson, readAuthPayload } from "./auth-gateway.mjs";
 import { publicIdentityUser, withHttpOnlyIdentityCookies } from "./http-only-auth.mjs";
+import { issuePrimarySession } from "./mfa-security.mjs";
 
 async function identityRequest(fetcher, url, options) {
   const response = await fetcher(url, { ...options, signal: AbortSignal.timeout(5000) });
@@ -11,7 +12,7 @@ async function identityRequest(fetcher, url, options) {
 // SDK login remains the session issuer. These account operations use Identity's
 // verification API because the SDK account helpers retain a shared browser-style
 // current user, unsuitable for concurrent server requests.
-export function createCompletePortalAccess(identity, fetcher = fetch) {
+export function createCompletePortalAccess(identity, fetcher = fetch, establishSession = issuePrimarySession) {
   return async (req, context) => {
     if (req.method !== "POST") return new Response(null, { status: 405, headers: { ...authHeaders, Allow: "POST" } });
     try {
@@ -35,7 +36,11 @@ export function createCompletePortalAccess(identity, fetcher = fetch) {
           method: "PUT", headers: { ...authorization, "Content-Type": "application/json" }, body: JSON.stringify({ password }),
         });
       }
-      const user = await withHttpOnlyIdentityCookies(context, () => identity.login(account.email, password));
+      const user = await withHttpOnlyIdentityCookies(context, async () => {
+        const current = await identity.login(account.email, password);
+        await establishSession(current, context);
+        return current;
+      });
       return authJson({ ok: true, user: publicIdentityUser(user) });
     } catch (error) {
       const status = [403,413,415,429].includes(error?.status) ? error.status : error?.status >= 400 && error.status < 500 ? 400 : 503;

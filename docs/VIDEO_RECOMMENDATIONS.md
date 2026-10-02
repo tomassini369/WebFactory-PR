@@ -118,3 +118,13 @@ Referencias: [Identity en Functions](https://docs.netlify.com/manage/security/se
 - **Antes de producción:** probar una cuenta controlada con login válido/erróneo, inspección de flags HttpOnly en navegador, expiración/renovación, invitación real, recuperación real, dos pestañas, logout y sesión instalada como PWA. Las pruebas sin cuenta real no sustituyen esta aceptación.
 
 Fuente del comportamiento de logout y verificación: [API del proveedor de Netlify Identity](https://github.com/netlify/gotrue).
+
+### Fase 4 — Segundo factor con passkeys (vista previa)
+
+- Identity valida la contraseña; una sesión privada adicional HttpOnly de ocho horas se crea únicamente después de ese login. WebAuthn exige verificación de usuario y valida firma, challenge de un uso, origen y RP ID en el servidor.
+- Todos los endpoints que usan `requireClientUser` exigen segundo factor cuando la cuenta tiene passkeys o la política lo requiere. La vista previa exige inscripción; producción mantiene inscripción opcional hasta activar `WEBFACTORY_REQUIRE_MFA=true` después de la aceptación real.
+- Ambos portales muestran el paso de seguridad y permiten administrar hasta cinco passkeys. Diez códigos aleatorios de recuperación se muestran una vez; solo se almacenan hashes y cada código se consume una vez bajo bloqueo. Regenerar códigos o eliminar dispositivos invalida las verificaciones de otras sesiones.
+- Registrar el primer dispositivo exige contraseña verificada en los últimos cinco minutos. Cambiar credenciales o códigos requiere segundo factor reciente. La última passkey no puede eliminarse; primero hay que registrar su reemplazo.
+- Los registros privados se eliminan después de borrar la cuenta de Identity. La eliminación de Identity y Blobs no constituye una transacción: un fallo posterior requiere limpieza administrativa. Sigue pendiente la limpieza programada de sesiones y desafíos expirados; su caducidad se exige al leerlos.
+- Las credenciales quedan vinculadas al origen de inscripción. La vista previa usa un store por deploy y no transporta credenciales a producción ni al próximo deploy. Antes de activar la política en producción hay que fijar el dominio canónico y completar aceptación en dispositivos reales, incluido código de recuperación y reemplazo de passkey. Los tests criptográficos no sustituyen esa aceptación.
+- No se habilitó MFA nativo de un proveedor nuevo ni se publicó a producción. No se promete revocación inmediata de todos los JWT de Identity para cuentas sin inscripción cuando la política de producción está desactivada.

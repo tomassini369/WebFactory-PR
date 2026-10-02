@@ -1,5 +1,5 @@
-import type { User } from '@netlify/identity'
-export type { User } from '@netlify/identity'
+import type { User as IdentityUser } from '@netlify/identity'
+export type User=IdentityUser & {mfa?:{required:boolean;enrolled:boolean;verified:boolean;needsLogin:boolean;credentials?:Array<{id:string;label:string;createdAt:string}>;recoveryCodesRemaining?:number}}
 
 type AuthResult={ok:boolean;user?:User|null}
 const listeners=new Set<(event:string,user:User|null)=>void>()
@@ -82,7 +82,8 @@ export async function handleAuthCallback():Promise<{type:'invite'|'recovery';tok
 }
 
 async function completeAccess(action:'invite'|'recovery',token:string,password:string):Promise<User> {
-  const result=await authRequest('portal-complete-access',{action,token,password})
+  await authRequest('portal-complete-access',{action,token,password})
+  const result=await authRequest('portal-session')
   if(!result.user)throw new Error('Unable to complete access.')
   authRevision++
   clearLegacySession()
@@ -136,3 +137,5 @@ export function onAuthChange(callback:(event:string,user:User|null)=>void):()=>v
     }
   }
 }
+
+export async function refreshPortalUser(){const user=await getUser();broadcast('login',user);return user}

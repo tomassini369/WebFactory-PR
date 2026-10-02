@@ -1,3 +1,4 @@
+import { MfaSettings } from './MfaAccess'
 import './business-policies.css'
 import { BookingCalendar } from './BookingCalendar'
 import { AthConnection } from './AthConnection'
@@ -139,7 +140,7 @@ export default function ClientAdminPage(){
       {tab==='marketing'&&<><MarketingPanel site={site} lang={lang}/><ReviewAutomationPanel site={site} lang={lang} onSave={save} busy={busy}/></>}
       {tab==='analytics'&&<AnalyticsPanel commerce={commerce} lang={lang} siteId={site.siteId} stripeConnected={Boolean(site.paymentRules?.methods?.stripe&&site.paymentRules?.stripeConnectedAccountId)}/>}
       {tab==='integrations'&&<><CalendarPanel site={site} setSite={setSite} lang={lang} calendars={calendars} configured={googleConfigured} onSave={()=>save('employees',site.employees)} busy={busy}/><IntegrationManagementPanel site={site} setSite={setSite} lang={lang} membership={membership}/></>}
-      {tab==='settings'&&<><SettingsPanel site={site} lang={lang} onSave={save} busy={busy}/><AccountLifecyclePanel site={site} lang={lang} membership={membership} onPageDeleted={async()=>{setSite(null);setSites([]);await loadSites()}} onAccountDeleted={async()=>{await logout();setUser(null);setSite(null);setSites([])}}/></>}
+      {tab==='settings'&&<><MfaSettings lang={lang}/><SettingsPanel site={site} lang={lang} onSave={save} busy={busy}/><AccountLifecyclePanel site={site} lang={lang} membership={membership} onPageDeleted={async()=>{setSite(null);setSites([]);await loadSites()}} onAccountDeleted={async()=>{await logout();setUser(null);setSite(null);setSites([])}}/></>}
       {tab==='billing'&&<BillingPanel site={site} billing={billing} lang={lang} busy={busy} setBusy={setBusy} setError={setError}/>}
     </section>
   </main></PortalPanelProvider>

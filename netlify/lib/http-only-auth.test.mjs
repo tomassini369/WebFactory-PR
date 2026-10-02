@@ -119,7 +119,7 @@ test("recovery and invite verify on the server, require long passwords and expos
       context.cookies.set({name:"nf_refresh",value:"refresh-secret"});
       return {id:"id",email,roles:["owner"],access_token:"must-not-leak"};
     } };
-    const handler = createCompletePortalAccess(identity,fetcher);
+    const handler = createCompletePortalAccess(identity,fetcher,async()=>{});
     assert.equal((await handler(req({action,token:"valid-token",password:"short"}),context)).status,400);
     assert.equal(calls.length,0);
     const response = await handler(req({action,token:"valid-token",password:"a long password for testing"}),context);

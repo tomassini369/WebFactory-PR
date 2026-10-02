@@ -1,6 +1,7 @@
 import { Suspense, lazy, useEffect, useState, type ReactNode } from 'react'
 import { AdaptiveLogo, ThemeToggle } from './theme'
 import HomePage from './HomePage'
+const MfaGate = lazy(() => import('./MfaAccess').then(module => ({default:module.MfaGate})))
 import { useFeedbackExperience } from './feedback/FeedbackExperience'
 
 const TemplatePreview = lazy(() => import('./TemplatePreview'))
@@ -67,8 +68,8 @@ function App(){
   if (privacyRoute) return <RouteView><LegalPage kind="privacy" /></RouteView>
   if (termsRoute) return <RouteView><LegalPage kind="terms" /></RouteView>
   if (refundRoute) return <RouteView><LegalPage kind="refund" /></RouteView>
-  if (webFactoryAdminRoute || identityInviteRoute) return <RouteView><WebFactoryAdminPage /></RouteView>
-  if (clientAdminRoute) return <RouteView><ClientAdminPage /></RouteView>
+  if (webFactoryAdminRoute || identityInviteRoute) return <RouteView><MfaGate><WebFactoryAdminPage /></MfaGate></RouteView>
+  if (clientAdminRoute) return <RouteView><MfaGate><ClientAdminPage /></MfaGate></RouteView>
   if (clientSiteMatch) return <RouteView><ClientStorefront slug={decodeURIComponent(clientSiteMatch[1])} /></RouteView>
   if (paymentLinkMatch) return <RouteView><PaymentLinkPage slug={decodeURIComponent(paymentLinkMatch[1])} token={decodeURIComponent(paymentLinkMatch[2])} /></RouteView>
   if (trackingMatch) return <RouteView><OrderTrackingPage token={decodeURIComponent(trackingMatch[1])} /></RouteView>
