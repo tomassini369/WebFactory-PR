@@ -20,5 +20,6 @@ export function BusinessPolicies({policies,lang,businessName}:{policies?:Busines
 }
 
 export function CustomerDataNotice({lang,businessName}:{lang:'es'|'en';businessName:string}) {
-  return <p className="customer-data-notice">{lang==='es'?`Tus datos se envían a ${businessName} para atender esta solicitud y gestionar el servicio o la compra. WebFactory procesa la información para operar la plataforma.`:`Your details are sent to ${businessName} to handle this request and manage the service or purchase. WebFactory processes the information to operate the platform.`}</p>
+  const name=businessName.trim()||(lang==='es'?'el negocio':'the business')
+  return <p className="customer-data-notice">{lang==='es'?`Tus datos se envían a ${name} para atender esta solicitud y gestionar el servicio o la compra. WebFactory procesa la información para operar la plataforma.`:`Your details are sent to ${name} to handle this request and manage the service or purchase. WebFactory processes the information to operate the platform.`}</p>
 }
