@@ -11,6 +11,7 @@ export default defineConfig({
   },
   build: {
     target: 'es2022',
-    sourcemap: true
+    // Do not publish original client sources in downloadable .map files.
+    sourcemap: false
   }
 })
