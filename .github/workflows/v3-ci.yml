@@ -31,6 +31,8 @@ jobs:
         run: npx playwright install --with-deps --only-shell chromium
       - name: Check panel keyboard navigation
         run: node scripts/browser-accessibility-smoke.mjs
+      - name: Check email previews on mobile and desktop
+        run: node scripts/browser-email-smoke.mjs
 
   deploy-preview-smoke:
     if: github.event_name == 'pull_request'

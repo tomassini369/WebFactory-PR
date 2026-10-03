@@ -3,6 +3,7 @@ import { assertSameOrigin, errorResponse, requirePlatformAdmin } from "../lib/cl
 import { clientSiteStore, emailHash, normalizeEmail } from "../lib/client-store.mjs";
 import { cleanText, validEmail } from "../lib/platform-utils.mjs";
 import { sendEmail } from "../lib/email.mjs";
+import { renderInvitationEmail } from "../lib/platform-email-template.mjs";
 
 const hashToken=(token)=>crypto.createHash("sha256").update(String(token||"")).digest("hex");
 const inviteKey=(token)=>`complimentary-invites/${hashToken(token)}.json`;
@@ -37,9 +38,7 @@ export default async(req)=>{
     await sendEmail({
       category:"team",
       to:email,
-      subject:"Your complimentary WebFactory access",
-      text:`You have been invited to create a WebFactory website with complimentary access. Open this private Builder link to create your business: ${builderUrl}\n\nThis invitation expires in 30 days.`,
-      html:`<p>You have been invited to create a WebFactory website with complimentary access.</p><p><a href="${builderUrl}">Open your private WebFactory Builder</a></p><p>This invitation expires in 30 days.</p>`,
+      ...renderInvitationEmail({kind:"complimentary",builderUrl,language:payload.language === "es" || payload.lang === "es" ? "es" : "en"}),
     });
 
     return Response.json({ok:true,status:"pending",email,invitationSent:true,expiresAt:record.expiresAt},{headers:{"Cache-Control":"no-store"}});

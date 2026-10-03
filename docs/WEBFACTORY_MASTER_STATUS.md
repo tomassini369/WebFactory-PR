@@ -1,6 +1,6 @@
 # WebFactory PR: registro maestro
 
-Actualizado: 2026-10-03. Base de producción: PR #57, commit `8e4cb36`.
+Actualizado: 2026-10-03. Base de producción: PR #58, commit `c2e91e519a6477afc8b54900168b738f9482cff9`, deploy `6ac07055e4bf16ec1a470b08`.
 Este documento es la fuente de continuidad. Los documentos de fases anteriores conservan evidencia histórica; no sustituyen este estado.
 
 ## Lote autónomo actual
@@ -39,6 +39,12 @@ Preview: https://deploy-preview-58--webfactorypr.netlify.app/
 | WF16 | Datos legales y política de retención | Requiere identidad legal, contacto, plazos y aprobación del propietario. No inventar estos datos. |
 | WF17 | Continuidad y runbooks | Registro y runbook creados en este lote. Mantenerlos en cada PR con SHA, validación y bloqueos. |
 | WF18 | Aplicación nativa y Tap to Pay | Diferido; no bloquea web. |
+
+## Avances posteriores a publicación PR58
+
+PR58 publicado 2/oct 23:03 PR, 295 pruebas/CI aprobados. Nova Fade Studio: recuperación asistida ejecutada por el usuario; auditoría `91081824-1e38-437a-9c92-c1a527e6b351` reset/accepted y mensaje enviado verificados. Usuario confirmó nuevo Authenticator y login Safari. No repetir el escenario como pendiente; WF01 sigue abierto por códigos de un uso, rechazo de códigos antiguos/sesiones previas, expiración, dos pestañas, contraseña e invitaciones/PWA. Recepción inbox no comprobada por el agente. Las notas anteriores de este documento describen la etapa previa a la publicación y no la contradicen.
+
+Lote de marca en correos solicitado el 3/oct: diseño común, identidad WebFactory/tenant, plantillas ES/EN y galería ficticia sin envíos. Véase `EMAIL_DESIGN.md`. Implementación en rama de revisión; no publicada por esa solicitud. Proveedor, MFA, facturación y OAuth conservados. WF03/WF14 avanzan, pero aceptación real en distintos clientes de correo/entregabilidad sigue pendiente. El video para Google Calendar sigue prioritario; guion preparado y permisos de Google Cloud por cotejar. IA y nativo/Tap to Pay separados.
 
 ## IA: carril separado
 

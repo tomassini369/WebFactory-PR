@@ -9,6 +9,7 @@ assets/demo-images/
 assets/template-images/
 preview-dist/
 home-preview-dist/
+.email-preview/
 
 # Reconstructed byte-identical media; source chunks are tracked.
 assets/media/webfactory-hero-original.mov
