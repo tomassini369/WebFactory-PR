@@ -1,14 +1,16 @@
 import crypto from 'node:crypto';
+import {renderTextEmail} from './email-design.mjs';
 import { withBookingLock } from './booking-lock.mjs';
 import { reviewEmailEligible } from './marketing-preferences.mjs';
 export const REVIEW_HEALTH_KEY='maintenance/review-processing.json';
 const fail=(message,status=503)=>Object.assign(new Error(message),{status});
 const rotate=(keys,cursor)=>{const sorted=[...new Set(keys)].sort();return [...sorted.filter(key=>key>cursor),...sorted.filter(key=>key<=cursor)];};
 async function keys(store,prefix,clock,deadline,max=50000){const result=[];for await(const page of store.list({prefix,paginate:true})){if(clock()>deadline)throw fail('Review listing time limit reached.');for(const row of page.blobs||[]){result.push(row.key);if(result.length>max)throw fail('Review pointer list exceeds the batch scanning limit.');}}return result;}
-function message(site,request,url){
+export function renderReviewEmail(site,request,url){
   const es=site.settings?.locale==='es',name=(es?(site.business?.nameEs||site.business?.name||site.business?.nameEn):(site.business?.nameEn||site.business?.name||site.business?.nameEs))||(es?'el negocio':'the business');
   const greeting=es?`Hola ${request.customer.name||'cliente'},`:`Hello ${request.customer.name||'there'},`;
-  return {category:'team',fromName:name,to:request.customer.email,subject:es?`¿Cómo fue tu experiencia con ${name}?`:`How was your experience with ${name}?`,text:[greeting,'',es?`Gracias por elegir ${name}.`:`Thank you for choosing ${name}.`,es?'Si tienes un momento, agradeceríamos mucho tu reseña:':'If you have a moment, we would appreciate your review:',request.reviewUrl,'',site.reviewSettings.postalAddress,`${es?'Cancelar emails de reseñas':'Unsubscribe from review emails'}: ${url}`].join('\n'),headers:{'List-Unsubscribe':`<${url}>`,'List-Unsubscribe-Post':'List-Unsubscribe=One-Click','Message-ID':`<review-${crypto.createHash('sha256').update(`${site.siteId}:${request.reviewRequestId}`).digest('hex')}@webfactorypr.com>`},timeoutMs:6000};
+  const mail={category:'team',fromName:name,to:request.customer.email,subject:es?`¿Cómo fue tu experiencia con ${name}?`:`How was your experience with ${name}?`,text:[greeting,'',es?`Gracias por elegir ${name}.`:`Thank you for choosing ${name}.`,es?'Si tienes un momento, agradeceríamos mucho tu reseña:':'If you have a moment, we would appreciate your review:',request.reviewUrl,'',site.reviewSettings.postalAddress,`${es?'Cancelar emails de reseñas':'Unsubscribe from review emails'}: ${url}`].join('\n'),headers:{'List-Unsubscribe':`<${url}>`,'List-Unsubscribe-Post':'List-Unsubscribe=One-Click','Message-ID':`<review-${crypto.createHash('sha256').update(`${site.siteId}:${request.reviewRequestId}`).digest('hex')}@webfactorypr.com>`},timeoutMs:6000};
+  return {...mail,...renderTextEmail({site,language:es?'es':'en',subject:mail.subject,text:mail.text,actions:[{url:request.reviewUrl,label:es?'Escribir una reseña':'Write a review'},{url,label:es?'Cancelar emails de reseñas':'Unsubscribe from review emails',primary:false}]})};
 }
 export function createReviewProcessor({sites,commerce,events,getSite,send,unsubscribe,configured=()=>true,clock=Date.now}){
   return async({budgetMs=18000,maxSites=10,maxRequests=20,perSite=5}={})=>withBookingLock(events,'locks/review-processing-batch',async()=>{
@@ -61,7 +63,7 @@ export function createReviewProcessor({sites,commerce,events,getSite,send,unsubs
               const claimed=await commerce.setJSON(key,sending,{onlyIfMatch:record.etag});if(!claimed.modified)return;
               summary.attempted++;
               try{
-                const result=await send(message(latestSite,current,url));
+                const result=await send(renderReviewEmail(latestSite,current,url));
                 if(!result?.accepted?.some(email=>String(email).trim().toLowerCase()===current.customer.email.trim().toLowerCase()))throw fail('Delivery not acknowledged.');
                 await commerce.setJSON(key,{...sending,status:'sent',sentAt:new Date(clock()).toISOString(),deliveryIssue:null,updatedAt:new Date(clock()).toISOString()});summary.sent++;
               }catch{

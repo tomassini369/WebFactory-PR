@@ -3,6 +3,7 @@ import { siteEntitlement } from "../lib/subscription-billing.mjs";
 import { emailConfigured, sendEmail } from "../lib/email.mjs";
 import { getClientSiteBySlug } from "../lib/client-store.mjs";
 import { cleanText, validEmail } from "../lib/platform-utils.mjs";
+import { renderContactEmail } from "../lib/contact-email-template.mjs";
 
 export default async (req) => {
   if (req.method !== "POST") {
@@ -32,18 +33,10 @@ export default async (req) => {
 
     await sendEmail({
       category:"info",
-      fromName:"WebFactory Contact",
+      fromName:site.business?.name || "WebFactory Contact",
       to:site.business.email,
       replyTo:email,
-      subject:`Website contact — ${site.business.name || slug}`,
-      text:[
-        `Business: ${site.business.name || slug}`,
-        `Name: ${name}`,
-        `Email: ${email}`,
-        `Phone: ${phone}`,
-        "",
-        message,
-      ].join("\n"),
+      ...renderContactEmail(site,{name,email,phone,message,language:payload.language === "es" ? "es" : payload.language === "en" ? "en" : undefined}),
       headers:{"X-WebFactory-Site-ID":site.siteId},
     });
 

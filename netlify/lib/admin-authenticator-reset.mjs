@@ -1,3 +1,4 @@
+import {renderSecurityResetEmail} from "./platform-email-template.mjs";
 import crypto from 'node:crypto';
 import {assertRecentSecondFactor,userPrefix} from './mfa-security.mjs';
 import {isPlatformAdmin} from './client-auth.mjs';
@@ -32,7 +33,7 @@ export async function resetClientAuthenticator({actor,target,siteId,context,stor
   // Persist the notification claim before SMTP. An uncertain send is never retried.
   await store.setJSON(auditKey,{...audit,status:'reset',notification:'sending'});
   let notification='review_required';
-  try{const sent=await notify({category:'support',to:target.email,subject:'WebFactory PR: Authenticator restablecido / Authenticator reset',text:`Tu Authenticator de WebFactory PR se restableció tras una solicitud de recuperación verificada. Inicia sesión nuevamente y configura un nuevo Authenticator, o usa una passkey existente. Los códigos de recuperación anteriores ya no son válidos. Si no solicitaste este cambio, contacta support@webfactorypr.com inmediatamente.\n\nYour WebFactory PR Authenticator was reset after a verified recovery request. Sign in again and configure a new Authenticator, or use an existing passkey. Previous recovery codes are invalid. If you did not request this, contact support@webfactorypr.com immediately.\n\nReferencia / Reference: ${input.requestId}\nFecha / Date: ${at}`,timeoutMs:6000});if(sent?.accepted?.some(email=>String(email).toLowerCase()===target.email.toLowerCase()))notification='accepted';}catch{}
+  try{const sent=await notify({category:'support',to:target.email,...renderSecurityResetEmail({requestId:input.requestId,at}),timeoutMs:6000});if(sent?.accepted?.some(email=>String(email).toLowerCase()===target.email.toLowerCase()))notification='accepted';}catch{}
   await store.setJSON(auditKey,{...audit,status:'reset',notification,completedAt:new Date(clock()).toISOString()});
   return {ok:true,auditId:input.requestId,notification,passkeysPreserved:next.credentials?.length||0};
  });

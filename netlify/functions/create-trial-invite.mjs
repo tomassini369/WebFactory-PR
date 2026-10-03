@@ -3,6 +3,7 @@ import { assertSameOrigin, errorResponse, requirePlatformAdmin } from "../lib/cl
 import { clientSiteStore, emailHash, normalizeEmail } from "../lib/client-store.mjs";
 import { validEmail } from "../lib/platform-utils.mjs";
 import { sendEmail } from "../lib/email.mjs";
+import { renderInvitationEmail } from "../lib/platform-email-template.mjs";
 
 const hashToken = (token) => crypto.createHash("sha256").update(String(token || "")).digest("hex");
 
@@ -35,9 +36,7 @@ export default async (req) => {
     await sendEmail({
       category: "team",
       to: email,
-      subject: "Your WebFactory 7-day trial invitation",
-      text: `You have been invited to start a free 7-day WebFactory trial. Open this private link to build your website: ${builderUrl}\n\nNo card is required. Your trial starts when you activate it from your client portal after setup. This invitation expires in 30 days.`,
-      html: `<p>You have been invited to start a free 7-day WebFactory trial.</p><p><a href="${builderUrl}">Open your private WebFactory Builder</a> to create your business and website.</p><p>No card is required. Your trial starts when you activate it from your client portal after setup.</p><p>This invitation expires in 30 days.</p>`,
+      ...renderInvitationEmail({kind:"trial",builderUrl,language:payload.language === "es" || payload.lang === "es" ? "es" : "en"}),
     });
 
     return Response.json({ ok: true, status: "pending", email, invitationSent: true, expiresAt }, { headers: { "Cache-Control": "no-store" } });

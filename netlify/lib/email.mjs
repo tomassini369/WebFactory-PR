@@ -1,4 +1,5 @@
 import nodemailer from "nodemailer";
+import { renderTextEmail, renderEmailLayout } from "./email-design.mjs";
 
 function env(name) { return globalThis.Netlify?.env?.get(name) || ""; }
 
@@ -60,7 +61,7 @@ export function emailProvider() {
   try { return transportConfig().provider; } catch { return "unconfigured"; }
 }
 
-export async function sendEmail({ category = "team", to, subject, html, text, replyTo, attachments, headers, fromName = "WebFactory PR", timeoutMs }) {
+export async function sendEmail({ category = "team", to, subject, html, text, replyTo, attachments, headers, fromName = "WebFactory PR", timeoutMs, language = "en", brandSite }) {
   const key = FROM_BY_CATEGORY[category] || FROM_BY_CATEGORY.team;
   const fallback = env("WEBFACTORY_GMAIL_USER");
   const { provider, options } = transportConfig();
@@ -70,6 +71,7 @@ export async function sendEmail({ category = "team", to, subject, html, text, re
   const safeReplyTo = replyTo ? cleanAddress(replyTo) : (provider === "gmail" || provider === "gmail-fallback") && configuredFrom ? cleanAddress(configuredFrom) : undefined;
   const safeSubject = cleanHeader(subject, 240);
   if (!safeSubject) throw new Error("Email subject is required.");
+  const brandedHtml=html ? (/<!doctype html|<html[\s>]/i.test(html) ? html : renderEmailLayout({language,title:safeSubject,bodyHtml:String(html)})) : renderTextEmail({site:brandSite,language,subject:safeSubject,text}).html;
   const bounded=Number.isFinite(timeoutMs)?Math.max(1000,Math.min(10000,timeoutMs)):null;
   const transport=nodemailer.createTransport({ ...options, connectionTimeout: bounded?Math.min(2500,bounded):8000, greetingTimeout: bounded?Math.min(2500,bounded):8000, socketTimeout: bounded?Math.min(2500,bounded):10000 });
   let timer;
@@ -79,7 +81,7 @@ export async function sendEmail({ category = "team", to, subject, html, text, re
     to: recipients,
     subject: safeSubject,
     text: text ? String(text) : undefined,
-    html: html ? String(html) : undefined,
+    html: brandedHtml,
     replyTo: safeReplyTo,
     attachments,
     headers,
