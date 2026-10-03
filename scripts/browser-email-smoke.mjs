@@ -12,6 +12,12 @@ try{
   const page=await browser.newPage();
   // Verification cannot send, fetch remote images, or call platform APIs.
   await page.route('http**/*',route=>route.abort());
+  await page.goto(pathToFileURL(resolve(directory,'index.html')).href);
+  await page.frameLocator('#email').getByRole('heading',{name:'Tu cita está confirmada'}).waitFor();
+  await page.getByLabel('Ejemplo').selectOption('platform-es-trial');
+  await page.frameLocator('#email').getByRole('heading',{name:'Tu invitación a probar WebFactory por 7 días'}).waitFor();
+  await page.getByRole('button',{name:'Ver móvil'}).click();
+  assert.equal(await page.locator('#email').evaluate(element=>element.clientWidth),390);
   for(const width of [390,1280]){
     await page.setViewportSize({width,height:900});
     for(const file of pages){
