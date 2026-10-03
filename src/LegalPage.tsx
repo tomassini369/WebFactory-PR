@@ -23,7 +23,7 @@ const copy={
           'Commerce and booking information, including customer name, email, phone number, selected products or services, quantities, appointment time, assigned employee, payment status, transaction identifiers, refund status, and related operational records.',
           'Business policy text, publication review records, recurring-billing acceptance records, and optional review email preferences, including unsubscribe records. Review email consent is separate from purchases and transactional notices.',
           'Technical and security information generated when the service is used, such as request metadata, authentication/session information, error records, revision data, security events, and service-readiness information.',
-          'Integration information required to operate services such as Stripe and Google Calendar. WebFactory does not ask users to enter complete card numbers, Stripe secret keys, banking passwords, or 2FA codes into WebFactory forms.'
+          'Integration information required to operate services such as Stripe and Google Calendar. WebFactory does not ask users to enter complete card numbers, Stripe secret keys, banking passwords, or third-party 2FA codes into WebFactory forms. Your own WebFactory verification codes are entered only in dedicated security screens.'
         ]],
         ['3. How we use information',[
           'To create and host business websites, authenticate portal users, save and publish configuration changes, process catalog and booking workflows, prevent scheduling conflicts, support payments, send transactional communications, operate trials and subscriptions, provide customer support, and protect the service against abuse or unauthorized access.',
@@ -53,6 +53,7 @@ const copy={
         ['9. Your choices and requests',[
           'You can decline optional review emails at checkout and unsubscribe through any review email. This does not stop purchase receipts or booking notices.',
           'Portal users can edit much of their business information directly. You may also contact WebFactory to request access, correction, deletion, or other assistance concerning personal information associated with your WebFactory account, subject to security verification and applicable retention obligations.',
+          'Assisted Authenticator recovery requires a request from the account holder and identity verification. WebFactory records a support reference, reason, verification method and administrative security event. Do not include identity documents, passwords or verification codes in support requests. A reset invalidates the previous WebFactory Authenticator, recovery codes and WebFactory session proofs; registered passkeys remain. A security notification is attempted to the registered account email.',
           'Businesses are responsible for responding to privacy requests from their own customers when the request concerns the business’s commercial relationship, products, services, or records.'
         ]],
         ['10. Children',[
@@ -195,7 +196,7 @@ const copy={
           'Información de comercio y reservaciones, incluyendo nombre, email y teléfono del comprador, productos o servicios seleccionados, cantidades, fecha y hora de cita, empleado asignado, estado del pago, identificadores de transacción, reembolsos y registros operacionales relacionados.',
           'Textos de políticas del negocio, registros de revisión antes de publicar, aceptación de renovaciones y preferencias opcionales de emails de reseñas, incluyendo bajas. La aceptación de estos emails se separa de las compras y de los avisos transaccionales.',
           'Información técnica y de seguridad generada durante el uso del servicio, como metadatos de solicitudes, información de sesión/autenticación, errores, revisiones, eventos de seguridad y estado de las integraciones.',
-          'Información de integración necesaria para operar servicios como Stripe y Google Calendar. WebFactory no solicita que introduzcas números completos de tarjeta, llaves secretas de Stripe, contraseñas bancarias o códigos 2FA en los formularios de WebFactory.'
+          'Información de integración necesaria para operar servicios como Stripe y Google Calendar. WebFactory no solicita que introduzcas números completos de tarjeta, llaves secretas de Stripe, contraseñas bancarias o códigos 2FA de terceros en los formularios de WebFactory. Tus códigos de verificación de WebFactory se introducen solo en las pantallas específicas de seguridad.'
         ]],
         ['3. Cómo utilizamos la información',[
           'Para crear y alojar websites, autenticar usuarios, guardar y publicar cambios, operar catálogo y reservaciones, evitar conflictos de horario, apoyar pagos, enviar comunicaciones transaccionales, administrar pruebas y suscripciones, brindar soporte y proteger el servicio.',
@@ -225,6 +226,7 @@ const copy={
         ['9. Tus opciones y solicitudes',[
           'Puedes rechazar emails opcionales de reseñas al comprar y darte de baja mediante cualquier email de reseña. Esto no detiene recibos de compra ni avisos de reservaciones.',
           'Los usuarios del portal pueden editar gran parte de la información de su negocio directamente. También puedes contactar a WebFactory para solicitar acceso, corrección, eliminación u otra asistencia relacionada con información personal de tu cuenta, sujeto a verificación de seguridad y obligaciones aplicables de retención.',
+          'La recuperación asistida de Authenticator requiere una solicitud del titular y verificación de identidad. WebFactory registra referencia del caso, motivo, método de verificación y evento administrativo de seguridad. No incluyas documentos de identidad, contraseñas ni códigos de verificación en solicitudes de soporte. El restablecimiento invalida el Authenticator anterior, los códigos de recuperación y las pruebas de sesión de WebFactory; conserva las passkeys registradas. Se intenta una notificación de seguridad al email registrado.',
           'Los negocios son responsables de responder solicitudes de privacidad de sus propios clientes cuando la solicitud se relaciona con la relación comercial, productos, servicios o registros del negocio.'
         ]],
         ['10. Menores',[

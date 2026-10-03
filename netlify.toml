@@ -8,6 +8,9 @@
 [functions]
   directory = "netlify/functions"
 
+[functions."tenant-page"]
+  included_files = ["dist/index.html"]
+
 [[headers]]
   for = "/*"
   [headers.values]
@@ -123,12 +126,12 @@
 
 [[redirects]]
   from = "/sites/:slug"
-  to = "/index.html"
+  to = "/.netlify/functions/tenant-page?slug=:slug"
   status = 200
 
 [[redirects]]
   from = "/sites/:slug/"
-  to = "/index.html"
+  to = "/.netlify/functions/tenant-page?slug=:slug"
   status = 200
 
 [[redirects]]
@@ -200,6 +203,12 @@
   from = "/template-parity-preview"
   to = "/index.html"
   status = 200
+
+[[redirects]]
+  from = "/sitemap.xml"
+  to = "/.netlify/functions/tenant-sitemap"
+  status = 200
+  force = true
 
 [[redirects]]
   from = "/*"

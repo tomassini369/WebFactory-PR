@@ -17,7 +17,8 @@ export async function issuePrimarySession(user,context,store=mfaStore(),now=Date
   if(!user?.id||!user?.email)throw reject();
   const token=crypto.randomBytes(32).toString('base64url');
   await indexAuthExpiry(store,sessionKey(user,token),now+8*3600000);
-  await store.setJSON(sessionKey(user,token),{issuedAt:now,expiresAt:now+8*3600000,userId:user.id});
+  const profile=await store.get(profileKey(user),{type:'json'});
+  await store.setJSON(sessionKey(user,token),{issuedAt:now,expiresAt:now+8*3600000,userId:user.id,resetEpoch:profile?.resetEpoch||null});
   context.cookies.set({name:PRIMARY_COOKIE,value:token,httpOnly:true,secure:true,sameSite:'Lax',path:'/',maxAge:8*3600});
 }
 
@@ -26,9 +27,9 @@ export async function securityState(user,context,store=mfaStore(),mandatory=mfaR
   const token=context?.cookies?.get(PRIMARY_COOKIE);
   const [profile,session]=await Promise.all([store.get(profileKey(user),{type:'json'}),token ? store.get(sessionKey(user,token),{type:'json'}) : null]);
   const enrolled=Boolean(profile?.credentials?.length||profile?.totp);
-  const validSession=session?.userId===user.id&&session.expiresAt>now;
+  const validSession=session?.userId===user.id&&session.expiresAt>now&&(session.resetEpoch||null)===(profile?.resetEpoch||null);
   const verified=Boolean(validSession&&enrolled&&session.verifiedAt&&session.version===profile.version);
-  return {required:Boolean(mandatory||enrolled),enrolled,verified,needsLogin:!validSession,authenticatorEnrolled:Boolean(profile?.totp),authenticatorAvailable:totpAvailable(),credentials:(profile?.credentials||[]).map(({id,label,createdAt})=>({id,label,createdAt})),recoveryCodesRemaining:profile?.codes?.length||0};
+  return {required:Boolean(mandatory||enrolled||profile?.forceMfa),enrolled,verified,needsLogin:!validSession,authenticatorEnrolled:Boolean(profile?.totp),authenticatorAvailable:totpAvailable(),credentials:(profile?.credentials||[]).map(({id,label,createdAt})=>({id,label,createdAt})),recoveryCodesRemaining:profile?.codes?.length||0};
 }
 
 export async function assertSecondFactor(user,context=globalThis.Netlify?.context,store=mfaStore(),mandatory=mfaRequiredByPolicy()){
@@ -42,6 +43,13 @@ export async function revokePrimarySession(user,context,store=mfaStore()){
   context.cookies.delete({name:PRIMARY_COOKIE,path:'/'});
 }
 
+export async function assertRecentSecondFactor(user,context,store=mfaStore(),now=Date.now()){
+  const state=await securityState(user,context,store,true,now);
+  const token=context?.cookies?.get(PRIMARY_COOKIE);
+  const session=token&&await store.get(sessionKey(user,token),{type:'json'});
+  if(!state.verified||!session?.verifiedAt||session.verifiedAt>now||session.verifiedAt+300000<now)throw reject('Verify your own MFA again within five minutes before this action.',403);
+}
+
 export async function purgeAccountSecurity(user,store=mfaStore()){
   const {blobs}=await store.list({prefix:userPrefix(user)});
   for(const {key} of blobs)await store.delete(key);
@@ -52,7 +60,8 @@ export function createMfaService(store,webAuthn,now=()=>Date.now(),{totpKey=totp
     const token=context.cookies.get(PRIMARY_COOKIE);
     const key=token&&sessionKey(user,token);
     const session=key&&await store.get(key,{type:'json'});
-    if(!session||session.userId!==user.id||session.expiresAt<=now())throw reject('Sign in again before verifying security.');
+    const profile=await store.get(profileKey(user),{type:'json'});
+    if(!session||session.userId!==user.id||session.expiresAt<=now()||(session.resetEpoch||null)!==(profile?.resetEpoch||null))throw reject('Sign in again before verifying security.');
     return {key,session,token};
   }
   async function grant(key,session,profile){await store.setJSON(key,{...session,version:profile.version,verifiedAt:now()});}
@@ -105,6 +114,7 @@ export function createMfaService(store,webAuthn,now=()=>Date.now(),{totpKey=totp
         if(profile?.credentials?.some(c=>c.id===credential.id))throw reject('Passkey already registered.',400);
         if((profile?.credentials?.length||0)>=5)throw reject('Up to five passkeys are supported.',400);
         if(!profile){codes=Array.from({length:10},()=>crypto.randomBytes(16).toString('hex'));profile={version:crypto.randomUUID(),origin,credentials:[],codes:codes.map(hash)};}
+        if(!profile.credentials.length&&!profile.totp&&!profile.codes?.length){codes=Array.from({length:10},()=>crypto.randomBytes(16).toString('hex'));profile.codes=codes.map(hash);}
         profile.credentials.push({id:credential.id,publicKey:Buffer.from(credential.publicKey).toString('base64url'),counter:credential.counter,transports:credential.transports,label:String(payload.label||'Passkey').slice(0,80),createdAt:new Date(now()).toISOString()});
       }else{
         const stored=profile?.credentials.find(c=>c.id===payload.response?.id);
@@ -196,6 +206,7 @@ export function createMfaService(store,webAuthn,now=()=>Date.now(),{totpKey=totp
       const secret=decryptTotp(pending.record.encrypted,user.id,origin,totpKey()),step=await checkTotp(user,secret,code);
       let codes;
       if(!profile){codes=Array.from({length:10},()=>crypto.randomBytes(16).toString('hex'));profile={origin,credentials:[],codes:codes.map(hash)};}
+      if(!profile.credentials?.length&&!profile.codes?.length){codes=Array.from({length:10},()=>crypto.randomBytes(16).toString('hex'));profile.codes=codes.map(hash);}
       profile.version=crypto.randomUUID();profile.totp={encrypted:pending.record.encrypted,lastUsedStep:step,createdAt:new Date(now()).toISOString()};
       // Save the factor/replay marker before granting the session. An uncertain
       // response requires a new time step, never accepting the same code twice.

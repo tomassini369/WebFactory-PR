@@ -16,7 +16,8 @@ export default async (req) => {
       if (!siteId || !key.startsWith(`sites/${siteId}/`)) throw Object.assign(new Error("Invalid asset."), { status: 400 });
       const site = await getClientSite(siteId);
       if (!site) throw Object.assign(new Error("Asset not found."), { status: 404 });
-      if (!siteEntitlement(site).public) await requireSiteAccess(siteId);
+      const isPublic=siteEntitlement(site).public;
+      if (!isPublic) await requireSiteAccess(siteId);
       const [data, metadata] = await Promise.all([
         clientAssetStore().get(key, { type: "arrayBuffer" }),
         clientAssetStore().getMetadata(key),
@@ -24,7 +25,7 @@ export default async (req) => {
       if (!data) throw Object.assign(new Error("Asset not found."), { status: 404 });
       return new Response(data, { headers: {
         "Content-Type": metadata?.metadata?.contentType || "application/octet-stream",
-        "Cache-Control": "public, max-age=3600, stale-while-revalidate=86400",
+        "Cache-Control": isPublic?"public, max-age=60":"private, no-store",
         "X-Content-Type-Options": "nosniff",
       } });
     }

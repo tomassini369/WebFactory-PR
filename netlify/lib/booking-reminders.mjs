@@ -14,8 +14,8 @@ export function dueBookingReminders(record, now = Date.now()) {
     return (!Number.isFinite(created) || created <= due) && now >= due && now - due < 30 * 60000;
   });
 }
-export async function sendBookingReminders(site, record, now = Date.now(), deadline = Infinity) {
-  const store = clientCommerceStore(); let sent = 0;
+export async function sendBookingReminders(site, record, now = Date.now(), deadline = Infinity, {store=clientCommerceStore(),send=sendEmail,outcome=()=>{}} = {}) {
+  let sent = 0;
   const recipients = [record.customer?.email, site.business?.email].filter(validEmail).map(email => email.trim().toLowerCase());
   for (const hours of dueBookingReminders(record, now)) {
     for (const email of new Set(recipients)) {
@@ -26,21 +26,27 @@ export async function sendBookingReminders(site, record, now = Date.now(), deadl
       if (!claim.modified) {
         const previous = await store.getWithMetadata(key, { type: "json" });
         if (!previous || previous.data?.status !== "sending" || now - Date.parse(previous.data.startedAt) < 10 * 60000) continue;
-        claim = await store.setJSON(key, { status: "sending", startedAt: new Date(now).toISOString(), transactionId: record.transactionId, hours }, { onlyIfMatch: previous.etag });
-        if (!claim.modified) continue;
+        // A terminated invocation may already have delivered the email.
+        // Preserve the evidence and require review rather than sending again.
+        const result=await store.setJSON(key,{...previous.data,status:'delivery_uncertain',issue:'interrupted_attempt'}, {onlyIfMatch:previous.etag});
+        if(result.modified)outcome('uncertain');
+        continue;
       }
       try {
         // Recheck cancellation after claiming the reminder, immediately before sending.
         const current = await store.get(commerceKey(site.siteId, "bookings", record.transactionId), { type: "json" });
-        if (!current || current.status !== "confirmed" || current.start !== record.start) { await store.delete(key); continue; }
-        await sendEmail({ category: "team", fromName: site.business?.name || "WebFactory Business", to: email,
+        if (!current || current.status !== "confirmed" || current.start !== record.start) { await store.setJSON(key,{status:'cancelled',transactionId:record.transactionId,hours}); outcome('suppressed'); continue; }
+        const response=await send({ category: "team", fromName: site.business?.name || "WebFactory Business", to: email,
           ...renderBookingEmail(site,record,{audience:email===record.customer?.email?.trim().toLowerCase()?"customer":"business",change:"reminder",hours}),
-          headers: { "Message-ID": `<booking-reminder-${hash}@webfactorypr.com>` },
+          headers: { "Message-ID": `<booking-reminder-${hash}@webfactorypr.com>` }, timeoutMs:6000,
         });
+        if(!response?.accepted?.some(value=>String(value).trim().toLowerCase()===email))throw Error('Delivery not acknowledged');
         await store.setJSON(key, { status: "sent", sentAt: new Date().toISOString(), transactionId: record.transactionId, hours });
-        sent++;
+        sent++; outcome('sent');
       } catch {
-        await store.delete(key); // A failed delivery can be retried inside the due window.
+        // Failure after an SMTP attempt is uncertain, including a failed sent-marker write.
+        await store.setJSON(key,{status:'delivery_uncertain',startedAt:new Date(now).toISOString(),transactionId:record.transactionId,hours,issue:'provider_or_persistence_failure'});
+        outcome('uncertain');
       }
     }
   }

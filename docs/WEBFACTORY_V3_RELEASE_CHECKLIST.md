@@ -1,3 +1,5 @@
+> Estado actual y pendientes: [registro maestro](WEBFACTORY_MASTER_STATUS.md) y [runbook](AUTONOMOUS_OPERATIONS_RUNBOOK.md). Este documento conserva evidencia de fases anteriores; las notas antiguas de publicación y siguientes pasos deben contrastarse con el registro y despliegue actuales.
+
 # WebFactory V3 — Release Checklist
 
 Status: pre-production checklist for PR #36  

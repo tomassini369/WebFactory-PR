@@ -1,0 +1,5 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {deleteStorePrefix} from './store-maintenance.mjs';
+function fixture(){const rows=new Map([['a/1','one'],['a/2','two'],['a/3','three'],['b/private','keep']]);return {rows,list(){return {async *[Symbol.asyncIterator](){yield {blobs:[{key:'a/1'},{key:'a/2'}]};yield {blobs:[{key:'a/3'}]}}}},async get(key){return rows.get(key)??null},async delete(key){rows.delete(key)}}}
+test('prefix deletion covers all pages, checks every removal and preserves other tenants',async()=>{const s=fixture();assert.equal(await deleteStorePrefix(s,'a/'),3);assert.deepEqual([...s.rows.keys()],['b/private'])});
+test('listing limits and foreign keys abort before deleting anything',async()=>{const s=fixture();await assert.rejects(deleteStorePrefix(s,'a/',{maxKeys:2}),{status:503});assert.equal(s.rows.size,4);await assert.rejects(deleteStorePrefix(s,'wrong/'),{status:503});assert.equal(s.rows.size,4)});
+test('silent delete failures cannot return successful deletion',async()=>{const s=fixture();s.delete=async()=>{};await assert.rejects(deleteStorePrefix(s,'a/'),/verified/);assert.equal(s.rows.size,4)});
