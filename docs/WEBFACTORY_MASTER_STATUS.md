@@ -11,6 +11,12 @@ Implementado en este lote: entrega incierta de recordatorios sin reenvío autom�
 
 Las mejoras visuales publicadas, MFA con Authenticator confirmado por Kevin, desconexiones existentes e invitaciones por email no se vuelven a presentar como funciones ausentes. Las pruebas pendientes de aceptación se distinguen de su implementación.
 
+## Evidencia del lote
+
+PR: https://github.com/tomassini369/WebFactory-PR/pull/58. Código verificado: `9c17651850295ffc82c5e26c28f8af0366eb6eaf`; deploy preview `6ac05024d477120008901cfb`, ready, con el mismo SHA. CI https://github.com/tomassini369/WebFactory-PR/actions/runs/37083384292: verify y deploy-preview-smoke correctos; 287 pruebas, build y Chromium teclado a 390/1280 px. Ocho probes públicos/privados correctos; sitemap preview 200/noindex/vacío, slug inexistente 404/no-store. No hubo prueba de tenant público real con metadatos ni recuperación productiva. Los commits posteriores de documentación no cambian esa evidencia; verificar siempre cabeza actual y CI antes de publicar.
+
+Preview: https://deploy-preview-58--webfactorypr.netlify.app/
+
 ## Pendientes en orden
 
 | ID | Trabajo que sigue abierto | Evidencia y siguiente condición de cierre |
