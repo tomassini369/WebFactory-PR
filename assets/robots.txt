@@ -1,4 +1,10 @@
 User-agent: *
 Allow: /
+Disallow: /webfactory-admin
+Disallow: /client-admin
+Disallow: /password
+Disallow: /builder
+Disallow: /preview-review
+Disallow: /template-parity-preview
 
 Sitemap: https://webfactorypr.com/sitemap.xml

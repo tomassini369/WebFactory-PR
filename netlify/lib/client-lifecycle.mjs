@@ -1,16 +1,14 @@
 import Stripe from "stripe";
+import {withBookingLock} from "./booking-lock.mjs";
+import {deleteStorePrefix} from "./store-maintenance.mjs";
 import { purgeAccountSecurity } from "./mfa-security.mjs";
 import { admin } from "@netlify/identity";
-import { clientAssetStore, clientCommerceStore, clientEventStore, clientOAuthStore, clientSiteStore, emailHash, getClientSite, normalizeEmail, saveClientSite, siteKey, slugify } from "./client-store.mjs";
+import { clientAssetStore, clientBackupStore, clientCommerceStore, clientEventStore, clientOAuthStore, clientSiteStore, emailHash, getClientSite, normalizeEmail, saveClientSite, siteKey, slugify } from "./client-store.mjs";
 import { decryptToken } from "./google-calendar.mjs";
 
 function env(name){return globalThis.Netlify?.env?.get(name)||"";}
 
-async function deletePrefix(store,prefix){
-  const listed=await store.list({prefix});
-  for(const blob of listed.blobs||[]) await store.delete(blob.key);
-  return (listed.blobs||[]).length;
-}
+const deletePrefix=deleteStorePrefix;
 
 export async function disconnectGoogle(site){
   const key=`tokens/${site.siteId}.json`;
@@ -104,7 +102,10 @@ async function removeSiteFromIdentityMembers(site){
   }
 }
 
-export async function purgeClientSite(siteId,{cancelSubscription=true}={}){
+export async function purgeClientSite(siteId,options={}){
+  return withBookingLock(clientBackupStore(),"maintenance/lock",()=>purgeClientSiteRecords(siteId,options));
+}
+async function purgeClientSiteRecords(siteId,{cancelSubscription=true}={}){
   const site=await getClientSite(siteId);
   if(!site)return {deleted:false,siteId};
   if(cancelSubscription) await cancelWebFactorySubscription(site);
@@ -129,7 +130,10 @@ export async function purgeClientSite(siteId,{cancelSubscription=true}={}){
 
   const deletedCommerce=await deletePrefix(clientCommerceStore(),`${site.siteId}/`);
   const deletedAssets=await deletePrefix(clientAssetStore(),`sites/${site.siteId}/`);
-  await deletePrefix(clientEventStore(),`${site.siteId}/`).catch(()=>0);
+  await deletePrefix(clientEventStore(),`${site.siteId}/`);
+  await deletePrefix(clientBackupStore(),`snapshots/${site.siteId}/`);
+  await clientBackupStore().delete(`latest/${site.siteId}.json`);
+  if(await clientBackupStore().get(`latest/${site.siteId}.json`)!==null)throw Object.assign(new Error("Backup pointer cleanup failed."),{status:503});
   await clientSiteStore().delete(siteKey(site.siteId));
 
   return {deleted:true,siteId:site.siteId,deletedCommerce,deletedAssets};
