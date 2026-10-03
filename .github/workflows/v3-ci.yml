@@ -34,6 +34,11 @@ jobs:
       - name: Check email previews on mobile and desktop
         run: node scripts/browser-email-smoke.mjs
 
+      - name: Check responsive business dashboard and isolated preview
+        run: |
+          WF_DESIGN_PREVIEW=1 node scripts/build-design-preview.mjs
+          node scripts/browser-dashboard-smoke.mjs
+
   deploy-preview-smoke:
     if: github.event_name == 'pull_request'
     needs: verify

@@ -4,3 +4,10 @@
 html[lang=es] .design-review-es{display:inline}
 html[lang=es] .design-review-en{display:none}
 @media(max-width:600px){.design-review-banner{padding:12px 18px;align-items:flex-start;font-size:.75rem}.design-review-banner>span{max-width:220px}}
+/* The review notice participates in the viewport, so it never pushes the
+   portal's scrolling workspace below the visible screen. */
+#root:has(.design-review-banner){height:100vh;height:100dvh;display:flex;flex-direction:column;overflow:hidden}
+.design-review-banner{flex:0 0 auto}
+.design-review-banner~.ca-dashboard{height:auto;min-height:0;flex:1}
+.design-review-banner~.ca-dashboard .ca-work{height:100%;min-height:0}
+@media(min-width:821px){.design-review-banner~.ca-dashboard .ca-sidebar{height:100%;min-height:0}}

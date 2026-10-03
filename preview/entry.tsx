@@ -6,6 +6,7 @@ import '../src/v3-system.css'
 import '../src/theme.css'
 import '../src/liquid-glass.css'
 import './design-review.css'
+import '../src/business-dashboard-v8.css'
 const previewStyle=document.createElement('style');previewStyle.textContent='.wf-theme-toggle.floating{display:none}';document.head.append(previewStyle);
 const today=new Date();const date=(offset:number)=>new Date(today.getTime()+offset*86400000).toISOString();
 const site:any={siteId:'preview-business',slug:'preview-business',status:'active',revision:1,business:{name:'Negocio de ejemplo',nameEn:'Sample business',nameEs:'Negocio de ejemplo',category:'Professional services',description:'Datos de ejemplo para evaluar el diseño.'},design:{primary:'#0B1529',secondary:'#3C86F6',style:'Modern'},catalog:Array.from({length:12},(_,i)=>({id:`item-${i}`,type:'service',name:`Servicio ${i+1}`,price:45,active:true,inventory:null,requiresAppointment:true,duration:30,bufferMinutes:0})),employees:[{id:'one',name:'Profesional de ejemplo',role:'Professional',active:true,serviceIds:[],calendarId:'',dailyLimit:8,schedule:{},timeOff:[]}],hours:{},paymentRules:{},googleCalendar:{},settings:{locale:'en',timezone:'America/Puerto_Rico',currency:'USD'},servicePlan:{name:'WebFactory Commerce Platform',billingModel:'subscription',subscriptionStatus:'active',billingStatus:'active'}};
@@ -15,5 +16,17 @@ const bookings=names.map((name,i)=>({transactionId:`booking-${i}`,kind:'booking'
 // Preview-only: ?caps=orders,bookings simulates a staff member limited to those capabilities.
 const caps=new URLSearchParams(location.search).get('caps');const membership=caps?{role:'staff',capabilities:caps.split(',').filter(Boolean)}:{role:'owner'};
 // This entire entry is preview-only. No request can reach a real backend.
-window.fetch=async(input,init)=>{const url=String(input);if(!url.includes('/.netlify/functions/'))throw new Error('External requests are disabled in this preview.');let result:any={ok:true,records:[],customers:[]};if(url.includes('client-admin'))result=url.includes('siteId=')||init?.method==='PATCH'?{ok:true,site,membership}:{ok:true,sites:[{siteId:site.siteId,slug:site.slug,businessName:site.business.name,status:site.status}]};if(url.includes('client-commerce-admin'))result={ok:true,orders,bookings};if(url.includes('subscription-readiness'))result={ok:true,readiness:{ready:true},entitlement:{public:true},servicePlan:site.servicePlan};if(init?.method&&!['GET','HEAD'].includes(init.method)&&init.method!=='PATCH')throw new Error('Preview: this action is disabled. Use Training to practice.');return new Response(JSON.stringify(result),{headers:{'Content-Type':'application/json'}})};
+window.fetch=async(input,init)=>{
+  const url=String(input);const state=new URLSearchParams(location.search).get('state');
+  if(!url.includes('/.netlify/functions/'))throw new Error('External requests are disabled in this preview.');
+  if(init?.method&&!['GET','HEAD'].includes(init.method))throw new Error(document.documentElement.lang==='es'?'Preview: esta acción está deshabilitada. Usa Training para practicar.':'Preview: this action is disabled. Use Training to practice.');
+  let result:any={ok:true,records:[],customers:[]};
+  if(url.includes('client-admin'))result=url.includes('siteId=')?{ok:true,site,membership}:{ok:true,sites:[{siteId:site.siteId,slug:site.slug,businessName:site.business.name,status:site.status}]};
+  if(url.includes('client-commerce-admin')){
+    if(state==='error')return new Response(JSON.stringify({ok:false,message:'Preview: activity unavailable.'}),{status:503,headers:{'Content-Type':'application/json'}});
+    result={ok:true,orders:state==='empty'?[]:orders,bookings:state==='empty'?[]:bookings};
+  }
+  if(url.includes('subscription-readiness'))result={ok:true,readiness:{ready:true},entitlement:{public:true},servicePlan:site.servicePlan};
+  return new Response(JSON.stringify(result),{headers:{'Content-Type':'application/json'}})
+};
 createRoot(document.getElementById('root')!).render(<ThemeProvider><aside className="design-review-banner" role="note"><span className="design-review-en">Design preview · Sample data · No real transactions</span><span className="design-review-es">Preview de diseño · Datos de ejemplo · Sin transacciones reales</span><a href="/"><span className="design-review-en">View homepage</span><span className="design-review-es">Ver homepage</span></a></aside><ClientAdminPage/></ThemeProvider>);
