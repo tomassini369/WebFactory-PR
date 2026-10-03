@@ -45,9 +45,16 @@ function transportConfig() {
     return { provider: "gmail", options: { host: "smtp.gmail.com", port: 465, secure: true, auth: { user, pass } } };
   };
 
+  const resend = () => {
+    const key = env("RESEND_API_KEY").trim();
+    if (!key) throw new Error("Resend email provider is selected, but its API key is not configured.");
+    return { provider: "resend", options: { host: "smtp.resend.com", port: 465, secure: true, auth: { user: "resend", pass: key } } };
+  };
+
   if (requestedProvider === "gmail") return gmail();
   if (requestedProvider === "mailjet") return mailjet();
-  if (requestedProvider && requestedProvider !== "auto") throw new Error("WEBFACTORY_EMAIL_PROVIDER must be set to auto, gmail, or mailjet.");
+  if (requestedProvider === "resend") return resend();
+  if (requestedProvider && requestedProvider !== "auto") throw new Error("WEBFACTORY_EMAIL_PROVIDER must be set to auto, gmail, mailjet, or resend.");
   if (apiKey && secretKey) return mailjet();
   if (user && pass) return { ...gmail(), provider: "gmail-fallback" };
   throw new Error("Transactional email transport is not configured.");
