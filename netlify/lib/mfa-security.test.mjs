@@ -28,3 +28,59 @@ test('five failed codes block the account across setup challenges',async()=>{con
 test('adding and removing factors requires fresh proof and preserves the remaining factor',async()=>{const s=await setup(),{c}=await enroll(s);await issuePrimarySession(user,s.context,s.store,s.clock());await assert.rejects(s.service.beginTotp(user,s.context,origin),/Verify/);const challenge=await s.service.options(user,s.context,'authenticate',origin);await s.service.verify(user,s.context,{challengeId:challenge.challengeId,response:response(challenge.options,c,false)},'authenticate',origin);await enrollTotp(s);await s.service.remove(user,s.context,c.id);assert.equal((await securityState(user,s.context,s.store,true,s.clock())).credentials.length,0);await enroll(s);await s.service.removeTotp(user,s.context,origin);assert.equal((await securityState(user,s.context,s.store,true,s.clock())).authenticatorEnrolled,false)});
 test('Authenticator-only accounts cannot register a passkey without second-factor proof',async()=>{const s=await setup();await enrollTotp(s);await issuePrimarySession(user,s.context,s.store,s.clock());await assert.rejects(s.service.options(user,s.context,'register',origin),/Verify/)});
 test('invalid encryption key, altered encrypted state and missing replay marker fail closed',async()=>{const s=await setup(),{pending}=await enrollTotp(s);await issuePrimarySession(user,s.context,s.store,s.clock());s.advance(30000);await assert.rejects(s.service.authenticateTotp(user,s.context,otp(s,pending),'https://foreign.example'),{status:403});const noKey=createMfaService(s.store,webAuthn,s.clock,{totpKey:()=>''});await assert.rejects(noKey.authenticateTotp(user,s.context,otp(s,pending),origin),{status:503});const path=`${userPrefix(user)}profile.json`,original=await s.store.get(path);await s.store.setJSON(path,{...original,totp:{...original.totp,encrypted:{...original.totp.encrypted,tag:Buffer.alloc(16).toString('base64')}}});await assert.rejects(s.service.authenticateTotp(user,s.context,otp(s,pending),origin),{status:503});await s.store.setJSON(path,{...original,totp:{encrypted:original.totp.encrypted}});await assert.rejects(s.service.authenticateTotp(user,s.context,otp(s,pending),origin),{status:503});await assert.rejects(assertSecondFactor(user,s.context,s.store,true))});
+
+const {resetClientAuthenticator,validateResetRequest}=await import('./admin-authenticator-reset.mjs');
+const {assertRecentSecondFactor}=await import('./mfa-security.mjs');
+async function resetFixture(){
+ const s=await setup();await enroll(s);const actor={...user,roles:['admin']},target={id:'customer-account',email:'customer@example.com'};
+ const jar=new Map(),context={cookies:{get:name=>jar.get(name),set:cookie=>jar.set(cookie.name,cookie.value),delete:cookie=>jar.delete(cookie.name)}};
+ await issuePrimarySession(target,context,s.store,s.clock());const pending=await s.service.beginTotp(target,context,origin);
+ const codes=await s.service.confirmTotp(target,context,pending.challengeId,totpCode(pending.secret,Math.floor(s.clock()/30000)),origin);
+ const payload={requestId:crypto.randomUUID(),confirmation:'RESET AUTHENTICATOR',requestedByClient:true,identityVerified:true,verificationMethod:'registered-contact-and-business-verification',reason:'Lost customer phone',requestReference:'SUPPORT-2026-1002'};
+ let sends=0;const reset=overrides=>resetClientAuthenticator({actor,target,siteId:'business',context:s.context,store:s.store,payload,clock:s.clock,notify:async()=>{sends++;return {accepted:[target.email]}},...overrides});
+ return {...s,actor,target,targetContext:context,targetToken:context.cookies.get(PRIMARY_COOKIE),payload,pending,codes,reset,sends:()=>sends};
+}
+test('support reset revokes every old primary proof and recovery code even in the same millisecond; fresh password and new MFA required',async()=>{
+ const s=await resetFixture();const secondJar=new Map(),second={cookies:{get:name=>secondJar.get(name),set:cookie=>secondJar.set(cookie.name,cookie.value)}};
+ await issuePrimarySession(s.target,second,s.store,s.clock());await s.service.recover(s.target,second,s.codes.recoveryCodes[0]);
+ const result=await s.reset();assert.equal(result.notification,'accepted');assert.equal(s.sends(),1);
+ for(const context of [s.targetContext,second]){const state=await securityState(s.target,context,s.store,false,s.clock());assert.equal(state.required,true);assert.equal(state.needsLogin,true);assert.equal(state.verified,false);await assert.rejects(s.service.beginTotp(s.target,context,origin));await assert.rejects(s.service.recover(s.target,context,s.codes.recoveryCodes[1]));}
+ await issuePrimarySession(s.target,s.targetContext,s.store,s.clock());assert.equal((await securityState(s.target,s.targetContext,s.store,false,s.clock())).needsLogin,false);
+ await assert.rejects(assertSecondFactor(s.target,s.targetContext,s.store,false));
+ const pending=await s.service.beginTotp(s.target,s.targetContext,origin);const confirmed=await s.service.confirmTotp(s.target,s.targetContext,pending.challengeId,totpCode(pending.secret,Math.floor(s.clock()/30000)),origin);
+ assert.equal(confirmed.recoveryCodes.length,10);await assertSecondFactor(s.target,s.targetContext,s.store,false);
+ assert.equal((await s.store.get(`${userPrefix(s.target)}profile.json`)).lastResetAuditId,s.payload.requestId);
+});
+test('support reset requires fresh administrator MFA and protects admin accounts and unverified requests',async()=>{
+ const s=await resetFixture();const before=await s.store.get(`${userPrefix(s.target)}profile.json`);
+ for(const payload of [{...s.payload,requestedByClient:false},{...s.payload,identityVerified:false},{...s.payload,verificationMethod:'email-only'}])await assert.rejects(s.reset({payload}));
+ await assert.rejects(s.reset({actor:{...s.actor,roles:[]}}));await assert.rejects(s.reset({target:{...s.target,roles:['admin']}}));await assert.rejects(s.reset({target:s.actor}));
+ s.advance(300001);await assert.rejects(s.reset());await assert.rejects(assertRecentSecondFactor(s.actor,s.context,s.store,s.clock()));
+ assert.deepEqual(await s.store.get(`${userPrefix(s.target)}profile.json`),before);assert.equal(s.sends(),0);
+});
+test('reset notification is at most one attempt on an uncertain SMTP response; same request cannot target another identity',async()=>{
+ const s=await resetFixture();let sends=0;const notify=async()=>{sends++;throw Error('SMTP reply lost')};
+ const result=await s.reset({notify});assert.equal(result.notification,'review_required');
+ await s.reset({notify});assert.equal(sends,1);
+ await assert.rejects(s.reset({target:{id:'different-client',email:'different@example.com'},notify}));
+ const audit=await s.store.get(`support-resets/${s.payload.requestId}.json`);assert.equal(audit.status,'reset');assert.equal(audit.notification,'review_required');assert.ok(!JSON.stringify(audit).includes(s.pending.secret));
+});
+test('audit persistence failure cannot reset client security, and existing passkeys are preserved',async()=>{
+ const s=await resetFixture();const before=await s.store.get(`${userPrefix(s.target)}profile.json`),write=s.store.setJSON.bind(s.store);
+ s.store.setJSON=async(key,...args)=>{if(key.startsWith('support-resets/'))throw Error('Audit storage unavailable');return write(key,...args)};
+ await assert.rejects(s.reset());assert.deepEqual(await s.store.get(`${userPrefix(s.target)}profile.json`),before);assert.equal(s.sends(),0);
+ s.store.setJSON=write;await write(`${userPrefix(s.target)}profile.json`,{...before,credentials:[{id:'retained-passkey',publicKey:'public-material'}]});
+ const result=await s.reset();assert.equal(result.passkeysPreserved,1);assert.equal((await s.store.get(`${userPrefix(s.target)}profile.json`)).credentials[0].id,'retained-passkey');
+});
+test('concurrent support resets cannot notify twice or grant a session',async()=>{
+ const s=await resetFixture();const results=await Promise.allSettled([s.reset(),s.reset()]);assert.ok(results.some(result=>result.status==='fulfilled'));assert.equal(s.sends(),1);
+ assert.equal((await securityState(s.target,s.targetContext,s.store,false,s.clock())).verified,false);
+});
+test('lost audit completion after SMTP cannot cause notification resend on a retry',async()=>{
+ const s=await resetFixture(),write=s.store.setJSON.bind(s.store);let sends=0;
+ s.store.setJSON=async(key,value,...args)=>{if(key.startsWith('support-resets/')&&value.completedAt)throw Error('Completion write lost');return write(key,value,...args)};
+ const notify=async()=>{sends++;return {accepted:[s.target.email]}};
+ await assert.rejects(s.reset({notify}));s.store.setJSON=write;
+ assert.equal((await s.reset({notify})).notification,'review_required');assert.equal(sends,1);
+ assert.equal((await securityState(s.target,s.targetContext,s.store,false,s.clock())).verified,false);
+});
