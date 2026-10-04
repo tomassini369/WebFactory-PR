@@ -1,0 +1,10 @@
+import assert from 'node:assert/strict';
+const origin=process.env.PREVIEW_URL||process.env.WEBFACTORY_SMOKE_URL;
+if(!origin)throw Error('Set PREVIEW_URL or WEBFACTORY_SMOKE_URL.');
+const get=path=>fetch(origin+path,{redirect:'manual',signal:AbortSignal.timeout(30000)});
+const page=await get('/chatgpt');assert.equal(page.status,200,'ChatGPT page must route to the app');
+const metadata=await get('/.well-known/oauth-authorization-server');assert.equal(metadata.status,200);const config=await metadata.json();assert.equal(config.issuer,origin);assert.deepEqual(config.code_challenge_methods_supported,['S256']);
+const resource=await (await get('/.well-known/oauth-protected-resource/mcp')).json();assert.equal(resource.resource,origin+'/mcp');
+const mcp=await get('/mcp');assert.equal(mcp.status,401);assert.ok(mcp.headers.get('www-authenticate')?.includes('/.well-known/oauth-protected-resource/mcp'));
+const control=await get('/.netlify/functions/chatgpt-control');assert.equal(control.status,401);
+console.log('ChatGPT route, OAuth metadata, MCP challenge and portal authentication passed for '+origin);

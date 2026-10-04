@@ -43,6 +43,8 @@ jobs:
       contents: read
       statuses: read
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
       - name: Wait for matching Netlify Deploy Preview
         env:
           GH_TOKEN: ${{ github.token }}
@@ -89,3 +91,8 @@ jobs:
             .nativeIos.deferred == true and
             .nativeIos.releaseBlocker == false
           '
+
+      - name: Check ChatGPT routes and authentication boundaries
+        env:
+          PREVIEW_URL: https://deploy-preview-${{ github.event.pull_request.number }}--webfactorypr.netlify.app
+        run: node scripts/chatgpt-http-smoke.mjs

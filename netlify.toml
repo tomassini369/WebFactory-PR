@@ -75,6 +75,22 @@
 
 
 # Keep the logo URL used by previously sent emails available.
+[[headers]]
+  for = "/chatgpt*"
+  [headers.values]
+    Cache-Control = "no-store"
+    X-Robots-Tag = "noindex, nofollow, noarchive"
+
+[[redirects]]
+  from = "/chatgpt"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/chatgpt/"
+  to = "/index.html"
+  status = 200
+
 [[redirects]]
   from = "/assets/webfactory-pr-logo.png"
   to = "/webfactory-pr-logo.png"
