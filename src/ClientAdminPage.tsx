@@ -1,3 +1,4 @@
+import { BusinessAccountingPanel } from './BusinessAccountingPanel'
 import { MfaSettings } from './MfaAccess'
 import './business-policies.css'
 import { BookingCalendar } from './BookingCalendar'
@@ -136,11 +137,11 @@ export default function ClientAdminPage(){
       {tab==='bookings'&&<><BookingCalendar records={commerce.bookings} lang={lang} timeZone={site.settings?.timezone} employees={site.employees}/><TransactionPanel records={commerce.bookings} kind="booking" lang={lang} timeZone={site.settings?.timezone} googleConnected={site.googleCalendar?.connected} employees={site.employees} onAction={transactionAction} busy={busy}/></>}
       {tab==='customers'&&<CustomersPanel siteId={site.siteId} lang={lang}/>}
       {tab==='catalog'&&<><CatalogEditor site={site} setSite={setSite} lang={lang} onSave={()=>save('catalog',site.catalog)} busy={busy}/><InventoryStatusPanel site={site} lang={lang}/><InventoryAdjustmentPanel site={site} setSite={setSite} lang={lang}/><InventoryMovementsPanel siteId={site.siteId} lang={lang}/></>}
-      {tab==='team'&&<><TeamEditor site={site} setSite={setSite} lang={lang} onSave={()=>save('employees',site.employees)} busy={busy}/><MemberRolesPanel site={site} setSite={setSite} lang={lang} onSave={save} busy={busy} membership={membership}/></>}
+      {tab==='team'&&<>{['owner','admin'].includes(membership?.role)&&<BusinessAccountingPanel siteId={site.siteId} employees={site.employees} catalog={site.catalog} lang={lang}/>}<TeamEditor site={site} setSite={setSite} lang={lang} onSave={()=>save('employees',site.employees)} busy={busy}/><MemberRolesPanel site={site} setSite={setSite} lang={lang} onSave={save} busy={busy} membership={membership}/></>}
       {tab==='payments'&&<><Payments site={site} setSite={setSite} lang={lang} onSave={()=>save('paymentRules',site.paymentRules)} busy={busy} setError={setError} canConnect={['owner','admin'].includes(membership?.role)}/><PaymentLinksPanel siteId={site.siteId} siteSlug={site.slug} lang={lang}/><PayoutsPanel siteId={site.siteId} lang={lang}/><ReceiptsPanel siteId={site.siteId} lang={lang}/></>}
       {tab==='pos'&&<PosPanel site={site} lang={lang} onSaleComplete={()=>loadCommerce().catch(()=>{})}/>}
       {tab==='marketing'&&<><MarketingPanel site={site} lang={lang}/><ReviewAutomationPanel site={site} lang={lang} onSave={save} busy={busy}/></>}
-      {tab==='analytics'&&<AnalyticsPanel commerce={commerce} lang={lang} siteId={site.siteId} stripeConnected={Boolean(site.paymentRules?.methods?.stripe&&site.paymentRules?.stripeConnectedAccountId)}/>}
+      {tab==='analytics'&&<>{['owner','admin'].includes(membership?.role)&&<BusinessAccountingPanel siteId={site.siteId} employees={site.employees} catalog={site.catalog} lang={lang} initialMode="expense"/>}<AnalyticsPanel commerce={commerce} lang={lang} siteId={site.siteId} stripeConnected={Boolean(site.paymentRules?.methods?.stripe&&site.paymentRules?.stripeConnectedAccountId)}/></>}
       {tab==='integrations'&&<><CalendarPanel site={site} setSite={setSite} lang={lang} calendars={calendars} configured={googleConfigured} onSave={()=>save('employees',site.employees)} busy={busy}/><IntegrationManagementPanel site={site} setSite={setSite} lang={lang} membership={membership}/></>}
       {tab==='security'&&<MfaSettings lang={lang} allowDisable/>}
       {tab==='settings'&&<><SettingsPanel site={site} lang={lang} onSave={save} busy={busy}/><AccountLifecyclePanel site={site} lang={lang} membership={membership} onPageDeleted={async()=>{setSite(null);setSites([]);await loadSites()}} onAccountDeleted={async()=>{await logout();setUser(null);setSite(null);setSites([])}}/></>}
