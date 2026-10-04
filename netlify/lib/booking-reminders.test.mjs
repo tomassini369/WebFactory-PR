@@ -12,7 +12,7 @@ function fixture(t){
  t.mock.method(proto,'get',async function(k){return structuredClone(rows.get(`${this.name}/${k}`)?.value||null)});
  t.mock.method(proto,'getWithMetadata',async function(k){const row=rows.get(`${this.name}/${k}`);return row?{data:structuredClone(row.value),etag:row.etag}:null});
  t.mock.method(proto,'setJSON',async function(k,v,opts={}){const key=`${this.name}/${k}`,old=rows.get(key);if((opts.onlyIfNew&&old)||(opts.onlyIfMatch&&old?.etag!==opts.onlyIfMatch))return {modified:false};rows.set(key,{value:structuredClone(v),etag:String(++etag)});return {modified:true}});
- t.mock.method(proto,'delete',async function(k){rows.delete(`${this.name}/${k}`)});const mails=[];t.mock.method(nodemailer,'createTransport',()=>({close:()=>{},sendMail:async mail=>{mails.push(mail);return {messageId:'test',accepted:[mail.to[0]]}}}));return {rows,mails};
+ t.mock.method(proto,'delete',async function(k){rows.delete(`${this.name}/${k}`)});const mails=[];const send=async mail=>{const normalized={...mail,to:Array.isArray(mail.to)?mail.to:[mail.to]};mails.push(normalized);return {messageId:'test',accepted:[normalized.to[0]]}};return {rows,mails,send};
 }
 test('24h and 4h windows exclude premature, obsolete, cancelled and short-notice reminders',()=>{
  assert.deepEqual(dueBookingReminders(record,start-24*3600000),[24]);assert.deepEqual(dueBookingReminders(record,start-4*3600000+5*60000),[4]);assert.deepEqual(dueBookingReminders(record,start-25*3600000),[]);assert.deepEqual(dueBookingReminders(record,start-24*3600000+31*60000),[]);
@@ -27,8 +27,8 @@ test('recipient deduplication and last-minute cancellation prevent unwanted remi
  await clientCommerceStore().setJSON(commerceKey(site.siteId,'bookings',record.transactionId),{...record,status:'cancelled'});assert.equal(await sendBookingReminders(site,record,start-4*3600000,Infinity,{send:f.send}),0);assert.equal(f.mails.length,1);
 });
 test('uncertain SMTP responses preserve the claim and never auto-retry',async t=>{
- const f=fixture(t);await clientCommerceStore().setJSON(commerceKey(site.siteId,'bookings',record.transactionId),record);let attempts=0;t.mock.method(nodemailer,'createTransport',()=>({close:()=>{},sendMail:async()=>{attempts++;throw Error('SMTP response lost')}}));assert.equal(await sendBookingReminders(site,record,start-24*3600000,Infinity,{send:f.send}),0);
- assert.equal(await sendBookingReminders(site,record,start-24*3600000+15*60000,Infinity,{send:f.send}),0);assert.equal(attempts,2);assert.equal([...f.rows.values()].filter(x=>x.value.status==='delivery_uncertain').length,2);
+ const f=fixture(t);await clientCommerceStore().setJSON(commerceKey(site.siteId,'bookings',record.transactionId),record);let attempts=0;const failingSend=async()=>{attempts++;throw Error('Provider response lost')};assert.equal(await sendBookingReminders(site,record,start-24*3600000,Infinity,{send:failingSend}),0);
+ assert.equal(await sendBookingReminders(site,record,start-24*3600000+15*60000,Infinity,{send:failingSend}),0);assert.equal(attempts,2);assert.equal([...f.rows.values()].filter(x=>x.value.status==='delivery_uncertain').length,2);
 });
 test('crashed sending claims become uncertain without re-sending and concurrent workers send once',async t=>{
  const f=fixture(t);await clientCommerceStore().setJSON(commerceKey(site.siteId,'bookings',record.transactionId),record);
