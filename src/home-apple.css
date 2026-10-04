@@ -97,3 +97,5 @@
 
 .wf-mcp-numbered{list-style:none;padding:0}.wf-mcp-numbered>li{padding:20px 0;border-bottom:1px solid var(--hp-line)}.wf-mcp-numbered h3{margin:0;font-size:1rem;color:var(--hp-blue)}.wf-mcp-copy-field{margin-top:16px;min-width:0}.wf-mcp-copy-field>div{display:flex;align-items:center;gap:12px;margin-top:8px}.wf-mcp-copy-field code{flex:1;min-width:0;user-select:text;white-space:pre-wrap}.wf-mcp-copy-field button{flex:none;min-height:44px}.wf-mcp-numbered .wf-mcp-icon{margin-bottom:0}
 @media(max-width:560px){.wf-mcp-copy-field>div{align-items:flex-start;flex-direction:column}}
+
+.wf-mcp-copy-field .wf-btn[data-copied="true"]{background:#176b48;color:#fff;border-color:#176b48}.wf-mcp-copy-field .wf-btn:disabled{opacity:.75;cursor:wait}.wf-mcp-copy-status:empty{display:none}
