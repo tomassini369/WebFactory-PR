@@ -22,6 +22,7 @@ export default async (req, context) => {
     if(payload.action==='totp-verify')return authJson(await service.authenticateTotp(user,context,payload.code,origin));
     if(payload.action==='totp-cancel')return authJson(await service.cancelTotp(user,context,payload.challengeId,origin));
     if(payload.action==='totp-remove')return authJson(await service.removeTotp(user,context,origin));
+    if(payload.action==='disable')return authJson(await service.disableMfa(user,context,origin));
     if(payload.action==='register-options')return authJson({ok:true,...await service.options(user,context,'register',origin)});
     if(payload.action==='authenticate-options')return authJson({ok:true,...await service.options(user,context,'authenticate',origin)});
     if(payload.action==='register-verify')return authJson(await service.verify(user,context,payload,'register',origin));

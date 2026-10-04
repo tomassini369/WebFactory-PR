@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { startRegistration, startAuthentication } from '@simplewebauthn/browser'
-import { getUser, logout, onAuthChange, refreshPortalUser, type User } from './portal-auth'
+import { getUser, logout, onAuthChange, refreshPortalUser, requestPasswordRecovery, type User } from './portal-auth'
 import { AdaptiveLogo, ThemeToggle } from './theme'
 import './mfa.css'
 
@@ -11,7 +11,7 @@ async function request(action:string, values:Record<string,unknown>={}) {
   return result
 }
 
-function SecurityPanel({user,lang,onComplete,onCodes}:{user:User;lang:'es'|'en';onComplete:()=>Promise<unknown>;onCodes?:()=>void}) {
+function SecurityPanel({user,lang,onComplete,onCodes,allowDisable=false}:{user:User;lang:'es'|'en';onComplete:()=>Promise<unknown>;onCodes?:()=>void;allowDisable?:boolean}) {
   const es=lang==='es'
   const [totpSetup,setTotpSetup]=useState<{secret:string;qr:string;challengeId:string;expiresAt:number}|null>(null),[totpCode,setTotpCode]=useState('')
   useEffect(()=>{if(!totpSetup)return;const timer=window.setTimeout(()=>{setTotpSetup(null);setTotpCode('')},Math.min(300000,Math.max(0,totpSetup.expiresAt-Date.now())));return()=>window.clearTimeout(timer)},[totpSetup])
@@ -33,6 +33,7 @@ function SecurityPanel({user,lang,onComplete,onCodes}:{user:User;lang:'es'|'en';
   const cancelTotp=async()=>{if(!totpSetup)return;const challengeId=totpSetup.challengeId;setTotpSetup(null);setTotpCode('');await request('totp-cancel',{challengeId})}
   return <section className="mfa-panel" aria-labelledby="mfa-title"><h2 id="mfa-title">{es?'Seguridad de la cuenta':'Account security'}</h2>
     <p>{es?'Usa tu contraseña y verifica con una passkey o una app Authenticator.':'Use your password and verify with a passkey or an Authenticator app.'}</p>
+    <p><strong>{es?'Autenticación de dos factores (2FA): ':'Two-factor authentication (2FA): '}{user.mfa?.enrolled?(es?'Activada':'Enabled'):(es?'Desactivada':'Disabled')}</strong>{user.mfa?.policyRequired?` · ${es?'Obligatoria para esta cuenta':'Required for this account'}`:''}</p>
     {error&&<p role="alert">{error}</p>}
     {codes.length>0?<><h3>{es?'Guarda tus códigos de recuperación':'Save your recovery codes'}</h3><p>{es?'Cada código sirve una vez. Guárdalos fuera de este dispositivo; no se volverán a mostrar.':'Each code works once. Save them outside this device; they will not be shown again.'}</p><ul className="mfa-codes">{codes.map(value=><li key={value}><code>{value}</code></li>)}</ul><label><input type="checkbox" checked={saved} onChange={e=>setSaved(e.target.checked)}/>{es?'Guardé los códigos en un lugar seguro':'I saved the codes in a safe place'}</label><button className="btn" disabled={!saved||busy} onClick={()=>void run(async()=>{await onComplete();setCodes([])})}>{es?'Continuar':'Continue'}</button></>:
     user.mfa?.needsLogin?<><p>{es?'Vuelve a iniciar sesión con tu contraseña antes de continuar.':'Sign in with your password again before continuing.'}</p><button className="btn" disabled={busy} onClick={()=>void run(async()=>{await logout()})}>{es?'Volver al login':'Return to sign in'}</button></>:
@@ -42,6 +43,8 @@ function SecurityPanel({user,lang,onComplete,onCodes}:{user:User;lang:'es'|'en';
     {!totpSetup&&user.mfa?.enrolled&&<><form onSubmit={e=>{e.preventDefault();void run(async()=>{await request('recovery',{code});setCode('');await onComplete()})}}><label>{es?'Código de recuperación':'Recovery code'}<input value={code} onChange={e=>setCode(e.target.value)} autoComplete="off" spellCheck={false} maxLength={32} required/></label><button className="btn secondary" disabled={busy}>{es?'Usar código':'Use code'}</button></form><p>{es?'Códigos restantes: ':'Codes remaining: '}{user.mfa.recoveryCodesRemaining}</p>
     {user.mfa.verified&&<><button className="btn secondary" disabled={busy} onClick={()=>void run(async()=>{const result=await request('rotate-codes');onCodes?.();setSaved(false);setCodes(result.recoveryCodes)})}>{es?'Renovar códigos de recuperación':'Replace recovery codes'}</button><p>{es?'Verifica un método de seguridad nuevamente antes de cambiar dispositivos. Mantén al menos una passkey o Authenticator configurado.':'Verify a security method again before changing devices. Keep at least one passkey or Authenticator configured.'}</p><ul>{user.mfa.credentials?.map(credential=><li key={credential.id}>{credential.label} <button disabled={busy||((user.mfa?.credentials?.length||0)<2&&!user.mfa?.authenticatorEnrolled)} onClick={()=>void run(async()=>{await request('remove',{id:credential.id});await onComplete()})}>{es?'Eliminar':'Remove'}</button></li>)}</ul>{user.mfa.authenticatorEnrolled&&<button className="btn secondary" disabled={busy||!user.mfa.credentials?.length} onClick={()=>void run(async()=>{await request('totp-remove');await onComplete()})}>{es?'Eliminar Authenticator':'Remove Authenticator'}</button>}</>}</>}
     </>}
+    {allowDisable&&user.mfa?.enrolled&&!user.mfa?.policyRequired&&user.mfa?.verified&&<button className="btn secondary" disabled={busy} onClick={()=>void run(async()=>{if(!window.confirm(es?'¿Desactivar 2FA en tu cuenta? Tendrás que volver a activarlo manualmente si quieres usarlo otra vez.':'Disable 2FA on your account? You will need to enable it again manually if you want to use it later.'))return;await request('disable');await onComplete()})}>{es?'Desactivar 2FA':'Disable 2FA'}</button>}
+    {user.mfa?.policyRequired&&<p>{es?'WebFactory exige 2FA para esta cuenta y no puede desactivarse desde el portal.':'WebFactory requires 2FA for this account and it cannot be disabled from the portal.'}</p>}
     {busy&&<p role="status">{es?'Verificando…':'Verifying…'}</p>}
   </section>
 }
@@ -55,8 +58,11 @@ export function MfaGate({children}:{children:ReactNode}) {
   return <main className="mfa-screen"><header><a href="/"><AdaptiveLogo alt="WebFactory PR"/></a><div><button onClick={()=>setLang(lang==='es'?'en':'es')}>{lang==='es'?'EN':'ES'}</button><ThemeToggle/></div></header><SecurityPanel user={user} lang={lang} onCodes={()=>setHoldCodes(true)} onComplete={async()=>{await refreshPortalUser();setHoldCodes(false)}}/><a href="/">{lang==='es'?'Volver a WebFactory PR':'Return to WebFactory PR'}</a><button onClick={()=>void logout().catch(()=>setFailed(true))}>{lang==='es'?'Cerrar sesión':'Sign out'}</button></main>
 }
 
-export function MfaSettings({lang}:{lang:'es'|'en'}) {
-  const [user,setUser]=useState<User|null>(null)
+export function MfaSettings({lang,allowDisable=false}:{lang:'es'|'en';allowDisable?:boolean}) {
+  const [user,setUser]=useState<User|null>(null),[resetBusy,setResetBusy]=useState(false),[resetSent,setResetSent]=useState(false),[resetError,setResetError]=useState('')
   useEffect(()=>{let active=true;void getUser().then(next=>{if(active)setUser(next)}).catch(()=>{});const stop=onAuthChange((_event,next)=>{if(active)setUser(next)});return()=>{active=false;stop()}},[])
-  return user?<SecurityPanel user={user} lang={lang} onComplete={refreshPortalUser}/>:null
+  if(!user)return null
+  const es=lang==='es',accountEmail=user.email||''
+  const sendReset=async()=>{if(!accountEmail)return setResetError(es?'Esta cuenta no tiene un email válido.':'This account does not have a valid email.');setResetBusy(true);setResetError('');try{await requestPasswordRecovery(accountEmail);setResetSent(true)}catch(e){setResetError(e instanceof Error?e.message:(es?'No se pudo enviar el enlace.':'The reset link could not be sent.'))}finally{setResetBusy(false)}}
+  return <><section className="mfa-panel" aria-labelledby="password-security-title"><h2 id="password-security-title">{es?'Contraseña':'Password'}</h2><p>{es?'Envía un enlace seguro al email de esta cuenta para crear una contraseña nueva. WebFactory nunca muestra tu contraseña actual.':'Send a secure link to this account email to create a new password. WebFactory never displays your current password.'}</p><strong>{accountEmail}</strong><div className="mfa-actions"><button className="btn secondary" disabled={resetBusy||!accountEmail} onClick={()=>void sendReset()}>{resetBusy?(es?'Enviando…':'Sending…'):(es?'Enviar enlace para restablecer contraseña':'Send password reset link')}</button></div>{resetSent&&<p role="status">{es?'Enlace enviado. Revisa el correo de esta cuenta.':'Reset link sent. Check this account email.'}</p>}{resetError&&<p role="alert">{resetError}</p>}</section><SecurityPanel user={user} lang={lang} onComplete={refreshPortalUser} allowDisable={allowDisable}/></>
 }
