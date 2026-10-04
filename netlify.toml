@@ -147,16 +147,6 @@
   status = 200
 
 [[redirects]]
-  from = "/sites/:slug"
-  to = "/.netlify/functions/tenant-page?slug=:slug"
-  status = 200
-
-[[redirects]]
-  from = "/sites/:slug/"
-  to = "/.netlify/functions/tenant-page?slug=:slug"
-  status = 200
-
-[[redirects]]
   from = "/pay/:slug/:token"
   to = "/index.html"
   status = 200
