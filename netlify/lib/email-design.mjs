@@ -19,7 +19,7 @@ export function emailContrast(value) {
 }
 export function emailBrand(site, language = 'en') {
   const base = publicBaseUrl();
-  if (!site) return { name:'WebFactory PR', primary:'#0B1529', accent:'#0089E8', logo:`${base}/webfactory-pr-logo.png`, website:base, platform:true };
+  if (!site) return { name:'WebFactory PR', primary:'#0B1529', accent:'#0089E8', logo:`${base}/webfactory-email-logo-v2.jpg`, website:base, platform:true };
   const business = site.business || {}, es = language === 'es';
   const name = (es ? business.nameEs || business.name || business.nameEn : business.nameEn || business.name || business.nameEs) || (es ? 'Tu negocio' : 'Your business');
   const assetKey = String(business.logoAssetKey || '');
@@ -43,7 +43,7 @@ export function emailParagraph(text) {
 // bodyHtml is composed only by server-side templates; caller data must be escaped.
 export function renderEmailLayout({brand = emailBrand(), language = 'en', title, bodyHtml, footer}) {
   const e = emailEscape, es = language === 'es', headText = emailContrast(brand.primary);
-  const identity = brand.logo ? `<img src="${e(brand.logo)}" width="${brand.platform ? '180' : '72'}" alt="${e(brand.name)}" style="display:block;max-width:100%;height:auto;max-height:100px;object-fit:contain;margin:0 0 16px;border:0;${brand.platform ? 'background:#ffffff;padding:10px;border-radius:8px;' : ''}">` : '';
+  const identity = brand.logo ? `<img src="${e(brand.logo)}" width="${brand.platform ? '200' : '72'}" alt="${e(brand.name)}" style="display:block;max-width:100%;height:auto;margin:0 0 16px;border:0;${brand.platform ? 'border-radius:8px;' : 'max-height:100px;object-fit:contain;'}">` : '';
   const footerText = footer || (brand.platform ? (es ? 'Mensaje de WebFactory PR.' : 'A message from WebFactory PR.') : (es ? `Mensaje de ${brand.name}. Tecnología de WebFactory PR.` : `A message from ${brand.name}. Powered by WebFactory PR.`));
   return `<!doctype html><html lang="${es ? 'es' : 'en'}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><title>${e(title)}</title></head><body style="margin:0;padding:0;background:#f3f6fb;color:#0B1529;font-family:Arial,Helvetica,sans-serif"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" bgcolor="#f3f6fb"><tr><td align="center" style="padding:24px 12px"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:600px;table-layout:fixed"><tr><td bgcolor="${brand.primary}" style="padding:28px 24px;border-radius:20px 20px 0 0;border-bottom:4px solid ${brand.accent};color:${headText}">${identity}<p style="margin:0;font-size:22px;font-weight:700;line-height:30px;overflow-wrap:anywhere">${e(brand.name)}</p></td></tr><tr><td bgcolor="#ffffff" style="padding:28px 24px;border-radius:0 0 20px 20px"><h1 style="margin:0 0 24px;font-size:27px;line-height:35px;overflow-wrap:anywhere;word-break:break-word;color:#0B1529">${e(title)}</h1>${bodyHtml || ''}</td></tr><tr><td align="center" style="padding:20px 12px;font-size:12px;line-height:20px;color:#53637a;overflow-wrap:anywhere">${e(footerText)}</td></tr></table></td></tr></table></body></html>`;
 }
