@@ -5,7 +5,7 @@ import { AdaptiveLogo, ThemeToggle } from './theme'
 type Language='en'|'es'
 type LegalKind='privacy'|'terms'|'refund'
 
-const updated={en:'Effective: September 21, 2026 · Last updated: October 2, 2026',es:'Vigente: 21 de septiembre de 2026 · Última actualización: 2 de octubre de 2026'}
+const updated={en:'Effective: September 21, 2026 · Last updated: October 4, 2026',es:'Vigente: 21 de septiembre de 2026 · Última actualización: 4 de octubre de 2026'}
 
 const copy={
   en:{
@@ -36,7 +36,10 @@ const copy={
         ]],
         ['ChatGPT connection',[
           'Business owners may authorize ChatGPT to read information from a selected business and prepare changes. Platform administrators may separately authorize platform-wide access. Information returned by the connection is shared with ChatGPT and is subject to its own terms and privacy policies.',
-          'WebFactory uses OAuth with scoped connections and stores hashed connection tokens. Changes require review and confirmation in WebFactory. Password changes, credentials and platform source code are not available through the connection. Disconnecting in WebFactory revokes further access but does not delete information already shared in ChatGPT conversations.'
+          'WebFactory uses OAuth with scoped connections and stores hashed connection tokens. Changes require review and confirmation in WebFactory. Password changes, credentials and platform source code are not available through the connection. Disconnecting in WebFactory revokes further access but does not delete information already shared in ChatGPT conversations.',
+          'Depending on the tools requested and authorized scope, shared information can include business configuration, customer contact details, bookings, orders, receipts, employee compensation, approved hours and accounting records. The business must have authority to disclose this information and should avoid unnecessary personal information in prompts.',
+          'WebFactory records connection authorization, scope, expiry and revocation, and stores proposed changes, their review status and execution results to operate the review workflow. These records follow the retention principles in this policy. Revoking a connection does not automatically erase these records or copies already processed by OpenAI; manage conversation data separately in ChatGPT.',
+          'This connection is separate from Google Calendar and Business Email authorization. Connecting ChatGPT does not itself authorize either Google integration.'
         ]],
         ['5. Google Calendar',[
           'If a business chooses to connect Google Calendar, WebFactory uses the authorization granted by that business to check availability and support creation, updating, cancellation, or rescheduling of booking-related calendar events.',
@@ -144,7 +147,14 @@ const copy={
         ['17. Governing framework and disputes',[
           'These Terms are intended to operate under the laws applicable to WebFactory PR and its services in Puerto Rico and the United States, without limiting consumer rights that cannot lawfully be waived. Before filing a formal dispute, users are encouraged to contact WebFactory so the issue can be reviewed and, when possible, resolved directly.'
         ]],
-        ['18. Contact',[
+        ['18. ChatGPT and delegated business actions',[
+          'Connecting ChatGPT is optional and requires an eligible ChatGPT account, a WebFactory account and explicit authorization. OpenAI controls supported devices, plans and connection availability; its terms and applicable charges are separate. WebFactory does not promise that every portal function is available in chat.',
+          'A business authorization is limited to its selected business and current access rights. Platform-wide administration requires a separately authorized platform administrator. Do not use the connection to access another business without authorization, expose credentials, change passwords or modify platform source code.',
+          'Read access permits authorized information to be returned to ChatGPT without approving each response in WebFactory. Proposed changes require review and confirmation in WebFactory before execution. Review the selected account, affected business, amounts, recipients and any design preview. A proposal or AI response is not proof that an action completed; verify the recorded result before retrying.',
+          'AI suggestions can be incomplete or inaccurate. Business owners remain responsible for approved content, communications and operations. Salary calculations and accounting exports organize supplied records; they do not file tax returns, send payroll payments or replace professional accounting or employment advice. Confirm hours, rates, classifications and tax treatment independently.',
+          'You may revoke a connection in WebFactory at /chatgpt. Revocation blocks further use of that authorization but does not undo completed actions or delete conversations already held by ChatGPT.'
+        ]],
+        ['19. Contact',[
           'Questions about these Terms may be sent to info@webfactorypr.com.'
         ]]
       ]
@@ -213,7 +223,10 @@ const copy={
         ]],
         ['Conexión con ChatGPT',[
           'Los dueños pueden autorizar a ChatGPT a consultar información de un negocio seleccionado y preparar cambios. Los administradores de la plataforma pueden autorizar por separado acceso a toda la plataforma. La información consultada se comparte con ChatGPT y está sujeta a sus propios términos y políticas de privacidad.',
-          'WebFactory utiliza OAuth con conexiones de alcance limitado y almacena hashes de los tokens de conexión. Los cambios requieren revisión y confirmación en WebFactory. Las contraseñas, credenciales y el código de la plataforma no están disponibles mediante la conexión. Desconectar revoca el acceso futuro, pero no elimina información compartida previamente en las conversaciones de ChatGPT.'
+          'WebFactory utiliza OAuth con conexiones de alcance limitado y almacena hashes de los tokens de conexión. Los cambios requieren revisión y confirmación en WebFactory. Las contraseñas, credenciales y el código de la plataforma no están disponibles mediante la conexión. Desconectar revoca el acceso futuro, pero no elimina información compartida previamente en las conversaciones de ChatGPT.',
+          'Según la herramienta solicitada y el alcance autorizado, la información compartida puede incluir configuración del negocio, datos de contacto de clientes, reservas, órdenes, recibos, compensación de empleados, horas aprobadas y registros contables. El negocio debe tener autoridad para divulgar estos datos y evitar información personal innecesaria en las instrucciones.',
+          'WebFactory registra la autorización, alcance, vencimiento y revocación de conexiones, y almacena propuestas de cambios, su estado de revisión y resultados para operar el flujo de aprobación. Estos registros siguen los principios de retención de esta política. Revocar no elimina automáticamente esos registros ni copias ya procesadas por OpenAI; administra los datos de conversaciones por separado en ChatGPT.',
+          'Esta conexión es independiente de las autorizaciones de Google Calendar y Business Email. Conectar ChatGPT no autoriza por sí solo ninguna de esas integraciones.'
         ]],
         ['5. Google Calendar',[
           'Si un negocio conecta Google Calendar, WebFactory utiliza la autorización otorgada para consultar disponibilidad y apoyar la creación, actualización, cancelación o reprogramación de eventos relacionados con reservaciones.',
@@ -321,7 +334,14 @@ const copy={
         ['17. Marco aplicable y disputas',[
           'Estos Términos están diseñados para operar bajo las leyes aplicables a WebFactory PR y sus servicios en Puerto Rico y Estados Unidos, sin limitar derechos del consumidor que legalmente no puedan renunciarse. Antes de iniciar una disputa formal, se recomienda contactar a WebFactory para evaluar y, cuando sea posible, resolver el asunto directamente.'
         ]],
-        ['18. Contacto',[
+        ['18. ChatGPT y acciones delegadas del negocio',[
+          'Conectar ChatGPT es opcional y requiere una cuenta elegible de ChatGPT, una cuenta WebFactory y autorización explícita. OpenAI controla los dispositivos, planes y disponibilidad de conexiones; sus términos y cargos aplicables son independientes. WebFactory no promete que toda función del portal esté disponible en el chat.',
+          'La autorización de negocio se limita al negocio seleccionado y sus permisos vigentes. Administrar toda la plataforma requiere un administrador de plataforma autorizado por separado. No uses la conexión para entrar a otro negocio sin autorización, exponer credenciales, cambiar contraseñas o modificar código fuente de la plataforma.',
+          'El acceso de lectura permite devolver información autorizada a ChatGPT sin aprobar cada respuesta en WebFactory. Los cambios propuestos requieren revisión y confirmación en WebFactory antes de ejecutarse. Revisa la cuenta, negocio, cantidades, destinatarios y cualquier vista previa de diseño. Una propuesta o respuesta de IA no demuestra que se completó una acción; verifica el resultado registrado antes de reintentar.',
+          'Las sugerencias de IA pueden ser incompletas o incorrectas. El dueño del negocio sigue siendo responsable del contenido, comunicaciones y operaciones que apruebe. Los cálculos de salarios y exportaciones contables organizan registros provistos; no radican planillas, envían pagos de nómina ni sustituyen asesoría profesional contable o laboral. Verifica independientemente horas, tarifas, clasificaciones y tratamiento contributivo.',
+          'Puedes revocar la conexión en WebFactory en /chatgpt. Revocar impide seguir usando esa autorización, pero no revierte acciones completadas ni elimina conversaciones ya guardadas por ChatGPT.'
+        ]],
+        ['19. Contacto',[
           'Preguntas sobre estos Términos pueden enviarse a info@webfactorypr.com.'
         ]]
       ]
@@ -370,7 +390,7 @@ export default function LegalPage({kind}:{kind:LegalKind}){
   useEffect(()=>{document.documentElement.lang=lang;document.title=`${page.title} | WebFactory PR`},[lang,page.title])
   return <main className="legal-page">
     <header className="legal-top"><a href="/" className="legal-logo"><AdaptiveLogo alt="WebFactory PR"/></a><nav><a href="/templates">Templates</a><a href="/builder">Builder</a><a href="/client-admin">Log In</a><div className="legal-lang"><button className={lang==='en'?'active':''} onClick={()=>setLang('en')}>EN</button><button className={lang==='es'?'active':''} onClick={()=>setLang('es')}>ES</button></div><ThemeToggle/></nav></header>
-    <section className="legal-hero"><div><p>WEBFACTORY PR · LEGAL</p><h1>{page.title}</h1><span>{updated[lang]}</span><p>{page.intro}</p></div></section>
+    <section className="legal-hero"><div><p>WEBFACTORY PR · LEGAL</p><h1>{page.title}</h1><span>{kind === 'refund' ? updated[lang].replace('October 4', 'October 2').replace('4 de octubre', '2 de octubre') : updated[lang]}</span><p>{page.intro}</p></div></section>
     <article className="legal-content">
       {page.sections.map(([title,paragraphs])=><section key={title}><h2>{title}</h2>{paragraphs.map((paragraph,index)=><p key={index}>{paragraph}</p>)}</section>)}
       <aside><strong>{lang==='es'?'¿Necesitas ayuda?':'Need help?'}</strong><p>{lang==='es'?'Contáctanos sobre estas políticas o tu cuenta.':'Contact us about these policies or your account.'}</p><a href="mailto:info@webfactorypr.com">info@webfactorypr.com</a></aside>
