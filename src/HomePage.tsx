@@ -10,7 +10,7 @@ type Language = 'en' | 'es'
 
 const copy = {
   en: {
-    nav: ['Platform', 'Tour', 'Demo', 'Plans'], templatesNav: 'Templates', login: 'Log In', menu: 'Menu', mainNav: 'Main navigation',
+    nav: ['Platform', 'Tour', 'Demo', 'Plans', 'FAQ'], templatesNav: 'Templates', login: 'Log In', menu: 'Menu', mainNav: 'Main navigation',
     eyebrow: 'BUILT IN PUERTO RICO · FOR YOUR BUSINESS', title: 'Your whole business,', accent: 'one control center.',
     lead: 'Launch a bilingual website, sell products and services, accept bookings, get paid and manage your team, all connected to your Business Control Center.',
     modules: ['Website', 'Commerce', 'Payments', 'Employees', 'Bookings'],
@@ -57,7 +57,7 @@ const copy = {
     footer: 'Your website. Your operation. Your control.', legal: ['Privacy', 'Terms', 'Refunds'], legalNav: 'Legal links',
   },
   es: {
-    nav: ['Plataforma', 'Recorrido', 'Demo', 'Planes'], templatesNav: 'Templates', login: 'Log In', menu: 'Menú', mainNav: 'Navegación principal',
+    nav: ['Plataforma', 'Recorrido', 'Demo', 'Planes', 'FAQ'], templatesNav: 'Templates', login: 'Log In', menu: 'Menú', mainNav: 'Navegación principal',
     eyebrow: 'CREADO EN PUERTO RICO · PARA TU NEGOCIO', title: 'Todo tu negocio,', accent: 'un centro de control.',
     lead: 'Lanza un website bilingüe, vende productos y servicios, recibe reservas, cobra y administra tu equipo, todo conectado a tu Business Control Center.',
     modules: ['Website', 'Ventas', 'Pagos', 'Empleados', 'Reservas'],
@@ -405,7 +405,7 @@ export default function HomePage({ lang, setLang }: { lang: Language, setLang: (
   }, [reduced, lang])
 
   const goToStep = (i: number) => stepRefs.current[i]?.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'center' })
-  const nav = ['#plataforma', '#recorrido', '#explorar', '#planes']
+  const nav = ['#plataforma', '#recorrido', '#explorar', '#planes', '#faq']
 
   return <div ref={rootRef} className={'wf-premium-home' + (reduced ? '' : ' motion')} id="top" style={{ '--step': step } as CSSProperties}>
     <header className={'wf-h-header' + (scrolled ? ' scrolled' : '')}>
@@ -481,7 +481,7 @@ export default function HomePage({ lang, setLang }: { lang: Language, setLang: (
           <div><p className="wf-eyebrow">{t.priceLabel}</p><h2>{t.priceTitle}</h2><p>{t.priceText}</p><span>{t.noCommission}</span></div>
           <div className="wf-price"><strong>$30<small>{t.perMonth}</small></strong><p>{t.annual}</p><a className="wf-btn" href="/builder">{t.start}<span aria-hidden="true">↗</span></a><small>{t.trialShort}</small></div>
         </div>
-        <div className="wf-faq">{t.faq.map(([q, a]) => <details key={q}><summary>{q}<span aria-hidden="true">+</span></summary><p>{a}</p></details>)}</div>
+        <div id="faq" className="wf-faq" tabIndex={-1} aria-label="FAQ">{t.faq.map(([q, a]) => <details key={q}><summary>{q}<span aria-hidden="true">+</span></summary><p>{a}</p></details>)}</div>
       </section>
 
       <section className="wf-final wf-shell" data-reveal>

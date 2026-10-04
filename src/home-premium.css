@@ -461,3 +461,10 @@
   .wf-demo-shop{grid-template-columns:1fr}
 }
 @media(prefers-reduced-motion:reduce){.wf-premium-home *,.wf-premium-home *::before,.wf-premium-home *::after{animation:none!important;transition:none!important}}
+
+#faq { scroll-margin-top: 110px; }
+#faq:focus-visible { outline: 2px solid currentColor; outline-offset: 8px; }
+@media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+
+.wf-h-header nav a:focus-visible{outline:2px solid currentColor;outline-offset:4px}
+@media(max-width:960px){.wf-h-header nav a{min-height:44px;display:flex;align-items:center;width:100%}}

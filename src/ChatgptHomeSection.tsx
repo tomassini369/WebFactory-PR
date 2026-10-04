@@ -3,7 +3,7 @@ import { useState } from 'react'
 const content = {
   en: {
     title: 'Your business, connected to ChatGPT.',
-    intro: 'Use the WebFactory MCP connection to consult business information and prepare changes from a conversation. You review and approve changes in WebFactory before they are applied.',
+    intro: 'Use the WebFactory MCP connection to consult business information and prepare changes from a conversation. You review and approve changes in WebFactory before they are applied. With explicit Execute permission, ChatGPT can apply supported approved changes and return a verified audit receipt.',
     cards: [['Ask about your business', 'Consult bookings, orders, catalog and accounting information within your authorized access.'], ['Prepare your next change', 'Prepare operational updates or a website design proposal with a preview. Available tools cover selected portal functions.'], ['Keep control', 'A business connection is limited to the selected business. Platform administration requires a separate, authorized administrator connection.']],
     setup: 'Connect your account',
     iconTitle: 'WebFactory PR icon', iconHelp: 'Download this PNG and upload it when the MCP setup asks for an icon. On iPhone, save it to Files; if it opens as an image, use Share → Save Image or Save to Files.', iconDownload: 'Download MCP icon (PNG)', iconOpen: 'Open image',
@@ -17,7 +17,7 @@ const content = {
   },
   es: {
     title: 'Tu negocio, conectado con ChatGPT.',
-    intro: 'Usa la conexión MCP de WebFactory para consultar información del negocio y preparar cambios desde una conversación. Revisas y apruebas los cambios en WebFactory antes de aplicarlos.',
+    intro: 'Usa la conexión MCP de WebFactory para consultar información del negocio y preparar cambios desde una conversación. Revisas y apruebas los cambios en WebFactory antes de aplicarlos. Con el permiso Execute explícito, ChatGPT puede aplicar cambios aprobados compatibles y devolver un recibo de auditoría verificado.',
     cards: [['Consulta tu negocio', 'Consulta reservas, órdenes, catálogo e información contable dentro de tu acceso autorizado.'], ['Prepara el próximo cambio', 'Prepara actualizaciones operacionales o una propuesta de diseño del website con vista previa. Las herramientas disponibles cubren funciones seleccionadas del portal.'], ['Mantén el control', 'La conexión de negocio se limita al negocio seleccionado. Administrar la plataforma requiere una conexión separada de un administrador autorizado.']],
     setup: 'Conecta tu cuenta',
     iconTitle: 'Icono de WebFactory PR', iconHelp: 'Descarga este PNG y súbelo cuando la configuración del MCP solicite un icono. En iPhone, guárdalo en Archivos; si se abre como imagen, usa Compartir → Guardar imagen o Guardar en Archivos.', iconDownload: 'Descargar icono del MCP (PNG)', iconOpen: 'Abrir imagen',

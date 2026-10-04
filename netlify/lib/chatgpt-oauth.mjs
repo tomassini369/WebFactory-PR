@@ -2,7 +2,7 @@ import crypto from 'node:crypto';
 export const oauthError=(message,status=400)=>Object.assign(new Error(message),{status});
 export const hash=value=>crypto.createHash('sha256').update(String(value)).digest('hex');
 export const randomToken=()=>crypto.randomBytes(32).toString('base64url');
-export const scopes=['webfactory.read','webfactory.propose'];
+export const scopes=['webfactory.read','webfactory.propose','webfactory.execute'];
 export const key=(kind,id)=>`chatgpt/${kind}/${hash(id)}.json`;
 export function allowedRedirect(uri){return uri==='https://chatgpt.com/connector_platform_oauth_redirect'||/^https:\/\/chatgpt\.com\/connector\/oauth\/[a-zA-Z0-9_-]+$/.test(uri);}
 export function metadata(origin){return {issuer:origin,authorization_endpoint:origin+'/oauth/chatgpt/authorize',token_endpoint:origin+'/oauth/chatgpt/token',registration_endpoint:origin+'/oauth/chatgpt/register',revocation_endpoint:origin+'/oauth/chatgpt/revoke',response_types_supported:['code'],grant_types_supported:['authorization_code','refresh_token'],token_endpoint_auth_methods_supported:['none'],code_challenge_methods_supported:['S256'],scopes_supported:scopes,authorization_response_iss_parameter_supported:true};}
@@ -22,12 +22,12 @@ export async function beginAuthorization(store,input,origin,now=Date.now()){
  if(typeof input.state!=='string'||input.state.length<1||input.state.length>2000)throw oauthError('OAuth state is required.');
  const requestId=randomToken();await setNew(store,key('requests',requestId),{clientId:client.client_id,redirectUri:input.redirect_uri,state:input.state,challenge:input.code_challenge,resource:input.resource,scopes:requested,origin,expiresAt:now+600000});return requestId;
 }
-export async function consent(store,requestId,user,{siteId='',platform=false,allowWrites=false},now=Date.now()){
+export async function consent(store,requestId,user,{siteId='',platform=false,allowWrites=false,allowExecute=false},now=Date.now()){
  const requestKey=key('requests',requestId),stored=await store.getWithMetadata(requestKey,json),request=stored?.data;
  if(!request||request.used||request.expiresAt<now)throw oauthError('Authorization request expired.',409);
  if(!user?.id||!user?.email||(!platform&&!siteId))throw oauthError('Choose an authorized business.',403);
  const grantId=crypto.randomUUID(),code=randomToken();
- const grant={id:grantId,userId:user.id,email:user.email.toLowerCase(),siteId:platform?'':siteId,platform,scopes:request.scopes.filter(s=>allowWrites||s!=='webfactory.propose'),clientId:request.clientId,resource:request.resource,origin:request.origin,createdAt:now,expiresAt:now+30*86400000,revoked:false};
+ const grant={id:grantId,userId:user.id,email:user.email.toLowerCase(),siteId:platform?'':siteId,platform,scopes:request.scopes.filter(s=>s==='webfactory.read'||s==='webfactory.propose'&&allowWrites||s==='webfactory.execute'&&allowExecute&&allowWrites),clientId:request.clientId,resource:request.resource,origin:request.origin,createdAt:now,expiresAt:now+30*86400000,revoked:false};
  const claimed=await store.setJSON(requestKey,{...request,used:true},{onlyIfMatch:stored.etag});if(!claimed.modified)throw oauthError('Authorization request already used.',409);
  await setNew(store,key('grants',grantId),grant);
  await setNew(store,`chatgpt/users/${hash(user.id)}/${grantId}.json`,{userId:user.id,grantId});
@@ -62,4 +62,11 @@ export async function authenticateToken(store,header,origin,now=Date.now()){
  const grant=await getGrant(store,token.grantId,now);
  if(grant.resource!==token.resource||grant.clientId!==token.clientId)throw oauthError('Invalid token audience.',401);
  return grant;
+}
+
+export async function revokeExecute(store,id){
+ const k=key('grants',id),old=await store.getWithMetadata(k,json);
+ if(!old)throw oauthError('Connection unavailable.',404);
+ const result=await store.setJSON(k,{...old.data,scopes:old.data.scopes.filter(s=>s!=='webfactory.execute')},{onlyIfMatch:old.etag});
+ if(!result.modified)throw oauthError('Connection changed. Retry revocation.',409);
 }

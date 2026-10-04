@@ -40,6 +40,8 @@ function sanitizeBusiness(value = {}, current = {}) {
     mapsUrl: cleanText(value.mapsUrl ?? current.mapsUrl, 1500),
     locations,
     instagram: cleanText(value.instagram ?? current.instagram, 300),
+    facebook: cleanText(value.facebook ?? current.facebook, 300),
+    x: cleanText(value.x ?? current.x, 300),
     logoAssetKey: cleanText(value.logoAssetKey ?? current.logoAssetKey, 700),
   };
 }
@@ -137,28 +139,9 @@ function sanitizePaymentRules(value = {}, current = {}) {
   };
 }
 
-export default async (req) => {
-  try {
-    if (req.method === "GET") {
-      const url = new URL(req.url);
-      const siteId = url.searchParams.get("siteId");
-      if (!siteId) {
-        const { user, sites } = await authorizedSites();
-        return Response.json({ ok: true, user: { id: user.id, email: user.email, name: user.name }, sites: sites.map((site) => ({
-          siteId: site.siteId, slug: site.slug, status: site.status, revision: site.revision, businessName: site.business?.name,
-        })) }, { headers: { "Cache-Control": "no-store" } });
-      }
-      const { user, site, membership } = await requireSiteAccess(siteId);
-      return Response.json({ ok: true, user: { id: user.id, email: user.email, name: user.name }, membership: { ...membership, capabilities: siteRoleCapabilities(membership?.role || "staff") }, site }, { headers: { "Cache-Control": "no-store" } });
-    }
-
-    if (req.method !== "PATCH") return Response.json({ ok: false, message: "Method not allowed." }, { status: 405 });
-    assertSameOrigin(req);
-    const payload = await req.json();
-    const section = cleanText(payload.section, 40);
-    if (!allowedSections.has(section)) throw Object.assign(new Error("Invalid settings section."), { status: 400 });
-    const { user, site, membership } = await requireSiteAccess(payload.siteId, ["owner", "manager"]);
-    if (membership.role === "staff") throw Object.assign(new Error("Staff cannot change business settings."), { status: 403 });
+export function normalizeClientSection(site, section, incoming, user, membership) {
+    if (!allowedSections.has(section)) throw Object.assign(new Error("Invalid settings section."), {status:400});
+    const payload = {value:incoming};
     if (section === "business" && !["active", "trialing", "trial", "complimentary"].includes(site.servicePlan?.subscriptionStatus)) {
       const incoming = payload.value || {};
       const brandFields = ["name", "nameEn", "nameEs", "category"];
@@ -231,6 +214,33 @@ export default async (req) => {
       allowCustomerRescheduling: typeof payload.value?.allowCustomerRescheduling === "boolean" ? payload.value.allowCustomerRescheduling : (site.settings?.allowCustomerRescheduling ?? true),
     };
     if (section === "business" && value.email && !validEmail(value.email)) throw Object.assign(new Error("Business email is invalid."), { status: 400 });
+
+    return value;
+}
+
+export default async (req) => {
+  try {
+    if (req.method === "GET") {
+      const url = new URL(req.url);
+      const siteId = url.searchParams.get("siteId");
+      if (!siteId) {
+        const { user, sites } = await authorizedSites();
+        return Response.json({ ok: true, user: { id: user.id, email: user.email, name: user.name }, sites: sites.map((site) => ({
+          siteId: site.siteId, slug: site.slug, status: site.status, revision: site.revision, businessName: site.business?.name,
+        })) }, { headers: { "Cache-Control": "no-store" } });
+      }
+      const { user, site, membership } = await requireSiteAccess(siteId);
+      return Response.json({ ok: true, user: { id: user.id, email: user.email, name: user.name }, membership: { ...membership, capabilities: siteRoleCapabilities(membership?.role || "staff") }, site }, { headers: { "Cache-Control": "no-store" } });
+    }
+
+    if (req.method !== "PATCH") return Response.json({ ok: false, message: "Method not allowed." }, { status: 405 });
+    assertSameOrigin(req);
+    const payload = await req.json();
+    const section = cleanText(payload.section, 40);
+    if (!allowedSections.has(section)) throw Object.assign(new Error("Invalid settings section."), { status: 400 });
+    const { user, site, membership } = await requireSiteAccess(payload.siteId, ["owner", "manager"]);
+    if (membership.role === "staff") throw Object.assign(new Error("Staff cannot change business settings."), { status: 403 });
+    const value = normalizeClientSection(site, section, payload.value, user, membership);
 
     if(section==='catalog'&&!Number.isInteger(payload.revision))throw Object.assign(new Error('Reload the portal before editing the catalog.'),{status:409});
     const updated = await patchClientSite(site.siteId, { [section]: value },section==='catalog'?{expectedRevision:payload.revision}:{});

@@ -1,3 +1,4 @@
+import {executableOperations,proposalSnapshot,proposalDigest} from './chatgpt-execution.mjs';
 import crypto from 'node:crypto';
 import {bookingVersion,changePrivateBooking} from './booking-management.mjs';
 import {clientOAuthStore,clientCommerceStore,getClientSite,patchClientSite,publicClientSite} from './client-store.mjs';
@@ -26,7 +27,7 @@ export async function prepareProposal(grant,user,{operation,siteId,input,request
  const {op,input:parsed}=parseOperation(operation,input),target=grant.platform?siteId:grant.siteId;
  if(!grant.platform&&siteId&&siteId!==target)throw oauthError('Cross-business access denied.',403);
  if(!target&&!['invite_trial','invite_complimentary'].includes(operation))throw oauthError('Select a business siteId.');
- const {site}=await authorizeGrant(grant,user,target,operationCapability(op,parsed),op);
+ const {site,membership}=await authorizeGrant(grant,user,target,operationCapability(op,parsed),op);
  const store=clientOAuthStore(),id=crypto.createHash('sha256').update(grant.id+requestId).digest('hex').slice(0,32).replace(/(.{8})(.{4})(.{4})(.{4})(.{12})/,'$1-$2-$3-$4-$5');
  const fingerprint=hash(JSON.stringify({operation,siteId:target,input:parsed}));
  const old=await store.get(proposalKey(id),{type:'json'});
@@ -36,9 +37,12 @@ export async function prepareProposal(grant,user,{operation,siteId,input,request
  const booking=operation==='reschedule_booking'?await clientCommerceStore().get(`${target}/bookings/${parsed.transactionId}.json`,{type:'json'}):null;
  if(operation==='reschedule_booking'&&(!booking||booking.siteId!==target||!booking.calendarToken))throw oauthError('Booking unavailable for online rescheduling.',409);
  const proposal={bookingVersion:booking?bookingVersion(booking):null,id,grantId:grant.id,userId:user.id,siteId:target||'',operation,input:parsed,description:op.description,siteRevision:site?.revision??null,ledgerRevision:ledger?.revision||0,businessName:site?.business?.name||'WebFactory PR',createdAt:Date.now(),expiresAt:Date.now()+3600000,status:'pending',fingerprint,preview};
+ const executable=executableOperations.includes(operation);
+ Object.assign(proposal,{proposalId:id,email:user.email,role:grant.platform?'platform-admin':membership.role,scopes:[...grant.scopes],action:operation,resource:operation.startsWith('update_')?operation.slice(7):operation,executeViaMcp:executable&&grant.scopes.includes('webfactory.execute'),...(executable?proposalSnapshot(site,operation,parsed,user,membership):{currentState:null,proposedState:safeOutput(parsed),diff:[],requiredConfirmation:operation.includes('delete_business_page')?'DELETE PAGE':/refund|disconnect|subscription|mark_paid|record_pos|revoke/.test(operation)?'CONFIRM SENSITIVE ACTION':'CONFIRM'})});
+ proposal.approvalDigest=proposalDigest(proposal);
  const saved=await store.setJSON(proposalKey(id),proposal,{onlyIfNew:true});if(!saved.modified)throw oauthError('Proposal already being prepared. Retry with the same requestId.',409);
  await store.setJSON(`chatgpt/proposal-users/${hash(user.id)}/${id}.json`,{id,userId:user.id});
- return {id,status:'pending',approvalUrl:origin+'/chatgpt?proposal='+id,requiresHumanConfirmation:true,summary:op.description||operation};
+ return {id,status:'pending',approvalUrl:origin+'/chatgpt?proposal='+id,requiresHumanConfirmation:true,summary:op.description||operation,proposalId:id,currentState:proposal.currentState,proposedState:proposal.proposedState,diff:proposal.diff,executeViaMcp:proposal.executeViaMcp,requiredConfirmation:proposal.requiredConfirmation||'CONFIRM'};
 }
 export async function executeProposal(id,user,request,context,confirmation){
  const store=clientOAuthStore(),k=proposalKey(id),stored=await store.getWithMetadata(k,{type:'json'}),p=stored?.data;
@@ -50,7 +54,7 @@ export async function executeProposal(id,user,request,context,confirmation){
  const {site}=await authorizeGrant(grant,user,p.siteId,operationCapability(op,input),op);
  if(site&&site.revision!==p.siteRevision)throw oauthError('Business changed since this proposal. Generate a fresh preview.',409);
  const destructive=p.operation.includes('delete_business_page');
- if(confirmation!==(destructive?'DELETE PAGE':'CONFIRM'))throw oauthError('Type the required confirmation in WebFactory.');
+ if(confirmation!==(p.requiredConfirmation||(destructive?'DELETE PAGE':'CONFIRM')))throw oauthError('Type the required confirmation in WebFactory.');
  const claim=await store.setJSON(k,{...p,status:'processing',approvedAt:Date.now(),approvedBy:user.email},{onlyIfMatch:stored.etag});if(!claim.modified)throw oauthError('Proposal already being processed.',409);
  let result,status;
  try{
