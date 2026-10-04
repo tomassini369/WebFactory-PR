@@ -78,7 +78,7 @@ The browser never supplies an authoritative subscription price. The server selec
 
 ## Transactional email
 
-Transactional email is sent only from backend Functions. The currently validated production transport is the configured Gmail fallback. Mailjet can be enabled when its production credentials are configured.
+Transactional email is sent only from backend Functions. Production uses Resend SMTP (`WEBFACTORY_EMAIL_PROVIDER=resend`, `RESEND_API_KEY`). Gmail remains available for preview/development and explicit rollback; automatic SMTP failover is not enabled. ImprovMX continues receiving corporate email.
 
 Corporate sender identities:
 

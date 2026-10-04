@@ -1,6 +1,6 @@
 # Correo: marca y previsualización
 
-Las funciones siguen enviando por Nodemailer con Gmail/Mailjet. No se instala Netlify Email Integration, no se cambia remitente SMTP ni se añade un proveedor. Diseño común en `netlify/lib/email-design.mjs`; contenido por propósito en las plantillas de reservas, comercio, contacto y plataforma.
+Las funciones envían por Nodemailer con Resend en producción. Gmail se conserva para otros contextos y reversión explícita. ImprovMX recibe el correo corporativo. No se instala Netlify Email Integration. Diseño común en `netlify/lib/email-design.mjs`; contenido por propósito en las plantillas de reservas, comercio, contacto y plataforma.
 
 ## Marca y cobertura
 
