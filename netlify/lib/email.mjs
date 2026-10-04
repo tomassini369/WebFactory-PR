@@ -22,22 +22,6 @@ function cleanAddress(value) {
 
 function transportConfig() {
   const requestedProvider = env("WEBFACTORY_EMAIL_PROVIDER").trim().toLowerCase();
-  const apiKey = env("MAILJET_API_KEY");
-  const secretKey = env("MAILJET_SECRET_KEY");
-
-  const mailjet = () => {
-    if (!apiKey || !secretKey) throw new Error("Mailjet email provider is selected, but its API key pair is not configured.");
-    return {
-      provider: "mailjet",
-      options: {
-        host: env("MAILJET_SMTP_HOST") || "in-v3.mailjet.com",
-        port: Number(env("MAILJET_SMTP_PORT") || 587),
-        secure: Number(env("MAILJET_SMTP_PORT") || 587) === 465,
-        auth: { user: apiKey, pass: secretKey },
-      },
-    };
-  };
-
   const user = env("WEBFACTORY_GMAIL_USER");
   const pass = env("WEBFACTORY_GMAIL_APP_PASSWORD");
   const gmail = () => {
@@ -52,10 +36,8 @@ function transportConfig() {
   };
 
   if (requestedProvider === "gmail") return gmail();
-  if (requestedProvider === "mailjet") return mailjet();
   if (requestedProvider === "resend") return resend();
-  if (requestedProvider && requestedProvider !== "auto") throw new Error("WEBFACTORY_EMAIL_PROVIDER must be set to auto, gmail, mailjet, or resend.");
-  if (apiKey && secretKey) return mailjet();
+  if (requestedProvider && requestedProvider !== "auto") throw new Error("WEBFACTORY_EMAIL_PROVIDER must be set to auto, gmail, or resend.");
   if (user && pass) return { ...gmail(), provider: "gmail-fallback" };
   throw new Error("Transactional email transport is not configured.");
 }

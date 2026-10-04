@@ -23,7 +23,7 @@ Preview: https://deploy-preview-58--webfactorypr.netlify.app/
 |---|---|---|
 | WF01 | Aceptación completa de acceso y recuperación | Authenticator ya funciona. Verificar recuperación, dos pestañas, cookies y PWA real en iPhone sin compartir códigos. |
 | WF02 | Revisión de configuración de Identity y revocación | Rutas privadas y pruebas locales existentes; comprobar configuración del proveedor, recuperación, limitación de intentos y comportamiento de tokens ya emitidos. No prometer revocación instantánea de JWT. |
-| WF03 | Entrega externa de correo y Mailjet | Gmail es el proveedor activo. Este lote evita reenvíos de entrega incierta. Falta evidencia de recepción y resolver o retirar Mailjet según decisión del propietario. |
+| WF03 | Entrega externa de correo | Resend activo en producción; prueba recibida en inbox del administrador con SPF/DKIM/DMARC aprobados. Falta aceptar cada flujo y el render multiplataforma. Gmail disponible para reversión explícita. |
 | WF04 | Aceptación de calendario y recordatorios | Hay sincronización existente y nuevo procesador con estado. Falta confirmar recordatorios en bandeja real, permisos y entrega incierta con proveedor. |
 | WF05 | Aceptación de invitaciones y planes | Invitaciones por email y lógica de planes ya existen. Falta redención real, prueba, caducidad y plan de cortesía con cuentas de prueba. |
 | WF06 | Ciclo de Billing en sandbox | Falta clave Stripe de prueba en preview y escenarios alta, renovación, cancelación y webhook. Nunca usar cobros reales como sustituto. |

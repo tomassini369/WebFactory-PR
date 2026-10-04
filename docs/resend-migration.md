@@ -1,6 +1,6 @@
 # Resend migration
 
-Resend is an explicit alternative for central transactional mail. Existing Gmail and Mailjet behavior and auto selection remain unchanged. No live provider change occurs merely by deploying this code or adding a Resend key.
+Resend is the production provider for central transactional mail. Gmail remains available in other contexts and for explicit rollback. Provider selection is explicit; adding a key alone does not override configured Gmail. Automatic send retries or SMTP failover are not enabled.
 
 ## Setup
 
@@ -11,7 +11,7 @@ Resend is an explicit alternative for central transactional mail. Existing Gmail
 5. After verification, explicitly select `WEBFACTORY_EMAIL_PROVIDER=resend`, deploy and use **Send test email** to the authorized administrator. Confirm actual reception and sender; monitor Resend events and logs. Revert to `gmail` if validation fails. Do not retry ambiguous sends automatically, to avoid duplicate messages.
 6. Preserve `WEBFACTORY_EMAIL_FROM_TEAM`, `..._SUPPORT`, `..._BILLING`, `..._INFO` with verified corporate addresses. Existing branded HTML/text, Reply-To, headers and ICS attachments are reused through Nodemailer.
 7. Validate booking, invitation, reminder, order and receipt workflows. Netlify Identity's own SMTP and Stripe-managed emails need independent configuration; this central transport does not override them.
-8. Remove Mailjet credentials/DNS only after all production workflows are accepted. Maintain valid SPF, DKIM and DMARC for the chosen sending provider and ImprovMX.
+8. Maintain valid SPF, DKIM and DMARC for Resend and ImprovMX. Retired provider credentials and diagnostics are not required.
 
 ## Transport
 
@@ -21,4 +21,4 @@ References: https://resend.com/docs/send-with-smtp and https://resend.com/docs/d
 
 ## Status
 
-Implementation prepared; account, API key, DNS verification and real delivery remain pending until independently confirmed. Gmail must remain the active provider during preparation.
+Resend domain and SMTP verified; production activated on 2026-10-03. Administrator test received in Gmail INBOX with SPF/DKIM/DMARC passing. Individual booking, receipt, invitation and reminder workflows and Outlook/Apple Mail rendering still require acceptance. Legacy provider transport and diagnostics retired by owner request.
