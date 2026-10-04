@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
-import {registerClient,beginAuthorization,consent,exchangeToken,authenticateToken,revokeGrant,randomToken,allowedRedirect,key} from './chatgpt-oauth.mjs';
+import {registerClient,beginAuthorization,consent,exchangeToken,authenticateToken,revokeGrant,revokeExecute,randomToken,allowedRedirect,key} from './chatgpt-oauth.mjs';
 const origin='https://webfactorypr.com',redirect='https://chatgpt.com/connector_platform_oauth_redirect';
 class Store{rows=new Map();async get(k){return structuredClone(this.rows.get(k)?.data||null)}async getWithMetadata(k){return structuredClone(this.rows.get(k)||null)}async setJSON(k,data,options={}){const old=this.rows.get(k);if(options.onlyIfNew&&old||options.onlyIfMatch&&old?.etag!==options.onlyIfMatch)return {modified:false};this.rows.set(k,{data:structuredClone(data),etag:crypto.randomUUID()});return {modified:true}}}
 async function setup(){const store=new Store(),client=await registerClient(store,{redirect_uris:[redirect]}),verifier=randomToken(),challenge=crypto.createHash('sha256').update(verifier).digest('base64url');const args={client_id:client.client_id,redirect_uri:redirect,response_type:'code',code_challenge_method:'S256',code_challenge:challenge,scope:'webfactory.read webfactory.propose',state:'state',resource:origin+'/mcp'};const requestId=await beginAuthorization(store,args,origin);const c=await consent(store,requestId,{id:'u1',email:'OWNER@example.com'},{siteId:'tenant-a',allowWrites:true});const tokenArgs={grant_type:'authorization_code',code:new URL(c.redirect).searchParams.get('code'),code_verifier:verifier,client_id:client.client_id,redirect_uri:redirect,resource:args.resource};return {store,client,args,requestId,c,tokenArgs};}
@@ -11,3 +11,14 @@ test('Code and consent are single-use; concurrent token exchange yields one toke
 test('Refresh rotation detects replay and revokes the entire connection',async()=>{const s=await setup(),t=await exchangeToken(s.store,s.tokenArgs,origin);const args={grant_type:'refresh_token',refresh_token:t.refresh_token,client_id:s.client.client_id,resource:origin+'/mcp'};const rotated=await exchangeToken(s.store,args,origin);await assert.rejects(exchangeToken(s.store,args,origin));await assert.rejects(authenticateToken(s.store,'Bearer '+rotated.access_token,origin),{status:401});});
 test('Revocation and token expiry fail closed; tokens stored as hashes',async()=>{const s=await setup(),t=await exchangeToken(s.store,s.tokenArgs,origin);for(const k of s.store.rows.keys())assert.ok(!k.includes(t.access_token)&&!k.includes(t.refresh_token));await assert.rejects(authenticateToken(s.store,'Bearer '+t.access_token,origin,Date.now()+901000),{status:401});await revokeGrant(s.store,s.c.grant.id);await assert.rejects(authenticateToken(s.store,'Bearer '+t.access_token,origin),{status:401});});
 test('Consent can narrow scope; foreign MCP resource cannot reuse a bearer token',async()=>{const s=await setup(),id=await beginAuthorization(s.store,s.args,origin),c=await consent(s.store,id,{id:'u1',email:'owner@example.com'},{siteId:'tenant-a'});assert.deepEqual(c.grant.scopes,['webfactory.read']);const t=await exchangeToken(s.store,s.tokenArgs,origin);await assert.rejects(authenticateToken(s.store,'Bearer '+t.access_token,'https://preview.test'),{status:401});assert.ok(await s.store.get(key('grants',c.grant.id)));});
+
+test('Execute requires fresh explicit consent and can be revoked independently',async()=>{
+ const s=await setup();assert.ok(!s.c.grant.scopes.includes('webfactory.execute'));
+ const args={...s.args,scope:'webfactory.read webfactory.propose webfactory.execute'};
+ const id=await beginAuthorization(s.store,args,origin),denied=await consent(s.store,id,{id:'u1',email:'owner@example.com'},{siteId:'tenant-a',allowWrites:true});
+ assert.deepEqual(denied.grant.scopes,['webfactory.read','webfactory.propose']);
+ const next=await beginAuthorization(s.store,args,origin),allowed=await consent(s.store,next,{id:'u1',email:'owner@example.com'},{siteId:'tenant-a',allowWrites:true,allowExecute:true});
+ assert.ok(allowed.grant.scopes.includes('webfactory.execute'));
+ await revokeExecute(s.store,allowed.grant.id);assert.deepEqual((await s.store.get(key('grants',allowed.grant.id))).scopes,['webfactory.read','webfactory.propose']);
+ await assert.rejects(exchangeToken(s.store,{...s.tokenArgs,scope:'webfactory.execute'},origin));
+});

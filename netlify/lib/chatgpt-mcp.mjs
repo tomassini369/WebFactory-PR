@@ -1,3 +1,4 @@
+import {getExecutableProposal,cancelExecutableProposal,executeConfirmedProposal} from './chatgpt-execution.mjs';
 import {McpServer} from '@modelcontextprotocol/sdk/server/mcp.js';
 import {WebStandardStreamableHTTPServerTransport} from '@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js';
 import {z} from 'zod';
@@ -10,11 +11,12 @@ import {prepareProposal,proposalKey} from './chatgpt-proposals.mjs';
 import {clientOAuthStore} from './client-store.mjs';
 import {oauthError} from './chatgpt-oauth.mjs';
 export async function serveMcp(request,grant,user){
+ if(!grant.scopes.includes('webfactory.read'))throw oauthError('Read scope is required.',403);
  const origin=new URL(request.url).origin;
  await authorizeGrant(grant,user,grant.siteId);
  const server=new McpServer({name:'WebFactory PR',version:'1.0.0'});
  const out=value=>({content:[{type:'text',text:JSON.stringify(value)}]});
- function tool(name,description,schema,callback,propose=false){server.registerTool(name,{description,inputSchema:schema,annotations:{readOnlyHint:!propose,destructiveHint:false,idempotentHint:true,openWorldHint:false},_meta:{securitySchemes:[{type:'oauth2',scopes:propose?['webfactory.read','webfactory.propose']:['webfactory.read']}]}},async args=>{try{return out(await callback(args));}catch(e){return {...out({error:e.status&&e.status<500?e.message:'Unable to complete operation. Review the portal.'}),isError:true};}});}
+ function tool(name,description,schema,callback,propose=false,execute=false){server.registerTool(name,{description,inputSchema:schema,annotations:{readOnlyHint:!propose,destructiveHint:execute,idempotentHint:true,openWorldHint:false},_meta:{securitySchemes:[{type:'oauth2',scopes:execute?['webfactory.read','webfactory.execute']:propose?['webfactory.read','webfactory.propose']:['webfactory.read']}]}},async args=>{try{return out(await callback(args));}catch(e){return {...out({error:e.status&&e.status<500?e.message:'Unable to complete operation. Review the portal.'}),isError:true};}});}
  const siteId=z.string().min(1).max(120).optional();
  const access=async(args,capability='overview')=>{
   if(!grant.platform&&args.siteId&&args.siteId!==grant.siteId)throw oauthError('Cross-business access denied.',403);
@@ -38,6 +40,9 @@ export async function serveMcp(request,grant,user){
   if(op.platform&&!grant.platform)continue;
   tool('wf_prepare_'+name,(op.description||name)+ ' Creates a proposal only. The signed-in user must review and confirm in WebFactory; never claim it is executed before wf_action_status confirms completion.',z.object({siteId,requestId:z.string().uuid().describe('New UUID for a new instruction; reuse exactly for retries.'),input:op.fields}),args=>prepareProposal(grant,user,{...args,operation:name},origin),true);
  }
+ tool('wf_get_proposal','Read the exact before/after diff and approval status of a proposal bound to this connection.',z.object({proposalId:z.string().uuid()}).strict(),({proposalId})=>getExecutableProposal(proposalId,user,grant));
+ if(grant.scopes.includes('webfactory.propose'))tool('wf_cancel_proposal','Cancel a pending or confirmed proposal without applying it.',z.object({proposalId:z.string().uuid()}).strict(),({proposalId})=>cancelExecutableProposal(proposalId,user,grant),true);
+ if(grant.scopes.includes('webfactory.execute'))tool('wf_execute_change','Execute only a previously user-confirmed proposal. First show before/after, send the approvalUrl and wait for confirmation in WebFactory. Never claim success unless verified=true. No replacement payload is accepted.',z.object({proposalId:z.string().uuid()}).strict(),({proposalId})=>executeConfirmedProposal(proposalId,user,grant),true,true);
  tool('wf_action_status','Read the status of a proposal created by this connection. A pending proposal has not changed the business.',z.object({proposalId:z.string().uuid()}),async({proposalId})=>{const p=await clientOAuthStore().get(proposalKey(proposalId),{type:'json'});if(!p||p.userId!==user.id||p.grantId!==grant.id)throw oauthError('Proposal unavailable.',404);return {id:p.id,status:p.status,result:safeOutput(p.result),approvalUrl:origin+'/chatgpt?proposal='+p.id};});
  const transport=new WebStandardStreamableHTTPServerTransport({sessionIdGenerator:undefined,enableJsonResponse:true});
  await server.connect(transport);
