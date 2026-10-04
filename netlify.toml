@@ -74,6 +74,12 @@
     Cache-Control = "public, max-age=31536000, immutable"
 
 
+# Keep the logo URL used by previously sent emails available.
+[[redirects]]
+  from = "/assets/webfactory-pr-logo.png"
+  to = "/webfactory-pr-logo.png"
+  status = 200
+
 [[redirects]]
   from = "/webfactory-admin"
   to = "/webfactory-admin/index.html"
