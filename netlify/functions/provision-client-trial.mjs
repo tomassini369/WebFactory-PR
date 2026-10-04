@@ -115,6 +115,7 @@ export default async (req) => {
           inPerson: { instructions: "" },
         },
         googleCalendar: { connected: false, calendarEmail: "", connectedAt: "", employeeCalendars: {} },
+        businessEmail: { provider: "", connected: false, connectedEmail: "", connectedAt: "", disconnectedAt: "" },
         settings: {
           locale: payload.locale === "es" ? "es" : "en",
           timezone: "America/Puerto_Rico",
