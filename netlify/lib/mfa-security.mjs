@@ -8,7 +8,18 @@ export const PRIMARY_COOKIE='__Host-wf-session';
 export const hash=value=>crypto.createHash('sha256').update(String(value)).digest('hex');
 export const userPrefix=user=>`users/${hash(user.id)}/`;
 export function mfaStore(){return globalThis.Netlify?.context?.deploy?.context==='production' ? getStore('webfactory-auth-security',{consistency:'strong'}) : getDeployStore('webfactory-auth-security',{consistency:'strong'});}
-export function mfaRequiredByPolicy(){return globalThis.Netlify?.env?.get('WEBFACTORY_REQUIRE_MFA')==='true'||globalThis.Netlify?.context?.deploy?.context==='deploy-preview';}
+function env(name){return globalThis.Netlify?.env?.get(name)||'';}
+const normalizeEmail=value=>String(value||'').trim().toLowerCase();
+export function mfaRequiredByPolicy(){return env('WEBFACTORY_REQUIRE_MFA')==='true'||globalThis.Netlify?.context?.deploy?.context==='deploy-preview';}
+export function mfaRequiredForUser(user){
+  const roles=new Set([
+    ...(Array.isArray(user?.roles)?user.roles:[]),
+    ...(Array.isArray(user?.app_metadata?.roles)?user.app_metadata.roles:[]),
+    user?.role,
+  ].filter(Boolean));
+  const ownerEmail=normalizeEmail(env('WEBFACTORY_ADMIN_EMAIL')||env('WEBFACTORY_ORDER_EMAIL'));
+  return mfaRequiredByPolicy()||roles.has('admin')||roles.has('webfactory_owner')||Boolean(ownerEmail&&normalizeEmail(user?.email)===ownerEmail);
+}
 const reject=(message='Second-factor verification required.',status=401)=>Object.assign(new Error(message),{status});
 const sessionKey=(user,token)=>`${userPrefix(user)}sessions/${hash(token)}.json`;
 const profileKey=user=>`${userPrefix(user)}profile.json`;
@@ -29,7 +40,8 @@ export async function securityState(user,context,store=mfaStore(),mandatory=mfaR
   const enrolled=Boolean(profile?.credentials?.length||profile?.totp);
   const validSession=session?.userId===user.id&&session.expiresAt>now&&(session.resetEpoch||null)===(profile?.resetEpoch||null);
   const verified=Boolean(validSession&&enrolled&&session.verifiedAt&&session.version===profile.version);
-  return {required:Boolean(mandatory||enrolled||profile?.forceMfa),enrolled,verified,needsLogin:!validSession,authenticatorEnrolled:Boolean(profile?.totp),authenticatorAvailable:totpAvailable(),credentials:(profile?.credentials||[]).map(({id,label,createdAt})=>({id,label,createdAt})),recoveryCodesRemaining:profile?.codes?.length||0};
+  const policyRequired=Boolean(mandatory||mfaRequiredForUser(user)||profile?.forceMfa);
+  return {required:Boolean(policyRequired||enrolled),policyRequired,enrolled,verified,needsLogin:!validSession,authenticatorEnrolled:Boolean(profile?.totp),authenticatorAvailable:totpAvailable(),credentials:(profile?.credentials||[]).map(({id,label,createdAt})=>({id,label,createdAt})),recoveryCodesRemaining:profile?.codes?.length||0};
 }
 
 export async function assertSecondFactor(user,context=globalThis.Netlify?.context,store=mfaStore(),mandatory=mfaRequiredByPolicy()){
@@ -235,5 +247,16 @@ export function createMfaService(store,webAuthn,now=()=>Date.now(),{totpKey=totp
       delete profile.totp;profile.version=crypto.randomUUID();await store.setJSON(profileKey(user),profile);await grant(current.key,current.session,profile);return {ok:true};
     });
   }
-  return {options,verify,recover,remove,rotateCodes,beginTotp,confirmTotp,authenticateTotp,cancelTotp,removeTotp};
+  async function disableMfa(user,context,origin){
+    return withBookingLock(store,`${userPrefix(user)}lock`,async()=>{
+      if(mfaRequiredForUser(user))throw reject('Two-factor authentication is required for this account.',403);
+      const profile=await store.get(profileKey(user),{type:'json'});sameOrigin(profile,origin);
+      if(profile?.forceMfa)throw reject('Two-factor authentication is required for this account.',403);
+      if(!profile?.credentials?.length&&!profile?.totp)return {ok:true};
+      await freshProof(user,context,profile);
+      await store.delete(profileKey(user));
+      return {ok:true};
+    });
+  }
+  return {options,verify,recover,remove,rotateCodes,beginTotp,confirmTotp,authenticateTotp,cancelTotp,removeTotp,disableMfa};
 }
