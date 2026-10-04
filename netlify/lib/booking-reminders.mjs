@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
 import { clientCommerceStore, commerceKey } from "./client-store.mjs";
 import { renderBookingEmail } from "./booking-email-template.mjs";
-import { sendEmail } from "./email.mjs";
+import { businessEmailConnected, sendBusinessEmail } from "./business-email.mjs";
 
 const validEmail = value => /^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(String(value || ""));
 export function dueBookingReminders(record, now = Date.now()) {
@@ -14,8 +14,10 @@ export function dueBookingReminders(record, now = Date.now()) {
     return (!Number.isFinite(created) || created <= due) && now >= due && now - due < 30 * 60000;
   });
 }
-export async function sendBookingReminders(site, record, now = Date.now(), deadline = Infinity, {store=clientCommerceStore(),send=sendEmail,outcome=()=>{}} = {}) {
+export async function sendBookingReminders(site, record, now = Date.now(), deadline = Infinity, {store=clientCommerceStore(),send=null,outcome=()=>{}} = {}) {
   let sent = 0;
+  const deliver=send || (businessEmailConnected(site) ? (message=>sendBusinessEmail(site,message)) : null);
+  if(!deliver)return sent;
   const recipients = [record.customer?.email, site.business?.email].filter(validEmail).map(email => email.trim().toLowerCase());
   for (const hours of dueBookingReminders(record, now)) {
     for (const email of new Set(recipients)) {
@@ -36,7 +38,7 @@ export async function sendBookingReminders(site, record, now = Date.now(), deadl
         // Recheck cancellation after claiming the reminder, immediately before sending.
         const current = await store.get(commerceKey(site.siteId, "bookings", record.transactionId), { type: "json" });
         if (!current || current.status !== "confirmed" || current.start !== record.start) { await store.setJSON(key,{status:'cancelled',transactionId:record.transactionId,hours}); outcome('suppressed'); continue; }
-        const response=await send({ category: "team", fromName: site.business?.name || "WebFactory Business", to: email,
+        const response=await deliver({ fromName: site.business?.name || "WebFactory Business", to: email,
           ...renderBookingEmail(site,record,{audience:email===record.customer?.email?.trim().toLowerCase()?"customer":"business",change:"reminder",hours}),
           headers: { "Message-ID": `<booking-reminder-${hash}@webfactorypr.com>` }, timeoutMs:6000,
         });
