@@ -13,6 +13,8 @@ const ALLOWED_SECTIONS = new Set(["catalog","team","about","gallery","contact"])
 const ALLOWED_LAYOUTS = new Set(["split","centered","editorial","showcase"]);
 const ALLOWED_STYLES = new Set(["Modern","Luxury","Minimal","Bold"]);
 
+export const factoryDesignOptions={templates:[...TEMPLATE_SLUGS],styles:[...ALLOWED_STYLES],features:[...ALLOWED_FEATURES]};
+
 function env(name) {
   return globalThis.Netlify?.env?.get(name) || process.env[name] || "";
 }

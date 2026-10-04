@@ -1,6 +1,10 @@
 import {McpServer} from '@modelcontextprotocol/sdk/server/mcp.js';
 import {WebStandardStreamableHTTPServerTransport} from '@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js';
 import {z} from 'zod';
+import Stripe from 'stripe';
+import {loadPlatformRevenue} from './platform-revenue.mjs';
+import {availabilityForDate} from './booking-engine.mjs';
+import {createAdminOverviewHandler} from '../functions/webfactory-admin-overview.mjs';
 import {operations,authorizeGrant,businessView,listRecords,readCollections,platformBusinesses,accountingForSite,safeOutput} from './chatgpt-operations.mjs';
 import {prepareProposal,proposalKey} from './chatgpt-proposals.mjs';
 import {clientOAuthStore} from './client-store.mjs';
@@ -20,7 +24,15 @@ export async function serveMcp(request,grant,user){
  tool('wf_connection','Identify the current connection and its fixed permissions. Passwords, source code, terminal, secrets and deployments are unavailable.',z.object({}),async()=>({email:user.email,platform:grant.platform,siteId:grant.siteId,scopes:grant.scopes,expiresAt:grant.expiresAt,reviewUrl:origin+'/chatgpt',manualPortal:origin+(grant.platform?'/webfactory-admin':'/client-admin')}));
  tool('wf_business','Read the selected business configuration. Platform administrators must specify siteId.',z.object({siteId}),async args=>{const a=await access(args);return businessView(a.site,a.membership);});
  tool('wf_records','Read a bounded page of records from this business. Follow nextOffset for additional records; no global customer search.',z.object({siteId,collection:z.enum(Object.keys(readCollections)),limit:z.number().int().min(1).max(100).default(50),offset:z.number().int().min(0).max(10000).default(0)}),async args=>{const {site}=await access(args,readCollections[args.collection]);return listRecords(site.siteId,args.collection,args);});
- tool('wf_accounting','Read salary, approved hours, income and cost report. Results over 500 rows are truncated; use the authenticated business portal export for complete records.',z.object({siteId,from:z.string().regex(/^\d{4}-\d{2}-\d{2}$/),to:z.string().regex(/^\d{4}-\d{2}-\d{2}$/),employeeId:z.string().optional()}),async args=>{const {site}=await access(args,'analytics');const report=await accountingForSite(site,args);return {report:safeOutput(report),rowLimit:500,completeExportPortal:origin+'/client-admin'};});
+ tool('wf_accounting','Read salary, approved hours, income and cost report. Results over 500 rows are truncated; use the authenticated business portal export for complete records.',z.object({siteId,from:z.string().regex(/^\d{4}-\d{2}-\d{2}$/),to:z.string().regex(/^\d{4}-\d{2}-\d{2}$/),employeeId:z.string().optional()}),async args=>{const {site}=await access(args,'analytics');const report=await accountingForSite(site,args);return {report:safeOutput(report),rowLimit:500,completeExportUrl:origin+'/.netlify/functions/client-business-accounting?'+new URLSearchParams({siteId:site.siteId,from:args.from,to:args.to,employeeId:args.employeeId||'',format:'csv'}),exportRequiresPortalSignIn:true};});
+ tool('wf_booking_availability','Read current available slots before preparing a booking or reschedule.',z.object({siteId,serviceId:z.string().max(120),employeeId:z.string().max(120),date:z.string().regex(/^\d{4}-\d{2}-\d{2}$/),locationId:z.string().max(120).optional()}),async args=>{const {site}=await access(args,'bookings');return {slots:await availabilityForDate(site,args.serviceId,args.employeeId,args.date,args.locationId||'',{strictGoogle:true})};});
+ if(grant.platform)tool('wf_platform_report','Read platform overview/health or platform-only revenue. Never includes tenant sales in platform revenue.',z.object({report:z.enum(['overview','revenue'])}),async args=>{
+  if(args.report==='revenue')return loadPlatformRevenue({secretKey:globalThis.Netlify?.env?.get('STRIPE_SECRET_KEY')||'',createStripe:key=>new Stripe(key,{apiVersion:'2026-08-26.dahlia',timeout:15000,maxNetworkRetries:0})});
+  const handler=createAdminOverviewHandler(async()=>{await authorizeGrant(grant,user,'','platform',{platform:true});return user});
+  const response=await handler(new Request(origin+'/.netlify/functions/webfactory-admin-overview'));
+  if(!response.ok)throw oauthError('Platform report unavailable.',response.status);
+  return safeOutput(await response.json());
+ });
  if(grant.platform)tool('wf_businesses','List businesses for an explicitly authorized platform administrator.',z.object({}),async()=>({businesses:await platformBusinesses()}));
  if(grant.scopes.includes('webfactory.propose'))for(const [name,op] of Object.entries(operations)){
   if(op.platform&&!grant.platform)continue;

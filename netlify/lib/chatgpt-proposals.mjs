@@ -1,4 +1,5 @@
 import crypto from 'node:crypto';
+import {bookingVersion,changePrivateBooking} from './booking-management.mjs';
 import {clientOAuthStore,clientCommerceStore,getClientSite,patchClientSite,publicClientSite} from './client-store.mjs';
 import {authorizeGrant,parseOperation,operationCapability,redesignSite,safeOutput} from './chatgpt-operations.mjs';
 import {key,oauthError,hash,getGrant} from './chatgpt-oauth.mjs';
@@ -32,7 +33,9 @@ export async function prepareProposal(grant,user,{operation,siteId,input,request
  if(old){if(old.fingerprint!==fingerprint)throw oauthError('Use a new requestId for changed instructions.',409);return {id:old.id,status:old.status,approvalUrl:origin+'/chatgpt?proposal='+old.id};}
  const preview=operation==='redesign'?publicClientSite(redesignSite(site,parsed)):null;
  const ledger=operation==='accounting_entry'?await clientCommerceStore().get(`${target}/accounting/ledger.json`,{type:'json'}):null;
- const proposal={id,grantId:grant.id,userId:user.id,siteId:target||'',operation,input:parsed,description:op.description,siteRevision:site?.revision??null,ledgerRevision:ledger?.revision||0,businessName:site?.business?.name||'WebFactory PR',createdAt:Date.now(),expiresAt:Date.now()+3600000,status:'pending',fingerprint,preview};
+ const booking=operation==='reschedule_booking'?await clientCommerceStore().get(`${target}/bookings/${parsed.transactionId}.json`,{type:'json'}):null;
+ if(operation==='reschedule_booking'&&(!booking||booking.siteId!==target||!booking.calendarToken))throw oauthError('Booking unavailable for online rescheduling.',409);
+ const proposal={bookingVersion:booking?bookingVersion(booking):null,id,grantId:grant.id,userId:user.id,siteId:target||'',operation,input:parsed,description:op.description,siteRevision:site?.revision??null,ledgerRevision:ledger?.revision||0,businessName:site?.business?.name||'WebFactory PR',createdAt:Date.now(),expiresAt:Date.now()+3600000,status:'pending',fingerprint,preview};
  const saved=await store.setJSON(proposalKey(id),proposal,{onlyIfNew:true});if(!saved.modified)throw oauthError('Proposal already being prepared. Retry with the same requestId.',409);
  await store.setJSON(`chatgpt/proposal-users/${hash(user.id)}/${id}.json`,{id,userId:user.id});
  return {id,status:'pending',approvalUrl:origin+'/chatgpt?proposal='+id,requiresHumanConfirmation:true,summary:op.description||operation};
@@ -51,7 +54,11 @@ export async function executeProposal(id,user,request,context,confirmation){
  const claim=await store.setJSON(k,{...p,status:'processing',approvedAt:Date.now(),approvedBy:user.email},{onlyIfMatch:stored.etag});if(!claim.modified)throw oauthError('Proposal already being processed.',409);
  let result,status;
  try{
-  if(p.operation==='redesign'){
+  if(p.operation==='reschedule_booking'){
+   const booking=await clientCommerceStore().get(`${p.siteId}/bookings/${input.transactionId}.json`,{type:'json'});
+   if(!booking||booking.siteId!==p.siteId||bookingVersion(booking)!==p.bookingVersion)throw oauthError('Booking changed. Prepare a fresh proposal.',409);
+   result=safeOutput(await changePrivateBooking(booking.calendarToken,{action:'reschedule',start:input.start,version:p.bookingVersion,acknowledged:'yes'}));
+  }else if(p.operation==='redesign'){
    if(!['active','trialing','trial','complimentary'].includes(site.servicePlan?.subscriptionStatus))throw oauthError('An active plan is required for redesign.',403);
    const next=redesignSite(site,input);
    const updated=await patchClientSite(site.siteId,{business:next.business,design:next.design,features:next.features},{expectedRevision:p.siteRevision});
