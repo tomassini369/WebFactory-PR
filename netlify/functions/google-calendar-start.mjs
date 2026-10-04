@@ -13,6 +13,7 @@ export default async (req) => {
     const { user } = await requireSiteAccess(siteId, ["owner", "manager"]);
     const state = crypto.randomBytes(32).toString("base64url");
     await clientOAuthStore().setJSON(`states/${state}.json`, {
+      kind: "calendar",
       siteId, userEmail: user.email, expiresAt: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
     });
     const params = new URLSearchParams({
