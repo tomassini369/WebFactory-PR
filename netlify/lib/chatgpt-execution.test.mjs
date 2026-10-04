@@ -88,3 +88,17 @@ test('HTTP success without correct read-after-write is not success and is audite
  const r=await executeConfirmedProposal(f.p.id,f.user,f.grant);assert.equal(r.verified,false);assert.equal(r.ok,false);assert.equal(r.status,'failed');assert.ok(r.auditId);
  await assert.rejects(executeConfirmedProposal(f.p.id,f.user,f.grant),{status:409});
 });
+
+test('MCP accepts existing deterministic proposal identifiers and executes only after portal confirmation',async t=>{
+ const f=await setup(t);
+ const rpc=async(name,args)=>{
+  const response=await serveMcp(new Request('https://webfactorypr.com/mcp',{method:'POST',headers:{'Content-Type':'application/json',Accept:'application/json, text/event-stream'},body:JSON.stringify({jsonrpc:'2.0',id:1,method:'tools/call',params:{name,arguments:args}})}),f.grant,f.user);
+  return response.json();
+ };
+ const status=await rpc('wf_action_status',{proposalId:f.p.id});assert.ok(!status.error&&!status.result.isError);
+ const proposal=await rpc('wf_get_proposal',{proposalId:f.p.id});assert.ok(!proposal.error&&!proposal.result.isError);
+ const denied=await rpc('wf_execute_change',{proposalId:f.p.id});assert.equal(denied.result.isError,true);
+ await confirmExecutableProposal(f.p.id,f.user,'CONFIRM');
+ const extra=await rpc('wf_execute_change',{proposalId:f.p.id,siteId:'tenant-b',input:{value:[]}});assert.ok(extra.error||extra.result.isError);
+ const done=await rpc('wf_execute_change',{proposalId:f.p.id});assert.ok(!done.error&&!done.result.isError);assert.equal(JSON.parse(done.result.content[0].text).verified,true);
+});
