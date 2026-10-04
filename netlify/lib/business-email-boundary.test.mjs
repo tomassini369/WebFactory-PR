@@ -15,7 +15,7 @@ test("customer-facing business mail modules do not import the WebFactory transac
     assert.doesNotMatch(source,/\bsendEmail\b/);
     assert.match(source,/business-email\.mjs/);
   }
-  for(const relative of ["../functions/client-contact.mjs","../functions/process-review-requests.mjs"]){
+  for(const relative of ["../functions/client-contact.mjs","../functions/process-review-requests.mjs","../functions/client-v3-admin.mjs"]){
     const source=fs.readFileSync(new URL(relative,import.meta.url),"utf8");
     assert.doesNotMatch(source,/\.\/\.\.\/lib\/email\.mjs|\.\.\/lib\/email\.mjs/);
     assert.match(source,/business-email\.mjs/);
