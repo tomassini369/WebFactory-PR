@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { AdaptiveLogo, ThemeToggle } from './theme'
 import { FeedbackPreferences } from './feedback/FeedbackPreferences'
+import ChatgptHomeSection from './ChatgptHomeSection'
 import './home-premium.css'
 import './home-apple.css'
 import { useSelectionPill } from './useSelectionPill'
@@ -467,6 +468,8 @@ export default function HomePage({ lang, setLang }: { lang: Language, setLang: (
         <div className="wf-heading" data-reveal><p className="wf-eyebrow">{t.explore}</p><h2>{t.exploreTitle}</h2><p>{t.exploreText}</p></div>
         <InteractiveDemo t={t} />
       </section>
+
+      <ChatgptHomeSection lang={lang} />
 
       <section className="wf-section wf-shell" id="como-funciona">
         <div className="wf-heading" data-reveal><p className="wf-eyebrow">{t.howLabel}</p><h2>{t.howTitle}</h2></div>

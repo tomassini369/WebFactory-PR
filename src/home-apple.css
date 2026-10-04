@@ -85,3 +85,9 @@
 @media(max-width:960px){
  .wf-premium-home .wf-hero.has-video .wf-hero-scrim{background:linear-gradient(180deg,rgba(4,9,20,.48),rgba(4,9,20,.58) 60%,rgba(4,9,20,.68))}
 }
+
+/* ChatGPT setup follows the existing homepage theme and responsive shell. */
+.wf-mcp-steps{padding:0 1.5rem;line-height:1.7}.wf-mcp-steps li{margin:1rem 0}.wf-mcp code{overflow-wrap:anywhere}.wf-mcp>.wf-actions{margin:1.5rem 0}.wf-mcp>p{line-height:1.7;max-width:80ch}.wf-mcp .wf-btn{white-space:normal}
+
+.wf-mcp .wf-platform{grid-template-columns:repeat(3,minmax(0,1fr))}.wf-mcp .wf-platform article:nth-child(n){grid-column:auto}
+@media(max-width:760px){.wf-mcp .wf-platform{grid-template-columns:1fr}}
