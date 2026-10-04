@@ -12,7 +12,7 @@ export function renderReviewEmail(site,request,url){
   const mail={category:'team',fromName:name,to:request.customer.email,subject:es?`¿Cómo fue tu experiencia con ${name}?`:`How was your experience with ${name}?`,text:[greeting,'',es?`Gracias por elegir ${name}.`:`Thank you for choosing ${name}.`,es?'Si tienes un momento, agradeceríamos mucho tu reseña:':'If you have a moment, we would appreciate your review:',request.reviewUrl,'',site.reviewSettings.postalAddress,`${es?'Cancelar emails de reseñas':'Unsubscribe from review emails'}: ${url}`].join('\n'),headers:{'List-Unsubscribe':`<${url}>`,'List-Unsubscribe-Post':'List-Unsubscribe=One-Click','Message-ID':`<review-${crypto.createHash('sha256').update(`${site.siteId}:${request.reviewRequestId}`).digest('hex')}@webfactorypr.com>`},timeoutMs:6000};
   return {...mail,...renderTextEmail({site,language:es?'es':'en',subject:mail.subject,text:mail.text,actions:[{url:request.reviewUrl,label:es?'Escribir una reseña':'Write a review'},{url,label:es?'Cancelar emails de reseñas':'Unsubscribe from review emails',primary:false}]})};
 }
-export function createReviewProcessor({sites,commerce,events,getSite,send,unsubscribe,configured=()=>true,clock=Date.now}){
+export function createReviewProcessor({sites,commerce,events,getSite,send,unsubscribe,configured=()=>true,ready=()=>true,clock=Date.now}){
   return async({budgetMs=18000,maxSites=10,maxRequests=20,perSite=5}={})=>withBookingLock(events,'locks/review-processing-batch',async()=>{
     const started=clock(),deadline=started+budgetMs,previous=await events.get(REVIEW_HEALTH_KEY,{type:'json'})||{};
     const summary={lastRunAt:new Date(started).toISOString(),sitesVisited:0,requestsVisited:0,attempted:0,sent:0,uncertain:0,suppressed:0,deferred:0,errors:0,paused:false,providerConfigured:configured(),siteCursor:typeof previous.siteCursor==='string'?previous.siteCursor:''};
@@ -53,6 +53,7 @@ export function createReviewProcessor({sites,commerce,events,getSite,send,unsubs
               if(!current.customer?.email||!current.reviewUrl||!await reviewEmailEligible(latestSite,current,events)){
                 const result=await commerce.setJSON(key,{...current,status:'suppressed',updatedAt:new Date(clock()).toISOString()},{onlyIfMatch:record.etag});if(result.modified)summary.suppressed++;return;
               }
+              if(!ready(latestSite)){summary.deferred++;return;}
               let url;
               try{url=await unsubscribe(siteId,current.customer.email);}
               catch{summary.errors++;await commerce.setJSON(key,{...current,nextAttemptAt:new Date(clock()+15*60000).toISOString(),deliveryIssue:'preparation_failed',updatedAt:new Date(clock()).toISOString()},{onlyIfMatch:record.etag});return;}
@@ -63,7 +64,7 @@ export function createReviewProcessor({sites,commerce,events,getSite,send,unsubs
               const claimed=await commerce.setJSON(key,sending,{onlyIfMatch:record.etag});if(!claimed.modified)return;
               summary.attempted++;
               try{
-                const result=await send(renderReviewEmail(latestSite,current,url));
+                const result=await send(latestSite,renderReviewEmail(latestSite,current,url));
                 if(!result?.accepted?.some(email=>String(email).trim().toLowerCase()===current.customer.email.trim().toLowerCase()))throw fail('Delivery not acknowledged.');
                 await commerce.setJSON(key,{...sending,status:'sent',sentAt:new Date(clock()).toISOString(),deliveryIssue:null,updatedAt:new Date(clock()).toISOString()});summary.sent++;
               }catch{

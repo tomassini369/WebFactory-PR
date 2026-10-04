@@ -50,12 +50,12 @@ export async function exchangeGoogleCode(code) {
   return result;
 }
 
-export async function refreshGoogleToken(siteId) {
-  const stored = await clientOAuthStore().get(`tokens/${siteId}.json`, { type: "json" });
-  if (!stored?.encrypted) throw Object.assign(new Error("Google Calendar is not connected."), { status: 409 });
+async function refreshStoredGoogleToken(storageKey, missingMessage, renewMessage) {
+  const stored = await clientOAuthStore().get(storageKey, { type: "json" });
+  if (!stored?.encrypted) throw Object.assign(new Error(missingMessage), { status: 409 });
   let token = decryptToken(stored.encrypted);
   if (token.access_token && Number(token.expires_at || 0) > Date.now() + 60_000) return token;
-  if (!token.refresh_token) throw Object.assign(new Error("Google Calendar authorization must be renewed."), { status: 409 });
+  if (!token.refresh_token) throw Object.assign(new Error(renewMessage), { status: 409 });
   const response = await fetch("https://oauth2.googleapis.com/token", {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -67,10 +67,32 @@ export async function refreshGoogleToken(siteId) {
     }),
   });
   const refreshed = await response.json();
-  if (!response.ok) throw Object.assign(new Error("Google Calendar authorization must be renewed."), { status: 409 });
+  if (!response.ok) throw Object.assign(new Error(renewMessage), { status: 409 });
   token = { ...token, ...refreshed, expires_at: Date.now() + Number(refreshed.expires_in || 3600) * 1000 };
-  await clientOAuthStore().setJSON(`tokens/${siteId}.json`, { encrypted: encryptToken(token), updatedAt: new Date().toISOString() });
+  await clientOAuthStore().setJSON(storageKey, { encrypted: encryptToken(token), updatedAt: new Date().toISOString() });
   return token;
+}
+
+export async function refreshGoogleToken(siteId) {
+  return refreshStoredGoogleToken(`tokens/${siteId}.json`, "Google Calendar is not connected.", "Google Calendar authorization must be renewed.");
+}
+
+export async function refreshGoogleBusinessEmailToken(siteId) {
+  return refreshStoredGoogleToken(`business-email/tokens/${siteId}.json`, "Business email is not connected.", "Business email authorization must be renewed.");
+}
+
+export async function googleUserEmail(token) {
+  if (!token?.access_token) throw Object.assign(new Error("Google authorization is incomplete."), { status: 409 });
+  const response = await fetch("https://openidconnect.googleapis.com/v1/userinfo", {
+    signal: AbortSignal.timeout(10000),
+    headers: { Authorization: `Bearer ${token.access_token}` },
+  });
+  const result = await response.json().catch(() => ({}));
+  const email = String(result?.email || "").trim().toLowerCase();
+  if (!response.ok || result?.email_verified === false || !/^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(email)) {
+    throw Object.assign(new Error("Google did not return a verified email address."), { status: 409 });
+  }
+  return email;
 }
 
 export async function googleApi(siteId, path, options = {}) {

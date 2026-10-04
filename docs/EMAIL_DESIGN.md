@@ -1,11 +1,11 @@
 # Correo: marca y previsualización
 
-Las funciones envían por Nodemailer con Resend en producción. Gmail se conserva para otros contextos y reversión explícita. ImprovMX recibe el correo corporativo. No se instala Netlify Email Integration. Diseño común en `netlify/lib/email-design.mjs`; contenido por propósito en las plantillas de reservas, comercio, contacto y plataforma.
+El correo está dividido por propietario. Los mensajes de plataforma WebFactory usan Nodemailer + Resend en producción. Los mensajes operacionales de cada negocio se generan con el mismo sistema visual, pero se envían mediante la cuenta Gmail/Google Workspace conectada por ese negocio y la Gmail API. No existe fallback silencioso desde correo de negocio hacia Resend. ImprovMX recibe el correo corporativo de WebFactory. Diseño común en `netlify/lib/email-design.mjs`; contenido por propósito en las plantillas de reservas, comercio, contacto y plataforma.
 
 ## Marca y cobertura
 
 - WebFactory: invitaciones trial/Complimentary, reset de Authenticator y avisos de plataforma enviados por `sendEmail`. El reset conserva su texto bilingüe, referencia, fecha y reglas de entrega incierta.
-- Negocio: confirmación de reserva para cliente/negocio, recordatorios, reprogramación/cancelación, pedidos, reenvío de recibos, contactos y solicitud de reseñas. Nombre según ES/EN; `design.primary` y `design.secondary`; logo del asset del tenant o URL existente. Sin logo, la marca sigue visible como texto.
+- Negocio: confirmación de reserva para cliente/negocio, recordatorios, reprogramación/cancelación, pedidos, reenvío de recibos, contactos y solicitud de reseñas. Se envían desde la cuenta Google conectada por el tenant. Si no hay conexión, se mantienen pendientes o se suprimen según el flujo; nunca se cargan al transporte central de WebFactory. Nombre según ES/EN; `design.primary` y `design.secondary`; logo del asset del tenant o URL existente. Sin logo, la marca sigue visible como texto.
 - Imágenes requieren acceso público y que el cliente de correo permita cargarlas. No se hace público ningún asset privado para enviar correo. Un logo de un sitio sin acceso público puede quedar como texto alternativo; tampoco se garantiza que un correo histórico conserve un logo después de borrar el sitio.
 - Los mensajes administrados directamente por Netlify Identity (confirmación/recuperación de contraseña) o Stripe no atraviesan este transport. Su personalización sigue siendo una configuración independiente; no se afirma que cambien por este lote.
 - Las invitaciones aceptan `language`/`lang` en ES/EN y conservan EN si no se aporta idioma. Los contenidos de seguridad permanecen bilingües.

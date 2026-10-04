@@ -6,15 +6,17 @@ import { googleConfigured, googleRedirectUri } from "../lib/google-calendar.mjs"
 function env(name) { return globalThis.Netlify?.env?.get(name) || ""; }
 
 export default async (req) => {
-  if (req.method !== "GET") return Response.json({ ok: false, message: "Method not allowed." }, { status: 405 });
+  if (req.method !== "GET") return Response.json({ ok:false,message:"Method not allowed." }, { status:405 });
   try {
-    if (!googleConfigured()) throw Object.assign(new Error("Google Calendar is not configured yet."), { status: 503 });
+    if (!googleConfigured()) throw Object.assign(new Error("Google email connection is not configured yet."), { status:503 });
     const siteId = new URL(req.url).searchParams.get("siteId") || "";
-    const { user } = await requireSiteAccess(siteId, ["owner", "manager"]);
+    const { user } = await requireSiteAccess(siteId, ["owner"]);
     const state = crypto.randomBytes(32).toString("base64url");
     await clientOAuthStore().setJSON(`states/${state}.json`, {
-      kind: "calendar",
-      siteId, userEmail: user.email, expiresAt: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
+      kind: "business-email",
+      siteId,
+      userEmail: user.email,
+      expiresAt: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
     });
     const params = new URLSearchParams({
       client_id: env("GOOGLE_OAUTH_CLIENT_ID"),
@@ -23,7 +25,7 @@ export default async (req) => {
       access_type: "offline",
       prompt: "consent",
       include_granted_scopes: "true",
-      scope: "openid email https://www.googleapis.com/auth/calendar.calendarlist.readonly https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/calendar.events.freebusy",
+      scope: "openid email https://www.googleapis.com/auth/gmail.send",
       state,
     });
     return Response.redirect(`https://accounts.google.com/o/oauth2/v2/auth?${params}`, 302);
