@@ -2,7 +2,7 @@ import { applyStockOperation,projectStockMovements } from '../lib/inventory-oper
 import { assertSameOrigin, errorResponse, requireSiteAccess, requireSiteCapability } from "../lib/client-auth.mjs";
 import { cleanText } from "../lib/platform-utils.mjs";
 import { createCustomerRecord, createInventoryMovement, createPaymentLinkRecord } from "../lib/webfactory-v3-domain.mjs";
-import { sendEmail } from "../lib/email.mjs";
+import { sendBusinessEmail } from "../lib/business-email.mjs";
 import { renderCommerceEmail } from "../lib/commerce-email-template.mjs";
 import { getV3Record, listV3Records, putV3Record } from "../lib/webfactory-v3-store.mjs";
 
@@ -59,8 +59,7 @@ export default async (req) => {
       const receipt = await getV3Record(site.siteId, "receipts", receiptId);
       if (!receipt) throw Object.assign(new Error("Receipt not found."), { status: 404 });
       if (!receipt.customer?.email) throw Object.assign(new Error("Receipt has no customer email."), { status: 409 });
-      await sendEmail({
-        category: "team",
+      await sendBusinessEmail(site,{
         fromName: site.business?.name || "WebFactory Business",
         to: receipt.customer.email,
         ...renderCommerceEmail(site,receipt,{receipt:true}),
