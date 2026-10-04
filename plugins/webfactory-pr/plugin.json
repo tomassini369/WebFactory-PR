@@ -1,0 +1,22 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "webfactory-pr",
+  "version": "0.1.0",
+  "description": "Read authorized WebFactory business data and prepare changes for human review in the portal.",
+  "author": {"name": "WebFactory PR"},
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "displayName": "WebFactory PR",
+        "shortDescription": "Manage your business safely",
+        "longDescription": "Connect one business or an explicitly authorized platform administrator. Consult commerce and accounting information, prepare operational changes and preview website redesigns. Changes require confirmation inside WebFactory. Passwords, credentials and platform source code remain outside this connection.",
+        "developerName": "WebFactory PR",
+        "category": "Productivity",
+        "capabilities": ["Interactive"],
+        "logo": "./assets/icon.png",
+        "composerIcon": "./assets/icon.png",
+        "defaultPrompt": "Muéstrame el estado de mi negocio en WebFactory y qué acciones puedo preparar."
+      }
+    }
+  }
+}
