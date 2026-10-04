@@ -1,6 +1,6 @@
 import { assertSameOrigin, errorResponse, requireSiteAccess } from "../lib/client-auth.mjs";
 import { cleanText } from "../lib/platform-utils.mjs";
-import { disconnectAth, disconnectGoogle, disconnectStripe } from "../lib/client-lifecycle.mjs";
+import { disconnectAth, disconnectBusinessEmail, disconnectGoogle, disconnectStripe } from "../lib/client-lifecycle.mjs";
 import { patchClientSite } from "../lib/client-store.mjs";
 import { assertAthProduction, configureAth } from "../lib/ath-movil.mjs";
 
@@ -15,7 +15,11 @@ export default async(req)=>{
     if(!["owner","manager","admin"].includes(membership.role||""))throw Object.assign(new Error("This role cannot manage integrations."),{status:403});
 
     let updated=site;
-    if(action==="disconnect_google")updated=await disconnectGoogle(site);
+    if(action==="disconnect_business_email"){
+      if((membership.role||"")==="manager")throw Object.assign(new Error("Only the owner can disconnect business email."),{status:403});
+      updated=await disconnectBusinessEmail(site);
+    }
+    else if(action==="disconnect_google")updated=await disconnectGoogle(site);
     else if(action==="disconnect_stripe"){
       if((membership.role||"")==="manager")throw Object.assign(new Error("Only the owner can disconnect Stripe."),{status:403});
       updated=await disconnectStripe(site);
