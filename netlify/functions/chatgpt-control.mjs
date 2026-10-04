@@ -35,7 +35,7 @@ export default async function handler(req,context){
    return respond(await executeProposal(body.proposalId,user,req,context,body.confirmation));
   }
   if(body.action==='cancel')return respond({ok:true,...await cancelExecutableProposal(body.proposalId,user)});
-  if(body.action==='reject'){const k=proposalKey(body.proposalId),saved=await store.getWithMetadata(k,json);if(!saved?.data||saved.data.userId!==user.id)throw oauthError('Proposal unavailable.',404);if(saved.data.status!=='pending')throw oauthError('Proposal no longer pending.',409);const result=await store.setJSON(k,{...saved.data,status:'rejected'},{onlyIfMatch:saved.etag});if(!result.modified)throw oauthError('Proposal changed.',409);return respond({ok:true});}
+  if(body.action==='reject'){const existing=await store.get(proposalKey(body.proposalId),json);if(existing?.executeViaMcp)return respond({ok:true,...await cancelExecutableProposal(body.proposalId,user)});const k=proposalKey(body.proposalId),saved=await store.getWithMetadata(k,json);if(!saved?.data||saved.data.userId!==user.id)throw oauthError('Proposal unavailable.',404);if(saved.data.status!=='pending')throw oauthError('Proposal no longer pending.',409);const result=await store.setJSON(k,{...saved.data,status:'rejected'},{onlyIfMatch:saved.etag});if(!result.modified)throw oauthError('Proposal changed.',409);return respond({ok:true});}
   throw oauthError('Unknown action.');
  }catch(e){return respond({ok:false,message:e.status&&e.status<500?e.message:'Unable to complete request.'},e.status||500);}
 }
