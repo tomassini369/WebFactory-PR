@@ -1,6 +1,6 @@
 import { assertSameOrigin, errorResponse } from "../lib/client-auth.mjs";
 import { siteEntitlement } from "../lib/subscription-billing.mjs";
-import { emailConfigured, sendEmail } from "../lib/email.mjs";
+import { businessEmailConnected, sendBusinessEmail } from "../lib/business-email.mjs";
 import { getClientSiteBySlug } from "../lib/client-store.mjs";
 import { cleanText, validEmail } from "../lib/platform-utils.mjs";
 import { renderContactEmail } from "../lib/contact-email-template.mjs";
@@ -27,12 +27,11 @@ export default async (req) => {
       return Response.json({ ok:false,message:"Contact form is not available." }, { status:404 });
     }
 
-    if (!emailConfigured()) {
-      return Response.json({ ok:false,message:"Contact delivery is temporarily unavailable." }, { status:503 });
+    if (!businessEmailConnected(site)) {
+      return Response.json({ ok:false,message:"This business has not connected its email account yet." }, { status:503 });
     }
 
-    await sendEmail({
-      category:"info",
+    await sendBusinessEmail(site,{
       fromName:site.business?.name || "WebFactory Contact",
       to:site.business.email,
       replyTo:email,
