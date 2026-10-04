@@ -194,6 +194,7 @@ export default async (req) => {
           stripeCapabilityStatus: "not_started",
         },
         googleCalendar: { connected: false, calendarEmail: "", connectedAt: "", employeeCalendars: {} },
+        businessEmail: { provider: "", connected: false, connectedEmail: "", connectedAt: "", disconnectedAt: "" },
         settings: { locale: payload.locale === "es" ? "es" : "en", timezone: "America/Puerto_Rico", currency: "usd" },
         servicePlan: complimentaryInvite ? createComplimentaryServicePlan({ grantedBy: complimentaryInvite.grantedBy || "webfactory-admin", note: "Email-only complimentary invitation" }) : pendingSubscriptionPlan(),
       });
