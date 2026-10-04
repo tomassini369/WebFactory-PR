@@ -34,7 +34,7 @@ function extractJson(raw) {
   if (start < 0 || end <= start) throw new Error("AI response did not contain valid JSON.");
   return JSON.parse(cleaned.slice(start,end+1));
 }
-function sanitize(result = {}) {
+export function sanitizeFactoryProposal(result = {}) {
   const business = result.business && typeof result.business === "object" ? result.business : {};
   const design = result.design && typeof result.design === "object" ? result.design : {};
   const features = result.features && typeof result.features === "object" ? result.features : {};
@@ -180,7 +180,7 @@ Use empty arrays when the prompt does not justify catalog or team generation.`;
     const result = await response.json();
     if (!response.ok) throw new Error(result?.error?.message || "Factory AI could not generate the website configuration.");
     const raw = Array.isArray(result?.content) ? result.content.filter((part)=>part?.type==="text").map((part)=>part.text).join("\n") : "";
-    const proposal = sanitize(extractJson(raw));
+    const proposal = sanitizeFactoryProposal(extractJson(raw));
     return Response.json({ok:true,proposal,model:result?.model || env("WEBFACTORY_AI_MODEL") || "claude-sonnet-5"},{headers:{"Cache-Control":"no-store"}});
   } catch (error) {
     return Response.json({ok:false,message:error?.message || "Factory AI could not complete the request."},{status:500,headers:{"Cache-Control":"no-store"}});

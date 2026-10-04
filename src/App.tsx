@@ -7,6 +7,7 @@ import { useFeedbackExperience } from './feedback/FeedbackExperience'
 const TemplatePreview = lazy(() => import('./TemplatePreview'))
 const TemplatesPage = lazy(() => import('./TemplatesPage'))
 const WebFactoryBuilder = lazy(() => import('./WebFactoryBuilder'))
+const ChatgptControlPage = lazy(() => import('./ChatgptControlPage'))
 const ClientAdminPage = lazy(() => import('./ClientAdminPage'))
 const ClientStorefront = lazy(() => import('./ClientStorefront'))
 const WebFactoryAdminPage = lazy(() => import('./WebFactoryAdminPage'))
@@ -64,6 +65,7 @@ function App(){
 
   if (TemplateParityReview && /^\/template-parity-preview\/?$/.test(window.location.pathname)) return <RouteView><TemplateParityReview/></RouteView>
   if (PreviewReviewPage && /^\/preview-review\/?$/.test(window.location.pathname)) return <RouteView><PreviewReviewPage lang={lang} setLang={setLang} /></RouteView>
+  if (/^\/chatgpt\/?$/.test(window.location.pathname)) return <RouteView><MfaGate><ChatgptControlPage /></MfaGate></RouteView>
   if (identityRecoveryRoute) return <RouteView><PasswordRecoveryPage /></RouteView>
   if (privacyRoute) return <RouteView><LegalPage kind="privacy" /></RouteView>
   if (termsRoute) return <RouteView><LegalPage kind="terms" /></RouteView>
