@@ -78,7 +78,7 @@ The browser never supplies an authoritative subscription price. The server selec
 
 ## Transactional email
 
-Transactional email is sent only from backend Functions. Production uses Resend SMTP (`WEBFACTORY_EMAIL_PROVIDER=resend`, `RESEND_API_KEY`). Gmail remains available for preview/development and explicit rollback; automatic SMTP failover is not enabled. ImprovMX continues receiving corporate email.
+Email is intentionally split into two delivery layers. WebFactory platform mail (account/security, platform invitations, billing and administrative notices) stays on the central backend transport; production uses Resend SMTP (`WEBFACTORY_EMAIL_PROVIDER=resend`, `RESEND_API_KEY`). Business operational mail never falls back to that transport: each tenant connects its own Gmail or Google Workspace account through OAuth, and booking confirmations/reminders, order/receipt messages, website contacts and review requests are sent with that business account through the Gmail API. If a business has not connected email, those operational messages remain paused rather than consuming WebFactory's Resend quota. ImprovMX continues receiving WebFactory corporate mail.
 
 Corporate sender identities:
 
