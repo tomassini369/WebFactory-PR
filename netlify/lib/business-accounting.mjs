@@ -120,7 +120,7 @@ export function accountingReport(ledger, transactions, site, from, to, employeeF
   });
   return {from,to,employeeFilter,inventory,employees,work,sales,expenses,entries:ledger.entries.filter(e=>within(e.date)&&matches(e)),summary:{estimatedRevenueCents,salaryCents,operatingCents,materialsCents,purchaseCents,estimatedResultCents:estimatedRevenueCents-salaryCents-operatingCents-materialsCents,regularMinutes:sum(approved,'regularMinutes'),overtimeMinutes:sum(approved,'overtimeMinutes'),paidCents:sum(approved,'paidCents'),pendingCents:sum(approved,'pendingCents'),taxCents:sum(sales,'taxCents'),tipCents:sum(sales,'tipCents'),refundCents:sum(sales,'refundCents'),unassignedRevenueCents:sum(sales.filter(e=>!e.employeeId),'estimatedRevenueCents')}};
 }
-export function csvCell(value) { const raw=String(value??''); return `"${(/^[\s]*[=+@\-]/.test(raw)?"'":'')+raw.replaceAll('"','""')}"`; }
+export function csvCell(value) { const raw=String(value??''); return `"${((/^[\s]*[=+@]/.test(raw)||(/^[\s]*-/.test(raw)&&!/^-[0-9]+(?:\.[0-9]+)?$/.test(raw)))?"'":'')+raw.replaceAll('"','""')}"`; }
 export function reportCsv(report, ledger) {
   const rows=[['section','id','date','employee_id','field','value','unit']];
   const add=(section, records)=>records.forEach(r=>Object.entries(r).forEach(([k,v])=>rows.push([section,r.id||r.transactionId||r.employeeId||'',r.date||'',r.employeeId||'',k,k.endsWith('Cents')&&v!==null?(v/100).toFixed(2):v,k.endsWith('Cents')?'USD':k.endsWith('Minutes')?'minutes':''])));

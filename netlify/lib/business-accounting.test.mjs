@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {appendEntry,emptyLedger,accountingReport,reportCsv,day} from './business-accounting.mjs';
+import {appendEntry,emptyLedger,accountingReport,reportCsv,day,csvCell} from './business-accounting.mjs';
 const site={siteId:'tenant-a',employees:[{id:'e1',name:'Ana'}],catalog:[]};
 let sequence=0;
 const add=(l,input)=>appendEntry(l,{date:'2026-10-01',id:`record-${++sequence}`,revision:l.revision,...input},site,'owner');
@@ -36,3 +36,5 @@ test('Corrections preserve audit trail and filtered CSV escapes formula injectio
  const r=accountingReport(l,[],site,'2026-10-01','2026-10-31');assert.equal(r.summary.operatingCents,0);assert.equal(r.entries.length,2);
  assert.ok(reportCsv(r,l).includes("'=HYPERLINK"));
 });
+
+test('CSV preserves numeric negative results without permitting formulas',()=>{assert.equal(csvCell('-12.34'),'\"-12.34\"');assert.ok(csvCell('-HYPERLINK(1)').includes("'-HYPERLINK"));});

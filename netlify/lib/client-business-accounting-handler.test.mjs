@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createAccountingHandler,loadAccountingTransactions} from './client-business-accounting.mjs';
+import {createAccountingHandler,loadAccountingTransactions} from '../functions/client-business-accounting.mjs';
 const origin='https://example.com';
 const site={siteId:'a',employees:[{id:'e',name:'Ana'}]};
 const request=(payload,requestOrigin=origin)=>new Request(origin+'/?siteId=a',{method:'POST',headers:{origin:requestOrigin,'Content-Type':'application/json'},body:JSON.stringify(payload)});
