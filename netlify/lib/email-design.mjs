@@ -19,7 +19,7 @@ export function emailContrast(value) {
 }
 export function emailBrand(site, language = 'en') {
   const base = publicBaseUrl();
-  if (!site) return { name:'WebFactory PR', primary:'#0B1529', accent:'#0089E8', logo:`${base}/assets/webfactory-pr-logo.png`, website:base, platform:true };
+  if (!site) return { name:'WebFactory PR', primary:'#0B1529', accent:'#0089E8', logo:`${base}/webfactory-pr-logo.png`, website:base, platform:true };
   const business = site.business || {}, es = language === 'es';
   const name = (es ? business.nameEs || business.name || business.nameEn : business.nameEn || business.name || business.nameEs) || (es ? 'Tu negocio' : 'Your business');
   const assetKey = String(business.logoAssetKey || '');
