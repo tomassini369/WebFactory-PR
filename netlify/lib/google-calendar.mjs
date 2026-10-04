@@ -89,7 +89,7 @@ export async function googleUserEmail(token) {
   });
   const result = await response.json().catch(() => ({}));
   const email = String(result?.email || "").trim().toLowerCase();
-  if (!response.ok || !/^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(email)) {
+  if (!response.ok || result?.email_verified === false || !/^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(email)) {
     throw Object.assign(new Error("Google did not return a verified email address."), { status: 409 });
   }
   return email;
