@@ -4,27 +4,13 @@ import {deleteStorePrefix} from "./store-maintenance.mjs";
 import { purgeAccountSecurity } from "./mfa-security.mjs";
 import { admin } from "@netlify/identity";
 import { clientAssetStore, clientBackupStore, clientCommerceStore, clientEventStore, clientOAuthStore, clientSiteStore, emailHash, getClientSite, normalizeEmail, saveClientSite, siteKey, slugify } from "./client-store.mjs";
-import { decryptToken } from "./google-calendar.mjs";
 
 function env(name){return globalThis.Netlify?.env?.get(name)||"";}
 
 const deletePrefix=deleteStorePrefix;
 
 export async function disconnectBusinessEmail(site){
-  const key=`business-email/tokens/${site.siteId}.json`;
-  const stored=await clientOAuthStore().get(key,{type:"json"}).catch(()=>null);
-  if(stored?.encrypted){
-    try{
-      const token=decryptToken(stored.encrypted);
-      const revokeToken=token.refresh_token||token.access_token;
-      if(revokeToken) await fetch("https://oauth2.googleapis.com/revoke",{
-        method:"POST",
-        headers:{"Content-Type":"application/x-www-form-urlencoded"},
-        body:new URLSearchParams({token:revokeToken}),
-      });
-    }catch{}
-  }
-  await clientOAuthStore().delete(key).catch(()=>{});
+  await clientOAuthStore().delete(`business-email/tokens/${site.siteId}.json`).catch(()=>{});
   return saveClientSite({
     ...site,
     businessEmail:{provider:"",connected:false,connectedEmail:"",connectedAt:"",disconnectedAt:new Date().toISOString()},
@@ -34,20 +20,7 @@ export async function disconnectBusinessEmail(site){
 }
 
 export async function disconnectGoogle(site){
-  const key=`tokens/${site.siteId}.json`;
-  const stored=await clientOAuthStore().get(key,{type:"json"}).catch(()=>null);
-  if(stored?.encrypted){
-    try{
-      const token=decryptToken(stored.encrypted);
-      const revokeToken=token.refresh_token||token.access_token;
-      if(revokeToken) await fetch("https://oauth2.googleapis.com/revoke",{
-        method:"POST",
-        headers:{"Content-Type":"application/x-www-form-urlencoded"},
-        body:new URLSearchParams({token:revokeToken}),
-      });
-    }catch{}
-  }
-  await clientOAuthStore().delete(key).catch(()=>{});
+  await clientOAuthStore().delete(`tokens/${site.siteId}.json`).catch(()=>{});
   const employees=(site.employees||[]).map((employee)=>({...employee,calendarId:""}));
   return saveClientSite({
     ...site,
@@ -129,7 +102,7 @@ export async function purgeClientSite(siteId,options={}){
   return withBookingLock(clientBackupStore(),"maintenance/lock",()=>purgeClientSiteRecords(siteId,options));
 }
 async function purgeClientSiteRecords(siteId,{cancelSubscription=true}={}){
-  const site=await getClientSite(siteId);
+  let site=await getClientSite(siteId);
   if(!site)return {deleted:false,siteId};
   if(cancelSubscription) await cancelWebFactorySubscription(site);
 
