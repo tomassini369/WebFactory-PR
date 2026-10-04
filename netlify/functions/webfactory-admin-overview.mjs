@@ -126,12 +126,12 @@ function capacity(sites, blockers) {
   };
 }
 
-export default async (req) => {
+export function createAdminOverviewHandler(authorize=requirePlatformAdmin){return async (req) => {
   try {
     if (req.method !== "GET") {
       return Response.json({ ok: false, message: "Method not allowed." }, { status: 405 });
     }
-    const user = await requirePlatformAdmin();
+    const user = await authorize();
     const [sites, commerce, stripeEvents, clientEvents, clientAssets, netlifyUsage] = await Promise.all([
       records(clientSiteStore(), "sites/"),
       records(clientCommerceStore()),
@@ -246,3 +246,6 @@ export default async (req) => {
     return errorResponse(error);
   }
 };
+
+}
+export default createAdminOverviewHandler();

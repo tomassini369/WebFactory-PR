@@ -34,6 +34,10 @@ const copy={
           'Where a client business enables ATH Móvil Business or in-person payments, the business is responsible for its own merchant account and payment relationship. WebFactory may store configuration information needed to present or route the payment option but does not become the merchant receiving the business’s sales revenue.',
           'WebFactory does not charge a platform commission on client business sales under the current subscription offering.'
         ]],
+        ['ChatGPT connection',[
+          'Business owners may authorize ChatGPT to read information from a selected business and prepare changes. Platform administrators may separately authorize platform-wide access. Information returned by the connection is shared with ChatGPT and is subject to its own terms and privacy policies.',
+          'WebFactory uses OAuth with scoped connections and stores hashed connection tokens. Changes require review and confirmation in WebFactory. Password changes, credentials and platform source code are not available through the connection. Disconnecting in WebFactory revokes further access but does not delete information already shared in ChatGPT conversations.'
+        ]],
         ['5. Google Calendar',[
           'If a business chooses to connect Google Calendar, WebFactory uses the authorization granted by that business to check availability and support creation, updating, cancellation, or rescheduling of booking-related calendar events.',
           'Google authorization tokens are stored in encrypted form by the WebFactory backend. Users can stop using the integration by disconnecting access through their Google account and contacting WebFactory if additional removal assistance is needed.'
@@ -206,6 +210,10 @@ const copy={
           'Los pagos de suscripción de WebFactory se procesan mediante Stripe. Los negocios clientes también pueden conectar Stripe para aceptar pagos de sus propios clientes. Los datos sensibles de tarjeta y banca son recopilados directamente por Stripe mediante interfaces oficiales o alojadas por Stripe y WebFactory no almacena credenciales completas de pago.',
           'Cuando un negocio activa ATH Móvil Business o pagos presenciales, el negocio es responsable de su propia cuenta comercial y relación de pago. WebFactory puede guardar la configuración necesaria para presentar o dirigir esa opción, pero no se convierte en el comerciante que recibe los ingresos de las ventas del negocio.',
           'Bajo la oferta de suscripción actual, WebFactory no cobra comisión sobre las ventas del negocio cliente.'
+        ]],
+        ['Conexión con ChatGPT',[
+          'Los dueños pueden autorizar a ChatGPT a consultar información de un negocio seleccionado y preparar cambios. Los administradores de la plataforma pueden autorizar por separado acceso a toda la plataforma. La información consultada se comparte con ChatGPT y está sujeta a sus propios términos y políticas de privacidad.',
+          'WebFactory utiliza OAuth con conexiones de alcance limitado y almacena hashes de los tokens de conexión. Los cambios requieren revisión y confirmación en WebFactory. Las contraseñas, credenciales y el código de la plataforma no están disponibles mediante la conexión. Desconectar revoca el acceso futuro, pero no elimina información compartida previamente en las conversaciones de ChatGPT.'
         ]],
         ['5. Google Calendar',[
           'Si un negocio conecta Google Calendar, WebFactory utiliza la autorización otorgada para consultar disponibilidad y apoyar la creación, actualización, cancelación o reprogramación de eventos relacionados con reservaciones.',

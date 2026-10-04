@@ -13,6 +13,7 @@
     "cache:template-images": "node scripts/cache-template-images.mjs"
   },
   "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.0",
     "@netlify/blobs": "^10.0.0",
     "@netlify/identity": "^2.0.0",
     "@simplewebauthn/browser": "^14.0.0",
@@ -22,7 +23,8 @@
     "qrcode": "^1.5.4",
     "react": "19.3.0",
     "react-dom": "19.3.0",
-    "stripe": "^22.6.2"
+    "stripe": "^22.6.2",
+    "zod": "^4.6.5"
   },
   "devDependencies": {
     "@types/react": "^19.2.0",
