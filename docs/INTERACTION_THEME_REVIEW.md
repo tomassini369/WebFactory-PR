@@ -2,7 +2,9 @@
 
 Prepared on `feat/premium-interactions-theme-audit`, based on current main
 `d53642d` plus the previously prepared storefront removal fix `545cf75`.
-No production deployment or remote push has completed.
+Uploaded through the GitHub connector as PR #78 after explicit user authorization.
+Netlify preview: https://deploy-preview-78--webfactorypr.netlify.app
+Production remains unchanged.
 
 ## Implemented
 
@@ -42,13 +44,16 @@ No production deployment or remote push has completed.
   installation returned invalid downloads and the cloud browser cannot open the
   local development address.
 
-## Required next step
+## Preview validation and remaining work
 
-Automatic approval review rejected `git push` as source export to an unverified
-remote without explicit destination authorization. Request permission to push this
-branch to `tomassini369/WebFactory-PR`, create a draft PR and generate the existing
-Netlify project's preview. Do not route around the rejection.
-
-Before publication: run the new browser gate, inspect the changed preview in both
-modes on mobile and desktop, and finish authenticated portal/module checks. The
-full-platform visual review is still pending; do not report it complete.
+- User authorized uploading this branch and a Netlify preview on October 5.
+- Verified cart removal/Undo manually inside the actual Builder iframe: $20 → $0 → $20.
+- Reviewed all Builder steps in both themes, plus templates and privacy. Fixed the
+  selected step number in dark mode and paired header color transitions.
+- CI passed the 350 tests, build, and Home FAQ desktop/mobile theme/language tests.
+- New interaction test exposed a mobile line-break assertion and coordinate click
+  instability in the scaled fixture. It now normalizes visible whitespace and
+  verifies keyboard cart activation; pointer behavior was separately checked in
+  the deployed Builder. Await the latest complete CI result before publication.
+- Complete authenticated portal/module visual checks after secure user sign-in.
+  The full-platform visual review remains pending; do not report it complete.
