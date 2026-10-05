@@ -41,7 +41,7 @@ const copy={
           'Depending on the tools requested and authorized scope, shared information can include business configuration, customer contact details, bookings, orders, receipts, employee compensation, approved hours and accounting records. The business must have authority to disclose this information and should avoid unnecessary personal information in prompts.',
           'WebFactory records connection authorization, scope, expiry and revocation, plus MCP action identifiers, confirmation status when required, results and audit information needed to operate and secure delegated actions. Revoking a connection does not undo completed actions or automatically erase records or copies already processed by OpenAI; manage conversation data separately in ChatGPT.',
           'This connection is separate from Google Calendar and Business Email authorization. Connecting ChatGPT does not itself authorize either Google integration.'
-        ]]
+        ]],
         ['5. Google Calendar',[
           'If a business chooses to connect Google Calendar, WebFactory uses the authorization granted by that business to check availability and support creation, updating, cancellation, or rescheduling of booking-related calendar events.',
           'Google authorization tokens are stored in encrypted form by the WebFactory backend. Users can stop using the integration by disconnecting access through their Google account and contacting WebFactory if additional removal assistance is needed.'
@@ -155,7 +155,7 @@ const copy={
           'Read access can return authorized information. Execute access can perform supported writes. The user remains responsible for checking the requested business, amounts, recipients and action. When a sensitive action returns a required confirmation phrase, execution is authorized only after the user supplies that exact phrase in chat. A model response alone is not proof of completion; rely on the recorded MCP result and verification status.',
           'AI suggestions can be incomplete or inaccurate. Business owners remain responsible for content, communications and operations they request or confirm. Salary calculations and accounting exports organize supplied records; they do not file tax returns, send payroll payments or replace professional accounting or employment advice. Confirm hours, rates, classifications and tax treatment independently.',
           'You may revoke a connection or only its Execute permission in WebFactory at /chatgpt. Revocation blocks further use of that authorization but does not undo completed actions or delete conversations already held by ChatGPT.'
-        ]]
+        ]],
         ['19. Contact',[
           'Questions about these Terms may be sent to info@webfactorypr.com.'
         ]]
@@ -230,7 +230,7 @@ const copy={
           'Según la herramienta solicitada y el alcance autorizado, la información compartida puede incluir configuración del negocio, datos de contacto de clientes, reservas, órdenes, recibos, compensación de empleados, horas aprobadas y registros contables. El negocio debe tener autoridad para divulgar estos datos y evitar información personal innecesaria en las instrucciones.',
           'WebFactory registra autorización, alcance, vencimiento y revocación de conexiones, además de identificadores de acciones MCP, estado de confirmación cuando aplique, resultados y auditoría necesaria para operar y proteger las acciones delegadas. Revocar no revierte acciones completadas ni elimina automáticamente registros o copias ya procesadas por OpenAI; administra los datos de conversaciones por separado en ChatGPT.',
           'Esta conexión es independiente de las autorizaciones de Google Calendar y Business Email. Conectar ChatGPT no autoriza por sí solo ninguna de esas integraciones.'
-        ]]
+        ]],
         ['5. Google Calendar',[
           'Si un negocio conecta Google Calendar, WebFactory utiliza la autorización otorgada para consultar disponibilidad y apoyar la creación, actualización, cancelación o reprogramación de eventos relacionados con reservaciones.',
           'Los tokens de autorización de Google se almacenan cifrados en el backend de WebFactory. El usuario puede revocar el acceso desde su cuenta de Google y contactar a WebFactory si necesita asistencia adicional para remover la integración.'
@@ -344,7 +344,7 @@ const copy={
           'El acceso de lectura puede devolver información autorizada. Execute puede realizar escrituras compatibles. El usuario sigue siendo responsable de comprobar negocio, cantidades, destinatarios y acción solicitada. Cuando una acción sensible devuelve una frase de confirmación requerida, solo se autoriza la ejecución después de que el usuario escriba exactamente esa frase en el chat. Una respuesta del modelo por sí sola no demuestra que la acción terminó; utiliza el resultado registrado del MCP y su estado de verificación.',
           'Las sugerencias de IA pueden ser incompletas o incorrectas. El dueño del negocio sigue siendo responsable del contenido, comunicaciones y operaciones que solicite o confirme. Los cálculos de salarios y exportaciones contables organizan registros provistos; no radican planillas, envían pagos de nómina ni sustituyen asesoría profesional contable o laboral. Verifica independientemente horas, tarifas, clasificaciones y tratamiento contributivo.',
           'Puedes revocar la conexión o solamente su permiso Execute en WebFactory en /chatgpt. Revocar impide seguir usando esa autorización, pero no revierte acciones completadas ni elimina conversaciones ya guardadas por ChatGPT.'
-        ]]
+        ]],
         ['19. Contacto',[
           'Preguntas sobre estos Términos pueden enviarse a info@webfactorypr.com.'
         ]]
