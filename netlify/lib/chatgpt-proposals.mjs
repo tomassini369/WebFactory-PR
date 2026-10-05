@@ -4,6 +4,7 @@ import {bookingVersion,changePrivateBooking} from './booking-management.mjs';
 import {clientOAuthStore,clientCommerceStore,getClientSite,patchClientSite,publicClientSite} from './client-store.mjs';
 import {authorizeGrant,parseOperation,operationCapability,redesignSite,safeOutput} from './chatgpt-operations.mjs';
 import {key,oauthError,hash,getGrant} from './chatgpt-oauth.mjs';
+import {withAuthorizedAction} from './internal-action-auth.mjs';
 const handlers={
  'client-admin':()=>import('../functions/client-admin.mjs'),
  'client-commerce-admin':()=>import('../functions/client-commerce-admin.mjs'),
@@ -89,7 +90,7 @@ export async function executeProposal(id,user,request,context,confirmation){
    if(destructive)body.confirmation='DELETE PAGE';
    const handler=(await handlers[op.endpoint]()).default;
    const origin=new URL(request.url).origin;
-   const response=await handler(new Request(origin+'/.netlify/functions/'+op.endpoint,{method:op.method,headers:{'Content-Type':'application/json',origin},body:JSON.stringify(body)}),context);
+   const response=await withAuthorizedAction({user,siteId:p.siteId,platform:grant.platform},()=>handler(new Request(origin+'/.netlify/functions/'+op.endpoint,{method:op.method,headers:{'Content-Type':'application/json',origin},body:JSON.stringify(body)}),context));
    const output=await response.json();
    if(!response.ok||output.ok===false)throw oauthError(output.message||'Operation requires review.',response.status);
    result=safeOutput(output);

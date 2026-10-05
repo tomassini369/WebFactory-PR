@@ -1,6 +1,7 @@
 import { getUser } from "@netlify/identity";
 import { getClientSite, normalizeEmail, sitesForEmail } from "./client-store.mjs";
 import { assertSecondFactor } from "./mfa-security.mjs";
+import { authorizedAction } from "./internal-action-auth.mjs";
 
 export function assertSameOrigin(req) {
   if (["GET", "HEAD", "OPTIONS"].includes(req.method)) return;
@@ -14,6 +15,10 @@ export function assertSameOrigin(req) {
 }
 
 export async function requireClientUser() {
+  // OAuth consent already required portal authentication/MFA. Internal handlers
+  // reuse that validated identity; ordinary portal requests retain session/MFA checks.
+  const action = authorizedAction();
+  if (action) return action.user;
   const user = await getUser();
   if (!user?.email) {
     const error = new Error("Authentication required.");
@@ -50,6 +55,9 @@ export function authorizeSiteUser(user, site, roles = ["owner", "manager", "empl
 }
 
 export async function requirePlatformAdmin() {
+  if (authorizedAction() && !authorizedAction().platform) {
+    throw Object.assign(new Error("Platform access required."), { status: 403 });
+  }
   const user = await requireClientUser();
   const authorized = isPlatformAdmin(user);
   if (!authorized) {
@@ -67,6 +75,9 @@ export async function authorizedSites() {
 }
 
 export async function requireSiteAccess(siteId, roles = ["owner", "manager", "employee", "cashier"]) {
+  if (authorizedAction() && authorizedAction().siteId !== siteId) {
+    throw Object.assign(new Error("Cross-business access denied."), { status: 403 });
+  }
   const user = await requireClientUser();
   const site = await getClientSite(siteId);
   if (!site) {
