@@ -63,6 +63,7 @@ export async function executeProposal(id,user,request,context,confirmation){
  if(p.status!=='pending')return {ok:p.status==='completed',status:p.status,result:p.result||null};
  if(p.expiresAt<Date.now())throw oauthError('Proposal expired. Request a new proposal.',409);
  const grant=await getGrant(store,p.grantId);
+ if(p.scopes?.includes('webfactory.execute')&&!grant.scopes.includes('webfactory.execute'))throw oauthError('Execute permission revoked.',403);
  const {op,input}=parseOperation(p.operation,p.input);
  const {site}=await authorizeGrant(grant,user,p.siteId,operationCapability(op,input),op);
  if(site&&site.revision!==p.siteRevision)throw oauthError('Business changed since this proposal. Generate a fresh preview.',409);
@@ -87,9 +88,22 @@ export async function executeProposal(id,user,request,context,confirmation){
    if(p.operation==='record_pos_sale')body.saleAttemptId=p.id;
    if(p.operation==='accounting_entry')body={...input.entry,siteId:p.siteId,id:p.id,revision:p.ledgerRevision};
    if(destructive)body.confirmation='DELETE PAGE';
-   const handler=(await handlers[op.endpoint]()).default;
+   const module=await handlers[op.endpoint]();
    const origin=new URL(request.url).origin;
-   const response=await handler(new Request(origin+'/.netlify/functions/'+op.endpoint,{method:op.method,headers:{'Content-Type':'application/json',origin},body:JSON.stringify(body)}),context);
+   const internalRequest=new Request(origin+'/.netlify/functions/'+op.endpoint,{method:op.method,headers:{'Content-Type':'application/json',origin},body:JSON.stringify(body)});
+   // OAuth grants are not Netlify Identity portal sessions. Pass validated access
+   // explicitly into the shared commerce handler; never synthesize cookies or
+   // accept an identity from request headers/body. Recheck the live grant and
+   // membership at the handler's authorization boundary.
+   const response=op.endpoint==='client-commerce-admin'
+    ? await module.handleCommerceRequest(internalRequest,async(target,capability)=>{
+       if(target!==p.siteId||capability!==operationCapability(op,input))throw oauthError('Action authorization mismatch.',403);
+       const live=await getGrant(store,p.grantId);
+       if(p.scopes?.includes('webfactory.execute')&&!live.scopes.includes('webfactory.execute'))throw oauthError('Execute permission revoked.',403);
+       if(!live.scopes.includes('webfactory.execute')&&!live.scopes.includes('webfactory.propose'))throw oauthError('Write permission revoked.',403);
+       return authorizeGrant(live,user,target,capability,op);
+      })
+    : await module.default(internalRequest,context);
    const output=await response.json();
    if(!response.ok||output.ok===false)throw oauthError(output.message||'Operation requires review.',response.status);
    result=safeOutput(output);
