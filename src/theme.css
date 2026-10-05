@@ -373,7 +373,7 @@ html[data-wf-platform-theme="true"][data-wf-theme="light"] .wfa-admin-id strong{
 html[data-wf-platform-theme="true"][data-wf-theme="light"] .wfa-admin-id span{color:#526078}
 
 .wfa-login-page,.ca-page{
-  height:100svh;height:100dvh;min-height:0;box-sizing:border-box;overflow:hidden;
+  height:auto;min-height:100svh;min-height:100dvh;box-sizing:border-box;overflow:visible;
   padding-top:max(12px,env(safe-area-inset-top));padding-bottom:max(12px,env(safe-area-inset-bottom));
   -webkit-text-size-adjust:100%;text-size-adjust:100%;overscroll-behavior:none;
 }
@@ -435,7 +435,9 @@ html[data-wf-platform-theme="true"][data-wf-theme="light"] .wfa-admin-id span{co
     border-radius:0!important;
     box-shadow:none!important;
     padding:max(34px,calc(env(safe-area-inset-top) + 18px)) 18px max(24px,env(safe-area-inset-bottom))!important;
-    overflow:hidden!important;
+    overflow-x:hidden!important;
+    overflow-y:auto!important;
+    -webkit-overflow-scrolling:touch;
     overscroll-behavior:none!important;
     box-sizing:border-box!important;
     transform:none!important;
@@ -529,15 +531,7 @@ html[data-wf-platform-theme="true"][data-wf-theme="light"] .wfa-admin-id span{co
   }
 }
 
-/* Short mobile viewports may scroll only inside the full-screen auth surface. */
-@media(max-width:820px) and (max-height:700px){
-  .wfa-login-page>.wfa-login,
-  .ca-page>.ca-login,
-  .ca-page>.ca-activate{
-    overflow-y:auto!important;
-    -webkit-overflow-scrolling:touch;
-  }
-}
+/* The mobile shell stays fixed; its auth surface scrolls only when content needs it. */
 
 .ca-booking-calendar-controls{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:20px}.ca-booking-calendar-controls strong{flex:1;text-transform:capitalize}.ca-booking-calendar-controls label{display:grid;gap:6px}.ca-booking-month{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}.ca-booking-month>small{text-align:center;padding:6px}.ca-booking-month>button{min-width:0;min-height:64px;padding:8px;display:flex;justify-content:space-between;align-items:flex-start;gap:4px}.ca-booking-month>button[aria-pressed="true"]{outline:2px solid #3985ed;outline-offset:1px}.ca-booking-month>button span{border-radius:50%;background:#2167c6;color:#fff;padding:2px 6px;font-size:12px}.ca-booking-agenda article{display:flex;gap:16px;flex-wrap:wrap;padding:14px 0;border-bottom:1px solid #94a3b855}.ca-booking-agenda time{font-weight:700}@media(max-width:600px){.ca-booking-month>button{min-height:48px;padding:6px}.ca-booking-calendar-controls{gap:8px}.ca-booking-calendar-controls label{width:100%}}
 .ca-booking-month>button,.ca-booking-calendar-controls>button{font:inherit;font-weight:700;cursor:pointer;border:1px solid #cbd9eb;border-radius:10px;background:#fff;color:#0b1529}.ca-booking-calendar-controls>button{padding:10px 14px}.ca-booking-month>button[aria-pressed="true"]{background:#eaf2ff;color:#0b1529}html[data-wf-theme="dark"] .ca-booking-month>button,html[data-wf-theme="dark"] .ca-booking-calendar-controls>button{background:#142138;color:#f7faff;border-color:#344866}html[data-wf-theme="dark"] .ca-booking-month>button[aria-pressed="true"]{background:#203b61;color:#fff}
