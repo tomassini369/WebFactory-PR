@@ -27,7 +27,7 @@ export async function consent(store,requestId,user,{siteId='',platform=false,all
  if(!request||request.used||request.expiresAt<now)throw oauthError('Authorization request expired.',409);
  if(!user?.id||!user?.email||(!platform&&!siteId))throw oauthError('Choose an authorized business.',403);
  const grantId=crypto.randomUUID(),code=randomToken();
- const grant={id:grantId,userId:user.id,email:user.email.toLowerCase(),siteId:platform?'':siteId,platform,scopes:request.scopes.filter(s=>s==='webfactory.read'||s==='webfactory.propose'&&allowWrites||s==='webfactory.execute'&&allowExecute&&allowWrites),clientId:request.clientId,resource:request.resource,origin:request.origin,createdAt:now,expiresAt:now+30*86400000,revoked:false};
+ const grant={id:grantId,userId:user.id,email:user.email.toLowerCase(),siteId:platform?'':siteId,platform,scopes:request.scopes.filter(s=>s==='webfactory.read'||s==='webfactory.propose'&&allowWrites||s==='webfactory.execute'&&allowExecute),clientId:request.clientId,resource:request.resource,origin:request.origin,createdAt:now,expiresAt:now+30*86400000,revoked:false};
  const claimed=await store.setJSON(requestKey,{...request,used:true},{onlyIfMatch:stored.etag});if(!claimed.modified)throw oauthError('Authorization request already used.',409);
  await setNew(store,key('grants',grantId),grant);
  await setNew(store,`chatgpt/users/${hash(user.id)}/${grantId}.json`,{userId:user.id,grantId});

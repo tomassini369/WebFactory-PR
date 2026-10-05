@@ -89,16 +89,19 @@ test('HTTP success without correct read-after-write is not success and is audite
  await assert.rejects(executeConfirmedProposal(f.p.id,f.user,f.grant),{status:409});
 });
 
-test('MCP accepts existing deterministic proposal identifiers and executes only after portal confirmation',async t=>{
- const f=await setup(t);
+test('MCP Execute exposes direct writers, applies normal changes immediately and confirms deletion only in chat',async t=>{
+ const f=fixture(t);f.grant.scopes=['webfactory.read','webfactory.execute'];await f.prepare();
  const rpc=async(name,args)=>{
-  const response=await serveMcp(new Request('https://webfactorypr.com/mcp',{method:'POST',headers:{'Content-Type':'application/json',Accept:'application/json, text/event-stream'},body:JSON.stringify({jsonrpc:'2.0',id:1,method:'tools/call',params:{name,arguments:args}})}),f.grant,f.user);
+  const response=await serveMcp(new Request('https://webfactorypr.com/mcp',{method:'POST',headers:{'Content-Type':'application/json',Accept:'application/json, text/event-stream'},body:JSON.stringify({jsonrpc:'2.0',id:1,method:'tools/call',params:{name,arguments:args}})}),f.grant,f.user,{});
   return response.json();
  };
- const status=await rpc('wf_action_status',{proposalId:f.p.id});assert.ok(!status.error&&!status.result.isError);
- const proposal=await rpc('wf_get_proposal',{proposalId:f.p.id});assert.ok(!proposal.error&&!proposal.result.isError);
- const denied=await rpc('wf_execute_change',{proposalId:f.p.id});assert.equal(denied.result.isError,true);
- await confirmExecutableProposal(f.p.id,f.user,'CONFIRM');
- const extra=await rpc('wf_execute_change',{proposalId:f.p.id,siteId:'tenant-b',input:{value:[]}});assert.ok(extra.error||extra.result.isError);
- const done=await rpc('wf_execute_change',{proposalId:f.p.id});assert.ok(!done.error&&!done.result.isError);assert.equal(JSON.parse(done.result.content[0].text).verified,true);
+ const listed=await serveMcp(new Request('https://webfactorypr.com/mcp',{method:'POST',headers:{'Content-Type':'application/json',Accept:'application/json, text/event-stream'},body:JSON.stringify({jsonrpc:'2.0',id:1,method:'tools/list',params:{}})}),f.grant,f.user,{});
+ const tools=(await listed.json()).result.tools.map(x=>x.name);
+ assert.ok(tools.includes('wf_update_catalog'));assert.ok(tools.includes('wf_confirm_action'));assert.ok(!tools.includes('wf_execute_change'));assert.ok(!tools.some(x=>x.startsWith('wf_prepare_')));
+ const direct=await rpc('wf_update_catalog',{requestId:crypto.randomUUID(),input:{value:f.site.catalog.map(x=>({...x,price:40}))}});
+ assert.ok(!direct.error&&!direct.result.isError);const directBody=JSON.parse(direct.result.content[0].text);assert.equal(directBody.verified,true);assert.equal((await getClientSite(f.site.siteId)).catalog[0].price,40);
+ const sensitive=await rpc('wf_update_catalog',{requestId:crypto.randomUUID(),input:{value:[]}});
+ assert.ok(!sensitive.error&&!sensitive.result.isError);const pending=JSON.parse(sensitive.result.content[0].text);assert.equal(pending.status,'confirmation_required');assert.equal(pending.requiredConfirmation,'CONFIRM DELETION');assert.equal((await getClientSite(f.site.siteId)).catalog.length,1);
+ const denied=await rpc('wf_confirm_action',{confirmationId:pending.confirmationId,confirmationText:'yes'});assert.equal(denied.result.isError,true);assert.equal((await getClientSite(f.site.siteId)).catalog.length,1);
+ const done=await rpc('wf_confirm_action',{confirmationId:pending.confirmationId,confirmationText:'CONFIRM DELETION'});assert.ok(!done.error&&!done.result.isError);assert.equal(JSON.parse(done.result.content[0].text).verified,true);assert.equal((await getClientSite(f.site.siteId)).catalog.length,0);
 });
