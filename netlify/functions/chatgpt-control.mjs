@@ -31,6 +31,7 @@ export default async function handler(req,context){
   if(body.action==='revoke_execute'){const g=await store.get(key('grants',body.grantId),json);if(!g||g.userId!==user.id)throw oauthError('Connection unavailable.',404);await revokeExecute(store,g.id);return respond({ok:true});}
   if(body.action==='approve'){
    const p=await store.get(proposalKey(body.proposalId),json);
+   if(p&&Object.hasOwn(p,'requiresChatConfirmation'))throw oauthError('New MCP actions are executed or confirmed in ChatGPT. WebFactory no longer approves them here.',409);
    if(p?.executeViaMcp)return respond(await confirmExecutableProposal(body.proposalId,user,body.confirmation));
    return respond(await executeProposal(body.proposalId,user,req,context,body.confirmation));
   }
