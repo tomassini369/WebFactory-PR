@@ -9,12 +9,14 @@ try {
  for(let i=0;i<80;i++){try{if((await fetch(origin)).ok){ready=true;break}}catch{}await new Promise(r=>setTimeout(r,100))}
  assert(ready,'Vite did not start');browser=await chromium.launch();
  const page=await browser.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.route('**/.netlify/functions/portal-session',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({ok:true,user:null})}));
+ await page.route('**/.netlify/functions/portal-login',()=>{throw new Error('Layout regression must never submit login credentials')});
  // No login is submitted. The local page uses disposable input values only.
  for(const path of ['/client-admin/','/webfactory-admin/']){
   for(const viewport of [{width:1366,height:600},{width:1280,height:720},{width:1366,height:900},{width:910,height:400},{width:390,height:844},{width:390,height:650},{width:844,height:390}]){
    await page.setViewportSize(viewport);await page.goto(origin+path);
    const email=page.locator('input[type="email"]'),password=page.locator('input[autocomplete="current-password"]');
-   await email.waitFor({state:'visible'});
+   try{await email.waitFor({state:'visible'})}catch(error){console.error('Login fixture diagnostic',path,await page.locator('body').innerText(),errors);throw error}
    for(const theme of ['light','dark']){
     if(await page.locator('html').getAttribute('data-wf-theme')!==theme)await page.locator('.wf-theme-toggle').click();
     const layout=await page.locator('main').evaluate(shell=>({overflow:getComputedStyle(shell).overflowY,height:shell.clientHeight,scrollHeight:shell.scrollHeight}));
