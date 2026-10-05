@@ -19,3 +19,6 @@ html[data-wf-platform-theme="true"][data-wf-theme="light"] .wf-builder-app .wf-d
 html[data-wf-platform-theme="true"][data-wf-theme="light"] .header .langs button:not(.active){color:#52627a}
 /* Status must stay available on phones, including local-storage failure. */
 @media(max-width:560px){.wf-builder-status span[role="status"]{display:block;max-width:150px;white-space:normal;font-size:.64rem}.wf-builder-status{flex-wrap:wrap;justify-content:flex-end}}
+html[data-wf-platform-theme="true"][data-wf-theme="dark"] .wf-builder-app .wf-builder-nav button.selected b{color:#f7faff}
+/* Change text and its header surface together; avoid a dark-on-dark transition frame. */
+html[data-wf-platform-theme="true"] .header :is(.btn.secondary,.langs button){transition:transform .15s ease,box-shadow .15s ease}

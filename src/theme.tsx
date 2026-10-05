@@ -61,7 +61,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     () => typeof window !== 'undefined' && (
       legalPlatformPath(window.location.pathname)
       || window.location.pathname === '/'
-      || /^\/(?:builder|templates|preview-review)\/?$/.test(window.location.pathname)
+      || /^\/(?:builder|templates|preview-review|chatgpt)\/?$/.test(window.location.pathname)
       || /^\/(?:webfactory-admin|client-admin|password|password-recovery)\/?$/.test(window.location.pathname)
       || /^#(?:invite_token|recovery_token)=/.test(window.location.hash)
     ),
