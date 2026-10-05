@@ -17,6 +17,8 @@ test('Execute requires fresh explicit consent and can be revoked independently',
  const args={...s.args,scope:'webfactory.read webfactory.propose webfactory.execute'};
  const id=await beginAuthorization(s.store,args,origin),denied=await consent(s.store,id,{id:'u1',email:'owner@example.com'},{siteId:'tenant-a',allowWrites:true});
  assert.deepEqual(denied.grant.scopes,['webfactory.read','webfactory.propose']);
+ const direct=await beginAuthorization(s.store,args,origin),directOnly=await consent(s.store,direct,{id:'u1',email:'owner@example.com'},{siteId:'tenant-a',allowWrites:false,allowExecute:true});
+ assert.deepEqual(directOnly.grant.scopes,['webfactory.read','webfactory.execute']);
  const next=await beginAuthorization(s.store,args,origin),allowed=await consent(s.store,next,{id:'u1',email:'owner@example.com'},{siteId:'tenant-a',allowWrites:true,allowExecute:true});
  assert.ok(allowed.grant.scopes.includes('webfactory.execute'));
  await revokeExecute(s.store,allowed.grant.id);assert.deepEqual((await s.store.get(key('grants',allowed.grant.id))).scopes,['webfactory.read','webfactory.propose']);
