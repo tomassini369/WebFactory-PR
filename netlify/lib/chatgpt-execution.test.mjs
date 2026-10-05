@@ -2,7 +2,10 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
 import {getStore} from '@netlify/blobs';
-import {clientOAuthStore,clientSiteStore,getClientSite} from './client-store.mjs';
+import {clientOAuthStore,clientSiteStore,clientCommerceStore,getClientSite} from './client-store.mjs';
+import {requestDirectAction,confirmDirectAction} from './chatgpt-direct.mjs';
+import {withAuthorizedAction,authorizedAction} from './internal-action-auth.mjs';
+import {requireClientUser,requireSiteAccess,requirePlatformAdmin} from './client-auth.mjs';
 import {authorizeGrant,parseOperation,safeOutput,redesignSite} from './chatgpt-operations.mjs';
 import {revokeExecute,key} from './chatgpt-oauth.mjs';
 import {prepareProposal,executeProposal,proposalKey} from './chatgpt-proposals.mjs';
@@ -23,6 +26,43 @@ function fixture(t){
  const prepare=async()=>{await clientSiteStore().setJSON('sites/tenant-a.json',site);await clientOAuthStore().setJSON(key('grants',grant.id),grant)};
  return {site,user,grant,prepare};
 }
+
+test('MCP cancellation uses the connected identity without a portal session and remains idempotent',async t=>{
+ const f=fixture(t);f.grant.scopes.push('webfactory.execute');await f.prepare();
+ const store=clientCommerceStore(),record={siteId:f.site.siteId,transactionId:'booking-auth',kind:'booking',status:'confirmed',paymentStatus:'due'};
+ const recordKey='tenant-a/bookings/booking-auth.json';await store.setJSON(recordKey,record);
+ const request=new Request('https://webfactorypr.com/mcp');
+ const pending=await requestDirectAction(f.grant,f.user,{operation:'cancel',input:{kind:'booking',transactionId:record.transactionId},requestId:crypto.randomUUID()},'https://webfactorypr.com',request);
+ assert.equal(pending.status,'confirmation_required');assert.equal((await store.get(recordKey)).status,'confirmed');
+ const args={confirmationId:pending.confirmationId,confirmationText:pending.requiredConfirmation};
+ await assert.rejects(confirmDirectAction(f.grant,{...f.user,id:'other'},args,request),{status:404});
+ const result=await confirmDirectAction(f.grant,f.user,args,request);
+ assert.equal(result.status,'completed');assert.equal(result.ok,true);assert.equal((await store.get(recordKey)).status,'cancelled');
+ const first=await store.get(recordKey);await confirmDirectAction(f.grant,f.user,args,request);assert.deepEqual(await store.get(recordKey),first);
+});
+
+test('Delegated identity is tenant-bound, cannot escalate platform access and never leaks between calls',async t=>{
+ const f=fixture(t);await f.prepare();const admin={...f.user,roles:['admin']};
+ assert.equal(authorizedAction(),null);
+ await Promise.all([f.user,admin].map(user=>withAuthorizedAction({user,siteId:f.site.siteId,platform:false},async()=>{
+  await Promise.resolve();assert.equal((await requireClientUser()).roles,user.roles);
+  assert.equal((await requireSiteAccess(f.site.siteId)).site.siteId,f.site.siteId);
+  await assert.rejects(requireSiteAccess('tenant-b'),{status:403});
+  await assert.rejects(requirePlatformAdmin(),{status:403});
+ })));
+ assert.equal(authorizedAction(),null);
+ await assert.rejects(withAuthorizedAction({user:f.user,siteId:f.site.siteId,platform:false},async()=>{throw Error('handler failure')}),/handler failure/);
+ assert.equal(authorizedAction(),null);
+});
+
+test('Revoked MCP grant cannot cancel after chat confirmation',async t=>{
+ const f=fixture(t);f.grant.scopes.push('webfactory.execute');await f.prepare();
+ const request=new Request('https://webfactorypr.com/mcp');
+ const pending=await requestDirectAction(f.grant,f.user,{operation:'cancel',input:{kind:'booking',transactionId:'test'},requestId:crypto.randomUUID()},'https://webfactorypr.com',request);
+ await clientOAuthStore().setJSON(key('grants',f.grant.id),{...f.grant,revoked:true});
+ await assert.rejects(confirmDirectAction(f.grant,f.user,{confirmationId:pending.confirmationId,confirmationText:pending.requiredConfirmation},request),{status:401});
+ assert.equal(authorizedAction(),null);
+});
 
 async function setup(t,{platform=false,operation='update_catalog',input}={}){
  const f=fixture(t);f.grant.scopes.push('webfactory.execute');
