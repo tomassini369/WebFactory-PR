@@ -21,8 +21,19 @@ const handlers={
  'admin-delete-client-site':()=>import('../functions/admin-delete-client-site.mjs'),
 };
 export function proposalKey(id){if(!/^[a-f0-9-]{36}$/.test(id||''))throw oauthError('Invalid proposal.');return key('proposals',id);}
+function chatConfirmation(op,operation,input,site,snapshot){
+ const removesItems=Boolean(snapshot?.requiresAdditionalConfirmation);
+ const accountingSensitive=op.confirmation==='accounting'&&['approve','payment','void'].includes(input?.entry?.type);
+ if(op.confirmation==='delete'){
+  const label=String(site?.business?.name||'BUSINESS').replace(/\s+/g,' ').trim().toUpperCase().slice(0,80);
+  return {requiresChatConfirmation:true,requiredConfirmation:`DELETE ${label}`};
+ }
+ if(removesItems)return {requiresChatConfirmation:true,requiredConfirmation:'CONFIRM DELETION'};
+ if(op.confirmation==='sensitive'||accountingSensitive)return {requiresChatConfirmation:true,requiredConfirmation:'CONFIRM SENSITIVE ACTION'};
+ return {requiresChatConfirmation:false,requiredConfirmation:'CONFIRM'};
+}
 export async function prepareProposal(grant,user,{operation,siteId,input,requestId},origin){
- if(!grant.scopes.includes('webfactory.propose'))throw oauthError('This connection is read-only.',403);
+ if(!grant.scopes.includes('webfactory.propose')&&!grant.scopes.includes('webfactory.execute'))throw oauthError('This connection is read-only.',403);
  if(!/^[a-f0-9-]{36}$/.test(requestId||''))throw oauthError('A UUID requestId is required for safe retries.');
  const {op,input:parsed}=parseOperation(operation,input),target=grant.platform?siteId:grant.siteId;
  if(!grant.platform&&siteId&&siteId!==target)throw oauthError('Cross-business access denied.',403);
@@ -38,11 +49,13 @@ export async function prepareProposal(grant,user,{operation,siteId,input,request
  if(operation==='reschedule_booking'&&(!booking||booking.siteId!==target||!booking.calendarToken))throw oauthError('Booking unavailable for online rescheduling.',409);
  const proposal={bookingVersion:booking?bookingVersion(booking):null,id,grantId:grant.id,userId:user.id,siteId:target||'',operation,input:parsed,description:op.description,siteRevision:site?.revision??null,ledgerRevision:ledger?.revision||0,businessName:site?.business?.name||'WebFactory PR',createdAt:Date.now(),expiresAt:Date.now()+3600000,status:'pending',fingerprint,preview};
  const executable=executableOperations.includes(operation);
- Object.assign(proposal,{proposalId:id,email:user.email,role:grant.platform?'platform-admin':membership.role,scopes:[...grant.scopes],action:operation,resource:operation.startsWith('update_')?operation.slice(7):operation,executeViaMcp:executable&&grant.scopes.includes('webfactory.execute'),...(executable?proposalSnapshot(site,operation,parsed,user,membership):{currentState:null,proposedState:safeOutput(parsed),diff:[],requiredConfirmation:operation.includes('delete_business_page')?'DELETE PAGE':/refund|disconnect|subscription|mark_paid|record_pos|revoke/.test(operation)?'CONFIRM SENSITIVE ACTION':'CONFIRM'})});
+ const snapshot=executable?proposalSnapshot(site,operation,parsed,user,membership):{currentState:null,proposedState:safeOutput(parsed),diff:[],requiresAdditionalConfirmation:false};
+ const confirmation=chatConfirmation(op,operation,parsed,site,snapshot);
+ Object.assign(proposal,{proposalId:id,email:user.email,role:grant.platform?'platform-admin':membership.role,scopes:[...grant.scopes],action:operation,resource:operation.startsWith('update_')?operation.slice(7):operation,executeViaMcp:executable&&grant.scopes.includes('webfactory.execute'),...snapshot,...confirmation});
  proposal.approvalDigest=proposalDigest(proposal);
  const saved=await store.setJSON(proposalKey(id),proposal,{onlyIfNew:true});if(!saved.modified)throw oauthError('Proposal already being prepared. Retry with the same requestId.',409);
  await store.setJSON(`chatgpt/proposal-users/${hash(user.id)}/${id}.json`,{id,userId:user.id});
- return {id,status:'pending',approvalUrl:origin+'/chatgpt?proposal='+id,requiresHumanConfirmation:true,summary:op.description||operation,proposalId:id,currentState:proposal.currentState,proposedState:proposal.proposedState,diff:proposal.diff,executeViaMcp:proposal.executeViaMcp,requiredConfirmation:proposal.requiredConfirmation||'CONFIRM'};
+ return {id,status:'pending',approvalUrl:origin+'/chatgpt?proposal='+id,requiresHumanConfirmation:proposal.requiresChatConfirmation,requiresChatConfirmation:proposal.requiresChatConfirmation,summary:op.description||operation,proposalId:id,currentState:proposal.currentState,proposedState:proposal.proposedState,diff:proposal.diff,executeViaMcp:proposal.executeViaMcp,requiredConfirmation:proposal.requiredConfirmation||'CONFIRM'};
 }
 export async function executeProposal(id,user,request,context,confirmation){
  const store=clientOAuthStore(),k=proposalKey(id),stored=await store.getWithMetadata(k,{type:'json'}),p=stored?.data;
