@@ -105,3 +105,48 @@ test('MCP Execute exposes direct writers, applies normal changes immediately and
  const denied=await rpc('wf_confirm_action',{confirmationId:pending.confirmationId,confirmationText:'yes'});assert.equal(denied.result.isError,true);assert.equal((await getClientSite(f.site.siteId)).catalog.length,1);
  const done=await rpc('wf_confirm_action',{confirmationId:pending.confirmationId,confirmationText:'CONFIRM DELETION'});assert.ok(!done.error&&!done.result.isError);assert.equal(JSON.parse(done.result.content[0].text).verified,true);assert.equal((await getClientSite(f.site.siteId)).catalog.length,0);
 });
+
+test('OAuth cancellation executes shared commerce logic without portal cookies and retries once',async t=>{
+ const f=fixture(t);f.grant.scopes.push('webfactory.execute');await f.prepare();
+ const {clientCommerceStore}=await import('./client-store.mjs');
+ const {requestDirectAction,confirmDirectAction}=await import('./chatgpt-direct.mjs');
+ const store=clientCommerceStore(),record={siteId:f.site.siteId,transactionId:'booking-1',kind:'booking',status:'confirmed',paymentStatus:'due'};
+ await store.setJSON('tenant-a/bookings/booking-1.json',record);
+ const req=new Request('https://webfactorypr.com/mcp',{method:'POST'});
+ const pending=await requestDirectAction(f.grant,f.user,{operation:'cancel',input:{kind:'booking',transactionId:record.transactionId},requestId:crypto.randomUUID()},'https://webfactorypr.com',req,{});
+ assert.equal(pending.status,'confirmation_required');assert.equal((await store.get('tenant-a/bookings/booking-1.json')).status,'confirmed');
+ await assert.rejects(confirmDirectAction(f.grant,f.user,{confirmationId:pending.confirmationId,confirmationText:'yes'},req,{}),{status:400});
+ const args={confirmationId:pending.confirmationId,confirmationText:'CONFIRM SENSITIVE ACTION'};
+ const result=await confirmDirectAction(f.grant,f.user,args,req,{});
+ assert.equal(result.status,'completed');assert.equal((await store.get('tenant-a/bookings/booking-1.json')).status,'cancelled');
+ const cancelledAt=(await store.get('tenant-a/bookings/booking-1.json')).cancelledAt;
+ await confirmDirectAction(f.grant,f.user,args,req,{});
+ assert.equal((await store.get('tenant-a/bookings/booking-1.json')).cancelledAt,cancelledAt);
+});
+
+test('OAuth commerce cancellation rechecks membership and Execute permission',async t=>{
+ const f=fixture(t);f.grant.scopes.push('webfactory.execute');await f.prepare();
+ const {clientCommerceStore}=await import('./client-store.mjs');
+ const {requestDirectAction,confirmDirectAction}=await import('./chatgpt-direct.mjs');
+ const store=clientCommerceStore(),record={siteId:f.site.siteId,transactionId:'booking-1',kind:'booking',status:'confirmed',paymentStatus:'due'};
+ await store.setJSON('tenant-a/bookings/booking-1.json',record);
+ const req=new Request('https://webfactorypr.com/mcp',{method:'POST'});
+ const pending=await requestDirectAction(f.grant,f.user,{operation:'cancel',input:{kind:'booking',transactionId:record.transactionId},requestId:crypto.randomUUID()},'https://webfactorypr.com',req,{});
+ const args={confirmationId:pending.confirmationId,confirmationText:'CONFIRM SENSITIVE ACTION'};
+ await clientSiteStore().setJSON('sites/tenant-a.json',{...f.site,members:[]});
+ await assert.rejects(confirmDirectAction(f.grant,f.user,args,req,{}),{status:403});
+ await clientSiteStore().setJSON('sites/tenant-a.json',f.site);
+ await revokeExecute(clientOAuthStore(),f.grant.id);
+ await assert.rejects(confirmDirectAction(f.grant,f.user,args,req,{}),{status:403});
+ assert.equal((await store.get('tenant-a/bookings/booking-1.json')).status,'confirmed');
+});
+
+test('Tenant cancellation cannot select a foreign business and HTTP cannot inject OAuth identity',async t=>{
+ const f=fixture(t);f.grant.scopes.push('webfactory.execute');await f.prepare();
+ const {requestDirectAction}=await import('./chatgpt-direct.mjs');
+ const req=new Request('https://webfactorypr.com/mcp',{method:'POST'});
+ await assert.rejects(requestDirectAction(f.grant,f.user,{operation:'cancel',siteId:'tenant-b',input:{kind:'booking',transactionId:'foreign'},requestId:crypto.randomUUID()},'https://webfactorypr.com',req,{}),{status:403});
+ const handler=(await import('../functions/client-commerce-admin.mjs')).default;
+ const response=await handler(new Request('https://webfactorypr.com/.netlify/functions/client-commerce-admin',{method:'POST',headers:{origin:'https://webfactorypr.com','Content-Type':'application/json','x-webfactory-user':JSON.stringify(f.user)},body:JSON.stringify({siteId:f.site.siteId,kind:'booking',transactionId:'booking-1',action:'cancel',user:f.user})}));
+ assert.equal(response.status,401);
+});
