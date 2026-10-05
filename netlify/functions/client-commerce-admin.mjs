@@ -28,7 +28,9 @@ async function listRecords(siteId, kind) {
   return records.sort((a, b) => Date.parse(b.createdAt || "") - Date.parse(a.createdAt || "")).slice(0, 250);
 }
 
-export default async (req) => {
+// Internal callers supply a server-validated authorization function. HTTP requests
+// always use the portal identity path below; payloads cannot select an identity.
+export async function handleCommerceRequest(req, authorize = requireSiteCapability) {
   try {
     if (req.method === "GET") {
       const siteId = new URL(req.url).searchParams.get("siteId") || "";
@@ -43,7 +45,7 @@ export default async (req) => {
     assertSameOrigin(req);
     const payload = await req.json();
     const requestedCapability = payload.action === "recover_pos" ? "pos" : payload.action === "refund" ? "refunds" : payload.action === "kitchen_status" ? "kitchen" : (payload.kind === "booking" ? "bookings" : "orders");
-    const { site, membership } = await requireSiteCapability(payload.siteId, requestedCapability);
+    const { site, membership } = await authorize(payload.siteId, requestedCapability);
     const kind = payload.kind === "booking" ? "bookings" : "orders";
     const run=async()=>{
     const key = commerceKey(site.siteId, kind, payload.transactionId);
@@ -204,4 +206,6 @@ export default async (req) => {
     };
     return kind==='bookings'||['recover_pos','recover_ath'].includes(payload.action)?await run():await withBookingLock(clientCommerceStore(),`locks/commerce/${site.siteId}`,run);
   } catch (error) { return errorResponse(error); }
-};
+}
+
+export default async (req) => handleCommerceRequest(req);
