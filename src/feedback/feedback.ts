@@ -3,7 +3,7 @@ export type FeedbackPreferences = { soundEnabled: boolean; hapticsEnabled: boole
 
 const STORAGE_KEY = 'webfactory:feedback:v1'
 const CHANGE_EVENT = 'webfactory-feedback-preferences-change'
-const defaults: FeedbackPreferences = { soundEnabled: true, hapticsEnabled: true }
+const defaults: FeedbackPreferences = { soundEnabled: false, hapticsEnabled: true }
 const soundCooldowns: Record<FeedbackSound, number> = {
   tap: 65, toggle: 90, navigate: 240, success: 180, warning: 180, error: 180, section: 1800, feature: 1300, major: 2200,
 }
@@ -25,7 +25,7 @@ function readPreferences(): FeedbackPreferences {
   if (typeof window === 'undefined') return defaults
   try {
     const value = JSON.parse(window.localStorage.getItem(STORAGE_KEY) || 'null') as Partial<FeedbackPreferences> | null
-    return { soundEnabled: value?.soundEnabled !== false, hapticsEnabled: value?.hapticsEnabled !== false }
+    return { soundEnabled: value?.soundEnabled === true, hapticsEnabled: value?.hapticsEnabled !== false }
   } catch {
     return defaults
   }

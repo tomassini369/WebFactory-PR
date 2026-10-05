@@ -34,6 +34,8 @@ function TemplateSite({ slug }: { slug: string }) {
   const [selectedItem, setSelectedItem] = useState<TemplateItem | null>(null)
   const [bookingItem, setBookingItem] = useState<TemplateItem | null>(null)
   const [cart, setCart] = useState<CartLine[]>([])
+  const [removed, setRemoved] = useState<CartLine | null>(null)
+  useEffect(()=>{if(!removed)return;const timer=window.setTimeout(()=>setRemoved(null),8000);return()=>window.clearTimeout(timer)},[removed])
   const [cartOpen, setCartOpen] = useState(false)
   const [catalogOpen, setCatalogOpen] = useState(false)
   const [selectedEmployee, setSelectedEmployee] = useState('')
@@ -114,8 +116,15 @@ function TemplateSite({ slug }: { slug: string }) {
     setCheckoutComplete(false)
   }
 
-  const removeFromCart = (id: string) =>
+  const removeFromCart = (id: string) => {
+    setRemoved(cart.find(line=>line.item.id===id)||null)
     setCart((current) => current.filter((line) => line.item.id !== id))
+  }
+  const undoRemove = () => {
+    if(!removed)return
+    setCart(current=>current.some(line=>line.item.id===removed.item.id)?current.map(line=>line.item.id===removed.item.id?{...line,quantity:line.quantity+removed.quantity}:line):[...current,removed])
+    setRemoved(null)
+  }
 
   const startBooking = (item?: TemplateItem) => {
     const target = item ?? config.items.find((entry) => entry.appointment)
@@ -251,6 +260,7 @@ function TemplateSite({ slug }: { slug: string }) {
                 </article>
               ))}
             </div>
+            {removed&&<div className="cs-cart-notice" role="status"><span>{language==='es'?'Producto eliminado':'Item removed'}</span><button type="button" onClick={undoRemove}>{language==='es'?'Deshacer':'Undo'}</button></div>}
             <div className="template-cart-summary">
               <span>{ui.subtotal} <b>{money(subtotal, language)}</b></span>
               <span>{ui.taxes} <b>{ui.calculatedCheckout}</b></span>

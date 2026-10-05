@@ -664,6 +664,7 @@ function CatalogStep({state,setState,lang}:{state:BuilderState;setState:Dispatch
     setState((current)=>({...current,catalog:current.catalog.map((item)=>item.id===id?{...item,...patch}:item)}))
 
   const remove = (id:string) => {
+    if(!window.confirm(lang==='es'?'¿Eliminar este artículo del borrador y quitar sus asignaciones de empleados?':'Remove this item from the draft and its employee assignments?'))return
     setState((current)=>({
       ...current,
       catalog:current.catalog.filter((item)=>item.id!==id),
@@ -766,7 +767,7 @@ function TeamStep({state,setState,lang}:{state:BuilderState;setState:Dispatch<Se
   const services = state.catalog.filter((item)=>item.type==='service' && item.requiresAppointment)
   const addMember = () => setState((current)=>({...current,team:[...current.team,{id:createId('employee'),name:'New team member',role:'Professional',roleEn:'Professional',roleEs:'',serviceIds:[]}]}))
   const update = (id:string,patch:Partial<TeamMember>) => setState((current)=>({...current,team:current.team.map((member)=>member.id===id?{...member,...patch}:member)}))
-  const remove = (id:string) => setState((current)=>({...current,team:current.team.filter((member)=>member.id!==id)}))
+  const remove = (id:string) => {if(window.confirm(lang==='es'?'¿Eliminar este empleado del borrador?':'Remove this employee from the draft?'))setState((current)=>({...current,team:current.team.filter((member)=>member.id!==id)}))}
 
   return (
     <div className="wf-step-content">
@@ -1029,9 +1030,12 @@ export default function WebFactoryBuilder({lang}:{lang:Language}) {
       return initialState
     }
   })
-  const [step,setStep] = useState(0)
+  const [step,setStep] = useState(()=>{try{return Math.min(7,Math.max(0,Number(sessionStorage.getItem('wf-builder-step'))||0))}catch{return 0}})
+  useEffect(()=>{try{sessionStorage.setItem('wf-builder-step',String(step))}catch{}},[step])
   const [device,setDevice] = useState<Device>('desktop')
   const [saved,setSaved] = useState(false)
+  const [draftError,setDraftError] = useState(false)
+  useEffect(()=>{if(!draftError)return;const warn=(event:BeforeUnloadEvent)=>{event.preventDefault();event.returnValue=''};window.addEventListener('beforeunload',warn);return()=>window.removeEventListener('beforeunload',warn)},[draftError])
   const [complimentaryInviteToken,setComplimentaryInviteToken] = useState('')
   const [complimentaryInviteError,setComplimentaryInviteError] = useState('')
   const [trialInviteToken,setTrialInviteToken] = useState('')
@@ -1070,10 +1074,10 @@ export default function WebFactoryBuilder({lang}:{lang:Language}) {
       }
       localStorage.setItem(STORAGE_KEY,JSON.stringify(persistentState))
       setSaved(true)
-      const timer=window.setTimeout(()=>setSaved(false),900)
-      return ()=>window.clearTimeout(timer)
+      setDraftError(false)
     } catch {
-      return
+      setSaved(false)
+      setDraftError(true)
     }
   },[state])
 
@@ -1110,7 +1114,7 @@ export default function WebFactoryBuilder({lang}:{lang:Language}) {
           <strong>{lang==='es'?'PREVIEW — NO PUBLICADO':'PREVIEW — NOT PUBLISHED'}</strong>
         </div>
         <div className="wf-builder-status">
-          <span className={saved?'saved':''}>{saved?(lang==='es'?'✓ Borrador guardado':'✓ Draft saved'):(lang==='es'?'Borrador local':'Local draft')}</span>
+          <span role="status" className={saved?'saved':''}>{saved?(lang==='es'?'✓ Borrador guardado':'✓ Draft saved'):draftError?(lang==='es'?'No se pudo guardar el borrador en este dispositivo. Mantén esta página abierta.':'Could not save this draft on this device. Keep this page open.'):(lang==='es'?'Guardando borrador…':'Saving draft…')}</span>
           <button onClick={reset}>{lang==='es'?'Reiniciar':'Reset'}</button>
         </div>
       </div>

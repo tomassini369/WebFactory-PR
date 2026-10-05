@@ -1,0 +1,21 @@
+/* Paired surfaces for new modules; never applies to a business storefront or its iframe. */
+html[data-wf-platform-theme="true"]{--wf-readable-surface:#fff;--wf-readable-text:#0b1529;--wf-readable-muted:#52627a;--wf-readable-line:#8b9cb3;--wf-readable-link:#215cb8}
+html[data-wf-platform-theme="true"][data-wf-theme="dark"]{--wf-readable-surface:#121c2e;--wf-readable-text:#f7faff;--wf-readable-muted:#b8c5d7;--wf-readable-line:#526987;--wf-readable-link:#91bfff}
+html[data-wf-platform-theme="true"] :is(.wf-chatgpt,.wf-accounting,.wf-redesign){color:var(--wf-readable-text)}
+html[data-wf-platform-theme="true"] :is(.wf-chatgpt,.wf-accounting,.wf-redesign) :is(input:not([type=checkbox]):not([type=radio]),select,textarea){color:var(--wf-readable-text);background:var(--wf-readable-surface);border-color:var(--wf-readable-line)}
+html[data-wf-platform-theme="true"] :is(.wf-chatgpt,.wf-accounting,.wf-redesign) :is(input,textarea)::placeholder{color:var(--wf-readable-muted);opacity:1}
+html[data-wf-platform-theme="true"] .wf-chatgpt select option{background:var(--wf-readable-surface);color:var(--wf-readable-text)}
+html[data-wf-platform-theme="true"] .wf-chatgpt .wf-chat-error{color:#a11b31;background:#fff0f2}
+html[data-wf-platform-theme="true"][data-wf-theme="dark"] .wf-chatgpt .wf-chat-error{color:#ffb7c2;background:#3c1e2a}
+html[data-wf-platform-theme="true"] .wf-accounting :is(th,td,legend,summary){color:var(--wf-readable-text)}
+html[data-wf-platform-theme="true"] .wf-accounting :is(small,caption){color:var(--wf-readable-muted)}
+html[data-wf-platform-theme="true"] .cs-tracking-card{background:var(--wf-readable-surface);color:var(--wf-readable-text)}
+html[data-wf-platform-theme="true"] .cs-tracking-card :is(p,small){color:var(--wf-readable-muted)}
+/* Measured on the eight Builder steps: keep the palette, deepen small labels. */
+html[data-wf-platform-theme="true"][data-wf-theme="light"] .wf-builder-app :is(.wf-builder-topbar span,.wf-builder-nav button,.wf-upload small,.wf-toggle small,.wf-toggle em,.wf-catalog-actions>span,.wf-empty-editor,.wf-service-assignment small,.wf-hours-editor span,.wf-hours-editor em,.wf-builder-navigation>span,.wf-review-grid article>span,.wf-guidance span,.wf-payment-methods>article>p,.wf-after-payment p,.wf-after-payment article span,.wf-checkout-box span,.wf-field-help){color:#52627a}
+html[data-wf-platform-theme="true"][data-wf-theme="light"] .wf-builder-app :is(.wf-step-intro small,.wf-upload span,.wf-toggle.on em,.wf-builder-nav button.selected,.wf-catalog-actions button,.wf-add-member,.wf-review-grid article>button,.wf-after-payment small,.wf-after-payment em){color:#245ea8}
+html[data-wf-platform-theme="true"] .wf-builder-app :is(.wf-builder-navigation button.primary,.wf-builder-nav button.selected b){color:#0b1529}
+html[data-wf-platform-theme="true"][data-wf-theme="light"] .wf-builder-app .wf-device-switcher button:not(.selected){color:#52627a}
+html[data-wf-platform-theme="true"][data-wf-theme="light"] .header .langs button:not(.active){color:#52627a}
+/* Status must stay available on phones, including local-storage failure. */
+@media(max-width:560px){.wf-builder-status span[role="status"]{display:block;max-width:150px;white-space:normal;font-size:.64rem}.wf-builder-status{flex-wrap:wrap;justify-content:flex-end}}
