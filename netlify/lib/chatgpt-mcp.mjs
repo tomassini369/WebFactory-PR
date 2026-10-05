@@ -1,4 +1,5 @@
-import {getExecutableProposal,cancelExecutableProposal,executeConfirmedProposal} from './chatgpt-execution.mjs';
+import {getExecutableProposal,cancelExecutableProposal} from './chatgpt-execution.mjs';
+import {requestDirectAction,confirmDirectAction} from './chatgpt-direct.mjs';
 import {McpServer} from '@modelcontextprotocol/sdk/server/mcp.js';
 import {WebStandardStreamableHTTPServerTransport} from '@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js';
 import {z} from 'zod';
@@ -10,7 +11,7 @@ import {operations,authorizeGrant,businessView,listRecords,readCollections,platf
 import {prepareProposal,proposalKey} from './chatgpt-proposals.mjs';
 import {clientOAuthStore} from './client-store.mjs';
 import {oauthError} from './chatgpt-oauth.mjs';
-export async function serveMcp(request,grant,user){
+export async function serveMcp(request,grant,user,context={}){
  if(!grant.scopes.includes('webfactory.read'))throw oauthError('Read scope is required.',403);
  const origin=new URL(request.url).origin;
  await authorizeGrant(grant,user,grant.siteId);
@@ -36,14 +37,21 @@ export async function serveMcp(request,grant,user){
   return safeOutput(await response.json());
  });
  if(grant.platform)tool('wf_businesses','List businesses for an explicitly authorized platform administrator.',z.object({}),async()=>({businesses:await platformBusinesses()}));
- if(grant.scopes.includes('webfactory.propose'))for(const [name,op] of Object.entries(operations)){
+ if(grant.scopes.includes('webfactory.execute'))for(const [name,op] of Object.entries(operations)){
   if(op.platform&&!grant.platform)continue;
-  tool('wf_prepare_'+name,(op.description||name)+ ' Creates a proposal only. The signed-in user must review and confirm in WebFactory; never claim it is executed before wf_action_status confirms completion.',z.object({siteId,requestId:z.string().uuid().describe('New UUID for a new instruction; reuse exactly for retries.'),input:op.fields}),args=>prepareProposal(grant,user,{...args,operation:name},origin),true);
+  const directDescription=(op.description||name)+' Applies the authorized change directly. Normal actions execute immediately. Sensitive, destructive, access, billing or financial actions return confirmation_required; ask the user for the exact phrase in chat and then call wf_confirm_action. Never send the user to WebFactory to approve a direct action.';
+  tool('wf_'+name,directDescription,z.object({siteId,requestId:z.string().uuid().describe('New UUID for a new instruction; reuse exactly for retries.'),input:op.fields}),args=>requestDirectAction(grant,user,{...args,operation:name},origin,request,context),true,true);
  }
- tool('wf_get_proposal','Read the exact before/after diff and approval status of a proposal bound to this connection.',z.object({proposalId:z.string().regex(/^[a-f0-9-]{36}$/)}).strict(),({proposalId})=>getExecutableProposal(proposalId,user,grant));
- if(grant.scopes.includes('webfactory.propose'))tool('wf_cancel_proposal','Cancel a pending or confirmed proposal without applying it.',z.object({proposalId:z.string().regex(/^[a-f0-9-]{36}$/)}).strict(),({proposalId})=>cancelExecutableProposal(proposalId,user,grant),true);
- if(grant.scopes.includes('webfactory.execute'))tool('wf_execute_change','Execute only a previously user-confirmed proposal. First show before/after, send the approvalUrl and wait for confirmation in WebFactory. Never claim success unless verified=true. No replacement payload is accepted.',z.object({proposalId:z.string().regex(/^[a-f0-9-]{36}$/)}).strict(),({proposalId})=>executeConfirmedProposal(proposalId,user,grant),true,true);
- tool('wf_action_status','Read the status of a proposal created by this connection. A pending proposal has not changed the business.',z.object({proposalId:z.string().regex(/^[a-f0-9-]{36}$/)}),async({proposalId})=>{const p=await clientOAuthStore().get(proposalKey(proposalId),{type:'json'});if(!p||p.userId!==user.id||p.grantId!==grant.id)throw oauthError('Proposal unavailable.',404);return {id:p.id,status:p.status,result:safeOutput(p.result),approvalUrl:origin+'/chatgpt?proposal='+p.id};});
+ if(!grant.scopes.includes('webfactory.execute')&&grant.scopes.includes('webfactory.propose'))for(const [name,op] of Object.entries(operations)){
+  if(op.platform&&!grant.platform)continue;
+  tool('wf_prepare_'+name,(op.description||name)+' Preview-only connection: prepare a proposal without applying it.',z.object({siteId,requestId:z.string().uuid().describe('New UUID for a new instruction; reuse exactly for retries.'),input:op.fields}),args=>prepareProposal(grant,user,{...args,operation:name},origin),true);
+ }
+ if(grant.scopes.includes('webfactory.execute'))tool('wf_confirm_action','Execute one sensitive action only after the user typed the exact required confirmation phrase in this chat. Pass the unchanged confirmationId returned by the original direct tool and the exact text provided by the user. Never fabricate confirmation text.',z.object({confirmationId:z.string().regex(/^[a-f0-9-]{36}$/),confirmationText:z.string().min(1).max(160)}).strict(),args=>confirmDirectAction(grant,user,args,request,context),true,true);
+ if(grant.scopes.includes('webfactory.propose')&&!grant.scopes.includes('webfactory.execute')){
+  tool('wf_get_proposal','Read the exact before/after diff and status of a preview-only proposal bound to this connection.',z.object({proposalId:z.string().regex(/^[a-f0-9-]{36}$/)}).strict(),({proposalId})=>getExecutableProposal(proposalId,user,grant));
+  tool('wf_cancel_proposal','Cancel a pending or confirmed preview-only proposal without applying it.',z.object({proposalId:z.string().regex(/^[a-f0-9-]{36}$/)}).strict(),({proposalId})=>cancelExecutableProposal(proposalId,user,grant),true);
+ }
+ tool('wf_action_status','Read the stored status/result of an MCP action or legacy proposal created by this connection.',z.object({proposalId:z.string().regex(/^[a-f0-9-]{36}$/)}),async({proposalId})=>{const p=await clientOAuthStore().get(proposalKey(proposalId),{type:'json'});if(!p||p.userId!==user.id||p.grantId!==grant.id)throw oauthError('Action unavailable.',404);return {id:p.id,status:p.status,result:safeOutput(p.result),requiresChatConfirmation:Boolean(p.requiresChatConfirmation),requiredConfirmation:p.requiresChatConfirmation?p.requiredConfirmation:undefined};});
  const transport=new WebStandardStreamableHTTPServerTransport({sessionIdGenerator:undefined,enableJsonResponse:true});
  await server.connect(transport);
  try{return await transport.handleRequest(request);}finally{await server.close();}
