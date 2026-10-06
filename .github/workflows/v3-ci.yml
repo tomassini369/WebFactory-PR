@@ -31,6 +31,8 @@ jobs:
         run: npx playwright install --with-deps --only-shell chromium
       - name: Install WebKit for mobile FAQ QA
         run: npx playwright install --with-deps webkit
+      - name: Check template structure and editing parity
+        run: node scripts/test-template-layout.mjs && node scripts/browser-template-parity.mjs
       - name: Check Home FAQ desktop/mobile, themes and languages
         run: node scripts/browser-home-faq-smoke.mjs
       - name: Check Builder cart and draft interactions

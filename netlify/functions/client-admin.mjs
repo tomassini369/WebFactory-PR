@@ -1,3 +1,5 @@
+import {templateStyle} from '../lib/template-identity.mjs';
+import {websiteContent,catalogPresentation} from '../lib/website-content.mjs';
 import { sanitizePolicies } from "../lib/publication-review.mjs";
 import { assertSameOrigin, authorizedSites, errorResponse, requireSiteAccess, siteRoleCapabilities } from "../lib/client-auth.mjs";
 import { normalizeEmail, patchClientSite, publicClientSite } from "../lib/client-store.mjs";
@@ -25,6 +27,9 @@ function sanitizeBusiness(value = {}, current = {}) {
     : [];
   return {
     ...current,
+    ...websiteContent(value,current),
+    heroAssetKey: cleanText(value.heroAssetKey ?? current.heroAssetKey,700),
+    galleryAssetKeys: Array.isArray(value.galleryAssetKeys ?? current.galleryAssetKeys) ? (value.galleryAssetKeys ?? current.galleryAssetKeys).slice(0,100).map(key=>cleanText(key,700)) : [],
     policies: sanitizePolicies(value.policies ?? current.policies),
     name: cleanText(value.nameEn ?? value.name ?? current.nameEn ?? current.name, 180),
     nameEn: cleanText(value.nameEn ?? value.name ?? current.nameEn ?? current.name, 180),
@@ -56,6 +61,7 @@ function sanitizeCatalog(value) {
     ids.add(id);
     return {
       id,
+      ...catalogPresentation(item),
       type: item.type === "service" ? "service" : "product",
       name: cleanText(item.nameEn || item.name || item.nameEs, 220),
       nameEn: cleanText(item.nameEn || item.name, 220),
@@ -168,6 +174,7 @@ export function normalizeClientSection(site, section, incoming, user, membership
       primary: color(payload.value?.primary, site.design?.primary || "#0B1529"),
       secondary: color(payload.value?.secondary, site.design?.secondary || "#3C86F6"),
     };
+    if(section==='design'&&value.templateSlug){const canonical=templateStyle(value.templateSlug);if(!canonical)throw Object.assign(new Error('Unknown template.'),{status:400});value.style=canonical;value.preserveTemplateStructure=true;}
     if (section === "features") {
       const allowedFeatures = ["products", "services", "bookings", "cart", "maps", "calls", "whatsapp", "social", "form", "calendar"];
       value = { ...(site.features || {}) };
@@ -213,6 +220,8 @@ export function normalizeClientSection(site, section, incoming, user, membership
       allowCustomerCancellation: typeof payload.value?.allowCustomerCancellation === "boolean" ? payload.value.allowCustomerCancellation : (site.settings?.allowCustomerCancellation ?? true),
       allowCustomerRescheduling: typeof payload.value?.allowCustomerRescheduling === "boolean" ? payload.value.allowCustomerRescheduling : (site.settings?.allowCustomerRescheduling ?? true),
     };
+    const assetKeys=section==='business'?[value.logoAssetKey,value.heroAssetKey,...(value.galleryAssetKeys||[])]:section==='catalog'?value.map(item=>item.imageAssetKey):[];
+    if(assetKeys.some(key=>key&&!key.startsWith(`sites/${site.siteId}/`)))throw Object.assign(new Error('Image must belong to this business.'),{status:400});
     if (section === "business" && value.email && !validEmail(value.email)) throw Object.assign(new Error("Business email is invalid."), { status: 400 });
 
     return value;

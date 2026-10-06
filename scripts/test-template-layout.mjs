@@ -8,8 +8,11 @@ try {
   const {default: Storefront} = await server.ssrLoadModule('/src/ClientStorefront.tsx')
   const {default: Layout} = await server.ssrLoadModule('/src/TemplateLayout.tsx')
   const {default: CatalogCard} = await server.ssrLoadModule('/src/TemplateCatalogCard.tsx')
-  const {templateConfigs} = await server.ssrLoadModule('/src/templateData.ts')
+  const {templateConfigs,templateVisualStyle} = await server.ssrLoadModule('/src/templateData.ts')
   const {templateUi} = await server.ssrLoadModule('/src/templateI18n.ts')
+  const {default:TemplateSite}=await server.ssrLoadModule('/src/TemplatePreview.tsx')
+  const {templatePreviewData}=await server.ssrLoadModule('/src/template-preview-data.ts')
+  const productMarkup=html=>html.match(/<div class="template-site[\s\S]*?<\/main>/)[0].replace(/_R_[a-z0-9]+_/g,'REACT_ID')
   let checked=0
   for(const config of templateConfigs) for(const lang of ['en','es']) {
     const site={siteId:'preview',slug:'example',business:{name:'Client business',description:'Client content',category:config.category,phone:'787-555-0100',heroUrl:'',galleryUrls:[]},design:{templateSlug:config.slug,primary:'#123456',secondary:'#abcdef'},features:{products:true,services:true,bookings:true,cart:true},catalog:[{id:'real-service',type:'service',name:'Real client service',description:'Actual service',price:25,inventory:null,requiresAppointment:true,duration:30,imageUrl:''}],employees:[],hours:{},paymentRules:{},settings:{}}
@@ -33,10 +36,11 @@ try {
     assert.ok(off.includes('/custom-hero.jpg') && off.includes('/custom-gallery.jpg'))
     assert.ok(!off.includes(config.heroImage), 'Uploaded content overrides sample media')
     const styled=renderToStaticMarkup(React.createElement(Storefront,{slug:'example',previewSite:{...site,design:{...site.design,style:'Luxury'}},previewLanguage:lang}))
-    assert.ok(styled.includes('visual-luxury'), 'Saved style preference is honored consistently in Builder and live renderer')
+    assert.ok(styled.includes('visual-'+templateVisualStyle(config.category)), 'Selected template locks its canonical visual style')
     const card=renderToStaticMarkup(React.createElement(CatalogCard,{item:config.items[0],accent:config.accent,language:lang,ui:templateUi[lang],onView(){},onAdd(){},onBook(){},bookEnabled:false,cartEnabled:false,disabled:true}))
     assert.ok(card.includes('template-catalog-card') && card.includes('template-card-copy'))
     assert.ok(!card.includes('template-solid'), 'Disabled commerce/booking never renders an action button')
+    if(lang==='en'){const sample=templatePreviewData(config);const shown=renderToStaticMarkup(React.createElement(TemplateSite,{slug:config.slug}));const generated=renderToStaticMarkup(React.createElement(Storefront,{slug:config.slug,previewSite:sample,previewLanguage:'en'}));assert.equal(productMarkup(shown),productMarkup(generated),config.slug+': entire template and generated storefront markup must match')}
     checked++
   }
   const canonical={siteId:'custom-preview',slug:'custom',business:{name:'Custom business',description:'Own content',category:'Barber',heroUrl:'/own-hero.jpg',galleryUrls:['/own-1.jpg','/own-2.jpg']},design:{templateSlug:'northline-barber',style:'Modern',primary:'#123456',secondary:'#abcdef'},features:{services:true,products:false,bookings:false,cart:false},catalog:[],employees:[],hours:{},paymentRules:{},settings:{}}

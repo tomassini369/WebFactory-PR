@@ -1,0 +1,9 @@
+[
+ {"group":"brand","es":"Marca y contacto","en":"Brand and contact","fields":[["shortName","Nombre corto","Short name"],["address","Dirección","Address"]]},
+ {"group":"hero","es":"Portada","en":"Hero","fields":[["kicker","Texto superior","Eyebrow"],["headline","Título principal","Headline"],["bookingLabel","Botón de reserva","Booking button"]]},
+ {"group":"catalog","es":"Catálogo","en":"Catalog","fields":[["catalogTitle","Título del catálogo","Catalog heading"],["catalogIntro","Introducción del catálogo","Catalog introduction"]]},
+ {"group":"team","es":"Equipo","en":"Team","fields":[["teamTitle","Título del equipo","Team heading"],["teamIntro","Introducción del equipo","Team introduction"]]},
+ {"group":"about","es":"Sobre el negocio","en":"About","fields":[["aboutTitle","Título de la sección","Section heading"],["aboutText","Descripción de la sección","Section description"]]},
+ {"group":"booking","es":"Reservas y compras","en":"Bookings and shopping","fields":[["bookingTitle","Título de reservas y compras","Booking and shopping heading"],["bookingIntro","Introducción de reservas y compras","Booking and shopping introduction"]]},
+ {"group":"contact","es":"Contacto","en":"Contact","fields":[["contactTitle","Título de contacto","Contact heading"]]}
+]

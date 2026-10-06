@@ -8,10 +8,10 @@ type Props = {
  config: TemplateConfig; ui: {[K in keyof TemplateUi]: TemplateUi[K] extends string ? string : TemplateUi[K]}; language: TemplateLanguage; setLanguage: (language: TemplateLanguage) => void;
  startBooking: (item?: TemplateItem) => void; setCatalogOpen: (open: boolean) => void; setCartOpen: (open: boolean) => void;
  cart: Array<{quantity: number}>; showcaseFeatures: string[]; contact?: ReactNode; footer?: ReactNode; extraSections?: ReactNode;
- catalogEnabled?: boolean; mainClass?: string; sectionOrder?: string[]; logoUrl?: string; locationHref?: string; phoneHref?: string;
+ catalogEnabled?: boolean; mainClass?: string; sectionOrder?: string[]; logoUrl?: string; locationHref?: string; phoneHref?: string; contactTitle?:string;
 }
 /** The product layout. Demo, Builder and live storefront all render this component. */
-export default function TemplateLayout({config,ui,language,setLanguage,startBooking,setCatalogOpen,setCartOpen,cart,showcaseFeatures,contact,footer,extraSections,catalogEnabled=true,mainClass='',sectionOrder,logoUrl,locationHref,phoneHref}: Props) {
+export default function TemplateLayout({config,ui,language,setLanguage,startBooking,setCatalogOpen,setCartOpen,cart,showcaseFeatures,contact,footer,extraSections,catalogEnabled=true,mainClass='',sectionOrder,logoUrl,locationHref,phoneHref,contactTitle}: Props) {
  const [menuOpen,setMenuOpen] = useState(false)
  const sectionStyle = (key:string): CSSProperties | undefined => sectionOrder ? {order:sectionOrder.includes(key)?sectionOrder.indexOf(key)+2:99} : undefined
  return <>      <header className="template-header">
@@ -154,7 +154,7 @@ export default function TemplateLayout({config,ui,language,setLanguage,startBook
         <section className="template-contact" id="contact" style={sectionStyle("contact")}>
           <div>
             <small>{ui.visitContact}</small>
-            <h2>{config.name}</h2>
+            <h2>{contactTitle||config.name}</h2>
             <p>{config.location}</p>
           </div>
           <div className="template-contact-grid">

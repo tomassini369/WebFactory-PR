@@ -1,3 +1,4 @@
+import {websiteContent,catalogPresentation} from './website-content.mjs';
 import { availableInventory, reservedQuantity } from './inventory-availability.mjs';
 import crypto from "node:crypto";
 import { getDeployStore, getStore } from "@netlify/blobs";
@@ -138,6 +139,7 @@ export function publicClientSite(site) {
     status: site.status,
     revision: site.revision,
     business: {
+      ...websiteContent(site.business),
       policies: site.business?.policies || {},
       name: site.business?.name || "",
       nameEn: site.business?.nameEn || site.business?.name || "",
@@ -168,6 +170,7 @@ export function publicClientSite(site) {
     features: { ...site.features, calendar: Boolean(site.features?.calendar && site.googleCalendar?.connected) },
     catalog: (site.catalog || []).filter((item) => item.active !== false).map((item) => ({
       id: item.id,
+      ...catalogPresentation(item),
       type: item.type,
       name: item.name,
       nameEn: item.nameEn || item.name || "",
@@ -193,6 +196,7 @@ export function publicClientSite(site) {
       serviceIds: member.serviceIds || [],
       locationIds: member.locationIds || [],
     })),
+    settings: {locale:site.settings?.locale||"en",timezone:site.settings?.timezone||"America/Puerto_Rico",currency:"usd"},
     hours: site.hours || {},
     paymentRules: {
       methods: site.paymentRules?.methods || {},
