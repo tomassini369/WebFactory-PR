@@ -80,8 +80,16 @@ try{
   // Confirm exact user values were sent; the authenticated backend test covers isolation.
   await page.waitForFunction(()=>JSON.parse(localStorage.getItem('webfactory:appearance:preview-user')||'{}').soundEnabled===false);
   assert.equal(savedAppearance.soundEnabled,false);assert.equal(savedAppearance.hapticsEnabled,false);assert.equal(savedAppearance.accent,'#7C3AED');
+  await preferences.getByRole('button',{name:'Restore original WebFactory colors',exact:true}).click();
+  await preferences.getByText('Original WebFactory palette active.',{exact:true}).waitFor();
+  assert.equal(await page.locator('.ca-dashboard').getAttribute('data-portal-palette'),'original');
+  assert.equal(await page.getByRole('radio',{name:'Dark',exact:true}).isChecked(),true);
+  await preferences.getByRole('button',{name:'Sound Effects: Off',exact:true}).waitFor();
+  await preferences.getByRole('button',{name:'Haptics: Off',exact:true}).waitFor();
+  await preferences.getByText('Preferences saved',{exact:true}).waitFor();
+  assert.equal(savedAppearance.paletteMode,'original');assert.equal(savedAppearance.accent,'#3C86F6');
   await page.reload();
-  await page.waitForFunction(()=>getComputedStyle(document.querySelector('.ca-dashboard')).getPropertyValue('--portal-accent').trim()==='#7C3AED');
+  await page.waitForFunction(()=>getComputedStyle(document.querySelector('.ca-dashboard')).getPropertyValue('--portal-accent').trim()==='#3C86F6'&&document.querySelector('.ca-dashboard').dataset.portalPalette==='original');
   assert.deepEqual(errors,[]);console.log('Portal navigation, inventory, QR, appearance, theme and feedback persistence: '+width);await context.close();
  }
 }finally{await browser?.close();server?.kill()}

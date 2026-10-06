@@ -2,7 +2,8 @@ export function sanitizePortalPreferences(value) {
   if (!value || typeof value !== 'object' || !/^#[0-9a-f]{6}$/i.test(value.accent) || !['light','dark'].includes(value.theme) || typeof value.soundEnabled !== 'boolean' || typeof value.hapticsEnabled !== 'boolean') {
     throw Object.assign(new Error('Invalid appearance preferences.'), {status:400});
   }
-  return {accent:value.accent.toUpperCase(),theme:value.theme,soundEnabled:value.soundEnabled,hapticsEnabled:value.hapticsEnabled};
+  if(value.paletteMode!==undefined&&!['original','custom'].includes(value.paletteMode))throw Object.assign(new Error('Invalid palette mode.'),{status:400});
+  return {paletteMode:value.paletteMode||'custom',accent:value.accent.toUpperCase(),theme:value.theme,soundEnabled:value.soundEnabled,hapticsEnabled:value.hapticsEnabled};
 }
 
 export function createPortalPreferences({authenticate,assertOrigin,store,keyForUser}) {
