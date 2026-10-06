@@ -62,34 +62,71 @@ export function shouldUseGraphify(question){
  return systemTerms.filter(term=>q.includes(term)).length>=2;
 }
 
+const TRANSIENT_GRAPHIFY_STATUS=new Set([502,503,504]);
+const RETRY_DELAYS_MS=[750,1500,2500,4000,5000];
+
+const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+
 async function postMcp(config,body,sessionId,authorization,{allowEmpty=false}={}){
  if(!/^Bearer [^\s]+$/.test(String(authorization||'')))throw oauthError('Graph context authorization is unavailable.',401);
- const controller=new AbortController();
- const timer=setTimeout(()=>controller.abort(),graphifyRequestTimeoutMs());
- try{
-  const headers={
-   'Content-Type':'application/json',
-   'Accept':'application/json, text/event-stream',
-   'Authorization':authorization
-  };
-  if(sessionId)headers['mcp-session-id']=sessionId;
-  const response=await fetch(config.url,{method:'POST',headers,body:JSON.stringify(body),signal:controller.signal});
-  const text=await response.text();
-  if(!response.ok)throw oauthError('Graph context service is unavailable.',502);
-  if(text.length>MAX_REMOTE_BODY)throw oauthError('Graph context response exceeded the safe limit.',502);
-  if(!text){
-   if(allowEmpty)return {response,payload:null};
-   throw oauthError('Graph context returned an empty response.',502);
+
+ const totalBudget=graphifyRequestTimeoutMs();
+ const deadline=Date.now()+totalBudget;
+ let attempt=0;
+ let lastError=null;
+
+ while(Date.now()<deadline){
+  const remaining=Math.max(1,deadline-Date.now());
+  const controller=new AbortController();
+  const perAttemptTimeout=Math.min(8000,remaining);
+  const timer=setTimeout(()=>controller.abort(),perAttemptTimeout);
+
+  try{
+   const headers={
+    'Content-Type':'application/json',
+    'Accept':'application/json, text/event-stream',
+    'Authorization':authorization
+   };
+   if(sessionId)headers['mcp-session-id']=sessionId;
+
+   const response=await fetch(config.url,{method:'POST',headers,body:JSON.stringify(body),signal:controller.signal});
+   const text=await response.text();
+
+   if(!response.ok){
+    if(TRANSIENT_GRAPHIFY_STATUS.has(response.status)){
+     lastError=oauthError('Graph context service is unavailable.',502);
+    }else{
+     throw oauthError('Graph context service is unavailable.',502);
+    }
+   }else{
+    if(text.length>MAX_REMOTE_BODY)throw oauthError('Graph context response exceeded the safe limit.',502);
+    if(!text){
+     if(allowEmpty)return {response,payload:null};
+     throw oauthError('Graph context returned an empty response.',502);
+    }
+    let payload;
+    try{payload=JSON.parse(text);}catch{throw oauthError('Graph context returned an invalid response.',502);}
+    if(payload?.error)throw oauthError('Graph context service rejected the request.',502);
+    return {response,payload};
+   }
+  }catch(error){
+   if(error?.status&&!TRANSIENT_GRAPHIFY_STATUS.has(error.status))throw error;
+   if(error?.name==='AbortError')lastError=oauthError('Graph context service timed out.',504);
+   else if(error?.status)lastError=error;
+   else lastError=oauthError('Graph context service is unavailable.',502);
+  }finally{
+   clearTimeout(timer);
   }
-  let payload;
-  try{payload=JSON.parse(text);}catch{throw oauthError('Graph context returned an invalid response.',502);}
-  if(payload?.error)throw oauthError('Graph context service rejected the request.',502);
-  return {response,payload};
- }catch(error){
-  if(error?.status)throw error;
-  if(error?.name==='AbortError')throw oauthError('Graph context service timed out.',504);
-  throw oauthError('Graph context service is unavailable.',502);
- }finally{clearTimeout(timer);}
+
+  const remainingAfter=deadline-Date.now();
+  if(remainingAfter<=500)break;
+  const delay=Math.min(RETRY_DELAYS_MS[Math.min(attempt,RETRY_DELAYS_MS.length-1)],Math.max(0,remainingAfter-250));
+  attempt+=1;
+  if(delay>0)await sleep(delay);
+ }
+
+ if(lastError?.status===504)throw lastError;
+ throw oauthError('Graph context service is unavailable.',502);
 }
 
 export async function queryGraphContext({question,mode='bfs',depth=2,tokenBudget,platform=false,siteId,authorization}={}){
