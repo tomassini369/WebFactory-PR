@@ -53,7 +53,7 @@ No `GRAPHIFY_API_KEY` is required.
 
 ### Resilience controls
 
-- `GRAPHIFY_MCP_TIMEOUT_MS`: Netlify to Graphify request timeout. Default 25000 ms; clamped to 5000-30000 ms.
+- `GRAPHIFY_MCP_TIMEOUT_MS`: total Netlify to Graphify request budget. Default 25000 ms; clamped to 5000-30000 ms. Transient 502/503/504 responses during a Render cold start are retried with bounded backoff inside this same budget.
 - `GRAPHIFY_AUTH_TIMEOUT_SECONDS`: Graphify proxy to WebFactory authorization timeout. Default 12 seconds; clamped to 3-20 seconds.
 - `GRAPHIFY_AUTH_CACHE_TTL_SECONDS`: successful authorization-digest cache. Default 30 seconds; clamped to 0-60 seconds.
 - Failed or denied authorization checks are never cached.
