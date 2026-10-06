@@ -1,9 +1,9 @@
 export type FeedbackSound = 'tap' | 'toggle' | 'navigate' | 'success' | 'warning' | 'error' | 'section' | 'feature' | 'major'
 export type FeedbackPreferences = { soundEnabled: boolean; hapticsEnabled: boolean }
 
-const STORAGE_KEY = 'webfactory:feedback:v1'
+let STORAGE_KEY = 'webfactory:feedback:v1'
 const CHANGE_EVENT = 'webfactory-feedback-preferences-change'
-const defaults: FeedbackPreferences = { soundEnabled: false, hapticsEnabled: true }
+const defaults: FeedbackPreferences = { soundEnabled: true, hapticsEnabled: true }
 const soundCooldowns: Record<FeedbackSound, number> = {
   tap: 65, toggle: 90, navigate: 240, success: 180, warning: 180, error: 180, section: 1800, feature: 1300, major: 2200,
 }
@@ -25,7 +25,7 @@ function readPreferences(): FeedbackPreferences {
   if (typeof window === 'undefined') return defaults
   try {
     const value = JSON.parse(window.localStorage.getItem(STORAGE_KEY) || 'null') as Partial<FeedbackPreferences> | null
-    return { soundEnabled: value?.soundEnabled === true, hapticsEnabled: value?.hapticsEnabled !== false }
+    return { soundEnabled: value?.soundEnabled !== false, hapticsEnabled: value?.hapticsEnabled !== false }
   } catch {
     return defaults
   }
@@ -190,6 +190,12 @@ export const feedback = {
   unlockAudio,
   play,
   vibrate,
+  useAccount(id?: string) {
+    try { if(id && !window.localStorage.getItem(`webfactory:feedback:account:${id}`)) { const legacy=window.localStorage.getItem('webfactory:feedback:v1'); if(legacy)window.localStorage.setItem(`webfactory:feedback:account:${id}`,legacy) } } catch {}
+    STORAGE_KEY = id ? `webfactory:feedback:account:${id}` : 'webfactory:feedback:v1'
+    refreshPreferences()
+    window.dispatchEvent(new CustomEvent(CHANGE_EVENT, { detail: preferences }))
+  },
   getPreferences: () => ({ ...preferences }),
   setMasterVolume(value: number) { if (Number.isFinite(value)) masterVolume = Math.max(0, Math.min(1, value)) },
   getMasterVolume: () => masterVolume,

@@ -19,6 +19,7 @@ export const clientAssetStore = () => scopedStore("webfactory-client-assets");
 export const clientCommerceStore = () => scopedStore("webfactory-client-commerce");
 export const clientEventStore = () => scopedStore("webfactory-client-events");
 export const clientBackupStore = () => scopedStore("webfactory-client-backups");
+export const portalPreferenceStore = () => scopedStore("webfactory-portal-preferences");
 export const clientOAuthStore = () => scopedStore("webfactory-client-oauth");
 
 export function normalizeSiteDesign(design = {}) {

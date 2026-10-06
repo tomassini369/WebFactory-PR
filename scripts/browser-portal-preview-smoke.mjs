@@ -8,6 +8,19 @@ try{
  browser=await chromium.launch({...(process.env.WF_QA_BROWSER?{executablePath:process.env.WF_QA_BROWSER}:{}),headless:true});
  for(const width of [390,1280]){
   const context=await browser.newContext({viewport:{width,height:844}}),page=await context.newPage();let errors=[];page.on('pageerror',e=>errors.push(e.message));
+  let savedAppearance=null;
+  await page.addInitScript(()=>{
+   window.__tones=0;window.__vibrations=0;
+   Object.defineProperty(navigator,'vibrate',{value:()=>{window.__vibrations++;return true},configurable:true});
+   const Original=window.AudioContext;
+   window.AudioContext=class extends Original{createOscillator(){window.__tones++;return super.createOscillator()}};
+  });
+  // Keep an account-backed fixture across reloads, as the real endpoint does.
+  await page.addInitScript(()=>{
+   const nativeFetch=window.fetch.bind(window);const install=()=>{const original=window.fetch;window.fetch=async(input,init)=>String(input).includes('/portal-preferences')?nativeFetch('/qa-account-preferences',init):original(input,init)};
+   window.addEventListener('load',install);
+  });
+  await page.route('**/qa-account-preferences',async route=>{if(route.request().method()==='PUT')savedAppearance=route.request().postDataJSON();await route.fulfill({json:{ok:true,preferences:savedAppearance}})});
   await page.goto(origin+'/design-preview/portal/preview.html');
   await page.getByRole('button',{name:'Catalog Products and services'}).click();
   await page.getByRole('checkbox',{name:'Track stock'}).waitFor();assert.equal(await page.getByRole('checkbox',{name:'Track stock'}).isChecked(),true);
@@ -32,6 +45,29 @@ try{
   // The real health component must reject incomplete API data without blanking the portal.
   await page.evaluate(()=>{const original=window.fetch;window.fetch=async(input,init)=>String(input).includes('client-inventory-health')?Response.json({ok:true}):original(input,init)});
   await page.getByRole('button',{name:'Refresh review'}).click();await page.getByRole('alert').filter({hasText:'incomplete data'}).waitFor();await page.getByRole('heading',{name:'Products and services',exact:true}).waitFor();
-  assert.deepEqual(errors,[]);console.log('Portal menu, stock tracking, Inventory entry, sample QR and incomplete health: '+width);await context.close();
+  if(width<821)await page.getByRole('button',{name:'Business menu',exact:true}).click();
+  await page.locator('.ca-nav-groups summary').filter({hasText:/^Account and settings$/}).click();
+  await page.getByRole('button',{name:'Appearance and preferences',exact:true}).click();
+  const preferences=page.locator('.portal-appearance');
+  await preferences.getByRole('button',{name:'Sound Effects: On',exact:true}).waitFor();
+  await preferences.getByRole('button',{name:'#7C3AED',exact:true}).click();
+  await preferences.getByRole('radio',{name:'Light',exact:true}).check();
+  await page.waitForFunction(()=>document.documentElement.dataset.wfTheme==='light');
+  assert.equal(await page.locator('.ca-dashboard').evaluate(el=>getComputedStyle(el).getPropertyValue('--portal-accent').trim()),'#7C3AED');
+  await preferences.getByRole('radio',{name:'Dark',exact:true}).check();
+  await preferences.getByRole('button',{name:'Test sound and feedback',exact:true}).click();
+  assert(await page.evaluate(()=>window.__tones>0&&window.__vibrations>0));
+  await preferences.getByRole('button',{name:'Sound Effects: On',exact:true}).click();
+  await preferences.getByRole('button',{name:'Haptics: On',exact:true}).click();
+  const silent=await page.evaluate(()=>[window.__tones,window.__vibrations]);
+  await preferences.getByRole('button',{name:'Test sound and feedback',exact:true}).click();
+  assert.deepEqual(await page.evaluate(()=>[window.__tones,window.__vibrations]),silent);
+  await preferences.getByText('Preferences saved',{exact:true}).waitFor();
+  // Confirm exact user values were sent; the authenticated backend test covers isolation.
+  await page.waitForFunction(()=>JSON.parse(localStorage.getItem('webfactory:appearance:preview-user')||'{}').soundEnabled===false);
+  assert.equal(savedAppearance.soundEnabled,false);assert.equal(savedAppearance.hapticsEnabled,false);assert.equal(savedAppearance.accent,'#7C3AED');
+  await page.reload();
+  await page.waitForFunction(()=>getComputedStyle(document.querySelector('.ca-dashboard')).getPropertyValue('--portal-accent').trim()==='#7C3AED');
+  assert.deepEqual(errors,[]);console.log('Portal navigation, inventory, QR, appearance, theme and feedback persistence: '+width);await context.close();
  }
 }finally{await browser?.close();server?.kill()}
