@@ -8,6 +8,7 @@ import './theme.css'
 import './liquid-glass.css'
 import './interactions.css'
 import './theme-accessibility.css'
+import './v4-system.css'
 
 const adminPwaRoutes: Record<string, string> = {
   '/webfactory-admin': '/manifest-webfactory-admin.webmanifest',
