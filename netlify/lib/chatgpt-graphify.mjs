@@ -1,6 +1,8 @@
 import {oauthError} from './chatgpt-oauth.mjs';
 
-const DEFAULT_TIMEOUT_MS=8000;
+const DEFAULT_TIMEOUT_MS=25000;
+const MIN_TIMEOUT_MS=5000;
+const MAX_TIMEOUT_MS=30000;
 const MAX_REMOTE_BODY=60000;
 const PLATFORM_TOKEN_MAX=1600;
 const TENANT_TOKEN_MAX=1000;
@@ -8,6 +10,12 @@ const DEFAULT_GRAPHIFY_MCP_URL='https://webfactory-graphify-prod.onrender.com/mc
 
 function env(name){
  return String(globalThis.Netlify?.env?.get?.(name)??process.env?.[name]??'').trim();
+}
+
+export function graphifyRequestTimeoutMs(){
+ const configured=Number(env('GRAPHIFY_MCP_TIMEOUT_MS'));
+ if(!Number.isFinite(configured)||configured<=0)return DEFAULT_TIMEOUT_MS;
+ return Math.max(MIN_TIMEOUT_MS,Math.min(MAX_TIMEOUT_MS,Math.round(configured)));
 }
 
 function endpointConfig(){
@@ -57,7 +65,7 @@ export function shouldUseGraphify(question){
 async function postMcp(config,body,sessionId,authorization,{allowEmpty=false}={}){
  if(!/^Bearer [^\s]+$/.test(String(authorization||'')))throw oauthError('Graph context authorization is unavailable.',401);
  const controller=new AbortController();
- const timer=setTimeout(()=>controller.abort(),DEFAULT_TIMEOUT_MS);
+ const timer=setTimeout(()=>controller.abort(),graphifyRequestTimeoutMs());
  try{
   const headers={
    'Content-Type':'application/json',
