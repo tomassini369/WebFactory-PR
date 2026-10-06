@@ -205,9 +205,9 @@ export const templateConfigs: TemplateConfig[] = [
     accent: '#B98A54', accent2: '#DEC5A5', dark: '#18211F', cream: '#F8F5EF',
     features: ['Property listings', 'Agent booking', 'Detail views', 'Inquiry flow'],
     items: [
-      {id:'isla-1',type:'listing',name:'Casa moderna con jardín',price:785000,displayPrice:'$785,000',description:'Residencia moderna con exterior contemporáneo, patio y áreas verdes como se muestra en la imagen.',image:pexels(7587880),appointment:true,duration:45,employees:['Valeria'],purchasable:false,badge:'Featured'},
-      {id:'isla-2',type:'listing',name:'Apartamento moderno con vista urbana',price:625000,displayPrice:'$625,000',description:'Apartamento contemporáneo con diseño elegante, mobiliario moderno y vista urbana.',image:pexels(22743872),appointment:true,duration:45,employees:['Valeria','Diego'],purchasable:false},
-      {id:'isla-3',type:'listing',name:'Casa mediterránea con jardín',price:495000,displayPrice:'$495,000',description:'Casa blanca de estilo mediterráneo rodeada de jardín y sendero de piedra.',image:pexels(12891613),appointment:true,duration:45,employees:['Diego'],purchasable:false},
+      {id:'isla-1',type:'listing',name:'Casa moderna con jardín',price:785000,displayPrice:'$785,000',description:'Residencia moderna con exterior contemporáneo, patio y áreas verdes como se muestra en la imagen.',image:pexels(7587880),appointment:true,deposit:0,duration:45,employees:['Valeria'],purchasable:false,badge:'Featured'},
+      {id:'isla-2',type:'listing',name:'Apartamento moderno con vista urbana',price:625000,displayPrice:'$625,000',description:'Apartamento contemporáneo con diseño elegante, mobiliario moderno y vista urbana.',image:pexels(22743872),appointment:true,deposit:0,duration:45,employees:['Valeria','Diego'],purchasable:false},
+      {id:'isla-3',type:'listing',name:'Casa mediterránea con jardín',price:495000,displayPrice:'$495,000',description:'Casa blanca de estilo mediterráneo rodeada de jardín y sendero de piedra.',image:pexels(12891613),appointment:true,deposit:0,duration:45,employees:['Diego'],purchasable:false},
       {id:'isla-4',type:'service',name:'Consulta con agente',price:0,displayPrice:'Free consultation',description:'Reunión profesional con asesor para conversar sobre compra, propiedades y próximos pasos.',image:pexels(7979435),appointment:true,duration:30,employees:['Valeria','Diego'],purchasable:false}
     ],
     employees: [
@@ -230,7 +230,7 @@ export const templateConfigs: TemplateConfig[] = [
     items: [
       {id:'atelier-1',type:'product',name:'Vela aromática artesanal',price:32,description:'Vela aromática hecha a mano en recipiente de vidrio, exactamente como aparece en la imagen.',image:pexels(1652095),badge:'Handmade'},
       {id:'atelier-2',type:'product',name:'Jarrón de cerámica artesanal',price:46,description:'Jarrón de cerámica hecho a mano y fotografiado en un entorno de taller.',image:pexels(8274442),badge:'Small batch'},
-      {id:'atelier-3',type:'class',name:'Taller de fabricación de velas',price:65,description:'Taller práctico donde los participantes crean velas con materiales sobre la mesa.',image:pexels(34241287),appointment:true,duration:120,employees:['Lucía'],badge:'10 seats'},
+      {id:'atelier-3',type:'class',name:'Taller de fabricación de velas',price:65,description:'Taller práctico donde los participantes crean velas con materiales sobre la mesa.',image:pexels(34241287),appointment:true,duration:120,employees:['Lucía'],badge:'Workshop'},
       {id:'atelier-4',type:'class',name:'Taller creativo privado',price:120,description:'Sesión creativa para grupo pequeño trabajando con materiales artísticos alrededor de una mesa.',image:pexels(6925189),appointment:true,duration:120,deposit:40,employees:['Lucía','Marcos']}
     ],
     employees: [
