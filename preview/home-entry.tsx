@@ -4,6 +4,7 @@ import App from '../src/App'
 import '../src/styles.css'
 import '../src/theme.css'
 import '../src/liquid-glass.css'
+import './stitch-design-preview.css'
 window.fetch=async()=>{throw new Error('No network operations are allowed in this visual preview.')}
 // Fragment navigation stays inside the device viewport in the design review.
 document.addEventListener('click',event=>{
