@@ -33,14 +33,18 @@ test('MCP protocol initializes and read-only tool listing excludes mutations and
 test('Write-capable MCP publishes usable accounting/design schemas and no direct executor',async t=>{const f=fixture(t);await f.prepare();const response=await serveMcp(new Request('https://webfactorypr.com/mcp',{method:'POST',headers:{'Content-Type':'application/json',Accept:'application/json, text/event-stream'},body:JSON.stringify({jsonrpc:'2.0',id:1,method:'tools/list',params:{}})}),f.grant,f.user);const {result}=await response.json();assert.ok(result.tools.some(t=>t.name==='wf_prepare_reschedule_booking'));assert.ok(result.tools.some(t=>t.name==='wf_prepare_accounting_entry'));assert.ok(result.tools.every(t=>!t.name.includes('execute')&&!t.name.includes('platform_report')));const schemas=JSON.stringify(result.tools);assert.match(schemas,/hourlyCents/);assert.match(schemas,/northline-barber/);});
 test('Changed booking snapshots cannot be applied from an earlier reschedule proposal',async t=>{const f=fixture(t);await f.prepare();const {clientCommerceStore}=await import('./client-store.mjs');const store=clientCommerceStore();const record={siteId:'tenant-a',transactionId:'book-1',calendarToken:'private-not-returned',kind:'booking',status:'confirmed',start:'2027-01-01T12:00:00Z',updatedAt:'2026-10-04'};await store.setJSON('tenant-a/bookings/book-1.json',record);const p=await prepareProposal(f.grant,f.user,{operation:'reschedule_booking',input:{transactionId:'book-1',start:'2027-01-02T12:00:00Z'},requestId:crypto.randomUUID()},'https://webfactorypr.com');assert.ok(!JSON.stringify(p).includes(record.calendarToken));await store.setJSON('tenant-a/bookings/book-1.json',{...record,updatedAt:'2026-10-05'});const result=await executeProposal(p.id,f.user,new Request('https://webfactorypr.com/chatgpt'),{},'CONFIRM');assert.equal(result.status,'review_required');assert.equal((await store.get('tenant-a/bookings/book-1.json')).start,record.start);});
 
-test('Graph context tool is fail-closed and never exposes project_path to a tenant',async t=>{
+test('Tenant graph context is fail-closed and never exposes project_path',async t=>{
  const f=fixture(t);await f.prepare();
  const originalGet=globalThis.Netlify.env.get;
- const values={GRAPHIFY_MCP_URL:'https://graph.example/mcp',GRAPHIFY_API_KEY:'secret',GRAPHIFY_TENANT_PROJECT_ROOT:'/graphs/tenants'};
+ let values={GRAPHIFY_TENANT_PROJECT_ROOT:'/graphs/tenants'};
  globalThis.Netlify.env.get=name=>values[name]||originalGet(name);
- const response=await serveMcp(new Request('https://webfactorypr.com/mcp',{method:'POST',headers:{'Content-Type':'application/json',Accept:'application/json, text/event-stream'},body:JSON.stringify({jsonrpc:'2.0',id:1,method:'tools/list',params:{}})}),{...f.grant,scopes:['webfactory.read']},f.user);
- const {result}=await response.json();
- const graph=result.tools.find(tool=>tool.name==='wf_graph_context');
+ const listTools=async()=>{
+  const response=await serveMcp(new Request('https://webfactorypr.com/mcp',{method:'POST',headers:{'Content-Type':'application/json',Accept:'application/json, text/event-stream',Authorization:'Bearer tenant-token'},body:JSON.stringify({jsonrpc:'2.0',id:1,method:'tools/list',params:{}})}),{...f.grant,scopes:['webfactory.read']},f.user);
+  return (await response.json()).result.tools;
+ };
+ assert.ok(!(await listTools()).some(tool=>tool.name==='wf_graph_context'));
+ values={GRAPHIFY_TENANT_PROJECT_ROOT:'/graphs/tenants',GRAPHIFY_TENANT_CONTEXT_ENABLED:'true'};
+ const graph=(await listTools()).find(tool=>tool.name==='wf_graph_context');
  assert.ok(graph);
  assert.ok(!JSON.stringify(graph.inputSchema).includes('project_path'));
  assert.deepEqual(Object.keys(graph.inputSchema.properties).sort(),['depth','mode','question','tokenBudget']);
