@@ -9,6 +9,8 @@ try {
   const {default: Layout} = await server.ssrLoadModule('/src/TemplateLayout.tsx')
   const {default: Map,googleMapsEmbedUrl} = await server.ssrLoadModule('/src/TemplateMap.tsx')
   assert.equal(googleMapsEmbedUrl('https://www.google.com/maps?q=Arecibo'), 'https://www.google.com/maps?q=Arecibo&output=embed')
+  assert.equal(googleMapsEmbedUrl('https://www.google.com/maps/place/Business/@18.5,-66.7,17z/data=!3d18.47!4d-66.72'),'https://www.google.com/maps?q=18.47%2C-66.72&output=embed','Business marker takes precedence over camera center')
+  assert.equal(googleMapsEmbedUrl('https://maps.google.com/maps/embed?pb=example'),'https://www.google.com/maps/embed?pb=example','Embeds use the permitted Google host')
   assert.equal(googleMapsEmbedUrl('https://maps.app.goo.gl/example'),null,'Short links need an address for embedding')
   assert.equal(googleMapsEmbedUrl('https://untrusted.example/maps/embed'),null,'Never embed a third-party URL')
   assert.ok(googleMapsEmbedUrl('https://maps.app.goo.gl/example','123 Main St, Arecibo').includes('123%20Main%20St'))

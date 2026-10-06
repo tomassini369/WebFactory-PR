@@ -6,8 +6,9 @@ export function googleMapsEmbedUrl(value:string,location=''){
     const url=new URL(value)
     const googleHost=url.hostname==='google.com'||url.hostname.endsWith('.google.com')
     if(url.protocol==='https:'&&googleHost){
-      if(url.pathname.startsWith('/maps/embed'))return url.toString()
-      const coords=url.href.match(/@(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/)
+      if(url.pathname.startsWith('/maps/embed')){url.hostname='www.google.com';return url.toString()}
+      const marker=url.href.match(/!3d(-?\d+(?:\.\d+)?)!4d(-?\d+(?:\.\d+)?)/)
+      const coords=marker||url.href.match(/@(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/)
       const place=url.pathname.match(/\/maps\/place\/([^/]+)/)
       const query=coords?`${coords[1]},${coords[2]}`:url.searchParams.get('query')||url.searchParams.get('q')||(place?decodeURIComponent(place[1]).replace(/\+/g,' '):'')
       if(query)return `https://www.google.com/maps?q=${encodeURIComponent(query)}&output=embed`
