@@ -28,6 +28,12 @@ Password changes, MFA management, account-wide deletion, provider OAuth/credenti
 
 Disconnect at `/chatgpt` to revoke the grant immediately. Prior data shared in ChatGPT conversations is not deleted by revocation. The privacy policy describes this data transfer. Model-visible records never intentionally include credential or private calendar-management token fields; do not add raw storage export tools.
 
+## Optional Graphify context accelerator
+
+WebFactory can expose one additional read-only tool, `wf_graph_context`, when a private Graphify MCP service is configured. It is intended only for dependency, impact, architecture, diagnostic, conflict and multi-system questions where graph context can reduce broad exploration. Simple reads and mutations continue through the normal WebFactory tools and deliberately skip Graphify.
+
+Graphify remains behind WebFactory OAuth and tenant authorization. Customers never receive the Graphify service API key and cannot choose `project_path`; tenant graph paths are derived from the already-authorized `siteId`. Platform code graphs are platform-admin only. Business graph support is fail-closed unless `GRAPHIFY_TENANT_PROJECT_ROOT` is configured and sanitized tenant graphs have been generated outside the request path. See `docs/GRAPHIFY_CONTEXT.md` for deployment, refresh and isolation requirements.
+
 ## Validation
 
 `npm test` includes PKCE, callback/resource/client binding, replay, revocation, concurrent code redemption, scope narrowing, current membership removal, cross-business denial, restricted inputs, redaction, stale proposals, one-time redesign and stateless MCP initialize/list/call tests. `npm run build` validates TypeScript and bundles the existing app. Production connection still requires an actual user OAuth consent and end-to-end verification before declaring activation complete.
