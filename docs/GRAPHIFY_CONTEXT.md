@@ -25,7 +25,7 @@ ChatGPT
   -> selected graph
 ```
 
-The Graphify service has no separate shared API key. WebFactory delegates the short-lived OAuth bearer already presented by ChatGPT, and the Render proxy validates it back against `wf_connection` on every graph request. Only `platform: true` connections with `webfactory.read` are allowed to reach the WebFactory source-code graph. The token is stripped before the request reaches Graphify itself.
+The Graphify service has no separate shared API key. WebFactory delegates the short-lived OAuth bearer already presented by ChatGPT. The Render proxy validates a new bearer against `wf_connection`, then caches only a SHA-256 digest of a successful authorization for a short bounded TTL (30 seconds by default) so the MCP initialize/initialized/tools-call sequence does not repeat the same remote authorization check three times. Only `platform: true` connections with `webfactory.read` are allowed to reach the WebFactory source-code graph. The raw token is stripped before the request reaches Graphify itself and is never stored in the authorization cache.
 
 Platform connections use the configured platform graph. Business connections can only use:
 
@@ -39,7 +39,7 @@ Do not place WebFactory source code, provider credentials, OAuth tokens, passwor
 
 Graphify runs as a persistent Python service outside the existing Netlify JavaScript function. The Render service builds the WebFactory graph locally with AST extraction and starts `scripts/graphify_oauth_proxy.py`.
 
-The proxy wraps Graphify's Streamable HTTP server and protects `/mcp` with the existing WebFactory OAuth connection. A platform-wide WebFactory connection must be selected during OAuth consent; an ordinary business-scoped connection remains business-scoped even when the same identity is a WebFactory administrator. A request without a Bearer token is rejected. A tenant/business token is rejected. A platform-admin token is checked against the production WebFactory MCP before each request so permission revocation takes effect immediately.
+The proxy wraps Graphify's Streamable HTTP server and protects `/mcp` with the existing WebFactory OAuth connection. A platform-wide WebFactory connection must be selected during OAuth consent; an ordinary business-scoped connection remains business-scoped even when the same identity is a WebFactory administrator. A request without a Bearer token is rejected. A tenant/business token is rejected. Successful platform authorization is cached briefly by digest to cover one MCP exchange; with the default TTL, permission revocation may take up to 30 seconds to be reflected by Graphify.
 
 The current default endpoint is:
 
@@ -50,6 +50,13 @@ https://webfactory-graphify-prod.onrender.com/mcp
 `GRAPHIFY_MCP_URL` remains an optional Netlify override if the Render service moves.
 
 No `GRAPHIFY_API_KEY` is required.
+
+### Resilience controls
+
+- `GRAPHIFY_MCP_TIMEOUT_MS`: Netlify to Graphify request timeout. Default 25000 ms; clamped to 5000-30000 ms.
+- `GRAPHIFY_AUTH_TIMEOUT_SECONDS`: Graphify proxy to WebFactory authorization timeout. Default 12 seconds; clamped to 3-20 seconds.
+- `GRAPHIFY_AUTH_CACHE_TTL_SECONDS`: successful authorization-digest cache. Default 30 seconds; clamped to 0-60 seconds.
+- Failed or denied authorization checks are never cached.
 
 ### Tenant graph safety
 
@@ -73,7 +80,7 @@ Limits:
 - Tenant response budget: 200-1000 Graphify tokens, default 800.
 - Platform response budget: 200-1600 Graphify tokens, default 1200.
 - Remote response body: 60 KB maximum.
-- Remote timeout: 8 seconds.
+- Remote timeout: 25 seconds by default (configurable from 5-30 seconds) to tolerate Render free-tier cold starts.
 - HTTPS required except localhost development.
 
 These controls are intended to keep Graphify a context reducer, not an extra mandatory step.
