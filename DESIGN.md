@@ -398,3 +398,18 @@ The original WebFactory homepage already contains a defining interaction model. 
 - The mobile header must expose exactly one Light/Dark control. Generic floating fallback toggles are not allowed when an inline header toggle is present.
 - The scroll cue must remain readable on video.
 - Mobile inline scroll-tour scenes require bottom breathing room so iOS browser chrome does not visually crowd the first interactive scene.
+
+
+### Mobile Dynamic Scroll Tour
+
+The mobile homepage must preserve the same five-step dynamic product-tour model as desktop rather than falling back to five static duplicated screenshots.
+
+- Reuse the existing `step` state and IntersectionObserver; do not introduce a second mobile-only state machine.
+- On phone widths below 768px, the shared Business Control Center becomes a compact sticky visualization directly below the mobile header.
+- The sticky visualization changes live between Crear, Vender, Reservar, Cobrar and Administrar as the corresponding narrative step crosses the active viewport band.
+- The five-step progress rail remains visible, updates from the same state, and stays tappable with minimum 44px touch targets.
+- Narrative text remains in normal document flow below the sticky visualization; the hero video remains separate above the tour.
+- Do not duplicate inline Control Center scenes on phone widths when the sticky visualization is enabled.
+- Use `100dvh`-relative step spacing and respect iOS safe areas.
+- Motion must use transform/opacity only. Reduced-motion mode keeps dynamic state changes but removes cinematic transforms and entrance effects.
+- Tablet widths may continue using the existing inline fallback until a separate tablet treatment is explicitly approved.
