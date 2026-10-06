@@ -870,46 +870,47 @@ html[data-wf-theme="light"] .wf-premium-home .wf-hero.has-video .wf-scroll-cue s
   }
 }
 
+/* ===== Mobile Dynamic Scroll Tour V2 · StitchDesign ===== */
 
-/* ===== Mobile Dynamic Scroll Tour · StitchDesign ===== */
-
-/* Mobile uses the same live step state as desktop. We do not duplicate business
-   logic: the existing IntersectionObserver updates --step and ControlFrame.
-   This layer only changes the responsive composition in the deploy preview. */
+/* Native mobile composition: never scale the desktop Control Center wider than
+   the viewport. The existing HomePage step state and IntersectionObserver stay
+   untouched; only the preview responsive layout changes. */
 @media(max-width:767px){
   .wf-premium-home .wf-tour{
-    padding-top:88px;
+    padding-top:78px;
   }
 
   .wf-premium-home .wf-tour>.wf-shell{
     width:calc(100% - 28px);
   }
 
-  /* Reorder the existing desktop stage before the step list, then keep it
-     sticky below the mobile header while the narrative scrolls underneath. */
   .wf-premium-home .wf-tour-grid{
     display:flex;
     flex-direction:column;
     gap:0;
   }
 
+  /* Compact sticky visual dock. Explicit height prevents the large empty region
+     seen in the previous mobile recording. */
   .wf-premium-home .wf-tour-stage{
     order:0;
     display:block;
     position:sticky;
     z-index:18;
-    top:calc(env(safe-area-inset-top,0px) + 72px);
+    top:calc(env(safe-area-inset-top,0px) + 68px);
     width:100%;
-    margin:0 0 18px;
-    padding:10px 0 12px;
+    height:244px;
+    margin:0 0 16px;
+    padding:8px 0 10px;
+    overflow:visible;
     background:linear-gradient(
       180deg,
-      color-mix(in srgb,var(--hp-bg) 96%,transparent) 0%,
-      color-mix(in srgb,var(--hp-bg) 92%,transparent) 82%,
+      color-mix(in srgb,var(--hp-bg) 97%,transparent) 0%,
+      color-mix(in srgb,var(--hp-bg) 94%,transparent) 84%,
       transparent 100%
     );
-    -webkit-backdrop-filter:blur(18px) saturate(120%);
-    backdrop-filter:blur(18px) saturate(120%);
+    -webkit-backdrop-filter:blur(16px) saturate(118%);
+    backdrop-filter:blur(16px) saturate(118%);
     transform:none!important;
   }
 
@@ -921,44 +922,381 @@ html[data-wf-theme="light"] .wf-premium-home .wf-hero.has-video .wf-scroll-cue s
     bottom:0;
     height:1px;
     background:linear-gradient(90deg,transparent,var(--hp-line),transparent);
-    opacity:.8;
+    opacity:.7;
     pointer-events:none;
   }
 
   .wf-premium-home .wf-tour-light{
-    inset:-8% -4% 10%;
-    opacity:.28;
+    inset:-5% -3% 18%;
+    opacity:.2;
     transform:none!important;
   }
 
-  /* Compact the real ControlFrame rather than substituting a static mock.
-     A wider internal layout is scaled down so the visual remains legible and
-     avoids the one-column container-query collapse inside the small viewport. */
   .wf-premium-home .wf-tour-stage>div[aria-hidden="true"]{
     position:relative;
-    height:216px;
+    width:100%;
+    height:178px;
     overflow:hidden;
-    border-radius:18px;
+    border-radius:16px;
   }
 
+  /* Real phone-width Control Center: no width inflation, no transform scaling. */
   .wf-premium-home .wf-tour-stage .wf-cc{
-    width:180%;
-    transform:scale(.5556);
-    transform-origin:top left;
-    border-radius:22px;
-    box-shadow:0 26px 64px -42px rgba(0,0,0,.78);
+    width:100%;
+    height:178px;
+    transform:none!important;
+    transform-origin:center;
+    border-radius:16px;
+    box-shadow:0 18px 46px -34px rgba(0,0,0,.78);
+    font-size:9px;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-cc-top{
+    min-height:30px;
+    padding:6px 8px;
+    gap:6px;
+    font-size:9px;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-cc-top strong{
+    font-size:9px;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-cc-crumb{
+    display:none;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-cc-sample{
+    max-width:82px;
+    overflow:hidden;
+    padding:2px 6px;
+    font-size:7px;
+    text-overflow:ellipsis;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-cc-body{
+    height:147px;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-cc-body>aside{
+    width:34px;
+    padding:7px 4px;
+    gap:5px;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-cc-mono{
+    margin-bottom:2px;
+    font-size:10px;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-cc-body aside>div:not(.wf-cc-mono){
+    padding:4px;
+    border-radius:6px;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-cc-body aside svg{
+    width:12px;
+    height:12px;
   }
 
   .wf-premium-home .wf-tour-stage .wf-cc-main{
-    height:310px;
+    height:147px;
+    overflow:hidden;
   }
 
-  /* Keep all five stages tappable while the progress line updates from --step. */
+  .wf-premium-home .wf-tour-stage .wf-cc-scene{
+    padding:8px;
+    overflow:hidden;
+    transform:translateY(8px) scale(.995);
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-cc-scene.past{
+    transform:translateY(-8px) scale(.995);
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-cc-scene.on{
+    transform:none;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-s-label{
+    margin-bottom:6px;
+    gap:6px;
+    font-size:8px;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-s-label span{
+    font-size:7px;
+  }
+
+  /* Force compact two-zone scenes after the original container query. */
+  .wf-premium-home .wf-tour-stage :is(.wf-s-website,.wf-s-sell,.wf-s-book,.wf-s-pay,.wf-s-manage){
+    grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;
+    gap:7px!important;
+    align-items:start;
+  }
+
+  /* CREATE */
+  .wf-premium-home .wf-tour-stage .wf-s-ai{
+    padding:7px;
+    border-radius:8px;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-s-ai-head{
+    gap:4px;
+    font-size:7.5px;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-s-ai-head svg{
+    width:10px;
+    height:10px;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-s-ai p{
+    display:none!important;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-s-ai li{
+    padding:3px 0;
+    gap:4px;
+    font-size:7px;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-s-ai li svg{
+    width:9px;
+    height:9px;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-s-ai li:nth-child(n+4){
+    display:none;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-s-site{
+    border-radius:8px;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-s-site-bar{
+    padding:4px 5px;
+    gap:3px;
+    font-size:6px;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-s-site-bar i{
+    width:4px;
+    height:4px;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-s-site-hero{
+    margin:5px;
+    padding:7px;
+    border-radius:6px;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-s-site-hero small{
+    font-size:5.5px;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-s-site-hero strong{
+    margin:3px 0 5px;
+    font-size:8px;
+    line-height:1.15;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-s-site-hero span{
+    padding:2px 5px;
+    border-radius:4px;
+    font-size:5.5px;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-s-site-cards{
+    grid-template-columns:1fr 1fr;
+    gap:4px;
+    margin:0 5px 5px;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-s-site-cards div{
+    padding:4px;
+    font-size:5.5px;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-s-site-cards div:nth-child(3){
+    display:none;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-s-site-cards i{
+    height:18px;
+    margin-bottom:3px;
+  }
+
+  /* SELL */
+  .wf-premium-home .wf-tour-stage .wf-s-catalog>div{
+    grid-template-columns:1fr 1fr!important;
+    gap:5px;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-s-catalog article{
+    padding:5px;
+    border-radius:7px;
+    font-size:6.5px;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-s-catalog article:nth-child(3){
+    display:none!important;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-s-art{
+    height:28px;
+    border-radius:5px;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-s-catalog article span{
+    margin-top:4px;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-s-catalog article strong{
+    margin:2px 0 3px;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-s-catalog article em{
+    padding:3px;
+    font-size:6px;
+  }
+
+  .wf-premium-home .wf-tour-stage :is(.wf-s-cart,.wf-s-slots,.wf-s-receipt,.wf-s-checkout,.wf-s-calendar,.wf-s-chart,.wf-s-quick){
+    padding:7px;
+    border-radius:8px;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-s-cart p,
+  .wf-premium-home .wf-tour-stage .wf-s-receipt p{
+    padding:3px 0;
+    font-size:6.5px;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-s-total{
+    margin-top:3px;
+    padding-top:4px;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-s-total small{
+    font-size:6px;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-s-total strong{
+    font-size:11px;
+  }
+
+  /* BOOK */
+  .wf-premium-home .wf-tour-stage .wf-s-grid{
+    gap:2px;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-s-grid small{
+    font-size:5.5px;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-s-grid span{
+    padding:2px 0;
+    font-size:6px;
+    border-radius:4px;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-s-pros{
+    gap:3px;
+    margin-bottom:5px;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-s-pros span{
+    width:18px;
+    height:18px;
+    font-size:6px;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-s-slots p{
+    margin-top:3px;
+    padding:3px 5px;
+    font-size:6.5px;
+  }
+
+  /* PAY */
+  .wf-premium-home .wf-tour-stage .wf-s-amount{
+    margin:2px 0 6px;
+    font-size:15px;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-s-methods{
+    gap:3px;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-s-methods span{
+    padding:3px 5px;
+    border-radius:5px;
+    font-size:6px;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-s-status{
+    gap:4px;
+    margin-top:7px;
+    font-size:6px;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-s-receipt em{
+    margin-top:4px;
+    padding:2px 5px;
+    font-size:6px;
+  }
+
+  /* MANAGE */
+  .wf-premium-home .wf-tour-stage .wf-s-manage{
+    grid-template-columns:minmax(0,1.25fr) minmax(0,.75fr)!important;
+    gap:6px!important;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-s-metrics{
+    grid-column:1/-1;
+    grid-template-columns:repeat(3,1fr)!important;
+    gap:4px;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-s-metrics div{
+    padding:5px 6px;
+    border-radius:7px;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-s-metrics span{
+    font-size:5.5px;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-s-metrics strong{
+    font-size:10px;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-s-chart>div{
+    height:42px;
+    gap:4px;
+    padding-top:3px;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-s-quick>div{
+    gap:3px;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-s-quick span{
+    gap:3px;
+    padding:3px 4px;
+    font-size:5.5px;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-s-quick span svg{
+    width:8px;
+    height:8px;
+  }
+
+  /* Progress: one compact row directly below the live visual. */
   .wf-premium-home .wf-tour-rail{
     grid-template-columns:repeat(5,minmax(0,1fr));
-    gap:4px;
-    margin-top:9px;
-    padding-top:10px;
+    gap:3px;
+    margin-top:7px;
+    padding-top:8px;
   }
 
   .wf-premium-home .wf-tour-rail>i{
@@ -967,17 +1305,17 @@ html[data-wf-theme="light"] .wf-premium-home .wf-hero.has-video .wf-scroll-cue s
 
   .wf-premium-home .wf-tour-rail button{
     min-width:0;
-    min-height:44px;
-    padding:8px 2px 2px;
+    min-height:42px;
+    padding:7px 2px 2px;
     overflow:hidden;
+    border-radius:8px;
     color:var(--hp-muted);
-    font-size:9px;
-    line-height:1.15;
-    letter-spacing:-.01em;
+    font-size:8.5px;
+    line-height:1.1;
+    letter-spacing:-.015em;
     text-align:center;
     text-overflow:ellipsis;
     white-space:nowrap;
-    border-radius:8px;
   }
 
   .wf-premium-home .wf-tour-rail button[aria-current=step]{
@@ -991,35 +1329,35 @@ html[data-wf-theme="light"] .wf-premium-home .wf-hero.has-video .wf-scroll-cue s
     z-index:1;
   }
 
-  /* Each narrative step has enough scroll distance to drive a distinct scene,
-     while keeping the text in the lower reading zone beneath the sticky panel. */
+  /* Natural reading rhythm: enough scroll distance for each state change, but
+     no giant blank spaces between the live dock and narrative. */
   .wf-premium-home .wf-tour-step,
   .wf-premium-home .wf-tour-step:first-child,
   .wf-premium-home .wf-tour-step:last-child{
-    min-height:68dvh;
-    padding:clamp(34px,7vh,58px) 0;
+    min-height:54dvh;
+    padding:32px 0 36px;
     justify-content:flex-start;
-    scroll-margin-top:calc(env(safe-area-inset-top,0px) + 338px);
+    scroll-margin-top:calc(env(safe-area-inset-top,0px) + 330px);
   }
 
   .wf-premium-home .wf-tour-step:first-child{
-    min-height:62dvh;
-    padding-top:30px;
+    min-height:50dvh;
+    padding-top:26px;
   }
 
   .wf-premium-home .wf-tour-step:last-child{
-    min-height:60dvh;
-    padding-bottom:calc(88px + env(safe-area-inset-bottom,0px));
+    min-height:52dvh;
+    padding-bottom:calc(74px + env(safe-area-inset-bottom,0px));
   }
 
   .wf-premium-home .wf-tour-text{
     max-width:100%;
-    padding:18px 4px 20px 18px;
+    padding:15px 4px 17px 16px;
     border-left-width:1px;
-    border-radius:0 14px 14px 0;
+    border-radius:0 12px 12px 0;
     background:linear-gradient(
       90deg,
-      color-mix(in srgb,var(--hp-panel) 46%,transparent),
+      color-mix(in srgb,var(--hp-panel) 42%,transparent),
       transparent 86%
     );
   }
@@ -1034,19 +1372,17 @@ html[data-wf-theme="light"] .wf-premium-home .wf-hero.has-video .wf-scroll-cue s
   }
 
   .wf-premium-home .wf-tour-text h3{
-    font-size:clamp(25px,7.3vw,31px);
-    margin:12px 0 10px;
+    margin:10px 0 8px;
+    font-size:clamp(24px,7vw,30px);
   }
 
   .wf-premium-home .wf-tour-text p{
     max-width:34ch;
     margin:0;
     font-size:15px;
-    line-height:1.65;
+    line-height:1.58;
   }
 
-  /* The old inline fallback is no longer needed on phone widths because the
-     shared sticky ControlFrame is now the live visualization. */
   .wf-premium-home .wf-tour-inline{
     display:none!important;
   }
@@ -1054,26 +1390,27 @@ html[data-wf-theme="light"] .wf-premium-home .wf-hero.has-video .wf-scroll-cue s
 
 @media(max-width:390px){
   .wf-premium-home .wf-tour-stage{
-    top:calc(env(safe-area-inset-top,0px) + 68px);
+    top:calc(env(safe-area-inset-top,0px) + 64px);
+    height:232px;
   }
-  .wf-premium-home .wf-tour-stage>div[aria-hidden="true"]{
-    height:198px;
-  }
+
+  .wf-premium-home .wf-tour-stage>div[aria-hidden="true"],
   .wf-premium-home .wf-tour-stage .wf-cc{
-    width:190%;
-    transform:scale(.5263);
+    height:168px;
   }
+
+  .wf-premium-home .wf-tour-stage .wf-cc-body,
+  .wf-premium-home .wf-tour-stage .wf-cc-main{
+    height:137px;
+  }
+
   .wf-premium-home .wf-tour-rail button{
-    font-size:8.5px;
+    font-size:8px;
   }
 }
 
-/* Reduced motion keeps the dynamic content changes but removes cinematic
-   transforms/entrance effects, matching the existing accessibility contract. */
 @media(max-width:767px) and (prefers-reduced-motion:reduce){
-  .wf-premium-home .wf-tour-stage .wf-cc{
-    transition:none!important;
-  }
+  .wf-premium-home .wf-tour-stage .wf-cc-scene,
   .wf-premium-home .wf-tour-step .wf-tour-text{
     transform:none!important;
     transition:none!important;
