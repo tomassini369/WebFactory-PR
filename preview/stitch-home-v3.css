@@ -869,3 +869,213 @@ html[data-wf-theme="light"] .wf-premium-home .wf-hero.has-video .wf-scroll-cue s
     margin-bottom:calc(24px + env(safe-area-inset-bottom,0px));
   }
 }
+
+
+/* ===== Mobile Dynamic Scroll Tour · StitchDesign ===== */
+
+/* Mobile uses the same live step state as desktop. We do not duplicate business
+   logic: the existing IntersectionObserver updates --step and ControlFrame.
+   This layer only changes the responsive composition in the deploy preview. */
+@media(max-width:767px){
+  .wf-premium-home .wf-tour{
+    padding-top:88px;
+  }
+
+  .wf-premium-home .wf-tour>.wf-shell{
+    width:calc(100% - 28px);
+  }
+
+  /* Reorder the existing desktop stage before the step list, then keep it
+     sticky below the mobile header while the narrative scrolls underneath. */
+  .wf-premium-home .wf-tour-grid{
+    display:flex;
+    flex-direction:column;
+    gap:0;
+  }
+
+  .wf-premium-home .wf-tour-stage{
+    order:0;
+    display:block;
+    position:sticky;
+    z-index:18;
+    top:calc(env(safe-area-inset-top,0px) + 72px);
+    width:100%;
+    margin:0 0 18px;
+    padding:10px 0 12px;
+    background:linear-gradient(
+      180deg,
+      color-mix(in srgb,var(--hp-bg) 96%,transparent) 0%,
+      color-mix(in srgb,var(--hp-bg) 92%,transparent) 82%,
+      transparent 100%
+    );
+    -webkit-backdrop-filter:blur(18px) saturate(120%);
+    backdrop-filter:blur(18px) saturate(120%);
+    transform:none!important;
+  }
+
+  .wf-premium-home .wf-tour-stage::after{
+    content:"";
+    position:absolute;
+    left:0;
+    right:0;
+    bottom:0;
+    height:1px;
+    background:linear-gradient(90deg,transparent,var(--hp-line),transparent);
+    opacity:.8;
+    pointer-events:none;
+  }
+
+  .wf-premium-home .wf-tour-light{
+    inset:-8% -4% 10%;
+    opacity:.28;
+    transform:none!important;
+  }
+
+  /* Compact the real ControlFrame rather than substituting a static mock.
+     A wider internal layout is scaled down so the visual remains legible and
+     avoids the one-column container-query collapse inside the small viewport. */
+  .wf-premium-home .wf-tour-stage>div[aria-hidden="true"]{
+    position:relative;
+    height:216px;
+    overflow:hidden;
+    border-radius:18px;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-cc{
+    width:180%;
+    transform:scale(.5556);
+    transform-origin:top left;
+    border-radius:22px;
+    box-shadow:0 26px 64px -42px rgba(0,0,0,.78);
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-cc-main{
+    height:310px;
+  }
+
+  /* Keep all five stages tappable while the progress line updates from --step. */
+  .wf-premium-home .wf-tour-rail{
+    grid-template-columns:repeat(5,minmax(0,1fr));
+    gap:4px;
+    margin-top:9px;
+    padding-top:10px;
+  }
+
+  .wf-premium-home .wf-tour-rail>i{
+    height:2px;
+  }
+
+  .wf-premium-home .wf-tour-rail button{
+    min-width:0;
+    min-height:44px;
+    padding:8px 2px 2px;
+    overflow:hidden;
+    color:var(--hp-muted);
+    font-size:9px;
+    line-height:1.15;
+    letter-spacing:-.01em;
+    text-align:center;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+    border-radius:8px;
+  }
+
+  .wf-premium-home .wf-tour-rail button[aria-current=step]{
+    color:var(--hp-blue);
+    background:color-mix(in srgb,var(--hp-blue) 8%,transparent);
+  }
+
+  .wf-premium-home .wf-tour-steps{
+    order:1;
+    position:relative;
+    z-index:1;
+  }
+
+  /* Each narrative step has enough scroll distance to drive a distinct scene,
+     while keeping the text in the lower reading zone beneath the sticky panel. */
+  .wf-premium-home .wf-tour-step,
+  .wf-premium-home .wf-tour-step:first-child,
+  .wf-premium-home .wf-tour-step:last-child{
+    min-height:68dvh;
+    padding:clamp(34px,7vh,58px) 0;
+    justify-content:flex-start;
+    scroll-margin-top:calc(env(safe-area-inset-top,0px) + 338px);
+  }
+
+  .wf-premium-home .wf-tour-step:first-child{
+    min-height:62dvh;
+    padding-top:30px;
+  }
+
+  .wf-premium-home .wf-tour-step:last-child{
+    min-height:60dvh;
+    padding-bottom:calc(88px + env(safe-area-inset-bottom,0px));
+  }
+
+  .wf-premium-home .wf-tour-text{
+    max-width:100%;
+    padding:18px 4px 20px 18px;
+    border-left-width:1px;
+    border-radius:0 14px 14px 0;
+    background:linear-gradient(
+      90deg,
+      color-mix(in srgb,var(--hp-panel) 46%,transparent),
+      transparent 86%
+    );
+  }
+
+  .wf-premium-home .wf-tour-step.on .wf-tour-text{
+    border-left-width:3px;
+    background:linear-gradient(
+      90deg,
+      color-mix(in srgb,var(--hp-blue) 7%,var(--hp-panel)),
+      transparent 90%
+    );
+  }
+
+  .wf-premium-home .wf-tour-text h3{
+    font-size:clamp(25px,7.3vw,31px);
+    margin:12px 0 10px;
+  }
+
+  .wf-premium-home .wf-tour-text p{
+    max-width:34ch;
+    margin:0;
+    font-size:15px;
+    line-height:1.65;
+  }
+
+  /* The old inline fallback is no longer needed on phone widths because the
+     shared sticky ControlFrame is now the live visualization. */
+  .wf-premium-home .wf-tour-inline{
+    display:none!important;
+  }
+}
+
+@media(max-width:390px){
+  .wf-premium-home .wf-tour-stage{
+    top:calc(env(safe-area-inset-top,0px) + 68px);
+  }
+  .wf-premium-home .wf-tour-stage>div[aria-hidden="true"]{
+    height:198px;
+  }
+  .wf-premium-home .wf-tour-stage .wf-cc{
+    width:190%;
+    transform:scale(.5263);
+  }
+  .wf-premium-home .wf-tour-rail button{
+    font-size:8.5px;
+  }
+}
+
+/* Reduced motion keeps the dynamic content changes but removes cinematic
+   transforms/entrance effects, matching the existing accessibility contract. */
+@media(max-width:767px) and (prefers-reduced-motion:reduce){
+  .wf-premium-home .wf-tour-stage .wf-cc{
+    transition:none!important;
+  }
+  .wf-premium-home .wf-tour-step .wf-tour-text{
+    transform:none!important;
+    transition:none!important;
+  }
+}
