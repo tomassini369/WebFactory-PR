@@ -730,3 +730,142 @@
   from{opacity:0;transform:translateY(-4px)}
   to{opacity:1;transform:none}
 }
+
+
+/* ===== Mobile Light Mode QA Fix · Screenshot 2026-10-06 ===== */
+
+/* The design-preview URL is not a production root path, so ThemeProvider adds
+   its generic floating fallback. The Home already has an inline header toggle. */
+.wf-theme-toggle.floating{
+  display:none!important;
+}
+
+/* Keep the hero cinematic even when the rest of the page is in Light Mode.
+   Light Mode should change the surrounding product surface, not wash out video. */
+html[data-wf-theme="light"] .wf-premium-home .wf-hero.has-video{
+  --hp-text:#F4F7FB;
+  --hp-muted:#D5DFEC;
+  --hp-line:#53667D;
+  --hp-line-soft:#324258;
+  --hp-blue:#86B4EB;
+  --hp-blue-strong:#356FBF;
+  color:var(--hp-text);
+}
+html[data-wf-theme="light"] .wf-premium-home .wf-hero.has-video .wf-hero-scrim{
+  background:
+    linear-gradient(90deg,rgba(5,9,15,.90) 0%,rgba(5,9,15,.74) 32%,rgba(5,9,15,.34) 58%,rgba(5,9,15,.18) 76%,rgba(5,9,15,.38) 100%),
+    linear-gradient(180deg,rgba(5,9,15,.30) 0%,transparent 30%,transparent 70%,rgba(5,9,15,.70) 100%)!important;
+}
+html[data-wf-theme="light"] .wf-premium-home .wf-hero-copy::before{
+  background:radial-gradient(72% 82% at 24% 50%,rgba(4,8,14,.46),transparent 76%)!important;
+}
+html[data-wf-theme="light"] .wf-premium-home .wf-hero.has-video h1{
+  color:#F7FAFF;
+  text-shadow:0 1px 18px rgba(0,0,0,.18);
+}
+html[data-wf-theme="light"] .wf-premium-home .wf-hero.has-video h1 em{
+  color:#82B4EE;
+}
+html[data-wf-theme="light"] .wf-premium-home .wf-hero.has-video .wf-lead{
+  color:#D7E1EE;
+}
+html[data-wf-theme="light"] .wf-premium-home .wf-hero.has-video .wf-eyebrow{
+  color:#85B6ED;
+}
+html[data-wf-theme="light"] .wf-premium-home .wf-hero.has-video .wf-dot{
+  background:#65C8AD;
+  box-shadow:0 0 10px rgba(101,200,173,.34);
+}
+html[data-wf-theme="light"] .wf-premium-home .wf-hero.has-video .wf-hero-modules li{
+  color:#F0F5FB;
+  background:rgba(8,14,22,.72)!important;
+  border-color:rgba(150,180,214,.34);
+  -webkit-backdrop-filter:blur(12px);
+  backdrop-filter:blur(12px);
+}
+html[data-wf-theme="light"] .wf-premium-home .wf-hero.has-video .wf-hero-modules svg{
+  color:#88B8EF;
+}
+html[data-wf-theme="light"] .wf-premium-home .wf-hero.has-video .wf-link{
+  color:#F1F6FC;
+}
+html[data-wf-theme="light"] .wf-premium-home .wf-hero.has-video .wf-trial{
+  color:#C3D0E0;
+}
+html[data-wf-theme="light"] .wf-premium-home .wf-hero.has-video .wf-scroll-cue{
+  color:#D3DEEB;
+}
+html[data-wf-theme="light"] .wf-premium-home .wf-hero.has-video .wf-scroll-cue span{
+  border-color:rgba(211,222,235,.68);
+}
+html[data-wf-theme="light"] .wf-premium-home .wf-hero.has-video .wf-scroll-cue span::after{
+  background:#8BB9EE;
+}
+
+/* Mobile header: same controls, tighter and more deliberate spacing. */
+@media(max-width:600px){
+  .wf-premium-home .wf-h-header-inner{
+    padding:8px 12px;
+    gap:7px;
+  }
+  .wf-premium-home .wf-h-logo{
+    width:86px;
+  }
+  .wf-premium-home .wf-h-logo .wf-adaptive-logo-slot,
+  .wf-premium-home .wf-h-logo .wf-adaptive-logo-slot>.wf-adaptive-logo{
+    height:50px;
+  }
+  .wf-premium-home .wf-h-actions{
+    gap:5px;
+  }
+  .wf-premium-home .wf-h-languages{
+    flex-shrink:0;
+  }
+  .wf-premium-home .wf-h-languages button{
+    min-width:30px;
+    min-height:32px;
+    padding:4px 5px;
+  }
+  .wf-premium-home .wf-h-header .wf-theme-toggle,
+  .wf-premium-home .wf-h-menu{
+    width:36px;
+    height:36px;
+    min-height:36px;
+  }
+  .wf-premium-home .wf-h-login{
+    min-height:36px;
+    padding:7px 10px;
+    font-size:12.5px;
+  }
+
+  /* The mobile hero stays dark and readable in either global theme. */
+  html[data-wf-theme="light"] .wf-premium-home .wf-hero.has-video .wf-hero-scrim{
+    background:
+      linear-gradient(180deg,rgba(5,9,15,.64) 0%,rgba(5,9,15,.58) 38%,rgba(5,9,15,.66) 68%,rgba(5,9,15,.88) 100%)!important;
+  }
+  html[data-wf-theme="light"] .wf-premium-home .wf-hero-copy::before{
+    background:radial-gradient(78% 82% at 34% 45%,rgba(4,8,14,.38),transparent 78%)!important;
+  }
+  .wf-premium-home .wf-hero-modules{
+    gap:7px!important;
+  }
+  .wf-premium-home .wf-hero-modules li{
+    min-height:38px;
+    padding:7px 9px;
+  }
+  .wf-premium-home .wf-scroll-cue{
+    min-height:44px;
+    margin-top:20px;
+    font-size:12px;
+  }
+
+  /* Give the inline product scene breathing room above iOS browser chrome. */
+  .wf-premium-home .wf-tour-step{
+    padding-bottom:46px;
+    scroll-margin-block:96px;
+  }
+  .wf-premium-home .wf-tour-inline{
+    margin-top:26px;
+    margin-bottom:calc(24px + env(safe-area-inset-bottom,0px));
+  }
+}
