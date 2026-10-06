@@ -19,12 +19,13 @@ ChatGPT
   -> WebFactory MCP OAuth
   -> current identity + membership check
   -> wf_graph_context
-  -> WebFactory Graphify gateway
-  -> private Graphify MCP API key
+  -> delegated WebFactory OAuth bearer
+  -> Render Graphify OAuth proxy
+  -> re-check wf_connection (platform admin + webfactory.read)
   -> selected graph
 ```
 
-The browser/client never receives the Graphify API key. A tenant cannot supply `project_path`; WebFactory derives it from the already-authorized `siteId`.
+The Graphify service has no separate shared API key. WebFactory delegates the short-lived OAuth bearer already presented by ChatGPT, and the Render proxy validates it back against `wf_connection` on every graph request. Only `platform: true` connections with `webfactory.read` are allowed to reach the WebFactory source-code graph. The token is stripped before the request reaches Graphify itself.
 
 Platform connections use the configured platform graph. Business connections can only use:
 
@@ -36,38 +37,30 @@ Do not place WebFactory source code, provider credentials, OAuth tokens, passwor
 
 ## Required Graphify service
 
-Graphify is a persistent Python service and should not be embedded inside the existing Netlify JavaScript function. Run Graphify separately and let the Netlify MCP call it over HTTPS.
+Graphify runs as a persistent Python service outside the existing Netlify JavaScript function. The Render service builds the WebFactory graph locally with AST extraction and starts `scripts/graphify_oauth_proxy.py`.
 
-Tested integration target: Graphify `graphifyy[mcp]` 0.9.77 or newer with Streamable HTTP and JSON responses.
+The proxy wraps Graphify's Streamable HTTP server and protects `/mcp` with the existing WebFactory OAuth connection. A platform-wide WebFactory connection must be selected during OAuth consent; an ordinary business-scoped connection remains business-scoped even when the same identity is a WebFactory administrator. A request without a Bearer token is rejected. A tenant/business token is rejected. A platform-admin token is checked against the production WebFactory MCP before each request so permission revocation takes effect immediately.
 
-Example:
+The current default endpoint is:
 
-```bash
-python -m graphify.serve /data/webfactory/graphify-out/graph.json \
-  --transport http \
-  --host 0.0.0.0 \
-  --port 8080 \
-  --api-key "$GRAPHIFY_API_KEY" \
-  --json-response
+```
+https://webfactory-graphify-oauth.onrender.com/mcp
 ```
 
-Terminate TLS in front of the container and expose only the HTTPS `/mcp` URL to WebFactory. Graphify's API-key authentication is used only between WebFactory and the Graphify service; customer authentication remains WebFactory OAuth.
+`GRAPHIFY_MCP_URL` remains an optional Netlify override if the Render service moves.
 
-## Netlify environment variables
+No `GRAPHIFY_API_KEY` is required.
 
-`GRAPHIFY_MCP_URL`
-: Optional HTTPS override for the Graphify MCP. WebFactory defaults to `https://webfactory-graphify.onrender.com/mcp`; set this only if the service moves.
+### Tenant graph safety
 
-`GRAPHIFY_API_KEY`
-: Private service-to-service key. The gateway does not enable Graphify if this is missing.
+The deployed Render proxy is intentionally for the WebFactory platform source-code graph. Business/customer connections do not receive `wf_graph_context` by default.
 
-`GRAPHIFY_PLATFORM_PROJECT_PATH`
-: Optional absolute project directory on the Graphify server. If omitted, Graphify's configured default graph is used for platform administrators.
+Future tenant graphs require both:
 
-`GRAPHIFY_TENANT_PROJECT_ROOT`
-: Optional absolute root containing tenant project directories. If omitted, business/customer connections do not receive `wf_graph_context`.
+- `GRAPHIFY_TENANT_CONTEXT_ENABLED=true`
+- `GRAPHIFY_TENANT_PROJECT_ROOT=<trusted sanitized graph root>`
 
-The tenant Graphify feature is therefore fail-closed: customers do not see the graph tool until a tenant graph root is intentionally configured.
+and a proxy implementation that authorizes those tenant graphs. Do not enable tenant context against the platform code graph.
 
 ## Routing and cost controls
 
@@ -109,10 +102,10 @@ The platform graph should be rebuilt from the current WebFactory repository afte
 
 `netlify/lib/chatgpt-graphify.test.mjs` verifies:
 
-- Graphify remains disabled without both endpoint and API key.
+- Platform Graphify uses the built-in HTTPS OAuth proxy without a shared API key.
 - Non-HTTPS remote endpoints are rejected.
-- Tenant paths are derived server-side and reject traversal.
+- Tenant graph exposure is disabled by default; any future tenant paths are derived server-side and reject traversal.
 - Simple CRUD requests do not make a Graphify network call.
-- MCP initialize/initialized/tools-call handshake is used.
+- The original WebFactory OAuth bearer is delegated to the proxy for the MCP initialize/initialized/tools-call handshake.
 - Tenant project paths are fixed from the authorized site id.
 - Platform output budgets remain bounded.
