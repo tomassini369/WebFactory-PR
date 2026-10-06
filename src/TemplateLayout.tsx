@@ -8,11 +8,11 @@ import './template-evolution.css'
 type Props = {
  config: TemplateConfig; ui: {[K in keyof TemplateUi]: TemplateUi[K] extends string ? string : TemplateUi[K]}; language: TemplateLanguage; setLanguage: (language: TemplateLanguage) => void;
  startBooking: (item?: TemplateItem, employeeId?: string) => void; setCatalogOpen: (open: boolean) => void; setCartOpen: (open: boolean) => void;
- cart: Array<{quantity: number}>; showcaseFeatures: string[]; contact?: ReactNode; footer?: ReactNode; extraSections?: ReactNode;
+ cart: Array<{quantity: number}>; contact?: ReactNode; map?: ReactNode; footer?: ReactNode; extraSections?: ReactNode;
  catalogEnabled?: boolean; mainClass?: string; sectionOrder?: string[]; logoUrl?: string; locationHref?: string; phoneHref?: string;
 }
 /** The product layout. Demo, Builder and live storefront all render this component. */
-export default function TemplateLayout({config,ui,language,setLanguage,startBooking,setCatalogOpen,setCartOpen,cart,showcaseFeatures,contact,footer,extraSections,catalogEnabled=true,mainClass='',sectionOrder,logoUrl,locationHref,phoneHref}: Props) {
+export default function TemplateLayout({config,ui,language,setLanguage,startBooking,setCatalogOpen,setCartOpen,cart,contact,map,footer,extraSections,catalogEnabled=true,mainClass='',sectionOrder,logoUrl,locationHref,phoneHref}: Props) {
  const [menuOpen,setMenuOpen] = useState(false)
  const sectionStyle = (key:string): CSSProperties | undefined => sectionOrder ? {order:sectionOrder.includes(key)?sectionOrder.indexOf(key)+2:99} : undefined
  return <>      <header className="template-header">
@@ -31,7 +31,6 @@ export default function TemplateLayout({config,ui,language,setLanguage,startBook
             <button className={language === 'en' ? 'active' : ''} onClick={() => setLanguage('en')} aria-pressed={language === 'en'}>EN</button>
             <button className={language === 'es' ? 'active' : ''} onClick={() => setLanguage('es')} aria-pressed={language === 'es'}>ES</button>
           </div>
-          {config.bookingEnabled && <button className="template-outline" onClick={() => startBooking()}>{config.bookingLabel}</button>}
           {config.cartEnabled && (
             <button className="template-cart-button" onClick={() => setCartOpen(true)}>
               {ui.cart} <b>{cart.reduce((sum, line) => sum + line.quantity, 0)}</b>
@@ -60,15 +59,6 @@ export default function TemplateLayout({config,ui,language,setLanguage,startBook
           </aside>
         </section>
 
-        <section className="template-feature-strip">
-          {showcaseFeatures.map((feature, index) => (
-            <div key={feature}>
-              <span>0{index + 1}</span>
-              <strong>{feature}</strong>
-            </div>
-          ))}
-        </section>
-
         {catalogEnabled && <section className="template-section template-catalog" id="services" style={sectionStyle("catalog")}>
           <div className="template-section-heading">
             <div>
@@ -85,14 +75,9 @@ export default function TemplateLayout({config,ui,language,setLanguage,startBook
                 <h3>{item.name}</h3>
                 <p>{item.description}</p>
                 <strong>{item.displayPrice || new Intl.NumberFormat(language==='es'?'es-US':'en-US',{style:'currency',currency:'USD'}).format(item.price)}</strong>
-                <button className="template-outline" onClick={() => setCatalogOpen(true)}>{ui.viewCatalog} ↗</button>
               </div>
             </article>)}
           </div>}
-          <div className="template-catalog-gateway">
-            <div><small>{ui.catalogAvailable}</small><strong>{config.items.length} {ui.productsServices}</strong><span>{ui.catalogHint}</span></div>
-            <button className="template-solid" onClick={() => setCatalogOpen(true)}>{ui.viewCatalog}</button>
-          </div>
         </section>
 
         }
@@ -145,24 +130,6 @@ export default function TemplateLayout({config,ui,language,setLanguage,startBook
           ))}
         </section>
 
-        {(config.bookingEnabled || config.cartEnabled) && <section className="template-booking-showcase">
-          <div>
-            <small>{ui.livePreview}</small>
-            <h2>{config.bookingEnabled ? ui.bookingPreview : ui.commercePreview}</h2>
-            <p>{ui.interactHint}</p>
-          </div>
-          <div className="template-showcase-card">
-            <span className="template-pulse" />
-            <small>{ui.templateMode}</small>
-            <strong>{config.bookingEnabled ? ui.availabilityReady : ui.commerceReady}</strong>
-            <div>
-              {config.bookingEnabled && <button className="template-solid" onClick={() => startBooking()}>{config.bookingLabel}</button>}
-              {config.cartEnabled && <button className="template-outline" onClick={() => setCartOpen(true)}>{ui.openCart}</button>}
-            </div>
-          </div>
-        </section>
-
-        }
         {extraSections}
         <section className="template-contact" id="contact" style={sectionStyle("contact")}>
           <div>
@@ -181,6 +148,7 @@ export default function TemplateLayout({config,ui,language,setLanguage,startBook
             <b>{config.location}</b>
           </div>
 </>}
+          {map}
         </section>
       </main>
 

@@ -2,6 +2,7 @@ import { BusinessPolicies, CustomerDataNotice } from './BusinessPolicies'
 import {templateButtonInk} from './templateVisual'
 import CatalogCard from './TemplateCatalogCard'
 import TemplateLayout from './TemplateLayout'
+import TemplateMap from './TemplateMap'
 import { templateUi } from './templateI18n'
 import type { TemplateConfig, TemplateItem } from './templateData'
 import { useEffect, useMemo, useState, type CSSProperties, type FormEvent } from 'react'
@@ -95,6 +96,7 @@ export default function ClientStorefront({slug,previewSite,previewLanguage='en'}
   const total=cartItems.reduce((sum,x)=>sum+(x.item?.price||0)*x.line.quantity,0)
   const add=(item:Item)=>{
     if(site?.features.cart===false)return
+    setBooking(null);setSelectedItem(null);setCheckoutOpen(true)
     setCart(current=>{const found=current.find(x=>x.id===item.id);return found?current.map(x=>x.id===item.id?{...x,quantity:Math.min(20,x.quantity+1)}:x):[...current,{id:item.id,quantity:1}]})
   }
   const removeFromCart=(id:string)=>{
@@ -194,14 +196,6 @@ export default function ClientStorefront({slug,previewSite,previewLanguage='en'}
   const instagram=socialUrl(site.business.instagram,'instagram')
   const facebook=socialUrl(site.business.facebook,'facebook')
   const xUrl=socialUrl(site.business.x,'x')
-  const activeFeatureLabels=[
-    site.features.products!==false&&(lang==='es'?'Productos':'Products'),
-    site.features.services!==false&&(lang==='es'?'Servicios':'Services'),
-    site.features.bookings&&(lang==='es'?'Reservaciones':'Bookings'),
-    site.features.cart&&(lang==='es'?'Carrito':'Cart'),
-    site.features.whatsapp&&'WhatsApp',
-    site.features.calendar&&'Google Calendar',
-  ].filter(Boolean) as string[]
   const heroImage=site.business.heroUrl||template?.heroImage||visibleCatalog.find(item=>item.imageUrl)?.imageUrl||''
   const galleryImages:string[]=site.business.galleryUrls?.length?site.business.galleryUrls:(template?.gallery||[])
   const hours=formatHours(site.hours,lang)
@@ -226,7 +220,7 @@ export default function ClientStorefront({slug,previewSite,previewLanguage='en'}
     kicker: site.business.kicker || businessCategory || '', headline: site.business.headline || businessName,
     description: businessDescription || '', heroImage, gallery: galleryImages, location: site.business.address || '', phone: site.features.calls ? site.business.phone || '' : '', hours,
     accent: styles['--template-accent' as keyof CSSProperties] as string, accent2: template?.accent2 || '', dark: site.design?.primary || template?.dark || '#0B1529', cream: template?.cream || '#F3F6FB',
-    features: activeFeatureLabels, items: visibleCatalog.map(item=>({id:item.id,type:item.type,name:itemName(item),description:itemDescription(item),price:item.price,image:item.imageUrl,appointment:item.requiresAppointment,employees:site.employees.filter(employee=>employee.serviceIds.includes(item.id)).map(employee=>employee.name)})),
+    features: [], items: visibleCatalog.map(item=>({id:item.id,type:item.type,name:itemName(item),description:itemDescription(item),price:item.price,image:item.imageUrl,appointment:item.requiresAppointment,employees:site.employees.filter(employee=>employee.serviceIds.includes(item.id)).map(employee=>employee.name)})),
     employees: site.features.bookings ? site.employees.map(employee=>({id:employee.id,name:employee.name,role:employeeRole(employee),initials:initials(employee.name),services:employee.serviceIds.map(id=>site.catalog.find(item=>item.id===id)).filter((item):item is Item=>Boolean(item)).map(itemName)})) : [],
     bookingLabel: t.book, bookingEnabled: Boolean(site.features.bookings && visibleCatalog.some(item=>item.requiresAppointment)), cartEnabled: site.features.cart!==false,
     aboutTitle: site.business.aboutTitle || businessName, aboutText: site.business.aboutText || businessDescription || '', trust: [],
@@ -235,7 +229,8 @@ export default function ClientStorefront({slug,previewSite,previewLanguage='en'}
   const startLayoutBooking=(item?:TemplateItem,employeeId?:string)=>{const service=item?visibleCatalog.find(entry=>entry.id===item.id):visibleCatalog.find(entry=>entry.requiresAppointment);if(service)beginBooking(service,employeeId)}
 
   return <div className={`template-site client-template template-${site.design?.templateSlug||'custom'} visual-${visualStyle}`} style={styles}>
-    <TemplateLayout config={layoutConfig} ui={layoutUi} language={lang} setLanguage={setLang} startBooking={startLayoutBooking} setCatalogOpen={setCatalog} setCartOpen={open=>{setBooking(null);setCheckoutOpen(open)}} cart={cart} showcaseFeatures={activeFeatureLabels} logoUrl={site.business.logoUrl} locationHref={site.features.maps?site.business.mapsUrl:undefined} phoneHref={site.features.calls&&site.business.phone?`tel:${site.business.phone}`:undefined} catalogEnabled={site.features.products!==false||site.features.services!==false}
+    <TemplateLayout config={layoutConfig} ui={layoutUi} language={lang} setLanguage={setLang} startBooking={startLayoutBooking} setCatalogOpen={setCatalog} setCartOpen={open=>{setBooking(null);setCheckoutOpen(open)}} cart={cart} logoUrl={site.business.logoUrl} locationHref={site.features.maps?site.business.mapsUrl:undefined} phoneHref={site.features.calls&&site.business.phone?`tel:${site.business.phone}`:undefined} catalogEnabled={site.features.products!==false||site.features.services!==false}
+      map={site.features.maps && (site.business.address || site.business.mapsUrl) ? <TemplateMap location={site.business.address||''} mapsUrl={site.business.mapsUrl} language={lang}/> : undefined}
       extraSections={locations.length>0&&<section className="template-section cs-locations" id="locations"><div className="template-section-heading"><div><small>{lang==='es'?'VISÍTANOS':'VISIT US'}</small><h2>{lang==='es'?'Nuestras localidades':'Our locations'}</h2></div></div><div className="cs-location-grid">{locations.map(location=><article key={location.id}><h3>{location.name}</h3>{location.address&&<p>{location.address}</p>}{location.phone&&<a href={`tel:${location.phone}`}>{location.phone}</a>}{location.mapsUrl&&<p><a href={location.mapsUrl} target="_blank" rel="noreferrer">Google Maps ↗</a></p>}</article>)}</div></section>}
       contact={<div className="cs-contact-grid">
           <div className="cs-contact-links">
@@ -262,7 +257,7 @@ export default function ClientStorefront({slug,previewSite,previewLanguage='en'}
       footer={<footer className="template-footer"><div><strong>{businessName}</strong><span>{businessCategory}</span></div><nav><a href="#template-top">{lang==='es'?'Inicio':'Home'}</a><a href="#contact">{t.contact}</a><BusinessPolicies policies={site.business.policies} lang={lang} businessName={businessName}/></nav></footer>}
     />
 
-    {catalog&&<div className="template-modal-backdrop" onMouseDown={()=>setCatalog(false)}><section className="template-catalog-modal" role="dialog" aria-modal="true" onMouseDown={e=>e.stopPropagation()}><header><div><small>CATALOG</small><h2>{t.available}</h2></div><button className="template-modal-close catalog-close" onClick={()=>setCatalog(false)}>×</button></header>{visibleCatalog.length===0?<p>{t.empty}</p>:<div className="template-catalog-modal-grid">{visibleCatalog.map(item=><CatalogCard key={item.id} item={layoutConfig.items.find(entry=>entry.id===item.id)!} accent={layoutConfig.accent} language={lang} ui={templateUi[lang]} disabled={item.inventory===0} bookEnabled={site.features.bookings} cartEnabled={site.features.cart!==false} onView={()=>{setCatalog(false);setSelectedItem(item)}} onBook={()=>beginBooking(item)} onAdd={()=>add(item)}/>)}</div>}</section></div>}
+    {catalog&&<div className="template-modal-backdrop" style={{visibility:selectedItem || booking || checkoutOpen ? 'hidden' : undefined}} aria-hidden={Boolean(selectedItem || booking || checkoutOpen)} onMouseDown={()=>setCatalog(false)}><section className="template-catalog-modal" role="dialog" aria-modal="true" onMouseDown={e=>e.stopPropagation()}><header><div><small>CATALOG</small><h2>{t.available}</h2></div><button className="template-modal-close catalog-close" onClick={()=>setCatalog(false)}>×</button></header>{visibleCatalog.length===0?<p>{t.empty}</p>:<div className="template-catalog-modal-grid">{visibleCatalog.map(item=><CatalogCard key={item.id} item={layoutConfig.items.find(entry=>entry.id===item.id)!} accent={layoutConfig.accent} language={lang} ui={templateUi[lang]} disabled={item.inventory===0} bookEnabled={site.features.bookings} cartEnabled={site.features.cart!==false} onView={()=>setSelectedItem(item)} onBook={()=>beginBooking(item)} onAdd={()=>add(item)}/>)}</div>}</section></div>}
 
     {selectedItem&&<div className="template-modal-backdrop" onMouseDown={()=>setSelectedItem(null)}><article className="template-detail-modal" role="dialog" aria-modal="true" onMouseDown={event=>event.stopPropagation()}><button className="template-modal-close" onClick={()=>setSelectedItem(null)}>×</button><div className="template-detail-image">{selectedItem.imageUrl&&<img src={selectedItem.imageUrl} alt=""/>}</div><div className="template-detail-copy"><small>{selectedItem.type==='service'?templateUi[lang].serviceType:templateUi[lang].product}</small><h2>{itemName(selectedItem)}</h2><strong>{money(selectedItem.price)}</strong><p>{itemDescription(selectedItem)}</p>{selectedItem.requiresAppointment&&<span>{selectedItem.duration} min</span>}<div className="template-detail-actions">{selectedItem.inventory===0?<span>{lang==='es'?'Agotado':'Sold out'}</span>:selectedItem.requiresAppointment&&site.features.bookings?<button className="template-solid" onClick={()=>beginBooking(selectedItem)}>{t.book}</button>:!selectedItem.requiresAppointment&&site.features.cart!==false?<button className="template-solid" onClick={()=>{add(selectedItem);setSelectedItem(null);setCheckoutOpen(true)}}>{t.shop}</button>:null}<button className="template-outline" onClick={()=>setSelectedItem(null)}>{templateUi[lang].close}</button></div></div></article></div>}
 

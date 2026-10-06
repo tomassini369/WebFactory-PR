@@ -1,6 +1,7 @@
 import {templateButtonInk} from './templateVisual'
 import CatalogCard from './TemplateCatalogCard'
 import TemplateLayout from './TemplateLayout'
+import TemplateMap from './TemplateMap'
 import { useEffect, useMemo, useState, type CSSProperties } from 'react'
 import { templateBySlug, templateVisualStyle, type TemplateItem } from './templateData'
 import { templateUi, localizeTemplate, type TemplateLanguage, type TemplateUi } from './templateI18n'
@@ -93,7 +94,6 @@ function TemplateSite({ slug }: { slug: string }) {
     )
   }
 
-  const showcaseFeatures = config.features
 
   const styles = {
     '--template-accent': config.accent,
@@ -195,7 +195,7 @@ function TemplateSite({ slug }: { slug: string }) {
     <div className={`template-site visual-${templateVisualStyle(config.category)}`} style={styles}>
       <TemplateNotice ui={ui} slug={slug} />
 
-      <TemplateLayout config={config} ui={ui} language={language} setLanguage={setLanguage} startBooking={startBooking} setCatalogOpen={setCatalogOpen} setCartOpen={setCartOpen} cart={cart} showcaseFeatures={showcaseFeatures} contact={<form className="template-demo-contact" onSubmit={event=>{event.preventDefault();setContactSubmitted(true)}} onChange={()=>setContactSubmitted(false)}>
+      <TemplateLayout config={config} ui={ui} language={language} setLanguage={setLanguage} startBooking={startBooking} setCatalogOpen={setCatalogOpen} setCartOpen={setCartOpen} cart={cart} map={<TemplateMap location={config.location} language={language} sample/>} contact={<form className="template-demo-contact" onSubmit={event=>{event.preventDefault();setContactSubmitted(true)}} onChange={()=>setContactSubmitted(false)}>
         <p>{language==='es'?'Formulario de muestra: puedes probarlo; no se envían mensajes.':'Sample form: you can try it; no messages are sent.'}</p>
         <label>{ui.name}<input name="name" autoComplete="name" required maxLength={180}/></label>
         <label>{ui.email}<input name="email" type="email" autoComplete="email" required maxLength={320}/></label>
@@ -205,7 +205,7 @@ function TemplateSite({ slug }: { slug: string }) {
       </form>} />
 
       {catalogOpen && (
-        <div className="template-modal-backdrop" role="presentation" onMouseDown={() => setCatalogOpen(false)}>
+        <div className="template-modal-backdrop" role="presentation" style={{visibility:selectedItem || bookingItem || cartOpen ? 'hidden' : undefined}} aria-hidden={Boolean(selectedItem || bookingItem || cartOpen)} onMouseDown={() => setCatalogOpen(false)}>
           <section className="template-catalog-modal" role="dialog" aria-modal="true" onMouseDown={(event) => event.stopPropagation()}>
             <header>
               <div><small>{ui.catalog}</small><h2>{ui.catalogTitle}</h2><p>{ui.catalogSelect}</p></div>
@@ -217,8 +217,8 @@ function TemplateSite({ slug }: { slug: string }) {
                   key={item.id}
                   item={item}
                   accent={config.accent}
-                  onView={() => { setCatalogOpen(false); setSelectedItem(item) }}
-                  onAdd={() => { setCatalogOpen(false); addToCart(item) }}
+                  onView={() => setSelectedItem(item)}
+                  onAdd={() => addToCart(item)}
                   onBook={() => { setCatalogOpen(false); startBooking(item) }}
                   language={language}
                   ui={ui}

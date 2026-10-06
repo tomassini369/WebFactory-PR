@@ -52,7 +52,7 @@ try{
    assert.equal(await page.locator('.template-catalog-preview article').count(),Math.min(3,config.items.length))
    if(process.env.QA_SCREENSHOTS&&width===390)await page.screenshot({path:`/tmp/template-hero-${templateVisualStyle(config.category)}.png`})
    if(config.items.length){
-    await page.locator('.template-catalog-preview button').first().click()
+    await page.locator('.template-hero-actions .template-glass').click()
     await page.locator('.template-catalog-modal').waitFor()
     const buyable=config.items.find(item=>!item.appointment&&item.purchasable!==false)
     if(config.cartEnabled&&buyable){
@@ -61,6 +61,8 @@ try{
      await page.locator('.template-cart-drawer').waitFor()
      assert.ok((await page.locator('.template-cart-drawer').textContent()).includes(buyable.name))
      await page.locator('.template-cart-drawer').getByRole('button',{name:'×',exact:true}).click()
+     await page.locator('.template-catalog-modal').waitFor({state:'visible'})
+     await page.locator('.catalog-close').click()
     }else await page.locator('.template-catalog-modal .catalog-close').click()
     if(config.bookingEnabled){await page.locator('.template-hero-actions .template-solid').click();await page.locator('.template-booking-modal').waitFor();await page.locator('.template-booking-modal .template-modal-close').click()}
     if(process.env.QA_SCREENSHOTS&&width===390){await page.locator('#services').scrollIntoViewIfNeeded();await page.screenshot({path:`/tmp/template-catalog-${templateVisualStyle(config.category)}.png`})}
@@ -69,7 +71,7 @@ try{
    const readStyle=e=>{const c=getComputedStyle(e);return {display:c.display,columns:c.gridTemplateColumns,fontSize:c.fontSize,position:c.position,borderRadius:c.borderRadius}}
    const demoStyles=[]
    if(width!==320)for(const selector of selectors)demoStyles.push(await page.locator(selector).evaluate(readStyle))
-   await page.evaluate(config=>localStorage.setItem('webfactory-v3-builder-draft',JSON.stringify({business:{name:config.shortName,category:config.category,description:config.description,headline:config.headline,kicker:config.kicker,hero:config.heroImage,gallery:config.gallery},features:{products:true,services:true,cart:config.cartEnabled,bookings:config.bookingEnabled},catalog:config.items.map(item=>({...item,type:item.type==='product'?'product':'service',requiresAppointment:Boolean(item.appointment),duration:item.duration||30}))})),config)
+   await page.evaluate(config=>localStorage.setItem('webfactory-v3-builder-draft',JSON.stringify({business:{name:config.shortName,category:config.category,description:config.description,headline:config.headline,kicker:config.kicker,hero:config.heroImage,gallery:config.gallery,address:'123 Main St, Arecibo',mapsUrl:'https://www.google.com/maps?q=Arecibo'},features:{products:true,services:true,cart:config.cartEnabled,bookings:config.bookingEnabled,maps:true},catalog:config.items.map(item=>({...item,type:item.type==='product'?'product':'service',requiresAppointment:Boolean(item.appointment),duration:item.duration||30}))})),config)
    assert.equal(await page.locator('.wf-template-notice a').last().getAttribute('href'),'/builder?template='+config.slug)
    await page.goto(origin+'/builder?template='+config.slug);await page.frameLocator('iframe').locator('.template-hero').waitFor()
    const expected=width<768?'mobile':width<1024?'tablet':'desktop'
@@ -82,6 +84,22 @@ try{
    await noOverflow(page,`builder ${config.slug}/${width}`)
    assert.ok(await frame.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'iframe overflow')
    assert.equal(await frame.locator('.template-catalog-preview article').count(),Math.min(3,config.items.length))
+   assert.equal(await frame.locator('.template-location-map iframe').count(),1,'Builder displays configured map')
+   for(const selector of ['.template-feature-strip','.template-catalog-gateway','.template-booking-showcase'])assert.equal(await frame.locator(selector).count(),0)
+   const purchasable=config.items.find(item=>!item.appointment&&item.purchasable!==false)
+   if(config.cartEnabled&&purchasable){
+    await frame.locator('.template-hero-actions .template-glass').click()
+    const add=frame.locator('.template-catalog-card').filter({has:frame.getByRole('heading',{name:purchasable.name,exact:true})}).locator('.template-solid')
+    await add.scrollIntoViewIfNeeded()
+    const catalogPosition=await frame.locator('.template-catalog-modal').evaluate(el=>el.scrollTop)
+    await add.click()
+    await frame.locator('.cs-checkout').waitFor()
+    await frame.locator('.cs-checkout > header > button').click()
+    await frame.locator('.template-catalog-modal').waitFor({state:'visible'})
+    assert.equal(await frame.locator('.template-catalog-modal').evaluate(el=>el.scrollTop),catalogPosition,'Builder cart returns to same catalog position')
+    assert.ok((await frame.locator('.template-cart-button').textContent()).includes('1'),'Builder cart keeps the item')
+    await frame.locator('.catalog-close').click()
+   }
    if(width!==320){for(let i=0;i<selectors.length;i++)assert.deepEqual(await frame.locator(selectors[i]).evaluate(readStyle),demoStyles[i],`${config.slug}/${width}: demo and Builder style parity for ${selectors[i]}`)}
    if(process.env.QA_SCREENSHOTS&&width===390)await page.screenshot({path:`/tmp/templates-builder-${templateVisualStyle(config.category)}.png`})
    await page.locator('.wf-device-switcher button').first().click()
