@@ -44,7 +44,7 @@ The proxy wraps Graphify's Streamable HTTP server and protects `/mcp` with the e
 The current default endpoint is:
 
 ```
-https://webfactory-graphify-oauth.onrender.com/mcp
+https://webfactory-graphify-prod.onrender.com/mcp
 ```
 
 `GRAPHIFY_MCP_URL` remains an optional Netlify override if the Render service moves.
