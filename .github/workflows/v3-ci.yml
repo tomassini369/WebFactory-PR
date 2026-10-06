@@ -33,6 +33,8 @@ jobs:
         run: npx playwright install --with-deps webkit
       - name: Check template structure and editing parity
         run: node scripts/test-template-layout.mjs && node scripts/browser-template-parity.mjs
+      - name: Check sample portal navigation, inventory and QR
+        run: WF_DESIGN_PREVIEW=1 node scripts/build-design-preview.mjs && node scripts/browser-portal-preview-smoke.mjs
       - name: Check Home FAQ desktop/mobile, themes and languages
         run: node scripts/browser-home-faq-smoke.mjs
       - name: Check Builder cart and draft interactions
