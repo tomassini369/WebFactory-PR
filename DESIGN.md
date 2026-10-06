@@ -289,3 +289,42 @@ When applying this system to WebFactory PR:
 5. Review deploy preview.
 6. Only after owner approval, port approved tokens/components into shared production styles.
 7. Publish to `main` only when explicitly authorized.
+
+
+## 16. StitchDesign V2 Screen Composition
+
+This composition is the approved **preview direction** for evaluating a visibly stronger redesign before any production adoption.
+
+### Homepage V2
+
+- Navigation floats inside a constrained translucent rail instead of blending into the page edge.
+- Hero remains video-backed by owner preference, but the composition is strongly asymmetric: editorial headline left, operational command surface right.
+- The command surface demonstrates real WebFactory concepts with explicitly labeled sample data: net sales, bookings, orders, next booking and team-on-shift.
+- Product modules use an irregular 2-row CSS Grid rather than equal feature cards.
+- The setup-to-operation story is rendered as a vertical numbered operating sequence, not a generic 3-card row.
+- Customer-side storefront and business-side operations are shown as two distinct spatial zones with no overlap.
+- Pricing is one focused plan surface with one primary action.
+- FAQ uses divider-based disclosure rows instead of cards.
+
+### Business Control Center V2
+
+- Use a narrow operational rail with clear active state and a sticky top bar.
+- The overview begins with one dominant revenue KPI plus three subordinate operational KPIs.
+- Daily bookings use a timeline treatment so time order is visually primary.
+- Quick actions are a compact 2×2 task block rather than a promotional card grid.
+- Sales pulse, active work queue and team load occupy unequal dashboard regions to create hierarchy.
+- Training Mode is visibly distinct from live operation.
+- On mobile, the left rail becomes a bottom task navigation so the working surface remains single-column and thumb reachable.
+
+### V2 Motion
+
+- Live system indicators may pulse continuously.
+- Charts animate from their baseline on mount using transform only.
+- Operating sequence rows reveal with subtle stagger.
+- Ordinary cards remain still; no decorative perpetual floating or neon effects.
+
+### V2 Reversibility
+
+- The V2 components remain inside the isolated `preview/` bundle until explicitly approved.
+- Production components, routes and business logic must not import V2 preview components.
+- Rejection of this direction is handled by discarding/reverting the preview branch or PR; no production rollback should be necessary.
