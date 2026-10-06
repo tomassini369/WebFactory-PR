@@ -8,7 +8,7 @@ Use Graphify only when a compact relationship graph can avoid broad exploration.
 
 Simple operations such as changing a price, updating hours, listing bookings, adding an employee, or adjusting inventory must continue to use the normal WebFactory MCP tools directly.
 
-The only WebFactory-facing Graphify tool is `wf_graph_context`. Keeping this to one tool reduces MCP tool-list overhead and prevents ChatGPT from being exposed to Graphify's lower-level graph tools.
+The only WebFactory-facing Graphify tool is `wf_graph_context`. It is advertised as a stable read-only MCP catalog entry even when a particular tenant has no graph enabled, because some MCP clients cache tool discovery before the final OAuth grant is resolved. Visibility never grants graph access: the handler re-authorizes the current grant on every call and fails closed when the authenticated scope has no permitted graph. Keeping this to one tool reduces MCP tool-list overhead and prevents ChatGPT from being exposed to Graphify's lower-level graph tools.
 
 ## Security boundary
 
