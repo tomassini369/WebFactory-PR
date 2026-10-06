@@ -388,3 +388,345 @@
     transition:none!important;
   }
 }
+
+
+/* ===== Original Premium Pass · StitchDesign ===== */
+
+/* Keep the original architecture. This pass only upgrades polish, motion,
+   hierarchy and tactile feedback inside the isolated deploy preview. */
+
+.wf-premium-home{
+  --premium-radius:22px;
+  --premium-soft:color-mix(in srgb,var(--hp-panel) 78%,transparent);
+}
+
+/* Hero video gets depth from the existing scroll variable instead of UI overlays. */
+.motion .wf-hero-media video{
+  transform:scale(calc(1.015 + var(--hero-p,0) * .018)) translate3d(0,calc(var(--hero-p,0) * -5px),0);
+  transition:filter .35s var(--ease);
+  will-change:transform;
+}
+.wf-premium-home .wf-hero-media video{
+  filter:saturate(.92) contrast(1.04);
+}
+.wf-premium-home .wf-hero-copy{
+  position:relative;
+}
+.wf-premium-home .wf-hero-copy::before{
+  content:"";
+  position:absolute;
+  z-index:-1;
+  inset:-36px -52px -36px -42px;
+  border-radius:36px;
+  background:radial-gradient(70% 80% at 25% 50%,rgba(5,9,15,.36),transparent 76%);
+  pointer-events:none;
+}
+[data-wf-theme=light] .wf-premium-home .wf-hero-copy::before{
+  background:radial-gradient(70% 80% at 25% 50%,rgba(245,247,250,.44),transparent 76%);
+}
+.motion .wf-hero-copy{
+  transform:translate3d(0,calc(var(--hero-p,0) * -7px),0);
+  will-change:transform;
+}
+.wf-premium-home .wf-lead{
+  max-width:570px;
+  font-size:clamp(17px,1.55vw,20px);
+  line-height:1.72;
+}
+.wf-premium-home .wf-actions{
+  gap:24px;
+  margin-top:34px;
+}
+.wf-premium-home .wf-link{
+  position:relative;
+  min-height:44px;
+  display:inline-flex;
+  align-items:center;
+  padding-inline:2px;
+}
+.wf-premium-home .wf-link::after{
+  content:"";
+  position:absolute;
+  left:0;right:0;bottom:6px;
+  height:1px;
+  background:currentColor;
+  transform:scaleX(0);
+  transform-origin:left;
+  transition:transform .25s var(--ease);
+  opacity:.65;
+}
+.wf-premium-home .wf-link:hover::after{transform:scaleX(1)}
+.wf-premium-home .wf-trial{
+  letter-spacing:.01em;
+}
+
+/* Scroll cue remains because it is part of the original WebFactory experience. */
+.wf-premium-home .wf-scroll-cue{
+  opacity:.82;
+  transition:opacity .25s,transform .25s;
+}
+.wf-premium-home .wf-scroll-cue:hover{
+  opacity:1;
+  transform:translateY(2px);
+}
+
+/* Scroll tour gets stronger cinematic continuity while preserving the exact logic. */
+.motion .wf-tour-stage{
+  transform:
+    perspective(1400px)
+    rotateX(calc((var(--tour-p,0) - .5) * -1.8deg))
+    translate3d(0,calc((var(--tour-p,0) - .5) * -12px),0);
+  transition:filter .35s var(--ease);
+  will-change:transform;
+}
+.wf-premium-home .wf-tour-stage .wf-cc{
+  background:color-mix(in srgb,var(--hp-panel) 94%,transparent);
+  -webkit-backdrop-filter:blur(18px);
+  backdrop-filter:blur(18px);
+}
+.wf-premium-home .wf-tour-step .wf-num{
+  display:inline-flex;
+  align-items:center;
+  min-height:28px;
+  padding:0 10px;
+  border:1px solid var(--hp-line);
+  border-radius:999px;
+  background:color-mix(in srgb,var(--hp-panel) 56%,transparent);
+  transition:color .3s,border-color .3s,background .3s,transform .3s;
+}
+.wf-premium-home .wf-tour-step.on .wf-num{
+  color:var(--hp-text);
+  border-color:color-mix(in srgb,var(--hp-blue) 52%,var(--hp-line));
+  background:color-mix(in srgb,var(--hp-blue) 9%,var(--hp-panel));
+  transform:translateX(4px);
+}
+.wf-premium-home .wf-tour-text{
+  transition:border-color .45s var(--ease),opacity .45s var(--ease),transform .45s var(--ease);
+}
+.motion .wf-tour-step:not(.on) .wf-tour-text{
+  transform:translateX(-4px);
+}
+.motion .wf-tour-step.on .wf-tour-text{
+  transform:none;
+}
+.wf-premium-home .wf-tour-rail button{
+  min-height:40px;
+  padding-right:8px;
+}
+.wf-premium-home .wf-tour-rail button[aria-current=step]{
+  font-weight:760;
+}
+.wf-premium-home .wf-tour-rail>i{
+  height:3px;
+  background:color-mix(in srgb,var(--hp-line) 86%,transparent);
+}
+.wf-premium-home .wf-tour-rail>i::after{
+  background:var(--hp-blue);
+}
+
+/* Section rhythm: cleaner transitions, no extra cards or content. */
+.wf-premium-home .wf-section>.wf-heading{
+  margin-bottom:52px;
+}
+.wf-premium-home .wf-section>.wf-heading .wf-eyebrow{
+  margin-bottom:2px;
+}
+.wf-premium-home .wf-section>.wf-heading>p:last-child:not(.wf-eyebrow){
+  font-size:17px;
+  line-height:1.72;
+}
+
+/* Capability grid keeps the original content but feels more crafted. */
+.wf-premium-home .wf-platform article{
+  position:relative;
+  overflow:hidden;
+  transition:transform .32s var(--ease),background .32s,border-color .32s;
+}
+.wf-premium-home .wf-platform article::after{
+  content:"";
+  position:absolute;
+  inset:auto -20% -62% 28%;
+  height:120%;
+  background:radial-gradient(closest-side,color-mix(in srgb,var(--hp-blue) 7%,transparent),transparent);
+  opacity:0;
+  transition:opacity .32s;
+  pointer-events:none;
+}
+.wf-premium-home .wf-platform article:hover::after{opacity:1}
+.wf-premium-home .wf-platform article:hover .wf-platform-icon{
+  transform:translateY(-2px) scale(1.035);
+  border-color:color-mix(in srgb,var(--hp-blue) 38%,var(--hp-line));
+}
+.wf-premium-home .wf-platform-icon{
+  transition:transform .3s var(--ease),border-color .3s,background .3s;
+}
+.wf-premium-home .wf-also{
+  margin-top:26px;
+  gap:9px;
+}
+.wf-premium-home .wf-also span{
+  min-height:34px;
+  display:inline-flex;
+  align-items:center;
+  border-radius:10px;
+  background:color-mix(in srgb,var(--hp-panel) 74%,transparent);
+  transition:border-color .22s,transform .22s;
+}
+.wf-premium-home .wf-also span:hover{
+  transform:translateY(-1px);
+  border-color:color-mix(in srgb,var(--hp-blue) 38%,var(--hp-line));
+}
+
+/* Interactive demo: clearer active states without changing any interaction. */
+.wf-premium-home .wf-demo{
+  position:relative;
+  overflow:hidden;
+}
+.wf-premium-home .wf-demo::before{
+  content:"";
+  position:absolute;
+  z-index:2;
+  left:0;right:0;top:0;
+  height:1px;
+  background:linear-gradient(90deg,transparent,color-mix(in srgb,var(--hp-blue) 45%,transparent),transparent);
+  pointer-events:none;
+}
+.wf-premium-home .wf-demo-tabs button{
+  position:relative;
+  transition:color .2s,background .2s,transform .2s;
+}
+.wf-premium-home .wf-demo-tabs button:hover{
+  color:var(--hp-text);
+  transform:translateY(-1px);
+}
+.wf-premium-home .wf-demo-tabs button[aria-selected=true]::after{
+  content:"";
+  position:absolute;
+  left:18px;right:18px;bottom:-11px;
+  height:2px;
+  border-radius:2px;
+  background:var(--hp-blue);
+}
+.wf-premium-home .wf-demo-product,
+.wf-premium-home .wf-demo-cart,
+.wf-premium-home .wf-demo-booking,
+.wf-premium-home .wf-demo-pay,
+.wf-premium-home .wf-demo-manage{
+  min-width:0;
+}
+.wf-premium-home .wf-demo-quick button{
+  min-height:88px;
+  border-radius:14px;
+  transition:transform .22s var(--ease),border-color .22s,background .22s;
+}
+.wf-premium-home .wf-demo-quick button:hover{
+  transform:translateY(-2px);
+  border-color:color-mix(in srgb,var(--hp-blue) 42%,var(--hp-line));
+}
+
+/* How it works: editorial spacing rather than decorative cards. */
+.wf-premium-home .wf-how article{
+  position:relative;
+}
+.wf-premium-home .wf-how article::before{
+  content:"";
+  position:absolute;
+  left:0;top:0;
+  width:26px;height:1px;
+  background:var(--hp-blue);
+  opacity:.65;
+}
+.wf-premium-home .wf-how span{
+  font-family:"Geist Mono","SFMono-Regular",ui-monospace,monospace;
+  letter-spacing:.08em;
+}
+.wf-premium-home .wf-how p{
+  max-width:48ch;
+}
+
+/* Pricing becomes cleaner and more premium while remaining the same plan. */
+.wf-premium-home .wf-pricing{
+  isolation:isolate;
+}
+.wf-premium-home .wf-pricing::after{
+  content:"";
+  position:absolute;
+  z-index:-1;
+  width:360px;height:360px;
+  right:-150px;top:-170px;
+  border-radius:50%;
+  background:radial-gradient(circle,color-mix(in srgb,var(--hp-blue) 9%,transparent),transparent 68%);
+  pointer-events:none;
+}
+.wf-premium-home .wf-price>strong{
+  font-family:"Geist Mono","SFMono-Regular",ui-monospace,monospace;
+  font-variant-numeric:tabular-nums;
+}
+.wf-premium-home .wf-price .wf-btn{
+  min-height:50px;
+}
+
+/* FAQ feels like a software settings surface, not a card stack. */
+.wf-premium-home .wf-faq summary{
+  transition:color .2s,padding-left .25s var(--ease);
+}
+.wf-premium-home .wf-faq summary:hover{
+  color:var(--hp-blue);
+  padding-left:4px;
+}
+.wf-premium-home .wf-faq details[open] summary{
+  color:var(--hp-text);
+}
+.wf-premium-home .wf-faq details[open] p{
+  animation:wf-premium-faq .28s var(--ease) both;
+}
+
+/* Final CTA stays visually calm to avoid competing with the hero. */
+.wf-premium-home .wf-final{
+  border-color:color-mix(in srgb,var(--hp-line) 92%,transparent);
+}
+.wf-premium-home .wf-final::before{
+  content:"";
+  position:absolute;
+  left:50%;top:-1px;
+  width:180px;height:1px;
+  transform:translateX(-50%);
+  background:var(--hp-blue);
+  opacity:.5;
+}
+.wf-premium-home .wf-footer nav a{
+  transition:color .2s,transform .2s;
+}
+.wf-premium-home .wf-footer nav a:hover{
+  transform:translateY(-1px);
+}
+
+/* Mobile: preserve the original inline tour and keep touch behavior generous. */
+@media(max-width:900px){
+  .motion .wf-tour-stage{transform:none}
+  .wf-premium-home .wf-hero-copy::before{inset:-24px -20px;border-radius:26px}
+  .wf-premium-home .wf-section>.wf-heading{margin-bottom:36px}
+  .wf-premium-home .wf-tour-step .wf-num{min-height:30px}
+  .wf-premium-home .wf-demo-tabs button{min-height:44px}
+}
+@media(max-width:600px){
+  .wf-premium-home .wf-hero h1{
+    line-height:.98;
+    letter-spacing:-.05em;
+  }
+  .wf-premium-home .wf-lead{font-size:16px}
+  .wf-premium-home .wf-actions{
+    align-items:stretch;
+    flex-direction:column;
+    gap:10px;
+  }
+  .wf-premium-home .wf-actions .wf-btn{width:100%}
+  .wf-premium-home .wf-actions .wf-link{justify-content:center}
+  .wf-premium-home .wf-demo-tabs button[aria-selected=true]::after{bottom:-11px}
+  .wf-premium-home .wf-pricing{border-radius:22px}
+}
+
+@keyframes wf-premium-faq{
+  from{opacity:0;transform:translateY(-4px)}
+  to{opacity:1;transform:none}
+}
