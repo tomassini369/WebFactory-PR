@@ -37,6 +37,8 @@ jobs:
         run: node scripts/test-template-layout.mjs
       - name: Check template library and Builder responsive parity
         run: node scripts/browser-template-workspace-smoke.mjs
+      - name: Check functions for every template and language
+        run: node scripts/browser-template-functions-smoke.mjs
       - name: Check Builder cart and draft interactions
         run: node scripts/browser-interactions-smoke.mjs
       - name: Check ChatGPT configuration on mobile and desktop

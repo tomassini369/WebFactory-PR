@@ -51,6 +51,8 @@ function TemplateSite({ slug }: { slug: string }) {
   const [bookingCustomerName, setBookingCustomerName] = useState<string>(ui.defaultCustomer)
   const [bookingCustomerEmail, setBookingCustomerEmail] = useState('template@example.com')
   const [checkoutComplete, setCheckoutComplete] = useState(false)
+  const [cartPaymentMethod,setCartPaymentMethod]=useState<'stripe'|'ath'>('stripe')
+  const [contactSubmitted,setContactSubmitted]=useState(false)
 
   const subtotal = useMemo(
     () => cart.reduce((sum, line) => sum + line.item.price * line.quantity, 0),
@@ -91,7 +93,7 @@ function TemplateSite({ slug }: { slug: string }) {
     )
   }
 
-  const showcaseFeatures = Array.from(new Set([...config.features, language === 'es' ? 'Calendario mensual de disponibilidad' : 'Monthly availability calendar', 'WhatsApp', 'Direct calls', 'Social media', 'Contact form', 'Google Maps', 'Google Calendar']))
+  const showcaseFeatures = config.features
 
   const styles = {
     '--template-accent': config.accent,
@@ -104,6 +106,7 @@ function TemplateSite({ slug }: { slug: string }) {
   } as CSSProperties
 
   const addToCart = (item: TemplateItem) => {
+    if (!config.cartEnabled || item.appointment || item.purchasable===false) return
     setCart((current) => {
       const existing = current.find((line) => line.item.id === item.id)
       if (existing) {
@@ -128,12 +131,14 @@ function TemplateSite({ slug }: { slug: string }) {
     setRemoved(null)
   }
 
-  const startBooking = (item?: TemplateItem) => {
+  const startBooking = (item?: TemplateItem, employeeId?: string) => {
+    if (!config.bookingEnabled) return
     const target = item ?? config.items.find((entry) => entry.appointment)
     if (!target) return
     setSelectedItem(null)
     setBookingItem(target)
-    setSelectedEmployee('')
+    const employee=config.employees.find(entry=>entry.id===employeeId && (!target.employees?.length || target.employees.some(name=>entry.name.startsWith(name))))
+    setSelectedEmployee(employee?.name || '')
     setSelectedDate('')
     setCalendarView(true)
     const parts = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Puerto_Rico', year: 'numeric', month: '2-digit' }).formatToParts(new Date()).reduce((acc, part) => ({ ...acc, [part.type]: part.value }), {} as Record<string, string>)
@@ -182,7 +187,7 @@ function TemplateSite({ slug }: { slug: string }) {
   }
 
   const verifyTemplatePayment = () => {
-    if (!bookingCustomerName.trim() || !bookingCustomerEmail.trim()) return
+    if (!bookingCustomerName.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(bookingCustomerEmail.trim())) return
     setBookingStage('verified')
   }
 
@@ -190,7 +195,14 @@ function TemplateSite({ slug }: { slug: string }) {
     <div className={`template-site visual-${templateVisualStyle(config.category)}`} style={styles}>
       <TemplateNotice ui={ui} slug={slug} />
 
-      <TemplateLayout config={config} ui={ui} language={language} setLanguage={setLanguage} startBooking={startBooking} setCatalogOpen={setCatalogOpen} setCartOpen={setCartOpen} cart={cart} showcaseFeatures={showcaseFeatures} />
+      <TemplateLayout config={config} ui={ui} language={language} setLanguage={setLanguage} startBooking={startBooking} setCatalogOpen={setCatalogOpen} setCartOpen={setCartOpen} cart={cart} showcaseFeatures={showcaseFeatures} contact={<form className="template-demo-contact" onSubmit={event=>{event.preventDefault();setContactSubmitted(true)}} onChange={()=>setContactSubmitted(false)}>
+        <p>{language==='es'?'Formulario de muestra: puedes probarlo; no se envían mensajes.':'Sample form: you can try it; no messages are sent.'}</p>
+        <label>{ui.name}<input name="name" autoComplete="name" required maxLength={180}/></label>
+        <label>{ui.email}<input name="email" type="email" autoComplete="email" required maxLength={320}/></label>
+        <label>{language==='es'?'Mensaje':'Message'}<textarea name="message" required maxLength={5000}/></label>
+        <button className="template-solid" type="submit">{language==='es'?'Probar formulario':'Test form'}</button>
+        {contactSubmitted&&<p role="status">{language==='es'?'Prueba completada. No se envió ningún mensaje.':'Test completed. No message was sent.'}</p>}
+      </form>} />
 
       {catalogOpen && (
         <div className="template-modal-backdrop" role="presentation" onMouseDown={() => setCatalogOpen(false)}>
@@ -232,9 +244,9 @@ function TemplateSite({ slug }: { slug: string }) {
               {selectedItem.groupCapacity ? <span>{ui.groupCapacity} · {selectedItem.groupCapacity}</span> : null}
               {selectedItem.employees?.length ? <span>{ui.availableWith} · {selectedItem.employees.join(', ')}</span> : null}
               <div className="template-detail-actions">
-                {selectedItem.appointment ? (
+                {selectedItem.appointment && config.bookingEnabled ? (
                   <button className="template-solid" onClick={() => startBooking(selectedItem)}>{ui.reserve}</button>
-                ) : selectedItem.purchasable !== false ? (
+                ) : !selectedItem.appointment && selectedItem.purchasable !== false && config.cartEnabled ? (
                   <button className="template-solid" onClick={() => addToCart(selectedItem)}>{ui.addToCart}</button>
                 ) : null}
                 <button className="template-outline" onClick={() => setSelectedItem(null)}>{ui.close}</button>
@@ -269,7 +281,7 @@ function TemplateSite({ slug }: { slug: string }) {
               <strong>{ui.totalPreview} <b>{money(subtotal, language)}</b></strong>
             </div>
             <div className="template-payment-options">
-              <button>Stripe</button><button>ATH Móvil</button>
+              <button className={cartPaymentMethod==='stripe'?'selected':''} onClick={()=>setCartPaymentMethod('stripe')}>Stripe</button><button className={cartPaymentMethod==='ath'?'selected':''} onClick={()=>setCartPaymentMethod('ath')}>ATH Móvil</button>
             </div>
             <button
               className="template-solid template-checkout"
@@ -375,7 +387,7 @@ function TemplateSite({ slug }: { slug: string }) {
 
                 <div className="template-booking-order">
                   <span><b>{ui.service}</b><strong>{bookingItem.name}</strong></span>
-                  <span><b>{ui.professional}</b><strong>{selectedEmployee === 'any' ? ui.anyAvailable : selectedEmployee}</strong></span>
+                  <span><b>{ui.professional}</b><strong>{selectedEmployee === 'any' ? ui.anyAvailable : selectedEmployee || config.shortName}</strong></span>
                   <span><b>{ui.dateTime}</b><strong>{formattedSelectedDate} · {selectedTime}</strong></span>
                   <span><b>{bookingItem.deposit ? ui.depositDue : ui.amountDue}</b><strong>{money(bookingCharge, language)}</strong></span>
                 </div>
@@ -385,13 +397,13 @@ function TemplateSite({ slug }: { slug: string }) {
                   <label><span>{ui.email}</span><input type="email" value={bookingCustomerEmail} onChange={(event)=>setBookingCustomerEmail(event.target.value)} /></label>
                 </div>
 
-                <section className="template-payment-step">
+                {bookingRequiresPayment && <section className="template-payment-step">
                   <strong>{ui.choosePayment}</strong>
                   <div className="template-payment-options booking">
                     <button className={bookingPaymentMethod === 'stripe' ? 'selected' : ''} onClick={() => setBookingPaymentMethod('stripe')}>Stripe</button>
                     <button className={bookingPaymentMethod === 'ath' ? 'selected' : ''} onClick={() => setBookingPaymentMethod('ath')}>ATH Móvil</button>
                   </div>
-                </section>
+                </section>}
 
                 <div className="template-hold">
                   <span>{ui.bookingHold}</span>
@@ -400,7 +412,7 @@ function TemplateSite({ slug }: { slug: string }) {
 
                 <div className="template-booking-actions">
                   <button className="template-outline" onClick={() => setBookingStage('selection')}>{ui.back}</button>
-                  <button className="template-solid" disabled={!bookingCustomerName.trim() || !bookingCustomerEmail.trim()} onClick={verifyTemplatePayment}>{ui.simulatePayment}</button>
+                  <button className="template-solid" disabled={!bookingCustomerName.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(bookingCustomerEmail.trim())} onClick={verifyTemplatePayment}>{bookingRequiresPayment?ui.simulatePayment:ui.continueNoPayment}</button>
                 </div>
                 <small className="template-safe-note">{ui.noExternalRecord}</small>
               </div>

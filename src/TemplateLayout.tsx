@@ -7,7 +7,7 @@ import './template-evolution.css'
 
 type Props = {
  config: TemplateConfig; ui: {[K in keyof TemplateUi]: TemplateUi[K] extends string ? string : TemplateUi[K]}; language: TemplateLanguage; setLanguage: (language: TemplateLanguage) => void;
- startBooking: (item?: TemplateItem) => void; setCatalogOpen: (open: boolean) => void; setCartOpen: (open: boolean) => void;
+ startBooking: (item?: TemplateItem, employeeId?: string) => void; setCatalogOpen: (open: boolean) => void; setCartOpen: (open: boolean) => void;
  cart: Array<{quantity: number}>; showcaseFeatures: string[]; contact?: ReactNode; footer?: ReactNode; extraSections?: ReactNode;
  catalogEnabled?: boolean; mainClass?: string; sectionOrder?: string[]; logoUrl?: string; locationHref?: string; phoneHref?: string;
 }
@@ -112,9 +112,9 @@ export default function TemplateLayout({config,ui,language,setLanguage,startBook
                   <small>{employee.role}</small>
                   <h3>{employee.name}</h3>
                   <div>{employee.services.map((service) => <b key={service}>{service}</b>)}</div>
-                  <button onClick={() => {
+                  <button disabled={!config.bookingEnabled || !config.items.some(item=>item.appointment && item.employees?.some(name=>employee.name.startsWith(name)))} onClick={() => {
                     const matching = config.items.find((item) => item.appointment && item.employees?.some((name) => employee.name.startsWith(name)))
-                    if (matching) startBooking(matching)
+                    if (matching) startBooking(matching,employee.id)
                   }}>{ui.viewAvailability}</button>
                 </article>
               ))}
@@ -180,14 +180,7 @@ export default function TemplateLayout({config,ui,language,setLanguage,startBook
             <i />
             <b>{config.location}</b>
           </div>
-          <div className="template-function-showcase">
-            <article><small>WHATSAPP</small><strong>Chat directo</strong><span>Ejemplo de acceso rápido al número configurado.</span></article>
-            <article><small>CALL</small><strong>Llamada con un toque</strong><span>El teléfono del negocio abre la función de llamadas.</span></article>
-            <article><small>SOCIAL</small><strong>Instagram · Facebook · X</strong><span>Las redes activas aparecen como enlaces públicos.</span></article>
-            <article><small>FORM</small><strong>Formulario de contacto</strong><span>El visitante puede enviar un mensaje al email del negocio.</span></article>
-            <article><small>MAPS</small><strong>Google Maps</strong><span>La ubicación configurada se enlaza desde la página.</span></article>
-            <article><small>CALENDAR</small><strong>Google Calendar</strong><span>Ejemplo de sincronización con disponibilidad y reservaciones.</span></article>
-          </div></>}
+</>}
         </section>
       </main>
 

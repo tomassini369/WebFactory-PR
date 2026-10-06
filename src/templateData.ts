@@ -134,14 +134,14 @@ export const templateConfigs: TemplateConfig[] = [
   {
     slug: 'balance-wellness', category: 'Wellness', name: 'Balance Wellness Room', shortName: 'BALANCE',
     kicker: 'MOVE · BREATHE · RESTORE', headline: 'Make space for feeling better.',
-    description: 'Wellness studio con yoga grupal, masaje individual, capacidades por clase y reservas simples.',
+    description: 'Wellness studio con yoga grupal, masaje individual, selección de instructor y reservas simples.',
     heroImage: pexels(8436730), gallery: [pexels(23095849), pexels(8436845), pexels(5793681)],
     location: 'Dorado, Puerto Rico', phone: '(787) 555-0151', hours: 'Lun–Dom · 7 AM–8 PM',
     accent: '#799B7A', accent2: '#BCD2B7', dark: '#213128', cream: '#F4F7F0',
-    features: ['Group capacity', 'Classes', 'Massage booking', 'Membership-ready'],
+    features: ['Instructor selection', 'Classes', 'Massage booking', 'Service catalog'],
     items: [
-      {id:'bal-1',type:'class',name:'Clase grupal de yoga y respiración',price:22,description:'Grupo de mujeres practicando yoga con enfoque en respiración y relajación, como muestra la imagen.',image:pexels(23095849),appointment:true,duration:60,employees:['Elena'],groupCapacity:15,badge:'15 spots'},
-      {id:'bal-2',type:'class',name:'Yoga en estudio',price:24,description:'Clase grupal de yoga sobre mats en un estudio iluminado, alineada con la imagen.',image:pexels(8436845),appointment:true,duration:60,employees:['Elena','Nadia'],groupCapacity:12},
+      {id:'bal-1',type:'class',name:'Clase grupal de yoga y respiración',price:22,description:'Grupo de mujeres practicando yoga con enfoque en respiración y relajación, como muestra la imagen.',image:pexels(23095849),appointment:true,duration:60,employees:['Elena'],badge:'Yoga'},
+      {id:'bal-2',type:'class',name:'Yoga en estudio',price:24,description:'Clase grupal de yoga sobre mats en un estudio iluminado, alineada con la imagen.',image:pexels(8436845),appointment:true,duration:60,employees:['Elena','Nadia']},
       {id:'bal-3',type:'service',name:'Masaje relajante',price:110,description:'Masaje de hombros realizado por terapeuta en ambiente de spa, tal como aparece en la imagen.',image:pexels(5793681),appointment:true,duration:75,deposit:25,employees:['Nadia']},
       {id:'bal-4',type:'product',name:'Vela aromática en vidrio',price:28,description:'Vela aromática artesanal presentada en recipiente de vidrio, como se observa en la imagen.',image:pexels(1652095),badge:'Studio shop'}
     ],
@@ -150,9 +150,9 @@ export const templateConfigs: TemplateConfig[] = [
       {id:'nadia',name:'Nadia Torres',role:'Wellness Therapist',initials:'NT',services:['Yoga en estudio','Masaje relajante']}
     ],
     bookingLabel: 'Reserve your spot', cartEnabled: true, bookingEnabled: true, groupBooking: true,
-    aboutTitle: 'Individual appointments + group capacity.',
-    aboutText: 'Balance enseña la excepción grupal del sistema: una clase puede tener un instructor y múltiples espacios disponibles, mientras el masaje permanece como cita individual.',
-    trust: ['Class capacity', 'Individual services', 'Schedule blocks']
+    aboutTitle: 'Services and classes by appointment.',
+    aboutText: 'Balance permite escoger un servicio o una clase, seleccionar un instructor y reservar una cita. La disponibilidad se organiza por profesional.',
+    trust: ['Instructor availability', 'Individual services', 'Schedule blocks']
   },
   {
     slug: 'luna-market', category: 'Retail', name: 'Luna Market Boutique', shortName: 'LUNA',
@@ -226,12 +226,12 @@ export const templateConfigs: TemplateConfig[] = [
     heroImage: pexels(6755615), gallery: [pexels(1652095), pexels(8274442), pexels(34241287)],
     location: 'Río Piedras, Puerto Rico', phone: '(787) 555-0147', hours: 'Mié–Dom · 11 AM–7 PM',
     accent: '#C26B45', accent2: '#E8B798', dark: '#2D241F', cream: '#FBF5EE',
-    features: ['Products', 'Workshops', 'Group booking', 'Cart'],
+    features: ['Products', 'Workshops', 'Workshop appointments', 'Cart'],
     items: [
       {id:'atelier-1',type:'product',name:'Vela aromática artesanal',price:32,description:'Vela aromática hecha a mano en recipiente de vidrio, exactamente como aparece en la imagen.',image:pexels(1652095),badge:'Handmade'},
       {id:'atelier-2',type:'product',name:'Jarrón de cerámica artesanal',price:46,description:'Jarrón de cerámica hecho a mano y fotografiado en un entorno de taller.',image:pexels(8274442),badge:'Small batch'},
-      {id:'atelier-3',type:'class',name:'Taller de fabricación de velas',price:65,description:'Taller práctico donde los participantes crean velas con materiales sobre la mesa.',image:pexels(34241287),appointment:true,duration:120,employees:['Lucía'],groupCapacity:10,badge:'10 seats'},
-      {id:'atelier-4',type:'class',name:'Taller creativo privado',price:120,description:'Sesión creativa para grupo pequeño trabajando con materiales artísticos alrededor de una mesa.',image:pexels(6925189),appointment:true,duration:120,deposit:40,employees:['Lucía','Marcos'],groupCapacity:6}
+      {id:'atelier-3',type:'class',name:'Taller de fabricación de velas',price:65,description:'Taller práctico donde los participantes crean velas con materiales sobre la mesa.',image:pexels(34241287),appointment:true,duration:120,employees:['Lucía'],badge:'10 seats'},
+      {id:'atelier-4',type:'class',name:'Taller creativo privado',price:120,description:'Sesión creativa para grupo pequeño trabajando con materiales artísticos alrededor de una mesa.',image:pexels(6925189),appointment:true,duration:120,deposit:40,employees:['Lucía','Marcos']}
     ],
     employees: [
       {id:'lucia',name:'Lucía Ferrer',role:'Founder & Maker',initials:'LF',services:['Taller de fabricación de velas','Taller creativo privado']},
@@ -239,8 +239,8 @@ export const templateConfigs: TemplateConfig[] = [
     ],
     bookingLabel: 'Book a workshop', cartEnabled: true, bookingEnabled: true, groupBooking: true,
     aboutTitle: 'One site, two revenue streams.',
-    aboutText: 'Atelier Nueve enseña cómo un negocio creativo puede vender productos y, al mismo tiempo, reservar talleres con capacidad grupal.',
-    trust: ['Product sales', 'Workshop capacity', 'Combined checkout']
+    aboutText: 'Atelier Nueve enseña cómo un negocio creativo puede vender productos y, al mismo tiempo, reservar citas para talleres con el profesional indicado.',
+    trust: ['Product sales', 'Workshop appointments', 'Shopping and appointments']
   },
   {
     slug: 'aqua-shine-carwash', category: 'Car Wash', name: 'Aqua Shine Car Wash', shortName: 'AQUA SHINE',
@@ -272,7 +272,7 @@ export const templateConfigs: TemplateConfig[] = [
     heroImage: pexels(1458694), gallery: [pexels(58929), pexels(1301856), pexels(1084540)],
     location: 'Arecibo, Puerto Rico', phone: '(787) 555-0202', hours: 'Lun–Sáb · 7 AM–5 PM',
     accent: '#65A30D', accent2: '#B7E37B', dark: '#17351E', cream: '#F6FAF1',
-    features: ['Service booking', 'Recurring care', 'Quote requests', 'Maps'],
+    features: ['Service booking', 'Maintenance services', 'Quote requests', 'Maps'],
     items: [
       {id:'verde-1',type:'service',name:'Recorte de patio',price:55,description:'Corte y terminación básica de césped residencial.',image:pexels(58929),appointment:true,duration:90,employees:['Javier','Noel'],badge:'Popular'},
       {id:'verde-2',type:'service',name:'Limpieza de patio',price:95,description:'Remoción de hojas, ramas y desperdicios de áreas exteriores.',image:pexels(1301856),appointment:true,duration:120,deposit:20,employees:['Noel']},
@@ -286,7 +286,7 @@ export const templateConfigs: TemplateConfig[] = [
     bookingLabel: 'Agendar servicio', cartEnabled: false, bookingEnabled: true,
     aboutTitle: 'Mantenimiento exterior organizado por zona y horario.',
     aboutText: 'Verde Vivo permite mostrar servicios, solicitar cotizaciones y coordinar visitas sin depender de llamadas para cada cita.',
-    trust: ['Route-ready', 'Quote visits', 'Recurring service']
+    trust: ['Route-ready', 'Quote visits', 'Maintenance appointments']
   },
   {
     slug: 'sonido-vivo-artist', category: 'Music Artist', name: 'Sonido Vivo', shortName: 'SONIDO VIVO',
@@ -452,7 +452,7 @@ export const templateConfigs: TemplateConfig[] = [
     heroImage: pexels(4239031), gallery: [pexels(4107120), pexels(4099264), pexels(6197122)],
     location: 'Puerto Rico', phone: '(787) 555-0212', hours: 'Lun–Sáb · 8 AM–6 PM',
     accent: '#38BDF8', accent2: '#BAE6FD', dark: '#113247', cream: '#F3FBFF',
-    features: ['Cleaning booking', 'Recurring visits', 'Team assignment', 'Deposits'],
+    features: ['Cleaning booking', 'Scheduled visits', 'Team assignment', 'Deposits'],
     items: [
       {id:'clean-1',type:'service',name:'Limpieza básica',price:95,description:'Limpieza general de áreas principales del hogar.',image:pexels(4107120),appointment:true,duration:120,deposit:20,employees:['Ana','Mia'],badge:'Popular'},
       {id:'clean-2',type:'service',name:'Deep Cleaning',price:185,description:'Limpieza profunda con atención adicional a cocina, baños y detalles.',image:pexels(4239031),appointment:true,duration:240,deposit:40,employees:['Ana'],badge:'Deep clean'},
@@ -466,7 +466,7 @@ export const templateConfigs: TemplateConfig[] = [
     bookingLabel: 'Reservar limpieza', cartEnabled: false, bookingEnabled: true,
     aboutTitle: 'Limpieza residencial con horarios claros.',
     aboutText: 'Fresh Home organiza servicios por duración, equipo y frecuencia para facilitar reservas repetidas.',
-    trust: ['Recurring service', 'Team assignment', 'Easy booking']
+    trust: ['Maintenance appointments', 'Team assignment', 'Easy booking']
   },
   {
     slug: 'sealpro-roofing', category: 'Roof Sealing', name: 'SealPro Roofing', shortName: 'SEALPRO',

@@ -106,3 +106,9 @@
  .template-site .template-catalog-preview article:first-child>img{aspect-ratio:4/3}
  .template-site .template-feature-strip{grid-template-columns:minmax(0,1fr)}
 }
+
+.template-site .template-demo-contact{grid-column:1/-1;display:grid;gap:16px;max-width:680px;width:100%;color:#12202b}
+.template-site .template-demo-contact label{display:grid;gap:8px;font-size:.9rem}
+.template-site .template-demo-contact :is(input,textarea){width:100%;box-sizing:border-box;border:1px solid #c2cbd3;border-radius:8px;padding:12px;background:#fff;color:#12202b;min-height:44px;font:inherit}
+.template-site .template-demo-contact textarea{min-height:120px;resize:vertical}
+.template-site .template-demo-contact button{justify-self:start}

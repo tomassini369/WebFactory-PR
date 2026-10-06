@@ -1,3 +1,4 @@
+import {templateCapabilities,usesTemplateCapabilities} from './templateCapabilities'
 import './business-policies.css'
 import type {StorefrontSite} from './ClientStorefront'
 import StorefrontPreview from './StorefrontPreview'
@@ -495,6 +496,18 @@ function BusinessStep({state,setState,lang,lockedEmail}:{state:BuilderState;setS
   )
 }
 
+/** Apply functional defaults only while the draft still uses an uncustomized preset. */
+function templateDefaults(current:BuilderState,template:typeof templateConfigs[number]){
+ const previous=templateConfigs.find(entry=>entry.slug===current.design.templateSlug)
+ const keys=['products','services','cart','bookings','calendar']
+ const expected=previous?templateCapabilities(previous):Object.fromEntries(keys.map(key=>[key,initialState.features[key]]))
+ const pristine=current.catalog.length===0&&current.team.length===0&&usesTemplateCapabilities(current.features,expected)
+ return {
+  business:current.business.category==='Other'||current.business.category===previous?.category?{...current.business,category:template.category}:current.business,
+  features:pristine?{...current.features,...templateCapabilities(template)}:current.features,
+ }
+}
+
 function DesignStep({state,setState,lang}:{state:BuilderState;setState:Dispatch<SetStateAction<BuilderState>>;lang:Language}) {
   const setDesign = <K extends keyof BuilderState['design']>(key:K, value:BuilderState['design'][K]) =>
     setState((current)=>({...current,design:{...current.design,[key]:value}}))
@@ -508,6 +521,7 @@ function DesignStep({state,setState,lang}:{state:BuilderState;setState:Dispatch<
     const template = templateConfigs.find((entry)=>entry.slug===slug)
     setState((current)=>({
       ...current,
+      ...(template?templateDefaults(current,template):{}),
       design:{
         ...current.design,
         templateSlug:slug,
@@ -620,7 +634,7 @@ function FeaturesStep({state,setState,lang}:{state:BuilderState;setState:Dispatc
   return (
     <div className="wf-step-content">
       <div className="wf-step-intro"><small>{lang==='es'?'PASO 3 · FUNCIONES':'STEP 3 · FEATURES'}</small><h3>{lang==='es'?'Activa exactamente lo que tu negocio necesita.':'Enable exactly what your business needs.'}</h3><p>{lang==='es'?'Cada interruptor controla una función real del website. Si lo apagas, esa función no debe aparecer en la página publicada.':'Each switch controls a real website capability. If you turn it off, that capability should not appear on the published site.'}</p></div>
-      <div className="wf-guidance"><b>{lang==='es'?'Cómo funciona':'How it works'}</b><span>{lang==='es'?'Activa solo las funciones que quieras ofrecer. Las opciones se aplican directamente a la página generada y luego pueden cambiarse desde el portal.':'Enable only the capabilities you want. These choices apply directly to the generated website and can later be changed from the portal.'}</span></div>
+      <div className="wf-guidance"><b>{lang==='es'?'Cómo funciona':'How it works'}</b><span>{lang==='es'?'Al comenzar con un Template, sus funciones iniciales corresponden al tipo de negocio. Puedes cambiarlas aquí o luego desde el portal.':'When starting with a Template, its initial capabilities match the business type. You can change these options here or later from the portal.'}</span></div>
       <div className="wf-feature-grid">
         {Object.entries(featureLabels[lang]).map(([key,label])=>(
           <Toggle
@@ -899,6 +913,7 @@ function FinalStep({state,setStep,lang,complimentaryInviteToken,trialInviteToken
   const [checkingOut,setCheckingOut] = useState(false)
   const [created,setCreated] = useState<{portalUrl:string;publicUrl:string}|null>(null)
   const appointmentServices = state.catalog.filter((item)=>item.requiresAppointment)
+  const bookingSetupReady = !state.features.bookings || appointmentServices.every(service=>state.team.some(employee=>employee.serviceIds.includes(service.id)))
   const enabledFeatures = Object.values(state.features).filter(Boolean).length
   const missingUpload = Boolean(state.business.logo && !state.business.logoAssetKey) ||
     state.catalog.some((item)=>Boolean(item.image && !item.imageAssetKey))
@@ -906,7 +921,7 @@ function FinalStep({state,setStep,lang,complimentaryInviteToken,trialInviteToken
   const customerReady = Boolean(state.business.name.trim() && state.business.contactName.trim() && emailValid)
   const paymentReady = Object.values(state.payments.methods).some(Boolean)
   const selectedTemplate = templateConfigs.find((template)=>template.slug===state.design.templateSlug)
-  const canCheckout = Boolean(customerReady && paymentReady && state.business.slug.trim() && !missingUpload && !checkingOut && reviewReady)
+  const canCheckout = Boolean(customerReady && paymentReady && state.business.slug.trim() && !missingUpload && !checkingOut && reviewReady && bookingSetupReady)
 
   const startCheckout = async () => {
     if (!canCheckout) return
@@ -978,6 +993,7 @@ function FinalStep({state,setStep,lang,complimentaryInviteToken,trialInviteToken
       {!customerReady && <div className="wf-checkout-warning">{lang==='es'?'Completa el nombre del cliente, nombre del negocio y un email válido.':'Enter the customer name, business name, and a valid email.'}</div>}
       {!state.business.slug.trim() && <div className="wf-checkout-warning">{lang==='es'?'Escoge el enlace preferido de tu website.':'Choose your preferred website link.'}</div>}
       {!paymentReady && <div className="wf-checkout-warning">{lang==='es'?'Selecciona al menos un método de pago para la página del negocio.':'Select at least one payment method for the business page.'}</div>}
+      {!bookingSetupReady && <div className="wf-checkout-warning" role="alert">{lang==='es'?'Asigna un profesional a cada servicio con cita en Equipo antes de activar las reservaciones.':'Assign a professional to each appointment service in Team before activating bookings.'}</div>}
       {missingUpload && <div className="wf-checkout-warning">{lang==='es'?'Hay imágenes todavía sin guardar. Vuelve a cargarlas antes de crear tu acceso.':'Some images are not saved yet. Upload them again before creating your access.'}</div>}
       <section className="wf-after-payment" aria-labelledby="wf-after-payment-title">
         <header>
@@ -1048,6 +1064,7 @@ export default function WebFactoryBuilder({lang}:{lang:Language}) {
     if (template) {
       setState((current)=>({
         ...current,
+        ...templateDefaults(current,template),
         design:{...current.design,templateSlug:template.slug,primary:template.dark,secondary:template.accent,style:({modern:'Modern',luxury:'Luxury',minimal:'Minimal',bold:'Bold'} as const)[templateVisualStyle(template.category)]},
       }))
       setStep(1)
