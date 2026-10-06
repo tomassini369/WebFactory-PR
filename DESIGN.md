@@ -337,3 +337,54 @@ This composition is the approved **preview direction** for evaluating a visibly 
 - The V2 components remain inside the isolated `preview/` bundle until explicitly approved.
 - Production components, routes and business logic must not import V2 preview components.
 - Rejection of this direction is handled by discarding/reverting the preview branch or PR; no production rollback should be necessary.
+
+
+## 17. Original Premium Direction — Current Homepage Source of Truth
+
+This section **supersedes the experimental homepage composition language above whenever there is a conflict**. The approved direction is to refine the existing WebFactory PR homepage rather than replace its identity.
+
+### Preserve exactly
+
+- The current homepage information architecture and section order.
+- The hero video as the dominant visual background.
+- The original left-aligned hero copy and its clear visual zone.
+- The interactive scroll-driven five-step product tour.
+- Scroll-linked active-step detection, sticky Control Center stage and progress rail.
+- The existing mobile inline step fallback for the tour.
+- The existing interactive product demo and its actions.
+- Light/Dark and EN/ES behavior.
+- Existing Builder, Templates, Login, pricing, FAQ and footer destinations.
+- Existing public copy and truthful sample-data labeling unless explicitly approved otherwise.
+
+### Premium modernization
+
+- Refine, do not replace.
+- Use Geist + Geist Mono for a more authored software character.
+- Use one restrained blue accent; no purple/neon AI aesthetic.
+- Give the hero video more visual space rather than covering it with product mockups.
+- Use scroll variables already present in the original implementation to add subtle depth to the video and tour stage.
+- Upgrade hierarchy through spacing, type scale, dividers, border rhythm and selective elevation.
+- Keep capability content in the existing sections but allow asymmetric grid weight to improve hierarchy.
+- Make buttons tactile with restrained transform feedback and no glow-heavy treatment.
+- Make active states unmistakable through border, surface, typography and position — not color alone.
+- Use hover/micro-motion only as enhancement; primary workflows must remain tap/click accessible.
+- Preserve reduced-motion behavior.
+
+### Interactivity philosophy
+
+The original WebFactory homepage already contains a defining interaction model. New premium work should deepen that model instead of introducing unrelated dashboard overlays.
+
+1. Hero: cinematic video depth tied lightly to scroll, with no UI panel covering the video.
+2. Product tour: the main interactive storytelling surface; scroll changes the active stage and product visualization.
+3. Product demo: direct click/tap exploration of WebFactory capabilities.
+4. Capability grid: subtle hover/tap feedback without turning every item into a floating card.
+5. FAQ: responsive disclosure motion.
+6. Mobile: single-column flow with generous touch targets and no horizontal page overflow.
+
+### Never do on the homepage
+
+- Never place a dashboard, command center card or floating product mockup over the hero video.
+- Never remove or replace the scroll-driven product tour without explicit owner approval.
+- Never redesign the homepage into an unrelated generic SaaS template.
+- Never remove existing capabilities merely to simplify the visual design.
+- Never alter production data, routes, auth, payments, bookings, tenant logic or integrations as part of a visual pass.
