@@ -25,3 +25,10 @@ media-source/
 *.docx
 *.xlsx
 *.pptx
+*.qmd
+*.skill
+*.txt
+*.rst
+*.html
+*.yaml
+*.yml
