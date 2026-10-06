@@ -297,9 +297,18 @@ This composition is the approved **preview direction** for evaluating a visibly 
 
 ### Homepage V2
 
+### Owner-preserved interaction constraints
+
+- The homepage scroll-driven interactive tour is a defining WebFactory behavior and must be preserved in redesigns.
+- Scroll position continues to drive the active product step, visual build-up and progress rail.
+- On desktop, the Control Center visualization belongs in the sticky scroll-tour stage below the hero.
+- On mobile, the existing inline per-step visualization remains the fallback.
+- The hero video must remain visible and unobstructed by dashboard mockups or floating operational cards.
+
+
 - Navigation floats inside a constrained translucent rail instead of blending into the page edge.
-- Hero remains video-backed by owner preference, but the composition is strongly asymmetric: editorial headline left, operational command surface right.
-- The command surface demonstrates real WebFactory concepts with explicitly labeled sample data: net sales, bookings, orders, next booking and team-on-shift.
+- Hero remains video-backed by owner preference and must stay visually unobstructed: editorial copy is confined to the left visual zone while the video owns the remaining canvas. Do not place dashboards, cards or command surfaces over the hero video.
+- Operational/dashboard storytelling begins below the hero inside the existing scroll-driven product tour, with explicitly labeled sample data.
 - Product modules use an irregular 2-row CSS Grid rather than equal feature cards.
 - The setup-to-operation story is rendered as a vertical numbered operating sequence, not a generic 3-card row.
 - Customer-side storefront and business-side operations are shown as two distinct spatial zones with no overlap.
