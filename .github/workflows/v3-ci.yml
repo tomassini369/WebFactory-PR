@@ -33,6 +33,8 @@ jobs:
         run: npx playwright install --with-deps webkit
       - name: Check Home FAQ desktop/mobile, themes and languages
         run: node scripts/browser-home-faq-smoke.mjs
+      - name: Check homepage responsive controls, tour and demos
+        run: node scripts/browser-home-evolution-smoke.mjs
       - name: Check Builder cart and draft interactions
         run: node scripts/browser-interactions-smoke.mjs
       - name: Check ChatGPT configuration on mobile and desktop
