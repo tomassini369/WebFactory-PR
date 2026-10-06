@@ -50,6 +50,20 @@ try{
   await page.getByRole('button',{name:'Appearance and preferences',exact:true}).click();
   const preferences=page.locator('.portal-appearance');
   await preferences.getByRole('button',{name:'Sound Effects: On',exact:true}).waitFor();
+  const layouts=[];
+  for(const color of ['#7C3AED','#0D9488','#D97706','#FFFFFF','#000000'])for(const mode of ['light','dark']){
+   await preferences.getByLabel('Full layout color',{exact:true}).fill(color);
+   await preferences.getByRole('radio',{name:mode==='light'?'Light':'Dark',exact:true}).check();
+   await page.waitForFunction(({color,mode})=>document.documentElement.dataset.wfTheme===mode&&getComputedStyle(document.querySelector('.ca-dashboard')).getPropertyValue('--portal-accent').trim()===color,{color,mode});
+   const layout=await page.evaluate(()=>{
+    const luminance=c=>{const rgb=c.match(/[\d.]+/g).slice(0,3).map(Number).map(n=>{const x=n/255;return x<=.04045?x/12.92:((x+.055)/1.055)**2.4});return rgb[0]*.2126+rgb[1]*.7152+rgb[2]*.0722};
+    const contrast=(a,b)=>{const x=luminance(a),y=luminance(b);return (Math.max(x,y)+.05)/(Math.min(x,y)+.05)};
+    const root=getComputedStyle(document.querySelector('.ca-dashboard')),panel=getComputedStyle(document.querySelector('.portal-appearance')),heading=getComputedStyle(document.querySelector('.portal-appearance h2')),copy=getComputedStyle(document.querySelector('.portal-appearance p')),sidebar=getComputedStyle(document.querySelector('.ca-sidebar'));
+    return {page:root.backgroundColor,panel:panel.backgroundColor,menu:sidebar.backgroundImage,headingContrast:contrast(heading.color,panel.backgroundColor),copyContrast:contrast(copy.color,panel.backgroundColor)};
+   });
+   assert(layout.headingContrast>=4.5&&layout.copyContrast>=4.5,JSON.stringify({color,mode,layout}));layouts.push(layout);
+  }
+  assert.equal(new Set(layouts.map(x=>x.page)).size,10);assert.equal(new Set(layouts.map(x=>x.panel)).size,10);assert.equal(new Set(layouts.map(x=>x.menu)).size,10);
   await preferences.getByRole('button',{name:'#7C3AED',exact:true}).click();
   await preferences.getByRole('radio',{name:'Light',exact:true}).check();
   await page.waitForFunction(()=>document.documentElement.dataset.wfTheme==='light');

@@ -51,8 +51,8 @@ export function usePortalAppearance(userId?:string) {
 export function PortalAppearance({lang,appearance}:{lang:'es'|'en';appearance:ReturnType<typeof usePortalAppearance>}) {
   const es=lang==='es'
   return <section className="ca-panel portal-appearance"><h2>{es?'Apariencia y preferencias':'Appearance and preferences'}</h2>
-    <p>{es?'Personaliza tu dashboard. Tus preferencias se guardan en tu cuenta y no cambian la página de tu negocio.':'Personalize your dashboard. Preferences are saved to your account and do not change your business website.'}</p>
-    <label>{es?'Color de acento':'Accent color'}<input type="color" value={appearance.accent} onChange={e=>appearance.setAccent(e.target.value.toUpperCase())}/></label>
+    <p>{es?'Elige el color de fondo, menú, tarjetas y controles del dashboard. Tus preferencias se guardan en tu cuenta y no cambian la página de tu negocio.':'Choose the color of your dashboard background, menu, cards and controls. Preferences are saved to your account and do not change your business website.'}</p>
+    <label>{es?'Color del layout completo':'Full layout color'}<input type="color" value={appearance.accent} onChange={e=>appearance.setAccent(e.target.value.toUpperCase())}/></label>
     <div className="portal-color-options">{['#3C86F6','#7C3AED','#0D9488','#D97706','#DB2777'].map(color=><button key={color} type="button" aria-label={color} aria-pressed={color===appearance.accent} style={{background:color}} onClick={()=>appearance.setAccent(color)}>{color===appearance.accent?'✓':''}</button>)}</div>
     <fieldset><legend>{es?'Modo de pantalla':'Display mode'}</legend>{(['light','dark'] as const).map(mode=><label key={mode} className="check"><input type="radio" name="portal-theme" checked={appearance.theme===mode} onChange={()=>appearance.setTheme(mode)}/>{mode==='light'?(es?'Claro':'Light'):(es?'Oscuro':'Dark')}</label>)}</fieldset>
     <FeedbackPreferences lang={lang}/>
