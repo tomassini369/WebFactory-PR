@@ -1,6 +1,7 @@
+import {useState} from 'react'
 import {createRoot} from 'react-dom/client'
 import {ThemeProvider} from '../src/theme'
-import App from '../src/App'
+import HomePage from '../src/HomePage'
 import '../src/styles.css'
 import '../src/theme.css'
 import '../src/liquid-glass.css'
@@ -14,4 +15,4 @@ document.addEventListener('click',event=>{
   if(target){event.preventDefault();target.scrollIntoView({behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'})}
 })
 const style=document.createElement('style');style.textContent='.wf-theme-toggle.floating{display:none}';document.head.append(style)
-createRoot(document.getElementById('root')!).render(<ThemeProvider><App/></ThemeProvider>)
+function PreviewHome(){const [lang,setLang]=useState<'en'|'es'>('en');return <HomePage lang={lang} setLang={setLang}/>}\ncreateRoot(document.getElementById('root')!).render(<ThemeProvider><PreviewHome/></ThemeProvider>)
