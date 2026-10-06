@@ -39,7 +39,7 @@ Do not place WebFactory source code, provider credentials, OAuth tokens, passwor
 
 Graphify runs as a persistent Python service outside the existing Netlify JavaScript function. The Render service builds the WebFactory graph locally with AST extraction and starts `scripts/graphify_oauth_proxy.py`.
 
-The proxy wraps Graphify's Streamable HTTP server and protects `/mcp` with the existing WebFactory OAuth connection. A request without a Bearer token is rejected. A tenant/business token is rejected. A platform-admin token is checked against the production WebFactory MCP before each request so permission revocation takes effect immediately.
+The proxy wraps Graphify's Streamable HTTP server and protects `/mcp` with the existing WebFactory OAuth connection. A platform-wide WebFactory connection must be selected during OAuth consent; an ordinary business-scoped connection remains business-scoped even when the same identity is a WebFactory administrator. A request without a Bearer token is rejected. A tenant/business token is rejected. A platform-admin token is checked against the production WebFactory MCP before each request so permission revocation takes effect immediately.
 
 The current default endpoint is:
 
