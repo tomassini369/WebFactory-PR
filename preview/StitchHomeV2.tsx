@@ -1,4 +1,4 @@
-import {useState} from 'react'
+import {useState, type CSSProperties} from 'react'
 import './stitch-v2.css'
 
 type Lang='en'|'es'
@@ -161,7 +161,7 @@ export default function StitchHomeV2(){
               </div>
               <div className="sv2-mini-chart" aria-label={t.activity}>
                 <div className="sv2-chart-label"><span>{t.activity}</span><b>09:15</b></div>
-                <div className="sv2-bars">{[37,54,43,71,64,86,58,92,76,88,69,96].map((h,i)=><i key={i} style={{'--h':h+'%'} as React.CSSProperties}/>)}</div>
+                <div className="sv2-bars">{[37,54,43,71,64,86,58,92,76,88,69,96].map((h,i)=><i key={i} style={{'--h':h+'%'} as CSSProperties}/>)}</div>
               </div>
             </div>
             <div className="sv2-command-foot"><span>{t.team}</span><div className="sv2-avatars"><i>JM</i><i>AR</i><i>LC</i><i>+1</i></div><strong>4</strong></div>
@@ -186,7 +186,7 @@ export default function StitchHomeV2(){
       <section className="sv2-section sv2-flow" id="flow">
         <div className="sv2-flow-title"><p className="sv2-eyebrow">{t.flowEyebrow}</p><h2>{t.flowTitle}</h2></div>
         <div className="sv2-flow-list">
-          {t.flow.map((f,i)=><article key={f[0]} style={{'--delay':(i*90)+'ms'} as React.CSSProperties}>
+          {t.flow.map((f,i)=><article key={f[0]} style={{'--delay':(i*90)+'ms'} as CSSProperties}>
             <span>{f[0]}</span><div><h3>{f[1]}</h3><p>{f[2]}</p></div><i/>
           </article>)}
         </div>
