@@ -30,7 +30,7 @@ Disconnect at `/chatgpt` to revoke the grant immediately. Prior data shared in C
 
 ## Optional Graphify context accelerator
 
-WebFactory can expose one additional read-only tool, `wf_graph_context`, when a private Graphify MCP service is configured. It is intended only for dependency, impact, architecture, diagnostic, conflict and multi-system questions where graph context can reduce broad exploration. Simple reads and mutations continue through the normal WebFactory tools and deliberately skip Graphify.
+WebFactory advertises one additional read-only tool, `wf_graph_context`, as a stable MCP catalog entry so clients do not lose it when tool discovery occurs before the final OAuth grant is known. Visibility is not authorization: every invocation revalidates the active WebFactory grant and fails closed when graph context is unavailable for that scope. It is intended only for dependency, impact, architecture, diagnostic, conflict and multi-system questions where graph context can reduce broad exploration. Simple reads and mutations continue through the normal WebFactory tools and deliberately skip Graphify.
 
 Graphify remains behind WebFactory OAuth and tenant authorization. The Render proxy re-validates the delegated short-lived WebFactory bearer against `wf_connection` and only accepts platform-admin connections with `webfactory.read`; Graphify itself never receives the bearer. No separate Graphify API key is used. Platform code graphs are platform-admin only. Business graph support remains fail-closed and requires an explicit tenant enable flag plus a sanitized tenant graph root. See `docs/GRAPHIFY_CONTEXT.md` for deployment, refresh and isolation requirements.
 
