@@ -48,7 +48,7 @@ try{
     await page.locator('.template-confirm-booking').click()
     const service=config.items.find(item=>item.appointment)
     assert.equal(await page.locator('.template-payment-step').count(),(service.deposit??service.price)>0?1:0,'Free reservations do not ask for payment')
-    await page.locator('.template-booking-actions .template-solid').click()
+    if((service.deposit??service.price)>0)await page.locator('.template-booking-actions .template-solid').click()
     await page.locator('.template-booking-verified .template-solid').click()
     await page.locator('.template-booking-confirmed').waitFor()
     await page.locator('.template-booking-modal .template-modal-close').click()
@@ -80,6 +80,7 @@ try{
    assert.equal(state.features.cart,base.cartEnabled)
    assert.deepEqual(state.catalog,[]);assert.deepEqual(state.team,[])
    checked++
+   if(checked%10===0)console.log(`Completed ${checked}/46 functional cases`)
   }finally{await browser.close()}
  }
  const preservedBrowser=await launch()
