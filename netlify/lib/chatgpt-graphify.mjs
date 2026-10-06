@@ -4,7 +4,7 @@ const DEFAULT_TIMEOUT_MS=8000;
 const MAX_REMOTE_BODY=60000;
 const PLATFORM_TOKEN_MAX=1600;
 const TENANT_TOKEN_MAX=1000;
-const DEFAULT_GRAPHIFY_MCP_URL='https://webfactory-graphify-oauth.onrender.com/mcp';
+const DEFAULT_GRAPHIFY_MCP_URL='https://webfactory-graphify-prod.onrender.com/mcp';
 
 function env(name){
  return String(globalThis.Netlify?.env?.get?.(name)??process.env?.[name]??'').trim();
