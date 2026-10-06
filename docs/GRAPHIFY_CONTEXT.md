@@ -56,7 +56,7 @@ Terminate TLS in front of the container and expose only the HTTPS `/mcp` URL to 
 ## Netlify environment variables
 
 `GRAPHIFY_MCP_URL`
-: HTTPS endpoint for the private Graphify MCP, for example `https://graph.internal.example/mcp`.
+: Optional HTTPS override for the Graphify MCP. WebFactory defaults to `https://webfactory-graphify.onrender.com/mcp`; set this only if the service moves.
 
 `GRAPHIFY_API_KEY`
 : Private service-to-service key. The gateway does not enable Graphify if this is missing.
