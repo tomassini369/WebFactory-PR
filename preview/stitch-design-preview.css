@@ -1,0 +1,226 @@
+/* StitchDesign visual prototype — preview bundle only.
+   This file is imported only by preview entry points and is never part of production. */
+
+:root{
+  --stitch-canvas:#0A0D12;
+  --stitch-surface:#111720;
+  --stitch-raised:#18212C;
+  --stitch-text:#F5F7FA;
+  --stitch-muted:#9AA6B5;
+  --stitch-line:#263241;
+  --stitch-accent:#4E88D8;
+  --stitch-accent-strong:#356FBF;
+  --stitch-success:#4EA98F;
+  --stitch-shadow:0 28px 70px -38px rgba(5,18,36,.72);
+  --stitch-font:"Geist","Avenir Next",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --stitch-mono:"Geist Mono","SFMono-Regular",ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;
+}
+
+/* ---------- Homepage prototype ---------- */
+.wf-premium-home{
+  --hp-bg:var(--stitch-canvas);
+  --hp-bg-2:#0E131A;
+  --hp-panel:var(--stitch-surface);
+  --hp-elevated:var(--stitch-raised);
+  --hp-text:var(--stitch-text);
+  --hp-muted:var(--stitch-muted);
+  --hp-line:var(--stitch-line);
+  --hp-line-soft:#1D2733;
+  --hp-blue:var(--stitch-accent);
+  --hp-blue-strong:var(--stitch-accent-strong);
+  --hp-glow:rgba(78,136,216,.18);
+  --hp-glow-soft:rgba(78,136,216,.08);
+  --hp-ok:var(--stitch-success);
+  --hp-shadow:var(--stitch-shadow);
+  font-family:var(--stitch-font);
+}
+
+[data-wf-theme=light] .wf-premium-home{
+  --hp-bg:#F6F8FB;
+  --hp-bg-2:#EEF2F7;
+  --hp-panel:#FFFFFF;
+  --hp-elevated:#EEF2F7;
+  --hp-text:#152033;
+  --hp-muted:#5F6E82;
+  --hp-line:#D9E0E9;
+  --hp-line-soft:#E7ECF2;
+  --hp-blue:#356FBF;
+  --hp-blue-strong:#2E62AA;
+  --hp-glow:rgba(53,111,191,.12);
+  --hp-glow-soft:rgba(53,111,191,.06);
+  --hp-ok:#237A66;
+  --hp-shadow:0 28px 70px -44px rgba(25,49,78,.32);
+}
+
+.wf-premium-home :is(h1,h2,h3,h4,strong,.wf-num,.wf-eyebrow){
+  font-family:var(--stitch-font);
+}
+
+.wf-premium-home :is(code,.wf-cc-mono,.wf-s-amount,.wf-price>strong){
+  font-family:var(--stitch-mono);
+  font-variant-numeric:tabular-nums;
+}
+
+/* Flat, tactile CTA instead of gradient/glow. */
+.wf-premium-home .wf-btn{
+  background:var(--hp-blue);
+  border-color:color-mix(in srgb,var(--hp-blue) 72%,#fff);
+  border-radius:11px;
+  box-shadow:0 10px 24px -16px color-mix(in srgb,var(--hp-blue) 55%,transparent);
+  transition:transform .18s cubic-bezier(.2,.7,.2,1),background-color .18s,border-color .18s,box-shadow .18s;
+}
+.wf-premium-home .wf-btn:hover{
+  transform:translateY(-1px);
+  background:color-mix(in srgb,var(--hp-blue) 90%,#fff);
+  box-shadow:0 14px 26px -18px color-mix(in srgb,var(--hp-blue) 55%,transparent);
+}
+.wf-premium-home .wf-btn:active{transform:translateY(1px);box-shadow:none}
+
+/* Preserve approved video hero, but calm the AI-like glow treatment. */
+.wf-premium-home .wf-hero-glow{
+  background:radial-gradient(46% 40% at 76% 38%,rgba(78,136,216,.14),transparent 72%);
+}
+.wf-premium-home .wf-hero-glow::after{opacity:.26}
+.wf-premium-home .wf-hero.has-video{
+  --hp-blue:#6FA0E2;
+  --hp-glow:rgba(78,136,216,.12);
+  --hp-glow-soft:rgba(78,136,216,.07);
+}
+.wf-premium-home .wf-hero.has-video h1 em,
+[data-wf-theme=light] .wf-premium-home .wf-hero.has-video h1 em{
+  color:#8AB2E8;
+  background:none;
+  -webkit-text-fill-color:currentColor;
+}
+.wf-premium-home .wf-hero h1 em{
+  color:var(--hp-blue);
+  background:none;
+  -webkit-text-fill-color:currentColor;
+}
+.wf-premium-home .wf-hero-scrim{
+  background:
+    linear-gradient(90deg,rgba(7,11,17,.9) 0%,rgba(7,11,17,.72) 36%,rgba(7,11,17,.38) 66%,rgba(7,11,17,.42) 100%),
+    linear-gradient(180deg,rgba(7,11,17,.42) 0%,transparent 24%,transparent 76%,rgba(7,11,17,.72) 100%);
+}
+
+/* Stitch anti-pattern: remove generic scroll cue from the design prototype. */
+.wf-premium-home .wf-scroll-cue{display:none}
+
+/* Reduce card-on-card feeling. */
+.wf-premium-home :is(.wf-cc,.wf-demo,.wf-pricing,.wf-final){
+  box-shadow:var(--hp-shadow);
+}
+.wf-premium-home :is(.wf-platform article,.wf-how article){
+  box-shadow:none;
+}
+.wf-premium-home .wf-how{
+  grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);
+  gap:26px 44px;
+}
+.wf-premium-home .wf-how article:nth-child(3){
+  grid-column:2;
+}
+.wf-premium-home .wf-how article{
+  padding:20px 0 20px 22px;
+}
+.wf-premium-home .wf-pricing{
+  border-radius:24px;
+  background:var(--hp-panel);
+}
+.wf-premium-home .wf-final{
+  background:var(--hp-panel);
+}
+
+/* Make dense mock-data numerals scan more like software, less like marketing. */
+.wf-premium-home :is(.wf-s-total strong,.wf-s-metrics strong,.wf-price>strong,.wf-cc-sample){
+  font-variant-numeric:tabular-nums;
+}
+
+/* ---------- Business Control Center prototype ---------- */
+.ca-page,.ca-dashboard,.bcc{
+  font-family:var(--stitch-font);
+}
+.ca-dashboard{
+  --ca-navy:#152033;
+  --ca-blue:var(--stitch-accent-strong);
+  --ca-bg:#F6F8FB;
+  --ca-line:#D9E0E9;
+  --ca-muted:#5F6E82;
+}
+html[data-wf-theme=dark] .ca-dashboard{
+  --ca-bg:var(--stitch-canvas);
+  --ca-line:var(--stitch-line);
+  --ca-muted:var(--stitch-muted);
+}
+
+.ca-sidebar{
+  background:var(--stitch-surface);
+  box-shadow:none;
+  border-right-color:var(--stitch-line);
+}
+.ca-sidebar nav button.active,
+.ca-sidebar .ca-nav-groups button.active{
+  background:var(--stitch-raised);
+  box-shadow:inset 3px 0 var(--stitch-accent);
+}
+.ca-nav-groups details{border-color:#253345;background:transparent}
+
+.ca-panel,.ca-card,.ca-v3-table article,.ca-v3-metrics article,.ca-v3-cards article,
+.ca-pos-cart,.ca-pos-catalog button,.ca-quick-start,.ca-quick-actions button{
+  box-shadow:none;
+}
+.ca-panel:hover,.ca-card:hover{box-shadow:none}
+
+.ca-v3-metrics article:nth-child(2n){transform:none}
+.ca-v3-metrics article:hover,
+.ca-v3-table article:hover,
+.ca-pos-catalog button:hover,
+.ca-quick-actions button:hover{
+  transform:translateY(-1px)!important;
+  box-shadow:0 12px 28px -22px rgba(53,111,191,.55);
+}
+
+.ca-save,.ca-primary-link,.ca-plans button,.ca-trial-start button,.ca-export-actions button{
+  background:var(--stitch-accent-strong);
+  border-radius:11px;
+  box-shadow:none;
+}
+.ca-save:active,.ca-primary-link:active,.ca-plans button:active,.ca-trial-start button:active{
+  transform:translateY(1px);
+}
+
+.bcc-hero{
+  background:var(--stitch-surface);
+  border-color:var(--stitch-line);
+  box-shadow:none;
+}
+.bcc-metrics article,.bcc .bcc-card,.bcc-action-grid button{
+  box-shadow:none;
+}
+.bcc-chart i{
+  background:var(--stitch-accent);
+}
+.bcc-action-icon{
+  color:var(--stitch-accent);
+  background:color-mix(in srgb,var(--stitch-accent) 10%,transparent);
+}
+
+/* High-density numbers and technical values use mono. */
+.ca-dashboard :is(.ca-v3-metrics strong,.bcc-metrics strong,.bcc-card header>strong,code,time){
+  font-family:var(--stitch-mono);
+  font-variant-numeric:tabular-nums;
+}
+
+@media(max-width:767px){
+  .wf-premium-home .wf-how{grid-template-columns:1fr}
+  .wf-premium-home .wf-how article:nth-child(3){grid-column:auto}
+  .wf-premium-home .wf-how article{padding:16px 0 16px 18px}
+  .wf-premium-home .wf-hero-grid{grid-template-columns:1fr;gap:34px}
+  .wf-premium-home .wf-hero-scrim{
+    background:linear-gradient(180deg,rgba(7,11,17,.9),rgba(7,11,17,.68) 58%,rgba(7,11,17,.88));
+  }
+}
+
+@media(prefers-reduced-motion:reduce){
+  .wf-premium-home *,.ca-dashboard *{animation:none!important;transition:none!important}
+}
