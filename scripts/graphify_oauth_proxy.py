@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import json
 import os
+import time
 import urllib.error
 import urllib.request
 from typing import Any
@@ -13,7 +15,21 @@ from graphify import serve as graphify_serve
 WEBFACTORY_MCP_URL = os.environ.get("WEBFACTORY_MCP_URL", "https://webfactorypr.com/mcp").strip()
 GRAPHIFY_GRAPH_PATH = os.environ.get("GRAPHIFY_GRAPH_PATH", "graphify-out/graph.json").strip()
 PORT = int(os.environ.get("PORT", "10000"))
-AUTH_TIMEOUT_SECONDS = 6.0
+
+
+def _bounded_float_env(name: str, default: float, minimum: float, maximum: float) -> float:
+    try:
+        value = float(os.environ.get(name, str(default)))
+    except (TypeError, ValueError):
+        value = default
+    return max(minimum, min(maximum, value))
+
+
+AUTH_TIMEOUT_SECONDS = _bounded_float_env("GRAPHIFY_AUTH_TIMEOUT_SECONDS", 12.0, 3.0, 20.0)
+AUTH_CACHE_TTL_SECONDS = _bounded_float_env("GRAPHIFY_AUTH_CACHE_TTL_SECONDS", 30.0, 0.0, 60.0)
+AUTH_CACHE_MAX_ENTRIES = 256
+_AUTH_CACHE: dict[str, float] = {}
+_AUTH_CACHE_LOCK = asyncio.Lock()
 
 
 def _connection_check_sync(authorization: str) -> tuple[bool, int]:
@@ -61,8 +77,43 @@ def _connection_check_sync(authorization: str) -> tuple[bool, int]:
     return False, 403
 
 
+def _authorization_cache_key(authorization: str) -> str:
+    return hashlib.sha256(authorization.encode("utf-8")).hexdigest()
+
+
 async def _authorized_platform(authorization: str) -> tuple[bool, int]:
-    return await asyncio.to_thread(_connection_check_sync, authorization)
+    """Validate platform OAuth while avoiding three remote checks per MCP handshake.
+
+    Only successful checks are cached, and only as a SHA-256 digest of the bearer.
+    The short TTL covers initialize -> initialized -> tools/call while keeping
+    revocation bounded to at most AUTH_CACHE_TTL_SECONDS.
+    """
+
+    key = _authorization_cache_key(authorization)
+    now = time.monotonic()
+
+    async with _AUTH_CACHE_LOCK:
+        expires_at = _AUTH_CACHE.get(key, 0.0)
+        if expires_at > now:
+            return True, 200
+        _AUTH_CACHE.pop(key, None)
+
+    allowed, status = await asyncio.to_thread(_connection_check_sync, authorization)
+    if not allowed or AUTH_CACHE_TTL_SECONDS <= 0:
+        return allowed, status
+
+    expiry = time.monotonic() + AUTH_CACHE_TTL_SECONDS
+    async with _AUTH_CACHE_LOCK:
+        current = time.monotonic()
+        for stale_key in [cache_key for cache_key, value in _AUTH_CACHE.items() if value <= current]:
+            _AUTH_CACHE.pop(stale_key, None)
+        _AUTH_CACHE[key] = expiry
+        if len(_AUTH_CACHE) > AUTH_CACHE_MAX_ENTRIES:
+            overflow = len(_AUTH_CACHE) - AUTH_CACHE_MAX_ENTRIES
+            for cache_key, _ in sorted(_AUTH_CACHE.items(), key=lambda item: item[1])[:overflow]:
+                _AUTH_CACHE.pop(cache_key, None)
+
+    return True, 200
 
 
 async def _send_json(send: Any, status: int, value: dict[str, Any]) -> None:
@@ -86,8 +137,9 @@ class WebFactoryPlatformOAuth:
 
     Only a currently valid WebFactory platform-admin connection with
     webfactory.read may reach the code graph. Tenant/business OAuth grants are
-    rejected. The bearer token is validated against WebFactory on every request
-    so revocation and membership changes take effect immediately.
+    rejected. A successful platform authorization is cached briefly by bearer
+    digest so the three-request MCP handshake does not repeat the same remote
+    wf_connection check. The raw bearer is never retained by the cache.
     """
 
     def __init__(self, app: Any):
