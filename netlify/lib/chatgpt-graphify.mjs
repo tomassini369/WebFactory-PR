@@ -12,8 +12,7 @@ function env(name){
 
 function endpointConfig(){
  const raw=env('GRAPHIFY_MCP_URL')||DEFAULT_GRAPHIFY_MCP_URL;
- const apiKey=env('GRAPHIFY_API_KEY');
- if(!raw||!apiKey)return null;
+ if(!raw)return null;
  let url;
  try{url=new URL(raw);}catch{return null;}
  const local=['localhost','127.0.0.1','::1'].includes(url.hostname);
@@ -26,7 +25,7 @@ export function graphifyAvailable({platform=false}={}){
  const base=endpointConfig();
  if(!base)return false;
  if(platform)return true;
- return Boolean(env('GRAPHIFY_TENANT_PROJECT_ROOT'));
+ return env('GRAPHIFY_TENANT_CONTEXT_ENABLED')==='true'&&Boolean(env('GRAPHIFY_TENANT_PROJECT_ROOT'));
 }
 
 function safeSiteId(siteId){
@@ -56,7 +55,8 @@ export function shouldUseGraphify(question){
 }
 
 async function postMcp(config,body,sessionId,authorization,{allowEmpty=false}={}){
- if(!/^Bearer [^\\s]+$/.test(String(authorization||'')))throw oauthError('Graph context authorization is unavailable.',401);\n const controller=new AbortController();
+ if(!/^Bearer [^\s]+$/.test(String(authorization||'')))throw oauthError('Graph context authorization is unavailable.',401);
+ const controller=new AbortController();
  const timer=setTimeout(()=>controller.abort(),DEFAULT_TIMEOUT_MS);
  try{
   const headers={
@@ -102,15 +102,15 @@ export async function queryGraphContext({question,mode='bfs',depth=2,tokenBudget
  const init=await postMcp(config,{
   jsonrpc:'2.0',id:1,method:'initialize',
   params:{protocolVersion:'2025-03-26',capabilities:{},clientInfo:{name:'webfactory-graph-gateway',version:'1.0.0'}}
- });
+ },'',authorization);
  const sessionId=init.response.headers.get('mcp-session-id')||'';
- await postMcp(config,{jsonrpc:'2.0',method:'notifications/initialized'},sessionId,{allowEmpty:true});
+ await postMcp(config,{jsonrpc:'2.0',method:'notifications/initialized'},sessionId,authorization,{allowEmpty:true});
  const argumentsValue={question:normalized,mode:graphMode,depth:graphDepth,token_budget:budget};
  if(projectPath)argumentsValue.project_path=projectPath;
  const call=await postMcp(config,{
   jsonrpc:'2.0',id:2,method:'tools/call',
   params:{name:'query_graph',arguments:argumentsValue}
- },sessionId);
+ },sessionId,authorization);
  const result=call.payload?.result;
  if(result?.isError)throw oauthError('Graph context could not answer this request.',502);
  const text=(result?.content||[]).filter(x=>x?.type==='text').map(x=>String(x.text||'')).join('\n').trim();
