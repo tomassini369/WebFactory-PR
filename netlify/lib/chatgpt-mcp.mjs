@@ -11,6 +11,7 @@ import {operations,authorizeGrant,businessView,listRecords,readCollections,platf
 import {prepareProposal,proposalKey} from './chatgpt-proposals.mjs';
 import {clientOAuthStore} from './client-store.mjs';
 import {oauthError} from './chatgpt-oauth.mjs';
+import {graphifyAvailable,queryGraphContext} from './chatgpt-graphify.mjs';
 export async function serveMcp(request,grant,user,context={}){
  if(!grant.scopes.includes('webfactory.read'))throw oauthError('Read scope is required.',403);
  const origin=new URL(request.url).origin;
@@ -29,6 +30,13 @@ export async function serveMcp(request,grant,user,context={}){
  tool('wf_records','Read a bounded page of records from this business. Follow nextOffset for additional records; no global customer search.',z.object({siteId,collection:z.enum(Object.keys(readCollections)),limit:z.number().int().min(1).max(100).default(50),offset:z.number().int().min(0).max(10000).default(0)}),async args=>{const {site}=await access(args,readCollections[args.collection]);return listRecords(site.siteId,args.collection,args);});
  tool('wf_accounting','Read salary, approved hours, income and cost report. Results over 500 rows are truncated; use the authenticated business portal export for complete records.',z.object({siteId,from:z.string().regex(/^\d{4}-\d{2}-\d{2}$/),to:z.string().regex(/^\d{4}-\d{2}-\d{2}$/),employeeId:z.string().optional()}),async args=>{const {site}=await access(args,'analytics');const report=await accountingForSite(site,args);return {report:safeOutput(report),rowLimit:500,completeExportUrl:origin+'/.netlify/functions/client-business-accounting?'+new URLSearchParams({siteId:site.siteId,from:args.from,to:args.to,employeeId:args.employeeId||'',format:'csv'}),exportRequiresPortalSignIn:true};});
  tool('wf_booking_availability','Read current available slots before preparing a booking or reschedule.',z.object({siteId,serviceId:z.string().max(120),employeeId:z.string().max(120),date:z.string().regex(/^\d{4}-\d{2}-\d{2}$/),locationId:z.string().max(120).optional()}),async args=>{const {site}=await access(args,'bookings');return {slots:await availabilityForDate(site,args.serviceId,args.employeeId,args.date,args.locationId||'',{strictGoogle:true})};});
+ if(graphifyAvailable({platform:grant.platform})){
+  const graphTokenMax=grant.platform?1600:1000;
+  tool('wf_graph_context','Use only for complex dependency, impact, architecture, conflict or multi-system questions where a compact knowledge-graph answer can avoid broad file/data exploration. Do not call for simple reads or direct CRUD changes; use normal WebFactory tools instead. This tool is read-only and automatically scopes the graph to the authenticated platform or business tenant.',z.object({question:z.string().min(4).max(800),mode:z.enum(['bfs','dfs']).default('bfs'),depth:z.number().int().min(1).max(4).default(2),tokenBudget:z.number().int().min(200).max(graphTokenMax).default(grant.platform?1200:800)}),async args=>{
+   if(!grant.platform)await access({},'overview');
+   return queryGraphContext({...args,platform:grant.platform,siteId:grant.siteId});
+  });
+ }
  if(grant.platform)tool('wf_platform_report','Read platform overview/health or platform-only revenue. Never includes tenant sales in platform revenue.',z.object({report:z.enum(['overview','revenue'])}),async args=>{
   if(args.report==='revenue')return loadPlatformRevenue({secretKey:globalThis.Netlify?.env?.get('STRIPE_SECRET_KEY')||'',createStripe:key=>new Stripe(key,{apiVersion:'2026-08-26.dahlia',timeout:15000,maxNetworkRetries:0})});
   const handler=createAdminOverviewHandler(async()=>{await authorizeGrant(grant,user,'','platform',{platform:true});return user});
