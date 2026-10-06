@@ -4,7 +4,7 @@ const DEFAULT_TIMEOUT_MS=8000;
 const MAX_REMOTE_BODY=60000;
 const PLATFORM_TOKEN_MAX=1600;
 const TENANT_TOKEN_MAX=1000;
-const DEFAULT_GRAPHIFY_MCP_URL='https://webfactory-graphify.onrender.com/mcp';
+const DEFAULT_GRAPHIFY_MCP_URL='https://webfactory-graphify-oauth.onrender.com/mcp';
 
 function env(name){
  return String(globalThis.Netlify?.env?.get?.(name)??process.env?.[name]??'').trim();
@@ -19,7 +19,7 @@ function endpointConfig(){
  const local=['localhost','127.0.0.1','::1'].includes(url.hostname);
  if(url.protocol!=='https:'&&!local)return null;
  if(url.username||url.password||url.search||url.hash)return null;
- return {url:url.toString(),apiKey};
+ return {url:url.toString()};
 }
 
 export function graphifyAvailable({platform=false}={}){
@@ -55,14 +55,14 @@ export function shouldUseGraphify(question){
  return systemTerms.filter(term=>q.includes(term)).length>=2;
 }
 
-async function postMcp(config,body,sessionId,{allowEmpty=false}={}){
- const controller=new AbortController();
+async function postMcp(config,body,sessionId,authorization,{allowEmpty=false}={}){
+ if(!/^Bearer [^\\s]+$/.test(String(authorization||'')))throw oauthError('Graph context authorization is unavailable.',401);\n const controller=new AbortController();
  const timer=setTimeout(()=>controller.abort(),DEFAULT_TIMEOUT_MS);
  try{
   const headers={
    'Content-Type':'application/json',
    'Accept':'application/json, text/event-stream',
-   'Authorization':'Bearer '+config.apiKey
+   'Authorization':authorization
   };
   if(sessionId)headers['mcp-session-id']=sessionId;
   const response=await fetch(config.url,{method:'POST',headers,body:JSON.stringify(body),signal:controller.signal});
@@ -84,7 +84,7 @@ async function postMcp(config,body,sessionId,{allowEmpty=false}={}){
  }finally{clearTimeout(timer);}
 }
 
-export async function queryGraphContext({question,mode='bfs',depth=2,tokenBudget,platform=false,siteId}={}){
+export async function queryGraphContext({question,mode='bfs',depth=2,tokenBudget,platform=false,siteId,authorization}={}){
  const config=endpointConfig();
  if(!config)throw oauthError('Graph context is not configured.',503);
  const normalized=String(question||'').trim();
