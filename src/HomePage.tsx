@@ -407,7 +407,7 @@ export default function HomePage({ lang, setLang }: { lang: Language, setLang: (
   const goToStep = (i: number) => stepRefs.current[i]?.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'center' })
   const nav = ['#plataforma', '#recorrido', '#explorar', '#planes', '#faq']
 
-  return <div ref={rootRef} className={'wf-premium-home' + (reduced ? '' : ' motion')} id="top" style={{ '--step': step } as CSSProperties}>
+  return <div ref={rootRef} className={'wf-premium-home wf-v4-home' + (reduced ? '' : ' motion')} id="top" style={{ '--step': step } as CSSProperties}>
     <header className={'wf-h-header' + (scrolled ? ' scrolled' : '')}>
       <div className="wf-h-header-inner">
         <a href="/" className="wf-h-logo"><AdaptiveLogo alt="WebFactory PR" /></a>
