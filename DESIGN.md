@@ -405,11 +405,14 @@ The original WebFactory homepage already contains a defining interaction model. 
 The mobile homepage must preserve the same five-step dynamic product-tour model as desktop rather than falling back to five static duplicated screenshots.
 
 - Reuse the existing `step` state and IntersectionObserver; do not introduce a second mobile-only state machine.
-- On phone widths below 768px, the shared Business Control Center becomes a compact sticky visualization directly below the mobile header.
+- On phone widths below 768px, the shared Business Control Center becomes a compact sticky visualization directly below the mobile header, rendered at the phone's real width.
 - The sticky visualization changes live between Crear, Vender, Reservar, Cobrar and Administrar as the corresponding narrative step crosses the active viewport band.
-- The five-step progress rail remains visible, updates from the same state, and stays tappable with minimum 44px touch targets.
+- The five-step progress rail remains visible, updates from the same state, and stays tappable with approximately 44px touch targets.
 - Narrative text remains in normal document flow below the sticky visualization; the hero video remains separate above the tour.
 - Do not duplicate inline Control Center scenes on phone widths when the sticky visualization is enabled.
+- Never scale the desktop Control Center wider than the mobile viewport and shrink it with transform; use a native compact layout instead.
+- The sticky dock must have an explicit bounded height and must never create a large empty region above or below the live Control Center.
+- Compress secondary UI details on mobile, but preserve the meaning of each state and keep the active scene legible.
 - Use `100dvh`-relative step spacing and respect iOS safe areas.
 - Motion must use transform/opacity only. Reduced-motion mode keeps dynamic state changes but removes cinematic transforms and entrance effects.
 - Tablet widths may continue using the existing inline fallback until a separate tablet treatment is explicitly approved.
