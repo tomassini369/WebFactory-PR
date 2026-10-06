@@ -388,3 +388,13 @@ The original WebFactory homepage already contains a defining interaction model. 
 - Never redesign the homepage into an unrelated generic SaaS template.
 - Never remove existing capabilities merely to simplify the visual design.
 - Never alter production data, routes, auth, payments, bookings, tenant logic or integrations as part of a visual pass.
+
+
+### Mobile Light Mode QA
+
+- The homepage hero remains a dark cinematic video scene in both global themes so text and video retain contrast.
+- Light Mode changes the surrounding page, header and subsequent surfaces, but must not apply a white wash over the hero video.
+- Hero feature chips use a dark translucent surface over video in both themes.
+- The mobile header must expose exactly one Light/Dark control. Generic floating fallback toggles are not allowed when an inline header toggle is present.
+- The scroll cue must remain readable on video.
+- Mobile inline scroll-tour scenes require bottom breathing room so iOS browser chrome does not visually crowd the first interactive scene.
