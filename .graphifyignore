@@ -1,0 +1,27 @@
+# WebFactory PR Graphify corpus boundary
+# Keep the knowledge graph code-focused so extraction stays local, deterministic,
+# and does not require an external LLM/API for docs, screenshots or media.
+
+docs/
+assets/
+media-source/
+
+*.md
+*.mdx
+*.pdf
+*.png
+*.jpg
+*.jpeg
+*.webp
+*.gif
+*.svg
+*.bmp
+*.mp4
+*.mov
+*.m4v
+*.mp3
+*.wav
+*.aac
+*.docx
+*.xlsx
+*.pptx
