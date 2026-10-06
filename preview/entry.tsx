@@ -6,6 +6,7 @@ import '../src/v3-system.css'
 import '../src/theme.css'
 import '../src/liquid-glass.css'
 import './design-review.css'
+import './stitch-design-preview.css'
 const previewStyle=document.createElement('style');previewStyle.textContent='.wf-theme-toggle.floating{display:none}';document.head.append(previewStyle);
 const today=new Date();const date=(offset:number)=>new Date(today.getTime()+offset*86400000).toISOString();
 const site:any={siteId:'preview-business',slug:'preview-business',status:'active',revision:1,business:{name:'Negocio de ejemplo',nameEn:'Sample business',nameEs:'Negocio de ejemplo',category:'Professional services',description:'Datos de ejemplo para evaluar el diseño.'},design:{primary:'#0B1529',secondary:'#3C86F6',style:'Modern'},catalog:Array.from({length:12},(_,i)=>({id:`item-${i}`,type:'service',name:`Servicio ${i+1}`,price:45,active:true,inventory:null,requiresAppointment:true,duration:30,bufferMinutes:0})),employees:[{id:'one',name:'Profesional de ejemplo',role:'Professional',active:true,serviceIds:[],calendarId:'',dailyLimit:8,schedule:{},timeOff:[]}],hours:{},paymentRules:{},googleCalendar:{},settings:{locale:'en',timezone:'America/Puerto_Rico',currency:'USD'},servicePlan:{name:'WebFactory Commerce Platform',billingModel:'subscription',subscriptionStatus:'active',billingStatus:'active'}};
