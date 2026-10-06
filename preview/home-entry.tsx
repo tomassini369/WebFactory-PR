@@ -15,4 +15,5 @@ document.addEventListener('click',event=>{
   if(target){event.preventDefault();target.scrollIntoView({behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'})}
 })
 const style=document.createElement('style');style.textContent='.wf-theme-toggle.floating{display:none}';document.head.append(style)
-function PreviewHome(){const [lang,setLang]=useState<'en'|'es'>('en');return <HomePage lang={lang} setLang={setLang}/>}\ncreateRoot(document.getElementById('root')!).render(<ThemeProvider><PreviewHome/></ThemeProvider>)
+function PreviewHome(){const [lang,setLang]=useState<'en'|'es'>('en');return <HomePage lang={lang} setLang={setLang}/>}
+createRoot(document.getElementById('root')!).render(<ThemeProvider><PreviewHome/></ThemeProvider>)
