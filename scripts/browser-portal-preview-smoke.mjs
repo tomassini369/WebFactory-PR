@@ -16,7 +16,11 @@ try{
   if(!await page.locator('.ca-nav-groups details').filter({has:page.locator('summary').filter({hasText:/^Business$/})}).getAttribute('open').then(v=>v!==null))await page.locator('.ca-nav-groups summary').filter({hasText:/^Business$/}).click();
   if(width<821){
    const geometry=await page.locator('.ca-nav-groups').evaluate(el=>({display:getComputedStyle(el).display,groups:Array.from(el.children).map(e=>{const r=e.getBoundingClientRect();return {x:r.x,right:r.right,width:r.width}})}));
-   assert.equal(geometry.display,'grid');assert(geometry.groups.every(g=>Math.abs(g.x-geometry.groups[0].x)<1&&g.right<=width));
+   assert.equal(geometry.display,'grid');
+   // Leave room for the iPhone browser toolbar below the last menu action.
+   await page.locator('.ca-sidebar').evaluate(el=>{el.scrollTop=el.scrollHeight});
+   const clearance=await page.locator('.ca-sidebar').evaluate(el=>({rect:el.getBoundingClientRect().toJSON(),scrollHeight:el.scrollHeight,scrollTop:el.scrollTop,clientHeight:el.clientHeight,bottom:el.querySelector('.ca-signout').getBoundingClientRect().bottom,padding:parseFloat(getComputedStyle(el).paddingBottom),overflow:getComputedStyle(el).overflowY}));assert(clearance.padding>=112&&clearance.overflow==='auto'&&clearance.bottom<=844-96);
+   await page.getByRole('button',{name:'Inventory',exact:true}).scrollIntoViewIfNeeded();assert(geometry.groups.every(g=>Math.abs(g.x-geometry.groups[0].x)<1&&g.right<=width));
   }
   await page.getByRole('button',{name:'Inventory',exact:true}).click();await page.getByRole('heading',{name:'Stock and consumption'}).waitFor();
   if(width<821)await page.getByRole('button',{name:'Business menu'}).click();
