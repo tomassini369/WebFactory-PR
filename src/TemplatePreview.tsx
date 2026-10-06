@@ -98,6 +98,8 @@ function TemplateSite({ slug }: { slug: string }) {
     '--template-button-ink':templateButtonInk(config.accent),
     '--template-accent-2': config.accent2,
     '--template-dark': config.dark,
+    '--template-dark-ink': templateButtonInk(config.dark),
+    '--template-cream-ink': templateButtonInk(config.cream),
     '--template-cream': config.cream,
   } as CSSProperties
 

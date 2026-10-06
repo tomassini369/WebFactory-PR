@@ -210,6 +210,8 @@ export default function ClientStorefront({slug,previewSite,previewLanguage='en'}
     '--template-button-ink':templateButtonInk(site.design?.secondary||template?.accent||'#3C86F6'),
     '--template-accent-2':template?.accent2||site.design?.secondary||'#4D96F3',
     '--template-dark':site.design?.primary||template?.dark||'#0B1529',
+    '--template-dark-ink':templateButtonInk(site.design?.primary||template?.dark||'#0B1529'),
+    '--template-cream-ink':templateButtonInk(template?.cream||'#F3F6FB'),
     '--template-cream':template?.cream||'#F3F6FB',
     '--cs-primary':site.design?.primary||template?.dark||'#0B1529',
     '--cs-accent':site.design?.secondary||template?.accent||'#3C86F6',

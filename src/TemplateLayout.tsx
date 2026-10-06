@@ -3,6 +3,7 @@ import type { TemplateConfig, TemplateItem } from './templateData'
 import type { TemplateLanguage, TemplateUi } from './templateI18n'
 import './template-preview.css'
 import './template-polish.css'
+import './template-evolution.css'
 
 type Props = {
  config: TemplateConfig; ui: {[K in keyof TemplateUi]: TemplateUi[K] extends string ? string : TemplateUi[K]}; language: TemplateLanguage; setLanguage: (language: TemplateLanguage) => void;
@@ -49,7 +50,7 @@ export default function TemplateLayout({config,ui,language,setLanguage,startBook
             <span>{config.description}</span>
             <div className="template-hero-actions">
               {config.bookingEnabled && <button className="template-solid large" onClick={() => startBooking()}>{config.bookingLabel}</button>}
-              <button className="template-glass large" onClick={() => setCatalogOpen(true)}>{config.cartEnabled ? ui.exploreCatalog : ui.viewServices}</button>
+              {catalogEnabled && <button className="template-glass large" onClick={() => setCatalogOpen(true)}>{config.cartEnabled ? ui.exploreCatalog : ui.viewServices}</button>}
             </div>
           </div>
           <aside className="template-hero-meta">
@@ -76,6 +77,18 @@ export default function TemplateLayout({config,ui,language,setLanguage,startBook
             </div>
             <p>{ui.catalogIntro}</p>
           </div>
+          {config.items.length > 0 && <div className="template-catalog-preview">
+            {config.items.slice(0,3).map(item => <article key={item.id}>
+              {item.image && <img src={item.image} alt="" loading="lazy" />}
+              <div>
+                {item.badge && <small>{item.badge}</small>}
+                <h3>{item.name}</h3>
+                <p>{item.description}</p>
+                <strong>{item.displayPrice || new Intl.NumberFormat(language==='es'?'es-US':'en-US',{style:'currency',currency:'USD'}).format(item.price)}</strong>
+                <button className="template-outline" onClick={() => setCatalogOpen(true)}>{ui.viewCatalog} ↗</button>
+              </div>
+            </article>)}
+          </div>}
           <div className="template-catalog-gateway">
             <div><small>{ui.catalogAvailable}</small><strong>{config.items.length} {ui.productsServices}</strong><span>{ui.catalogHint}</span></div>
             <button className="template-solid" onClick={() => setCatalogOpen(true)}>{ui.viewCatalog}</button>
