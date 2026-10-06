@@ -39,11 +39,13 @@ try{
    assert.deepEqual(errors,[])
   }finally{await browser.close()}
  }
- for(const config of representatives)for(const width of [320,390,1280]){
+ for(const baseConfig of representatives)for(const width of [320,390,1280]){
+  const config=localizeTemplate(baseConfig,'en')
   const browser=await launch()
   try{
    const page=await browser.newPage({viewport:{width,height:900}})
    await page.goto(origin+'/templates/'+config.slug);await page.locator('.template-hero h1').waitFor()
+   await page.locator('.template-languages button').filter({hasText:'EN'}).click()
    await noOverflow(page,`demo ${config.slug}/${width}`)
    for(const box of await geometry(page,'.template-languages button,.template-menu-button,.template-cart-button'))assert.ok(box.width>=43.5&&box.height>=43.5,`demo target ${config.slug}/${width}: ${JSON.stringify(box)}`)
    if(width<768){await page.locator('.template-menu-button').click();assert.equal(await page.locator('.template-menu-button').getAttribute('aria-expanded'),'true');await page.locator('#template-main-nav a').first().click();assert.equal(await page.locator('.template-menu-button').getAttribute('aria-expanded'),'false')}
@@ -58,7 +60,7 @@ try{
      await card.locator('.template-solid').click()
      await page.locator('.template-cart-drawer').waitFor()
      assert.ok((await page.locator('.template-cart-drawer').textContent()).includes(buyable.name))
-     await page.locator('.template-cart-drawer .template-modal-close').click()
+     await page.locator('.template-cart-drawer').getByRole('button',{name:'×',exact:true}).click()
     }else await page.locator('.template-catalog-modal .catalog-close').click()
     if(config.bookingEnabled){await page.locator('.template-hero-actions .template-solid').click();await page.locator('.template-booking-modal').waitFor();await page.locator('.template-booking-modal .template-modal-close').click()}
     if(process.env.QA_SCREENSHOTS&&width===390){await page.locator('#services').scrollIntoViewIfNeeded();await page.screenshot({path:`/tmp/template-catalog-${templateVisualStyle(config.category)}.png`})}

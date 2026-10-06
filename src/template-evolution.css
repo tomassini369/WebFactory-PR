@@ -1,7 +1,7 @@
 /* Product pages: visible composition changes shared by demo, Builder and storefront. */
 .template-site .template-hero{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);min-height:0;padding:0;background:var(--template-dark);color:var(--template-dark-ink,#fff);perspective:none;align-items:stretch}
 .template-site .template-hero::before,.template-site .template-hero-overlay{display:none}
-.template-site .template-hero>img{position:relative;inset:auto;grid-column:2;grid-row:1;width:100%;height:100%;min-height:460px;object-fit:cover;transform:none;transition:none}
+.template-site .template-hero>img{position:relative;inset:auto;grid-column:2;grid-row:1;width:100%;height:clamp(460px,48vw,680px);min-height:0;object-fit:cover;transform:none;transition:none}
 .template-site .template-hero:hover>img{transform:none}
 .template-site .template-hero-content{grid-column:1;grid-row:1;width:100%;max-width:none;margin:0;padding:clamp(40px,6vw,88px) clamp(24px,5vw,72px);align-self:center;transform:none}
 .template-site .template-hero-content>p{padding:0;border:0;border-radius:0;background:none;backdrop-filter:none;color:var(--template-dark-ink,#fff);font-weight:650;letter-spacing:.14em;line-height:1.5}
