@@ -400,65 +400,216 @@
   .wf-v4-home .wf-section{padding-top:104px}
 }
 
-/* Mobile: scroll remains native; each tour step becomes an interactive story card. */
+/* Mobile: dedicated composition rather than a scaled-down desktop layout. */
+@media(max-width:960px){
+  .wf-v4-home .wf-tour-grid{grid-template-columns:minmax(0,1fr)}
+  .wf-v4-home .wf-tour-steps{min-width:0}
+  .wf-v4-home .wf-tour-inline{width:100%;min-width:0;overflow:hidden}
+  .wf-v4-home .wf-tour-inline .wf-cc{width:100%;max-width:100%;min-width:0;overflow:hidden}
+  .wf-v4-home .wf-tour-inline .wf-cc-body{min-width:0}
+  .wf-v4-home .wf-tour-inline .wf-cc-main{min-width:0;width:100%}
+}
+
+/* Mobile: scroll remains native; every scene becomes a true mobile card. */
 @media(max-width:600px){
-  .wf-v4-home .wf-h-header-inner{min-height:58px;padding:4px 6px 4px 10px}
-  .wf-v4-home .wf-h-logo{width:82px}
+  .wf-v4-home{background:linear-gradient(180deg,var(--v4-bg),var(--v4-bg-2) 48%,var(--v4-bg))}
+
+  /* Header: compact, tappable, and visually separated from browser chrome. */
+  .wf-v4-home .wf-h-header{padding:0 6px}
+  .wf-v4-home .wf-h-header-inner{
+    min-height:58px;
+    padding:4px 5px 4px 9px;
+    gap:5px;
+    border-radius:16px;
+  }
+  .wf-v4-home .wf-h-logo{width:76px}
   .wf-v4-home .wf-h-logo .wf-adaptive-logo-slot,
-  .wf-v4-home .wf-h-logo .wf-adaptive-logo-slot>.wf-adaptive-logo{height:46px}
-  .wf-v4-home .wf-h-languages{min-height:36px}
-  .wf-v4-home .wf-h-languages button{min-width:29px;min-height:28px;padding:3px 4px}
+  .wf-v4-home .wf-h-logo .wf-adaptive-logo-slot>.wf-adaptive-logo{height:44px}
+  .wf-v4-home .wf-h-actions{gap:4px;min-width:0}
+  .wf-v4-home .wf-h-languages{min-height:36px;padding:2px}
+  .wf-v4-home .wf-h-languages button{min-width:28px;min-height:30px;padding:3px 4px;font-size:.7rem}
   .wf-v4-home .wf-h-header .wf-theme-toggle,
   .wf-v4-home .wf-h-login,
   .wf-v4-home .wf-h-menu{min-height:36px;height:36px;border-radius:10px}
-  .wf-v4-home .wf-h-header .wf-theme-toggle{width:36px}
-  .wf-v4-home .wf-h-login{padding-inline:10px;font-size:.78rem}
-  .wf-v4-home .wf-h-menu{width:36px}
+  .wf-v4-home .wf-h-header .wf-theme-toggle{width:36px;padding:7px}
+  .wf-v4-home .wf-h-login{padding-inline:9px;font-size:.75rem}
+  .wf-v4-home .wf-h-menu{width:36px;min-width:36px}
+
+  /* Hero: preserve the video, but give the copy enough breathing room on iPhone. */
   .wf-v4-home .wf-hero{
     min-height:100svh;
-    padding:104px 0 78px;
+    padding:96px 0 76px;
+    align-items:flex-end;
   }
-  .wf-v4-home .wf-hero-grid{width:calc(100% - 30px)}
+  .wf-v4-home .wf-hero-grid{width:calc(100% - 28px)}
+  .wf-v4-home .wf-hero-copy{max-width:none}
   .wf-v4-home .wf-hero-media video,
-  .wf-v4-home .wf-hero-media img{object-position:69% 50%}
+  .wf-v4-home .wf-hero-media img{object-position:68% 50%;transform:scale(1.015)}
   .wf-v4-home .wf-hero.has-video .wf-hero-scrim{
     background:
-      linear-gradient(180deg,rgba(1,5,12,.22) 0%,rgba(2,7,16,.43) 26%,rgba(2,7,16,.76) 57%,rgba(2,7,16,.97) 100%),
-      linear-gradient(90deg,rgba(2,7,16,.28),rgba(2,7,16,.02));
+      linear-gradient(180deg,rgba(1,5,12,.18) 0%,rgba(2,7,16,.36) 29%,rgba(2,7,16,.74) 58%,rgba(2,7,16,.98) 100%),
+      linear-gradient(90deg,rgba(2,7,16,.34),rgba(2,7,16,.02));
   }
   .wf-v4-home .wf-hero h1{
-    font-size:clamp(3rem,15.5vw,4.8rem);
-    line-height:.91;
-    letter-spacing:-.058em;
-    margin:18px 0 20px;
+    max-width:8.6ch;
+    font-size:clamp(2.75rem,13.6vw,4rem);
+    line-height:.94;
+    letter-spacing:-.055em;
+    margin:16px 0 18px;
   }
-  .wf-v4-home .wf-lead{font-size:1rem;line-height:1.62}
-  .wf-v4-home .wf-hero-modules{gap:6px;margin-top:22px}
+  .wf-v4-home .wf-lead{max-width:34rem;font-size:.98rem;line-height:1.58}
+  .wf-v4-home .wf-hero-modules{
+    display:grid;
+    grid-auto-flow:column;
+    grid-auto-columns:max-content;
+    flex-wrap:nowrap;
+    gap:7px;
+    margin:20px -14px 0 0;
+    padding:0 14px 4px 0;
+    overflow-x:auto;
+    overscroll-behavior-x:contain;
+    scrollbar-width:none;
+  }
+  .wf-v4-home .wf-hero-modules::-webkit-scrollbar{display:none}
   .wf-v4-home .wf-hero-modules li{min-height:34px;font-size:.72rem;padding:6px 9px}
-  .wf-v4-home .wf-actions{gap:14px;margin-top:28px}
-  .wf-v4-home .wf-actions .wf-btn{width:100%}
-  .wf-v4-home .wf-actions .wf-link{width:100%;justify-content:center}
-  .wf-v4-home .wf-trial{text-align:center}
-  .wf-v4-home .wf-scroll-cue{width:max-content;max-width:calc(100% - 30px);font-size:.7rem}
+  .wf-v4-home .wf-actions{gap:10px;margin-top:24px}
+  .wf-v4-home .wf-actions .wf-btn{width:100%;min-height:48px}
+  .wf-v4-home .wf-actions .wf-link{width:100%;justify-content:center;min-height:40px}
+  .wf-v4-home .wf-trial{margin-top:10px!important;text-align:center;font-size:.72rem}
+  .wf-v4-home .wf-scroll-cue{bottom:15px;width:max-content;max-width:calc(100% - 28px);font-size:.68rem}
 
+  /* Page rhythm */
+  .wf-v4-home .wf-shell{width:calc(100% - 28px)}
   .wf-v4-home .wf-tour,
-  .wf-v4-home .wf-section{padding-top:88px}
-  .wf-v4-home .wf-heading{margin-bottom:28px}
+  .wf-v4-home .wf-section{padding-top:76px}
+  .wf-v4-home .wf-heading{margin-bottom:24px}
   .wf-v4-home .wf-heading h2,
   .wf-v4-home .wf-pricing h2,
-  .wf-v4-home .wf-final h2{font-size:clamp(2.35rem,11vw,3.35rem)}
-  .wf-v4-home .wf-tour-step{padding:10px 0 28px}
-  .wf-v4-home .wf-tour-text{padding:18px;border-radius:18px 18px 8px 8px}
-  .wf-v4-home .wf-tour-inline .wf-cc{border-radius:0 0 18px 18px}
-  .wf-v4-home .wf-tour-inline .wf-cc-main{min-height:300px}
-  .wf-v4-home .wf-platform article{min-height:auto;padding:24px;border-radius:20px}
-  .wf-v4-home .wf-demo{border-radius:22px}
-  .wf-v4-home .wf-demo-content{padding:24px 18px}
-  .wf-v4-home .wf-how{gap:12px}
-  .wf-v4-home .wf-how article{min-height:0;padding:20px;border-radius:18px}
-  .wf-v4-home .wf-pricing{padding:28px 22px;border-radius:22px}
-  .wf-v4-home .wf-final{margin-top:90px;padding:52px 20px;border-radius:24px}
-  .wf-v4-home .wf-footer{margin-top:72px}
+  .wf-v4-home .wf-final h2{
+    font-size:clamp(2.15rem,10.5vw,3rem);
+    line-height:1.02;
+    letter-spacing:-.048em;
+  }
+  .wf-v4-home .wf-heading>p:last-child:not(.wf-eyebrow){font-size:.94rem;line-height:1.62}
+
+  /* Tour: one column. The desktop Control Center becomes a mobile scene. */
+  .wf-v4-home .wf-tour-grid{display:block}
+  .wf-v4-home .wf-tour-step{padding:0;margin:0 0 24px}
+  .wf-v4-home .wf-tour-text{
+    padding:18px;
+    border:1px solid var(--v4-line);
+    border-radius:20px 20px 10px 10px;
+    background:linear-gradient(145deg,color-mix(in srgb,var(--v4-panel-strong) 84%,transparent),color-mix(in srgb,var(--v4-panel) 70%,transparent));
+  }
+  .wf-v4-home.motion .wf-tour-text{opacity:1;transform:none}
+  .wf-v4-home .wf-tour-step.on .wf-tour-text{
+    border-color:var(--v4-line-strong);
+    background:linear-gradient(145deg,color-mix(in srgb,var(--v4-blue) 10%,var(--v4-panel-strong)),color-mix(in srgb,var(--v4-panel) 78%,transparent));
+  }
+  .wf-v4-home .wf-tour-text h3{font-size:1.55rem;margin:8px 0 8px}
+  .wf-v4-home .wf-tour-text p{font-size:.92rem;line-height:1.58}
+  .wf-v4-home .wf-tour-inline{display:block;margin-top:-1px}
+  .wf-v4-home .wf-tour-inline .wf-cc{
+    border-radius:0 0 20px 20px;
+    border-color:var(--v4-line);
+    background:color-mix(in srgb,var(--v4-panel-strong) 92%,transparent);
+    box-shadow:0 24px 56px -38px rgba(29,104,220,.55);
+  }
+  .wf-v4-home .wf-tour-inline .wf-cc-top{
+    min-height:48px;
+    padding:10px 12px;
+    gap:7px;
+    font-size:.72rem;
+  }
+  .wf-v4-home .wf-tour-inline .wf-cc-crumb{display:none}
+  .wf-v4-home .wf-tour-inline .wf-cc-sample{margin-left:auto;font-size:.62rem;padding:3px 7px}
+  .wf-v4-home .wf-tour-inline .wf-cc-body{display:block}
+  .wf-v4-home .wf-tour-inline .wf-cc-body>aside{display:none}
+  .wf-v4-home .wf-tour-inline .wf-cc-main{height:auto!important;min-height:0!important}
+  .wf-v4-home .wf-tour-inline .wf-cc-scene{
+    position:relative!important;
+    inset:auto!important;
+    width:100%;
+    min-width:0;
+    padding:14px;
+    opacity:1!important;
+    transform:none!important;
+  }
+
+  /* Recompose every Control Center scene for narrow screens. */
+  .wf-v4-home .wf-tour-inline :is(.wf-s-website,.wf-s-sell,.wf-s-book,.wf-s-pay,.wf-s-manage){
+    grid-template-columns:minmax(0,1fr)!important;
+    gap:12px;
+    min-width:0;
+  }
+  .wf-v4-home .wf-tour-inline :is(.wf-s-ai,.wf-s-site,.wf-s-catalog,.wf-s-cart,.wf-s-calendar,.wf-s-slots,.wf-s-checkout,.wf-s-receipt,.wf-s-chart,.wf-s-quick){
+    min-width:0;
+  }
+  .wf-v4-home .wf-tour-inline .wf-s-ai{padding:12px}
+  .wf-v4-home .wf-tour-inline .wf-s-ai p{display:block;margin:8px 0 10px;padding:8px;font-size:.68rem}
+  .wf-v4-home .wf-tour-inline .wf-s-ai li{font-size:.68rem;padding:5px 0}
+  .wf-v4-home .wf-tour-inline .wf-s-site-hero{padding:13px}
+  .wf-v4-home .wf-tour-inline .wf-s-site-hero strong{font-size:.95rem}
+  .wf-v4-home .wf-tour-inline .wf-s-site-cards{gap:6px}
+  .wf-v4-home .wf-tour-inline .wf-s-site-cards div{padding:6px;font-size:.62rem}
+  .wf-v4-home .wf-tour-inline .wf-s-catalog>div{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .wf-v4-home .wf-tour-inline .wf-s-catalog article:nth-child(3){display:none}
+  .wf-v4-home .wf-tour-inline .wf-s-catalog article{padding:8px}
+  .wf-v4-home .wf-tour-inline .wf-s-art{height:54px}
+  .wf-v4-home .wf-tour-inline .wf-s-cart{padding:11px}
+  .wf-v4-home .wf-tour-inline .wf-s-grid{gap:3px}
+  .wf-v4-home .wf-tour-inline .wf-s-grid span{padding:4px 0}
+  .wf-v4-home .wf-tour-inline .wf-s-slots{padding:11px}
+  .wf-v4-home .wf-tour-inline .wf-s-methods{gap:5px}
+  .wf-v4-home .wf-tour-inline .wf-s-methods span{padding:6px 8px}
+  .wf-v4-home .wf-tour-inline .wf-s-metrics{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+  .wf-v4-home .wf-tour-inline .wf-s-metrics div{padding:8px}
+  .wf-v4-home .wf-tour-inline .wf-s-metrics strong{font-size:1rem}
+  .wf-v4-home .wf-tour-inline .wf-s-chart>div{height:70px}
+  .wf-v4-home .wf-tour-inline .wf-s-quick>div{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .wf-v4-home .wf-tour-inline .wf-s-quick span{min-width:0;font-size:.65rem}
+
+  /* Content cards: less vertical bulk, stronger hierarchy. */
+  .wf-v4-home .wf-platform{gap:12px}
+  .wf-v4-home .wf-platform article{min-height:0;padding:20px;border-radius:20px}
+  .wf-v4-home .wf-platform-icon{width:42px;height:42px;margin-bottom:16px}
+  .wf-v4-home .wf-platform h3{font-size:1.12rem}
+  .wf-v4-home .wf-platform p{font-size:.9rem;line-height:1.58}
+  .wf-v4-home .wf-also{gap:6px}
+  .wf-v4-home .wf-also span{font-size:.72rem;padding:5px 9px}
+
+  .wf-v4-home .wf-demo{border-radius:22px;box-shadow:0 18px 50px -38px rgba(0,0,0,.7)}
+  .wf-v4-home .wf-demo-tabs{padding:10px 8px}
+  .wf-v4-home .wf-demo-content{padding:22px 16px;gap:22px}
+  .wf-v4-home .wf-demo-copy h3{font-size:1.45rem}
+  .wf-v4-home .wf-demo-copy p{font-size:.92rem;line-height:1.58}
+  .wf-v4-home .wf-demo-shop{grid-template-columns:minmax(0,1fr);gap:12px}
+  .wf-v4-home .wf-demo-art{height:96px}
+  .wf-v4-home .wf-demo-booking,
+  .wf-v4-home .wf-demo-pay{grid-template-columns:minmax(0,1fr)}
+  .wf-v4-home .wf-demo-booking label,
+  .wf-v4-home .wf-demo-label,
+  .wf-v4-home .wf-demo-booking fieldset,
+  .wf-v4-home .wf-demo-pay fieldset,
+  .wf-v4-home .wf-demo-booking>.wf-btn,
+  .wf-v4-home .wf-demo-pay>.wf-btn,
+  .wf-v4-home .wf-demo-pay>.wf-link,
+  .wf-v4-home .wf-demo-amount,
+  .wf-v4-home .wf-demo-ok{grid-column:1}
+  .wf-v4-home .wf-demo-quick{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+
+  .wf-v4-home .wf-how{gap:10px}
+  .wf-v4-home .wf-how article{min-height:0;padding:18px;border-radius:18px}
+  .wf-v4-home .wf-how h3{font-size:1.28rem;margin:8px 0}
+  .wf-v4-home .wf-how p{font-size:.9rem;line-height:1.58}
+
+  .wf-v4-home .wf-pricing{padding:24px 18px;border-radius:22px}
+  .wf-v4-home .wf-price{margin-top:22px}
+  .wf-v4-home .wf-price>strong{font-size:3.6rem}
+  .wf-v4-home .wf-faq{margin-top:28px}
+  .wf-v4-home .wf-faq details{padding:18px 2px}
+  .wf-v4-home .wf-final{margin-top:76px;padding:44px 18px;border-radius:24px}
+  .wf-v4-home .wf-footer{margin-top:62px;padding-bottom:calc(28px + env(safe-area-inset-bottom))}
 }
 
 @media(max-width:390px){
