@@ -356,7 +356,7 @@
     -webkit-backdrop-filter:var(--v4-glass);
     backdrop-filter:var(--v4-glass);
   }
-  .wf-v4-home .wf-h-header nav a{width:100%;padding-inline:12px}
+  .wf-v4-home .wf-h-header nav a{width:100%;min-height:44px;padding-inline:12px}
   .wf-v4-home .wf-hero{
     min-height:100svh;
     padding:118px 0 72px;
