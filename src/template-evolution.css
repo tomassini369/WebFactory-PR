@@ -112,7 +112,7 @@
 .template-site .template-demo-contact :is(input,textarea){width:100%;box-sizing:border-box;border:1px solid #c2cbd3;border-radius:8px;padding:12px;background:#fff;color:#12202b;min-height:44px;font:inherit}
 .template-site .template-demo-contact textarea{min-height:120px;resize:vertical}
 .template-site .template-demo-contact button{justify-self:start}
-.template-location-map{margin-top:32px;border:1px solid color-mix(in srgb,var(--template-dark) 18%,transparent);overflow:hidden;background:var(--template-cream);color:var(--template-cream-ink)}
+.template-location-map{grid-column:1/-1;width:100%;margin-top:32px;border:1px solid color-mix(in srgb,var(--template-dark) 18%,transparent);overflow:hidden;background:var(--template-cream);color:var(--template-cream-ink)}
 .template-location-map header{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:20px}
 .template-location-map small{font-size:.7rem;font-weight:800;letter-spacing:.1em}
 .template-location-map p{margin:8px 0 0}.template-location-map a{color:inherit;font-weight:700;font-size:.85rem}
