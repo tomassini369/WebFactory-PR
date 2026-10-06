@@ -6,6 +6,7 @@ import { templateConfigs, templateGroups, templateGroupForCategory, templateVisu
 import BuilderAiAssistant from './BuilderAiAssistant'
 import { feedback } from './feedback/feedback'
 import './builder.css'
+import './template-workspace.css'
 
 type Language = 'es' | 'en'
 type BuilderStyle = 'Modern' | 'Luxury' | 'Minimal' | 'Bold'
@@ -1032,7 +1033,7 @@ export default function WebFactoryBuilder({lang}:{lang:Language}) {
   })
   const [step,setStep] = useState(()=>{try{return Math.min(7,Math.max(0,Number(sessionStorage.getItem('wf-builder-step'))||0))}catch{return 0}})
   useEffect(()=>{try{sessionStorage.setItem('wf-builder-step',String(step))}catch{}},[step])
-  const [device,setDevice] = useState<Device>('desktop')
+  const [device,setDevice] = useState<Device>(() => window.matchMedia('(max-width: 767px)').matches ? 'mobile' : window.matchMedia('(max-width: 1023px)').matches ? 'tablet' : 'desktop')
   const [saved,setSaved] = useState(false)
   const [draftError,setDraftError] = useState(false)
   useEffect(()=>{if(!draftError)return;const warn=(event:BeforeUnloadEvent)=>{event.preventDefault();event.returnValue=''};window.addEventListener('beforeunload',warn);return()=>window.removeEventListener('beforeunload',warn)},[draftError])
@@ -1146,9 +1147,9 @@ export default function WebFactoryBuilder({lang}:{lang:Language}) {
 
         <section className="wf-live-panel">
           <header>
-            <div className="wf-device-switcher">
+            <div className="wf-device-switcher" role="group" aria-label={lang==='es'?'Dispositivo del preview':'Preview device'}>
               {(['desktop','tablet','mobile'] as Device[]).map((value)=>(
-                <button key={value} className={device===value?'selected':''} onClick={()=>setDevice(value)}>
+                <button key={value} className={device===value?'selected':''} aria-pressed={device===value} onClick={()=>setDevice(value)}>
                   {value==='desktop'?'▱':value==='tablet'?'▯':'▯'} <span>{lang==='es'?({desktop:'escritorio',tablet:'tableta',mobile:'móvil'} as Record<Device,string>)[value]:value}</span>
                 </button>
               ))}

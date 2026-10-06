@@ -16,10 +16,10 @@ export default function TemplateLayout({config,ui,language,setLanguage,startBook
  const sectionStyle = (key:string): CSSProperties | undefined => sectionOrder ? {order:sectionOrder.includes(key)?sectionOrder.indexOf(key)+2:99} : undefined
  return <>      <header className="template-header">
         <a className="template-brand" href="#template-top">{logoUrl ? <img className="cs-template-logo" src={logoUrl} alt={config.shortName}/> : config.shortName}</a>
-        <button className="template-menu-button" onClick={() => setMenuOpen((v) => !v)} aria-expanded={menuOpen}>
+        <button className="template-menu-button" onClick={() => setMenuOpen((v) => !v)} aria-expanded={menuOpen} aria-controls="template-main-nav">
           {ui.menu}
         </button>
-        <nav className={menuOpen ? 'open' : ''}>
+        <nav id="template-main-nav" aria-label={ui.menu} className={menuOpen ? 'open' : ''}>
           {catalogEnabled && <a href="#services" onClick={() => setMenuOpen(false)}>{ui.services}</a>}
           {config.employees.length > 0 && <a href="#team" onClick={() => setMenuOpen(false)}>{ui.team}</a>}
           <a href="#about" onClick={() => setMenuOpen(false)}>{ui.about}</a>

@@ -12,12 +12,12 @@ type CartLine = { item: TemplateItem; quantity: number }
 const money = (value: number, language: TemplateLanguage) =>
   new Intl.NumberFormat(language === 'es' ? 'es-US' : 'en-US', { style: 'currency', currency: 'USD' }).format(value)
 
-function TemplateNotice({ ui }: { ui: TemplateUi }) {
+function TemplateNotice({ ui, slug }: { ui: TemplateUi; slug: string }) {
   return (
     <div className="wf-template-notice">
       <a href="/templates">← WebFactory PR</a>
       <span>{ui.templateNotice}</span>
-      <a href="/#builder">{ui.createWebsite}</a>
+      <a href={`/builder?template=${encodeURIComponent(slug)}`}>{ui.createWebsite}</a>
     </div>
   )
 }
@@ -186,7 +186,7 @@ function TemplateSite({ slug }: { slug: string }) {
 
   return (
     <div className={`template-site visual-${templateVisualStyle(config.category)}`} style={styles}>
-      <TemplateNotice ui={ui} />
+      <TemplateNotice ui={ui} slug={slug} />
 
       <TemplateLayout config={config} ui={ui} language={language} setLanguage={setLanguage} startBooking={startBooking} setCatalogOpen={setCatalogOpen} setCartOpen={setCartOpen} cart={cart} showcaseFeatures={showcaseFeatures} />
 
