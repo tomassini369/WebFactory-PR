@@ -1,4 +1,4 @@
-import {useState} from 'react'
+import {useState, type CSSProperties} from 'react'
 import './stitch-v2.css'
 
 type Tab='overview'|'bookings'|'sales'|'team'
@@ -54,7 +54,7 @@ export default function StitchControlCenterV2(){
         </section>
 
         <section className="sv2-kpis">
-          <article className="hero-kpi"><span>{t.net}</span><strong>$1,284.35</strong><small><b>+8.4%</b> vs. previous Tuesday</small><div className="sv2-sparkline">{[28,40,34,54,47,72,61,88,76,91].map((h,i)=><i key={i} style={{'--h':h+'%'} as React.CSSProperties}/>)}</div></article>
+          <article className="hero-kpi"><span>{t.net}</span><strong>$1,284.35</strong><small><b>+8.4%</b> vs. previous Tuesday</small><div className="sv2-sparkline">{[28,40,34,54,47,72,61,88,76,91].map((h,i)=><i key={i} style={{'--h':h+'%'} as CSSProperties}/>)}</div></article>
           <article><span>{t.booked}</span><strong>7</strong><small>3 upcoming</small></article>
           <article><span>{t.avg}</span><strong>$64.22</strong><small>5 completed sales</small></article>
           <article><span>{t.open}</span><strong>3</strong><small>2 ready · 1 preparing</small></article>
@@ -85,7 +85,7 @@ export default function StitchControlCenterV2(){
 
           <article className="sv2-panel sv2-sales-chart">
             <header><div><span>{t.salesPulse}</span><strong>$4,936.72 · 7 days</strong></div><small>Sample</small></header>
-            <div className="sv2-week-chart">{[44,61,52,78,67,91,74].map((h,i)=><div key={i}><i style={{'--h':h+'%'} as React.CSSProperties}/><span>{t.days[i]}</span></div>)}</div>
+            <div className="sv2-week-chart">{[44,61,52,78,67,91,74].map((h,i)=><div key={i}><i style={{'--h':h+'%'} as CSSProperties}/><span>{t.days[i]}</span></div>)}</div>
           </article>
 
           <article className="sv2-panel sv2-queue">
