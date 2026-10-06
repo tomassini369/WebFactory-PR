@@ -34,7 +34,7 @@ export async function serveMcp(request,grant,user,context={}){
   const graphTokenMax=grant.platform?1600:1000;
   tool('wf_graph_context','Use only for complex dependency, impact, architecture, conflict or multi-system questions where a compact knowledge-graph answer can avoid broad file/data exploration. Do not call for simple reads or direct CRUD changes; use normal WebFactory tools instead. This tool is read-only and automatically scopes the graph to the authenticated platform or business tenant.',z.object({question:z.string().min(4).max(800),mode:z.enum(['bfs','dfs']).default('bfs'),depth:z.number().int().min(1).max(4).default(2),tokenBudget:z.number().int().min(200).max(graphTokenMax).default(grant.platform?1200:800)}),async args=>{
    if(!grant.platform)await access({},'overview');
-   return queryGraphContext({...args,platform:grant.platform,siteId:grant.siteId});
+   return queryGraphContext({...args,platform:grant.platform,siteId:grant.siteId,authorization:request.headers.get('authorization')||''});
   });
  }
  if(grant.platform)tool('wf_platform_report','Read platform overview/health or platform-only revenue. Never includes tenant sales in platform revenue.',z.object({report:z.enum(['overview','revenue'])}),async args=>{
