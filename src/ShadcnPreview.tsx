@@ -11,7 +11,7 @@ export default function ShadcnPreview() {
     <div style={{width:'100%',maxWidth:480}}>
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:24}}><a href="/">WebFactory PR</a><ThemeToggle/></div>
       <Card>
-        <CardHeader><CardTitle>Shadcn instalado</CardTitle><CardDescription>Componentes reales: Button, Card e Input. Esta prueba no guarda datos.</CardDescription></CardHeader>
+        <CardHeader><CardTitle role="heading" aria-level={1}>Shadcn instalado</CardTitle><CardDescription>Componentes reales: Button, Card e Input. Esta prueba no guarda datos.</CardDescription></CardHeader>
         <CardContent>
           <form style={{display:'grid',gap:16}} onSubmit={event=>{event.preventDefault();setMessage(name.trim()?`Funciona, ${name.trim()}.`:'El botón funciona.')}}>
             <label htmlFor="component-name">Nombre de prueba</label>
