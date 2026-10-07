@@ -19,7 +19,12 @@ const adminPwaRoutes: Record<string, string> = {
 function configureInstallableApp() {
   const path = window.location.pathname.replace(/\/$/, '') || '/'
   const adminManifest = adminPwaRoutes[path]
-  if (!adminManifest) return
+  if (!adminManifest) {
+    document.getElementById('app-manifest')?.setAttribute('href','/manifest.webmanifest')
+    document.getElementById('application-name')?.setAttribute('content','WebFactoryPR')
+    document.getElementById('apple-mobile-web-app-title')?.setAttribute('content','WebFactoryPR')
+    return
+  }
 
   document.getElementById('app-manifest')?.setAttribute('href', adminManifest)
   document.getElementById('application-name')?.setAttribute('content', 'Admin/Log In')
@@ -30,6 +35,7 @@ function configureInstallableApp() {
 }
 
 configureInstallableApp()
+window.addEventListener('wf-route-change',configureInstallableApp)
 
 if ('serviceWorker' in navigator && window.location.protocol !== 'file:') {
   window.addEventListener('load', () => {

@@ -1,3 +1,4 @@
+import PortalReturnHome from './PortalReturnHome'
 import AnimatedOverlay from './AnimatedOverlay'
 import {templateButtonInk} from './templateVisual'
 import CatalogCard from './TemplateCatalogCard'
@@ -17,7 +18,7 @@ const money = (value: number, language: TemplateLanguage) =>
 function TemplateNotice({ ui, slug }: { ui: TemplateUi; slug: string }) {
   return (
     <div className="wf-template-notice">
-      <a href="/templates">← WebFactory PR</a>
+      <PortalReturnHome lang={ui===templateUi.es?'es':'en'}/><a href="/templates">← Templates</a>
       <span>{ui.templateNotice}</span>
       <a href={`/builder?template=${encodeURIComponent(slug)}`}>{ui.createWebsite}</a>
     </div>

@@ -1,3 +1,5 @@
+import PortalLoadingCard from './PortalLoadingCard'
+import PortalReturnHome from './PortalReturnHome'
 import {usePortalNavigation} from './portal-navigation'
 import { Suspense, lazy, useEffect, useState, type ReactNode } from 'react'
 import { AdaptiveLogo, ThemeToggle } from './theme'
@@ -24,12 +26,8 @@ const ShadcnPreview = __WF_PREVIEW_REVIEW__ ? lazy(() => import('./ShadcnPreview
 
 const TemplateParityReview = __WF_PREVIEW_REVIEW__ ? lazy(() => import('./TemplateParityReview')) : null
 
-function RouteLoading(){
-  return <main className="route-loading" role="status" aria-live="polite"><span/><b>Loading WebFactory…</b></main>
-}
-
 function RouteView({children}:{children:ReactNode}){
-  return <Suspense fallback={<RouteLoading/>}>{children}</Suspense>
+  return <Suspense fallback={<PortalLoadingCard/>}>{children}</Suspense>
 }
 
 type Language = 'es' | 'en'
@@ -45,32 +43,32 @@ function Heading({data,invert=false}:{data:string[],invert?:boolean}) {
 
 function App(){
   useFeedbackExperience()
-  usePortalNavigation()
+  const pathname=usePortalNavigation()
   const [lang,setLang]=useState<Language>('en')
   const t=content[lang]
   useEffect(()=>{
-    if (!/^\/templates\//.test(window.location.pathname)) document.documentElement.lang=lang
-  },[lang])
+    if (!/^\/templates\//.test(pathname)) document.documentElement.lang=lang
+  },[lang,pathname])
 
-  const templateMatch = window.location.pathname.match(/^\/templates\/([^/]+)\/?$/)
-    const templatesRoute = /^\/templates\/?$/.test(window.location.pathname)
-    const clientAdminRoute = /^\/client-admin\/?$/.test(window.location.pathname)
-  const webFactoryAdminRoute = /^\/webfactory-admin\/?$/.test(window.location.pathname)
+  const templateMatch = pathname.match(/^\/templates\/([^/]+)\/?$/)
+    const templatesRoute = /^\/templates\/?$/.test(pathname)
+    const clientAdminRoute = /^\/client-admin\/?$/.test(pathname)
+  const webFactoryAdminRoute = /^\/webfactory-admin\/?$/.test(pathname)
   const identityInviteRoute = /^#invite_token=/.test(window.location.hash)
-  const identityRecoveryRoute = /^#recovery_token=/.test(window.location.hash) || /^\/password-recovery\/?$/.test(window.location.pathname)
-  const clientSiteMatch = window.location.pathname.match(/^\/sites\/([^/]+)\/?$/)
-  const paymentLinkMatch = window.location.pathname.match(/^\/pay\/([^/]+)\/([^/]+)\/?$/)
-  const trackingMatch = window.location.pathname.match(/^\/track\/([^/]+)\/?$/)
-  const builderRoute = /^\/builder\/?$/.test(window.location.pathname)
+  const identityRecoveryRoute = /^#recovery_token=/.test(window.location.hash) || /^\/password-recovery\/?$/.test(pathname)
+  const clientSiteMatch = pathname.match(/^\/sites\/([^/]+)\/?$/)
+  const paymentLinkMatch = pathname.match(/^\/pay\/([^/]+)\/([^/]+)\/?$/)
+  const trackingMatch = pathname.match(/^\/track\/([^/]+)\/?$/)
+  const builderRoute = /^\/builder\/?$/.test(pathname)
   const builderEditSiteId = builderRoute ? new URLSearchParams(window.location.search).get('edit') || '' : ''
-  const privacyRoute = /^\/privacy\/?$/.test(window.location.pathname)
-  const termsRoute = /^\/terms\/?$/.test(window.location.pathname)
-  const refundRoute = /^\/refund-policy\/?$/.test(window.location.pathname)
+  const privacyRoute = /^\/privacy\/?$/.test(pathname)
+  const termsRoute = /^\/terms\/?$/.test(pathname)
+  const refundRoute = /^\/refund-policy\/?$/.test(pathname)
 
-  if (ShadcnPreview && /^\/shadcn-preview\/?$/.test(window.location.pathname)) return <RouteView><ShadcnPreview/></RouteView>
-  if (TemplateParityReview && /^\/template-parity-preview\/?$/.test(window.location.pathname)) return <RouteView><TemplateParityReview/></RouteView>
-  if (PreviewReviewPage && /^\/preview-review\/?$/.test(window.location.pathname)) return <RouteView><PreviewReviewPage lang={lang} setLang={setLang} /></RouteView>
-  if (/^\/chatgpt\/?$/.test(window.location.pathname)) return <RouteView><MfaGate><ChatgptControlPage lang={lang} setLang={setLang} /></MfaGate></RouteView>
+  if (ShadcnPreview && /^\/shadcn-preview\/?$/.test(pathname)) return <RouteView><ShadcnPreview/></RouteView>
+  if (TemplateParityReview && /^\/template-parity-preview\/?$/.test(pathname)) return <RouteView><TemplateParityReview/></RouteView>
+  if (PreviewReviewPage && /^\/preview-review\/?$/.test(pathname)) return <RouteView><PreviewReviewPage lang={lang} setLang={setLang} /></RouteView>
+  if (/^\/chatgpt\/?$/.test(pathname)) return <RouteView><MfaGate><ChatgptControlPage lang={lang} setLang={setLang} /></MfaGate></RouteView>
   if (identityRecoveryRoute) return <RouteView><PasswordRecoveryPage /></RouteView>
   if (privacyRoute) return <RouteView><LegalPage kind="privacy" /></RouteView>
   if (termsRoute) return <RouteView><LegalPage kind="terms" /></RouteView>
@@ -81,10 +79,10 @@ function App(){
   if (paymentLinkMatch) return <RouteView><PaymentLinkPage slug={decodeURIComponent(paymentLinkMatch[1])} token={decodeURIComponent(paymentLinkMatch[2])} /></RouteView>
   if (trackingMatch) return <RouteView><OrderTrackingPage token={decodeURIComponent(trackingMatch[1])} /></RouteView>
   if (templateMatch) return <RouteView><TemplatePreview slug={templateMatch[1]} /></RouteView>
-  if (templatesRoute) return <><header className="header"><a href="/" className="logo"><AdaptiveLogo alt="WebFactory PR"/></a><div className="header-actions"><a className="btn secondary desktop-cta" href="/client-admin">Log In</a><a className="btn secondary desktop-cta" href="/">{lang==='es'?'Volver al inicio':'Back to home'}</a><div className="langs"><button className={lang==='en'?'active':''} onClick={()=>setLang('en')}>EN</button><button className={lang==='es'?'active':''} onClick={()=>setLang('es')}>ES</button><ThemeToggle/></div></div></header><RouteView><TemplatesPage lang={lang}/></RouteView></>
+  if (templatesRoute) return <><header className="header"><a href="/" className="logo"><AdaptiveLogo alt="WebFactory PR"/></a><div className="header-actions"><a className="btn secondary desktop-cta" href="/client-admin">Log In</a><PortalReturnHome lang={lang}/><div className="langs"><button className={lang==='en'?'active':''} onClick={()=>setLang('en')}>EN</button><button className={lang==='es'?'active':''} onClick={()=>setLang('es')}>ES</button><ThemeToggle/></div></div></header><RouteView><TemplatesPage lang={lang}/></RouteView></>
   if (builderRoute) return <><header className="header wf-creation-header"><a href="/" className="logo"><AdaptiveLogo alt="WebFactory PR"/></a><div className="header-actions"><a className="btn secondary desktop-cta" href="/client-admin">Log In</a><a className="wf-creation-home" href="/" aria-label={lang==='es'?'Volver a WebFactory PR':'Return to WebFactory PR'} title={lang==='es'?'Volver a WebFactory PR':'Return to WebFactory PR'}><svg aria-hidden="true" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="m3 10 9-7 9 7"/><path d="M5 9v11h5v-6h4v6h5V9"/></svg></a><div className="langs"><button className={lang==='en'?'active':''} onClick={()=>setLang('en')}>EN</button><button className={lang==='es'?'active':''} onClick={()=>setLang('es')}>ES</button><ThemeToggle/></div></div></header><main className="standalone-builder"><section className="section white builder"><div className="shell">{builderEditSiteId?<RouteView><SiteRedesignBuilder lang={lang} siteId={builderEditSiteId}/></RouteView>:<><div className="builder-head"><Heading data={t.builder}/><div className="builder-price"><strong>7 días</strong><span>{lang==='es'?'gratis · sin tarjeta':'free · no card'}</span></div></div><RouteView><WebFactoryBuilder lang={lang}/></RouteView></>}</div></section></main></>
 
-  if(window.location.pathname!=='/')return <main className="cs-state"><h1>404 · {lang==='es'?'Página no encontrada':'Page not found'}</h1><p>{lang==='es'?'El enlace no existe o cambió.':'This link does not exist or has changed.'}</p><a className="btn" href="/">{lang==='es'?'Volver a WebFactory PR':'Return to WebFactory PR'}</a></main>
+  if(pathname!=='/')return <main className="cs-state"><h1>404 · {lang==='es'?'Página no encontrada':'Page not found'}</h1><p>{lang==='es'?'El enlace no existe o cambió.':'This link does not exist or has changed.'}</p><a className="btn" href="/">{lang==='es'?'Volver a WebFactory PR':'Return to WebFactory PR'}</a></main>
   return <HomePage lang={lang} setLang={setLang}/>
 }
 
