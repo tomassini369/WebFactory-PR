@@ -1,3 +1,4 @@
+import {usePortalNavigation} from './portal-navigation'
 import { Suspense, lazy, useEffect, useState, type ReactNode } from 'react'
 import { AdaptiveLogo, ThemeToggle } from './theme'
 import HomePage from './HomePage'
@@ -42,6 +43,7 @@ function Heading({data,invert=false}:{data:string[],invert?:boolean}) {
 
 function App(){
   useFeedbackExperience()
+  usePortalNavigation()
   const [lang,setLang]=useState<Language>('en')
   const t=content[lang]
   useEffect(()=>{

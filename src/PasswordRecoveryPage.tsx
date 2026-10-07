@@ -1,3 +1,4 @@
+import PortalReturnHome from './PortalReturnHome'
 import { useEffect, useState } from 'react'
 import { handleAuthCallback, updateUser } from './portal-auth'
 import './client-admin.css'
@@ -74,6 +75,7 @@ export default function PasswordRecoveryPage(){
   return <main className="ca-page">
     <section className="ca-login">
       <div className="portal-language"><button className={lang==='en'?'active':''} onClick={()=>setLang('en')}>EN</button><button className={lang==='es'?'active':''} onClick={()=>setLang('es')}>ES</button><ThemeToggle/></div>
+      <PortalReturnHome lang={lang}/>
       <AdaptiveLogo alt="WebFactory PR"/>
       <small>{t.eyebrow}</small><h1>{t.title}</h1><p>{t.text}</p>
       {!ready&&<div className="ca-loading">…</div>}

@@ -1,0 +1,94 @@
+/* Scoped presentation; authentication, permissions and tenant data remain in their existing modules. */
+html body :is(.ca-page,.wfa-login-page,.ca-dashboard,.wfa-dashboard.wfa-premium){
+  --pg-canvas:#edf2f7;--pg-surface:rgba(255,255,255,.88);--pg-solid:#fff;--pg-soft:#f0f4f8;--pg-text:#17263b;--pg-muted:#52647a;--pg-line:#c2cedc;--pg-accent:#2867b2;
+  font-family:ui-sans-serif,system-ui,sans-serif;
+  color:var(--pg-text);
+  background:radial-gradient(ellipse at 8% 5%,#dce7f5 0,transparent 45%),radial-gradient(ellipse at 95% 95%,#e0e8f0 0,transparent 50%),var(--pg-canvas);
+}
+html[data-wf-theme=dark] body :is(.ca-page,.wfa-login-page,.ca-dashboard,.wfa-dashboard.wfa-premium){--pg-canvas:#0d1522;--pg-surface:rgba(23,35,52,.9);--pg-solid:#132033;--pg-soft:#1e2d42;--pg-text:#f2f6fc;--pg-muted:#b8c6d9;--pg-line:#41536c;--pg-accent:#91bfff;background:radial-gradient(ellipse at 8% 5%,#1b304a 0,transparent 45%),radial-gradient(ellipse at 95% 95%,#19293e 0,transparent 50%),var(--pg-canvas)}
+html body :is(.ca-page,.wfa-login-page) :is(.ca-login,.wfa-login){width:min(100%,500px);border:1px solid var(--pg-line);border-radius:28px;background:var(--pg-surface);color:var(--pg-text);box-shadow:0 24px 72px #12233b18;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);padding:32px;}
+html body :is(.ca-login,.wfa-login) h1{font-size:clamp(26px,3vw,40px);line-height:1.1;letter-spacing:-.04em;margin:20px 0 12px;font-weight:700}
+html body :is(.ca-login,.wfa-login)>p{color:var(--pg-muted);font-size:15px;line-height:1.6;max-width:60ch}
+html body :is(.ca-login,.wfa-login) :is(label,small){color:var(--pg-text);font-size:14px;font-weight:600;letter-spacing:0}
+html body :is(.ca-login,.wfa-login)>small{display:block;color:var(--pg-accent);font-size:11px;letter-spacing:.12em;margin-top:20px}
+html body :is(.ca-login,.wfa-login) .wf-adaptive-logo-slot{display:inline-grid;width:160px;max-width:100%;margin:24px 0 16px}
+html body :is(.ca-login,.wfa-login) .wf-adaptive-logo-slot img{margin:0}
+html body :is(.ca-login,.wfa-login) form{gap:16px;margin-top:24px}
+html body :is(.ca-login,.wfa-login) :is(input:not([type=checkbox]),.portal-password-field){background:var(--pg-solid);color:var(--pg-text);border:1px solid var(--pg-line);border-radius:12px;min-height:48px;font-size:16px}
+html body :is(.ca-login,.wfa-login) .portal-password-field input{background:transparent;border:0;min-width:0}
+html body :is(.ca-login,.wfa-login) .portal-password-field button{color:var(--pg-accent);min-height:46px;min-width:48px;background:transparent}
+html body :is(.ca-login,.wfa-login) :is(.ca-link,.wfa-text-button){color:var(--pg-accent);min-height:44px;font-size:14px;font-weight:600}
+html body :is(.ca-login,.wfa-login) form>button{min-height:48px;font-size:15px;font-weight:650;border-radius:12px}
+html body :is(.ca-page,.wfa-login-page) .portal-language{gap:6px;margin:0 0 16px;flex-wrap:wrap}
+html body :is(.ca-page,.wfa-login-page,.ca-dashboard,.wfa-dashboard) .portal-language :is(button,.wf-theme-toggle){min-width:44px;min-height:44px;border:1px solid var(--pg-line);background:var(--pg-solid);color:var(--pg-text);border-radius:12px;box-shadow:none}
+html body :is(.ca-page,.wfa-login-page,.ca-dashboard,.wfa-dashboard) .portal-language button.active{background:var(--pg-text);color:var(--pg-solid);border-color:var(--pg-text)}
+html body :is(.ca-page,.wfa-login-page) .portal-return-home{display:inline-flex;align-items:center;justify-content:center;gap:9px;min-height:44px;max-width:100%;width:fit-content;padding:10px 14px;margin:0 0 4px;border:1px solid var(--pg-line);border-radius:12px;background:var(--pg-solid);color:var(--pg-text);font:inherit;font-size:14px;font-weight:600;line-height:1.4;cursor:pointer;text-decoration:none;touch-action:manipulation}
+html body :is(.ca-page,.wfa-login-page) .portal-return-home:hover{background:var(--pg-soft);text-decoration:none}
+html body :is(.ca-page,.wfa-login-page,.ca-dashboard,.wfa-dashboard) :is(button,a,input,select,textarea,summary):focus-visible{outline:3px solid var(--pg-accent);outline-offset:3px}
+html body :is(.ca-page,.wfa-login-page,.ca-dashboard,.wfa-dashboard) button{touch-action:manipulation;transition:background-color .15s,opacity .15s,transform .15s}
+html body :is(.ca-page,.wfa-login-page,.ca-dashboard,.wfa-dashboard) button:not(:disabled):active{transform:translateY(1px)}
+html body :is(.ca-dashboard,.wfa-dashboard.wfa-premium){--ca-navy:var(--pg-text);--ca-muted:var(--pg-muted);--ca-line:var(--pg-line);--wfa-navy:var(--pg-text);--wfa-muted:var(--pg-muted);--wfa-line:var(--pg-line);--wfa-surface:var(--pg-surface);--wfa-soft:var(--pg-soft)}
+html body :is(.ca-dashboard,.wfa-dashboard.wfa-premium) :is(.ca-panel,.wfa-card,.wfa-stat,.ca-help-card){border:1px solid var(--pg-line);border-radius:24px;background:var(--pg-surface);color:var(--pg-text);box-shadow:0 8px 30px #12233b0a;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);transform:none}
+html body :is(.ca-dashboard,.wfa-dashboard.wfa-premium) :is(.ca-panel,.wfa-card) :is(h2,h3,label){color:var(--pg-text)}
+html body :is(.ca-dashboard,.wfa-dashboard.wfa-premium) :is(.ca-panel,.wfa-card)>header p{color:var(--pg-muted);font-size:14px;line-height:1.6}
+html body :is(.ca-dashboard,.wfa-dashboard.wfa-premium) :is(input:not([type=checkbox]):not([type=color]),select,textarea){background:var(--pg-solid);color:var(--pg-text);border-color:var(--pg-line);font-size:16px;min-height:44px}
+html body :is(.ca-dashboard,.wfa-dashboard.wfa-premium) :is(input,textarea)::placeholder{color:var(--pg-muted);opacity:1}
+html body :is(.ca-dashboard,.wfa-dashboard.wfa-premium) :is(.ca-sidebar,.wfa-sidebar){background:rgba(15,28,46,.96);color:#f2f6fc;border-color:#41536c;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
+html body :is(.ca-dashboard,.wfa-dashboard.wfa-premium) :is(.ca-sidebar,.wfa-sidebar) :is(.ca-business-id,.wfa-admin-id){background:#ffffff0b;border:1px solid #ffffff26;border-radius:16px}
+html body :is(.ca-dashboard,.wfa-dashboard.wfa-premium) :is(.ca-business-id,.wfa-admin-id) strong{color:#f2f6fc;font-size:14px;overflow-wrap:anywhere}
+html body :is(.ca-dashboard,.wfa-dashboard.wfa-premium) :is(.ca-business-id,.wfa-admin-id) :is(span,small){color:#b8c6d9}
+html body :is(.ca-dashboard,.wfa-dashboard.wfa-premium) :is(.ca-sidebar,.wfa-sidebar) nav button{min-height:44px;color:#d4deec;border:1px solid transparent;font-size:14px;font-weight:550}
+html body :is(.ca-dashboard,.wfa-dashboard.wfa-premium) :is(.ca-sidebar,.wfa-sidebar) nav button.active{background:#ffffff16;border-color:#ffffff40;color:#fff;box-shadow:none}
+html body .ca-dashboard .ca-nav-groups summary{color:#b8c6d9;min-height:44px;font-size:13px;font-weight:600}
+html body :is(.ca-dashboard,.wfa-dashboard.wfa-premium) .wf-panel-tools{background:var(--pg-solid);color:var(--pg-text);border-radius:12px;gap:6px;padding:4px;box-shadow:none}
+html body :is(.ca-dashboard,.wfa-dashboard.wfa-premium) .wf-panel-tools button{min-height:44px;min-width:44px;color:var(--pg-text);background:var(--pg-soft);border:1px solid var(--pg-line);font-size:12px;opacity:1;font-weight:550}
+html body :is(.ca-dashboard,.wfa-dashboard.wfa-premium) :is(.ca-work>header,.wfa-top){background:var(--pg-surface);color:var(--pg-text);border:1px solid var(--pg-line);border-radius:24px;padding:24px;min-height:0;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}
+html body :is(.ca-dashboard,.wfa-dashboard.wfa-premium) :is(.ca-work>header,.wfa-top) :is(h1,p,small,.wfa-updated){color:var(--pg-text)}
+html body :is(.ca-dashboard,.wfa-dashboard.wfa-premium) :is(.ca-work>header,.wfa-top) h1{font-size:clamp(26px,3vw,38px);letter-spacing:-.04em;line-height:1.15;overflow-wrap:anywhere}
+html body .wfa-dashboard.wfa-premium .wfa-top button{background:var(--pg-solid);color:var(--pg-text);border-color:var(--pg-line)}
+html body :is(.ca-dashboard,.wfa-dashboard.wfa-premium) :is(.ca-sidebar,.wfa-sidebar) .portal-language{flex-wrap:wrap}
+@media(max-width:820px){
+ html body :is(.ca-page,.wfa-login-page)>:is(.ca-login,.wfa-login){background:var(--pg-surface);padding:24px 20px max(24px,env(safe-area-inset-bottom))!important;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none}
+ html body :is(.ca-dashboard,.wfa-dashboard.wfa-premium) :is(.ca-brand-row,.wfa-brand-row){align-items:center;gap:10px;flex-wrap:wrap}
+ html body :is(.ca-dashboard,.wfa-dashboard.wfa-premium) :is(.ca-brand-row,.wfa-brand-row) .portal-language{margin:0;gap:4px;flex-wrap:nowrap}
+ html body .wfa-dashboard.wfa-premium .wfa-brand-row>.wf-adaptive-logo-slot{width:110px!important}
+ html body :is(.ca-dashboard,.wfa-dashboard.wfa-premium) :is(.ca-work,.wfa-work){padding:16px 12px 40px}
+ html body :is(.ca-dashboard,.wfa-dashboard.wfa-premium) :is(.ca-work>header,.wfa-top){padding:20px;border-radius:20px}
+ html body :is(.ca-dashboard,.wfa-dashboard.wfa-premium) :is(.ca-panel,.wfa-card){padding:18px;border-radius:20px;backdrop-filter:none;-webkit-backdrop-filter:none}
+ html body :is(.ca-dashboard,.wfa-dashboard.wfa-premium) .wf-panel-tools{flex-wrap:wrap}
+}
+@media(max-width:767px){html body .ca-dashboard :is(.ca-grid,.ca-grid.compact,.ca-overview-grid){grid-template-columns:minmax(0,1fr)}html body .wfa-dashboard.wfa-premium .wfa-grid{grid-template-columns:minmax(0,1fr)}}
+@media(prefers-reduced-motion:reduce){html body :is(.ca-page,.wfa-login-page,.ca-dashboard,.wfa-dashboard) *{transition:none!important;animation:none!important;scroll-behavior:auto!important}}
+@media(prefers-reduced-transparency:reduce){html body :is(.ca-page,.wfa-login-page,.ca-dashboard,.wfa-dashboard.wfa-premium){--pg-surface:var(--pg-solid)}html body :is(.ca-page,.wfa-login-page,.ca-dashboard,.wfa-dashboard) *{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}}
+@supports not (backdrop-filter:blur(1px)){html body :is(.ca-page,.wfa-login-page,.ca-dashboard,.wfa-dashboard.wfa-premium){--pg-surface:var(--pg-solid)}}
+@media(forced-colors:active){html body :is(.ca-page,.wfa-login-page,.ca-dashboard,.wfa-dashboard) :is(button,input,select,textarea,.ca-panel,.wfa-card,.ca-login,.wfa-login){border:1px solid ButtonText;box-shadow:none;background:Canvas;color:CanvasText}}
+
+/* Floating authentication cards keep their own scroll area on small screens. */
+html body :is(.ca-page,.wfa-login-page)>:is(.ca-login,.wfa-login){box-shadow:inset 0 1px 0 #ffffff60,0 30px 80px #07122226,0 6px 20px #07122212;animation:pg-card-enter .22s cubic-bezier(.2,.8,.2,1) both}
+html[data-wf-theme=dark] body :is(.ca-page,.wfa-login-page)>:is(.ca-login,.wfa-login){box-shadow:inset 0 1px 0 #ffffff20,0 30px 80px #03071165,0 6px 20px #03071140}
+html body :is(.ca-page,.wfa-login-page,.ca-dashboard,.wfa-dashboard) button:not(:disabled):active{transform:translateY(1px) scale(.985);filter:brightness(1.08)}
+html #root{transition:opacity .18s cubic-bezier(.2,.8,.2,1)}
+html.wf-portal-leaving #root{opacity:0;pointer-events:none}
+@keyframes pg-card-enter{from{opacity:0;transform:translateY(10px) scale(.99)}to{opacity:1;transform:translateY(0) scale(1)}}
+@media(max-width:820px){
+ html body :is(.ca-page,.wfa-login-page){display:grid!important;place-items:center!important;padding:max(12px,env(safe-area-inset-top)) 12px max(12px,env(safe-area-inset-bottom))!important;background:var(--pg-canvas)}
+ html body :is(.ca-page,.wfa-login-page)>:is(.ca-login,.wfa-login){width:min(100%,500px)!important;max-width:100%!important;height:auto!important;min-height:0!important;max-height:100%!important;border:1px solid var(--pg-line)!important;border-radius:26px!important;padding:22px 20px!important;box-shadow:inset 0 1px 0 #ffffff45,0 18px 48px #07122226!important;overflow-y:auto!important;overflow-x:hidden!important;overscroll-behavior:contain!important}
+ html body :is(.ca-login,.wfa-login) .wf-adaptive-logo-slot{margin:20px 0 14px}
+ html body :is(.ca-login,.wfa-login) h1{margin:14px 0 10px}
+}
+@media(prefers-reduced-motion:reduce){html #root{transition:none!important}html body :is(.ca-page,.wfa-login-page)>:is(.ca-login,.wfa-login){animation:none!important}}
+html body .ca-dashboard .bcc{--bcc-surface:var(--pg-surface);--bcc-text:var(--pg-text);--bcc-muted:var(--pg-muted);--bcc-line:var(--pg-line);--bcc-soft:var(--pg-soft)}
+html body .ca-dashboard :is(.bcc-card,.bcc-metrics article,.bcc-action-grid button){background:var(--pg-surface);border:1px solid var(--pg-line);color:var(--pg-text);box-shadow:0 8px 28px #12233b0a}
+html body .ca-dashboard .bcc-card{border-radius:24px;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}
+html body .ca-dashboard :is(.bcc-hero,.bcc-training){background:var(--pg-surface);border-color:var(--pg-line);color:var(--pg-text)}
+html body .ca-dashboard :is(.bcc-hero,.bcc-training) :is(h2,h3,p,.bcc-eyebrow){color:var(--pg-text)}
+@media(max-width:767px){html body .ca-dashboard :is(.bcc-insights,.bcc-bottom,.bcc-metrics,.bcc-action-grid){grid-template-columns:minmax(0,1fr)}html body .ca-dashboard .bcc-card{backdrop-filter:none;-webkit-backdrop-filter:none}}
+@media(max-width:820px){
+ html body :is(.ca-page,.wfa-login-page)>:is(.ca-login,.wfa-login) .portal-language{position:static;inset:auto;justify-content:flex-end;margin:0 0 16px;z-index:auto}
+ html body :is(.ca-page,.wfa-login-page)>:is(.ca-login,.wfa-login) .wf-adaptive-logo-slot{display:inline-grid;width:150px!important;max-width:100%!important;margin:20px 0 16px!important}
+ html body :is(.ca-page,.wfa-login-page)>:is(.ca-login,.wfa-login) h1{font-size:clamp(26px,8vw,34px)!important;line-height:1.1!important;margin:14px 0 12px!important}
+}
+
+/* Follow the visual viewport when an on-screen keyboard reduces the usable height. */
+@media(max-width:820px){html body :is(.ca-page:has(>.ca-login),.wfa-login-page:has(>.wfa-login)){inset:auto 0 auto!important;top:var(--pg-viewport-top,0px)!important;height:var(--pg-viewport-height,100dvh)!important;min-height:0!important}}
+.wf-h-login:active{transform:translateY(1px) scale(.985)}
