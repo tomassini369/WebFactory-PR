@@ -385,10 +385,10 @@ export const templateConfigs: TemplateConfig[] = [
     accent: '#C96A3D', accent2: '#F3B38D', dark: '#2B1C17', cream: '#FFF7F1',
     features: ['Catering packages', 'Tastings', 'Event booking', 'Deposits'],
     items: [
-      {id:'cat-1',type:'service',name:'Paquete íntimo · hasta 20 personas',price:650,description:'Paquete de catering para reuniones pequeñas y familiares.',image:pexels(1267320),appointment:true,duration:240,deposit:150,employees:['Chef Ana'],badge:'20 guests'},
-      {id:'cat-2',type:'service',name:'Paquete celebración · hasta 50 personas',price:1450,description:'Catering para cumpleaños, actividades y celebraciones medianas.',image:pexels(958545),appointment:true,duration:300,deposit:300,employees:['Chef Ana','Luis'],badge:'Popular'},
-      {id:'cat-3',type:'service',name:'Paquete evento grande · hasta 100 personas',price:2850,description:'Servicio de catering ampliado para eventos grandes.',image:pexels(587741),appointment:true,duration:420,deposit:600,employees:['Chef Ana','Luis']},
-      {id:'cat-4',type:'service',name:'Degustación / consulta',price:75,description:'Sesión para revisar menú, cantidades y necesidades del evento.',image:pexels(262978),appointment:true,duration:60,employees:['Chef Ana']}
+      {id:'cat-1',type:'service',name:'Paquete íntimo · hasta 20 personas',price:650,description:'Paquete de catering para reuniones pequeñas y familiares.',image:pexels(1267320),appointment:true,duration:240,deposit:150,employees:['Ana'],badge:'20 guests'},
+      {id:'cat-2',type:'service',name:'Paquete celebración · hasta 50 personas',price:1450,description:'Catering para cumpleaños, actividades y celebraciones medianas.',image:pexels(958545),appointment:true,duration:300,deposit:300,employees:['Ana','Luis'],badge:'Popular'},
+      {id:'cat-3',type:'service',name:'Paquete evento grande · hasta 100 personas',price:2850,description:'Servicio de catering ampliado para eventos grandes.',image:pexels(587741),appointment:true,duration:420,deposit:600,employees:['Ana','Luis']},
+      {id:'cat-4',type:'service',name:'Degustación / consulta',price:75,description:'Sesión para revisar menú, cantidades y necesidades del evento.',image:pexels(262978),appointment:true,duration:60,employees:['Ana']}
     ],
     employees: [
       {id:'cat-ana',name:'Ana Morales',role:'Executive Chef',initials:'AM',services:['Paquete íntimo · hasta 20 personas','Paquete celebración · hasta 50 personas','Paquete evento grande · hasta 100 personas','Degustación / consulta']},

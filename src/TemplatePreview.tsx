@@ -315,13 +315,24 @@ function TemplateSite({ slug }: { slug: string }) {
                   <p>{bookingItem.duration ? `${bookingItem.duration} min` : ui.appointment} · {bookingPaymentLabel}</p>
                 </header>
 
+                <section>
+                  <label>{language === 'es' ? 'Selecciona un servicio' : 'Choose a service'}
+                    <select value={bookingItem.id} onChange={event => {
+                      const service = config.items.find(item => item.id === event.target.value && item.appointment)
+                      if (service) startBooking(service)
+                    }}>
+                      {config.items.filter(item => item.appointment).map(item => <option key={item.id} value={item.id}>{item.name}</option>)}
+                    </select>
+                  </label>
+                </section>
+
                 {employeesForBooking.length > 0 && (
                   <section>
                     <strong>1 · {ui.chooseProfessional}</strong>
                     <div className="template-choice-grid">
-                      <button className={selectedEmployee === 'any' ? 'selected' : ''} onClick={() => setSelectedEmployee('any')}>{ui.anyAvailable}</button>
+                      <button className={selectedEmployee === 'any' ? 'selected' : ''} onClick={() => { setSelectedEmployee('any'); setSelectedDate(''); setSelectedTime('') }}>{ui.anyAvailable}</button>
                       {employeesForBooking.map((employee) => (
-                        <button key={employee.id} className={selectedEmployee === employee.name ? 'selected' : ''} onClick={() => setSelectedEmployee(employee.name)}>
+                        <button key={employee.id} className={selectedEmployee === employee.name ? 'selected' : ''} onClick={() => { setSelectedEmployee(employee.name); setSelectedDate(''); setSelectedTime('') }}>
                           {employee.name}<small>{employee.role}</small>
                         </button>
                       ))}
