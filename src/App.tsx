@@ -48,6 +48,7 @@ function App(){
   const t=content[lang]
   useEffect(()=>{
     if (!/^\/templates\//.test(pathname)) document.documentElement.lang=lang
+    if(pathname==='/'||/^\/templates\/?$/.test(pathname))document.title='WebFactory PR | Plataforma de comercio y reservas'
   },[lang,pathname])
 
   const templateMatch = pathname.match(/^\/templates\/([^/]+)\/?$/)

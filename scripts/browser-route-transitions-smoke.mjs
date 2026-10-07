@@ -26,6 +26,7 @@ try{
   assert.equal(await page.locator('#app-manifest').getAttribute('href'),'/manifest-client-admin.webmanifest')
   await page.locator('.portal-return-home').click();await page.locator('.wf-h-login').waitFor()
   assert.equal(documents,initialDocuments,'Return home must not reload or reveal an empty document')
+  assert.equal(await page.title(),'WebFactory PR | Plataforma de comercio y reservas')
   assert.equal(await page.locator('#app-manifest').getAttribute('href'),'/manifest.webmanifest')
   await page.evaluate(()=>{window.__stopNavigationFrames=true});const frames=await page.evaluate(()=>window.__navigationFrames)
   assert(frames.length>0);assert(frames.every(frame=>Number(frame.opacity)>0&&!frame.circle),'No hidden root or circular loading interstitial')
