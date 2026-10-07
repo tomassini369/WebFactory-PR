@@ -7,6 +7,7 @@ import {authorizeGrant,parseOperation,safeOutput,redesignSite} from './chatgpt-o
 import {key} from './chatgpt-oauth.mjs';
 import {prepareProposal,executeProposal,proposalKey} from './chatgpt-proposals.mjs';
 import {serveMcp} from './chatgpt-mcp.mjs';
+import {shadcnCatalog} from './chatgpt-shadcn.mjs';
 function fixture(t){
  globalThis.netlifyBlobsContext=Buffer.from(JSON.stringify({siteID:'test',token:'test',deployID:'test'})).toString('base64');
  globalThis.Netlify={env:{get:()=>''}};
@@ -64,7 +65,7 @@ test('Shadcn tools are read-only admin-only and use public registry without OAut
  const grant={...f.grant,platform:true,siteId:undefined,scopes:['webfactory.read']};
  const listing=await (await rpc(grant,tenantAdmin,'tools/list',{})).json();
  const tools=listing.result.tools.filter(tool=>tool.name.startsWith('wf_shadcn_'));
- assert.equal(tools.length,2);assert(tools.every(tool=>tool.annotations.readOnlyHint&&tool.annotations.openWorldHint&&!tool.annotations.destructiveHint));
+ assert.equal(tools.length,4);assert(tools.every(tool=>tool.annotations.readOnlyHint&&tool.annotations.openWorldHint&&!tool.annotations.destructiveHint));
  let requests=0;
  t.mock.method(globalThis,'fetch',async(url,options)=>{requests++;assert.equal(options.credentials,'omit');assert.deepEqual(options.headers,{Accept:'application/json'});assert(!JSON.stringify(options.headers).includes('private-oauth-token'));assert(url.startsWith('https://ui.shadcn.com/r/styles/new-york-v4/'));return Response.json(url.endsWith('registry.json')?{items:[{name:'button',type:'registry:ui'}]}:{name:'button',files:[{path:'ui/button.tsx',content:'public source'}]});});
  const search=await (await rpc(grant,tenantAdmin,'tools/call',{name:'wf_shadcn_search',arguments:{query:'button'}})).json();assert.equal(JSON.parse(search.result.content[0].text).items[0].name,'button');
@@ -72,4 +73,24 @@ test('Shadcn tools are read-only admin-only and use public registry without OAut
  const prior=requests;
  const injection=await (await rpc(grant,tenantAdmin,'tools/call',{name:'wf_shadcn_component',arguments:{name:'button',url:'https://evil.invalid'}})).json();assert(injection.error||injection.result?.isError);assert.equal(requests,prior);
  await assert.rejects(rpc(grant,f.user,'tools/call',{name:'wf_shadcn_search',arguments:{query:'button'}}),{status:403});assert.equal(requests,prior);
+});
+
+
+test('MCP Shadcn additions require administrator Execute scope and expose honest fallback',async t=>{
+ const f=fixture(t);await f.prepare();
+ const admin={...f.user,roles:['admin']};
+ const grant={...f.grant,platform:true,siteId:undefined,scopes:['webfactory.read','webfactory.execute']};
+ const rpc=async(g,u,method,params)=>(await serveMcp(new Request('https://webfactorypr.com/mcp',{method:'POST',headers:{'Content-Type':'application/json',Accept:'application/json, text/event-stream'},body:JSON.stringify({jsonrpc:'2.0',id:1,method,params})}),g,u)).json();
+ const requestId='76827e44-405b-4001-8b1c-9a33b69036bb';
+ const args={components:['button'],requestId};
+ const tenantList=await rpc({...f.grant,scopes:grant.scopes},admin,'tools/list',{});assert(!tenantList.result.tools.some(tool=>tool.name.startsWith('wf_shadcn_')));
+ const readGrant={...grant,scopes:['webfactory.read']};
+ const readonly=await rpc(readGrant,admin,'tools/list',{});assert(!readonly.result.tools.some(tool=>tool.name==='wf_shadcn_add'));
+ const denied=await rpc(readGrant,admin,'tools/call',{name:'wf_shadcn_add',arguments:args});assert(denied.error||denied.result?.isError);
+ const listing=await rpc(grant,admin,'tools/list',{});const add=listing.result.tools.find(tool=>tool.name==='wf_shadcn_add');assert(add&&!add.annotations.readOnlyHint&&add.annotations.openWorldHint);assert(add._meta.securitySchemes[0].scopes.includes('webfactory.execute'));
+ t.mock.method(shadcnCatalog,'item',async()=>({name:'button',type:'registry:ui',files:[{path:'registry/new-york-v4/ui/button.tsx',type:'registry:ui',content:'import {cn} from "cn"; export const Button = () => null;'}]}));
+ const prepared=await rpc(grant,admin,'tools/call',{name:'wf_shadcn_prepare',arguments:{components:['button'],limit:10}});const plan=JSON.parse(prepared.result.content[0].text);assert.equal(plan.files[0].path,'src/components/ui/button.tsx');assert.equal(plan.selectedFile.content.length,10);assert(plan.selectedFile.nextOffset);
+ const result=await rpc(grant,admin,'tools/call',{name:'wf_shadcn_add',arguments:args});const output=JSON.parse(result.result.content[0].text);assert.equal(output.status,'github_connection_required');assert.equal(output.productionPublished,false);assert(!output.previewUrl);
+ const injection=await rpc(grant,admin,'tools/call',{name:'wf_shadcn_add',arguments:{...args,sourceCode:'bad',repository:'other/repo'}});assert(injection.error||injection.result?.isError);
+ await assert.rejects(rpc(grant,f.user,'tools/call',{name:'wf_shadcn_add',arguments:args}),{status:403});
 });

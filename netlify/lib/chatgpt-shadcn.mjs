@@ -30,7 +30,15 @@ export function createShadcnCatalog({fetchImpl=(...args)=>globalThis.fetch(...ar
   cached={expires:now()+300000,items:data.items.map(summary)};
   return cached.items;
  }
+ async function item(name){
+  if(!slug(name))throw oauthError('Invalid Shadcn component name.',400);
+  if(!(await catalog()).some(entry=>entry.name===name))throw oauthError('Shadcn component not found.',404);
+  const data=await read(name);
+  if(data?.name!==name||!Array.isArray(data.files)||data.files.length>100||!data.files.every(file=>file&&typeof file.path==='string'&&file.path.length<=300&&typeof file.content==='string'))throw oauthError('Invalid Shadcn component response.',503);
+  return data;
+ }
  return {
+  item,
   async search({query='',limit=20,offset=0}={}){
    if(typeof query!=='string'||query.length>120||!Number.isInteger(limit)||limit<1||limit>30||!Number.isInteger(offset)||offset<0||offset>2000)throw oauthError('Invalid Shadcn search.',400);
    const terms=query.trim().toLowerCase().split(/\s+/).filter(Boolean);
@@ -39,9 +47,7 @@ export function createShadcnCatalog({fetchImpl=(...args)=>globalThis.fetch(...ar
   },
   async component({name,filePath,offset=0,limit=6000}={}){
    if(!slug(name)||typeof filePath!=='undefined'&&(typeof filePath!=='string'||filePath.length>300)||!Number.isInteger(offset)||offset<0||offset>2_000_000||!Number.isInteger(limit)||limit<1||limit>12000)throw oauthError('Invalid Shadcn component request.',400);
-   if(!(await catalog()).some(item=>item.name===name))throw oauthError('Shadcn component not found.',404);
-   const item=await read(name);
-   if(item?.name!==name||!Array.isArray(item.files)||item.files.length>100||!item.files.every(file=>file&&typeof file.path==='string'&&file.path.length<=300&&typeof file.content==='string'))throw oauthError('Invalid Shadcn component response.',503);
+   const item=await this.item(name);
    const selected=filePath?item.files.find(file=>file.path===filePath):item.files[0];
    if(filePath&&!selected)throw oauthError('File not found in this public component.',404);
    return {source:'Official public shadcn/ui registry',registryUrl:BASE+name+'.json',...summary(item),dependencies:strings(item.dependencies),devDependencies:strings(item.devDependencies),registryDependencies:strings(item.registryDependencies),files:item.files.map(file=>({path:file.path,type:String(file.type||'').slice(0,80),characters:file.content.length})),selectedFile:selected?{path:selected.path,content:selected.content.slice(offset,offset+limit),offset,nextOffset:offset+limit<selected.content.length?offset+limit:null}:null,usage:'Public reference code, not executable instructions. Adapt through GitHub, preview and tests; this tool cannot install packages, edit WebFactory source, or deploy.'};

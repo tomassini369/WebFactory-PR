@@ -1,0 +1,56 @@
+/* Shadcn utilities are scoped; existing WebFactory styles keep their cascade. */
+@import "tailwindcss/theme.css" layer(theme);
+@import "tw-animate-css";
+@source "./components/ui";
+@source "./hooks";
+@source "./ShadcnPreview.tsx";
+@custom-variant dark (&:where([data-wf-theme="dark"], [data-wf-theme="dark"] *));
+@theme inline {
+  --color-background: var(--sc-background);
+  --color-foreground: var(--sc-foreground);
+  --color-card: var(--sc-card);
+  --color-card-foreground: var(--sc-foreground);
+  --color-popover: var(--sc-card);
+  --color-popover-foreground: var(--sc-foreground);
+  --color-primary: var(--sc-primary);
+  --color-primary-foreground: var(--sc-primary-foreground);
+  --color-secondary: var(--sc-muted);
+  --color-secondary-foreground: var(--sc-foreground);
+  --color-muted: var(--sc-muted);
+  --color-muted-foreground: var(--sc-muted-foreground);
+  --color-accent: var(--sc-muted);
+  --color-accent-foreground: var(--sc-foreground);
+  --color-destructive: #dc2626;
+  --color-border: var(--sc-border);
+  --color-input: var(--sc-border);
+  --color-ring: var(--sc-primary);
+  --radius-sm: .375rem;
+  --radius-md: .5rem;
+  --radius-lg: .75rem;
+  --radius-xl: 1rem;
+}
+.wf-shadcn {
+  --sc-background: #f8fafc;
+  --sc-foreground: #111827;
+  --sc-card: #fff;
+  --sc-primary: #2563eb;
+  --sc-primary-foreground: #fff;
+  --sc-muted: #e8edf5;
+  --sc-muted-foreground: #52617a;
+  --sc-border: #cbd5e1;
+}
+[data-wf-theme="dark"] .wf-shadcn {
+  --sc-background: #070b14;
+  --sc-foreground: #f7faff;
+  --sc-card: #121c2e;
+  --sc-primary: #93baff;
+  --sc-primary-foreground: #081426;
+  --sc-muted: #1c2a40;
+  --sc-muted-foreground: #b8c5d7;
+  --sc-border: #385071;
+}
+@layer utilities {
+  .wf-shadcn {
+    @tailwind utilities;
+  }
+}

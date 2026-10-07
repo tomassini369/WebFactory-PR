@@ -19,6 +19,8 @@ const SiteRedesignBuilder = lazy(() => import('./SiteRedesignBuilder'))
 // Preview-only visual comparison. Compiled out of production builds (see vite.config.ts).
 const PreviewReviewPage = typeof __WF_PREVIEW_REVIEW__ !== 'undefined' && __WF_PREVIEW_REVIEW__ ? lazy(() => import('./PreviewReviewPage')) : null
 
+const ShadcnPreview = __WF_PREVIEW_REVIEW__ ? lazy(() => import('./ShadcnPreview')) : null
+
 const TemplateParityReview = __WF_PREVIEW_REVIEW__ ? lazy(() => import('./TemplateParityReview')) : null
 
 function RouteLoading(){
@@ -63,6 +65,7 @@ function App(){
   const termsRoute = /^\/terms\/?$/.test(window.location.pathname)
   const refundRoute = /^\/refund-policy\/?$/.test(window.location.pathname)
 
+  if (ShadcnPreview && /^\/shadcn-preview\/?$/.test(window.location.pathname)) return <RouteView><ShadcnPreview/></RouteView>
   if (TemplateParityReview && /^\/template-parity-preview\/?$/.test(window.location.pathname)) return <RouteView><TemplateParityReview/></RouteView>
   if (PreviewReviewPage && /^\/preview-review\/?$/.test(window.location.pathname)) return <RouteView><PreviewReviewPage lang={lang} setLang={setLang} /></RouteView>
   if (/^\/chatgpt\/?$/.test(window.location.pathname)) return <RouteView><MfaGate><ChatgptControlPage lang={lang} setLang={setLang} /></MfaGate></RouteView>
