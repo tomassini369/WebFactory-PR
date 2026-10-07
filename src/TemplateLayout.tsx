@@ -4,6 +4,8 @@ import type { TemplateLanguage, TemplateUi } from './templateI18n'
 import './template-preview.css'
 import './template-polish.css'
 import './template-evolution.css'
+import './template-glass.css'
+import TemplateHighlights from './TemplateHighlights'
 
 type Props = {
  config: TemplateConfig; ui: {[K in keyof TemplateUi]: TemplateUi[K] extends string ? string : TemplateUi[K]}; language: TemplateLanguage; setLanguage: (language: TemplateLanguage) => void;
@@ -67,17 +69,7 @@ export default function TemplateLayout({config,ui,language,setLanguage,startBook
             </div>
             <p>{ui.catalogIntro}</p>
           </div>
-          {config.items.length > 0 && <div className="template-catalog-preview">
-            {config.items.slice(0,3).map(item => <article key={item.id}>
-              {item.image && <img src={item.image} alt="" loading="lazy" />}
-              <div>
-                {item.badge && <small>{item.badge}</small>}
-                <h3>{item.name}</h3>
-                <p>{item.description}</p>
-                <strong>{item.displayPrice || new Intl.NumberFormat(language==='es'?'es-US':'en-US',{style:'currency',currency:'USD'}).format(item.price)}</strong>
-              </div>
-            </article>)}
-          </div>}
+          <TemplateHighlights items={config.items} language={language}/>
         </section>
 
         }

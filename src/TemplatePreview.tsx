@@ -1,3 +1,4 @@
+import AnimatedOverlay from './AnimatedOverlay'
 import {templateButtonInk} from './templateVisual'
 import CatalogCard from './TemplateCatalogCard'
 import TemplateLayout from './TemplateLayout'
@@ -53,7 +54,6 @@ function TemplateSite({ slug }: { slug: string }) {
   const [bookingCustomerEmail, setBookingCustomerEmail] = useState('template@example.com')
   const [checkoutComplete, setCheckoutComplete] = useState(false)
   const [cartPaymentMethod,setCartPaymentMethod]=useState<'stripe'|'ath'>('stripe')
-  const [contactSubmitted,setContactSubmitted]=useState(false)
 
   const subtotal = useMemo(
     () => cart.reduce((sum, line) => sum + line.item.price * line.quantity, 0),
@@ -195,16 +195,9 @@ function TemplateSite({ slug }: { slug: string }) {
     <div className={`template-site visual-${templateVisualStyle(config.category)}`} style={styles}>
       <TemplateNotice ui={ui} slug={slug} />
 
-      <TemplateLayout config={config} ui={ui} language={language} setLanguage={setLanguage} startBooking={startBooking} setCatalogOpen={setCatalogOpen} setCartOpen={setCartOpen} cart={cart} map={<TemplateMap location={config.location} language={language} sample/>} contact={<form className="template-demo-contact" onSubmit={event=>{event.preventDefault();setContactSubmitted(true)}} onChange={()=>setContactSubmitted(false)}>
-        <p>{language==='es'?'Formulario de muestra: puedes probarlo; no se envían mensajes.':'Sample form: you can try it; no messages are sent.'}</p>
-        <label>{ui.name}<input name="name" autoComplete="name" required maxLength={180}/></label>
-        <label>{ui.email}<input name="email" type="email" autoComplete="email" required maxLength={320}/></label>
-        <label>{language==='es'?'Mensaje':'Message'}<textarea name="message" required maxLength={5000}/></label>
-        <button className="template-solid" type="submit">{language==='es'?'Probar formulario':'Test form'}</button>
-        {contactSubmitted&&<p role="status">{language==='es'?'Prueba completada. No se envió ningún mensaje.':'Test completed. No message was sent.'}</p>}
-      </form>} />
+      <TemplateLayout config={config} ui={ui} language={language} setLanguage={setLanguage} startBooking={startBooking} setCatalogOpen={setCatalogOpen} setCartOpen={setCartOpen} cart={cart} map={<TemplateMap location={config.location} language={language} sample/>} contact={<></>} />
 
-      {catalogOpen && (
+      <AnimatedOverlay open={Boolean(catalogOpen)}>{catalogOpen && (
         <div className="template-modal-backdrop" role="presentation" style={{visibility:selectedItem || bookingItem || cartOpen ? 'hidden' : undefined}} aria-hidden={Boolean(selectedItem || bookingItem || cartOpen)} onMouseDown={() => setCatalogOpen(false)}>
           <section className="template-catalog-modal" role="dialog" aria-modal="true" onMouseDown={(event) => event.stopPropagation()}>
             <header>
@@ -227,9 +220,9 @@ function TemplateSite({ slug }: { slug: string }) {
             </div>
           </section>
         </div>
-      )}
+      )}</AnimatedOverlay>
 
-      {selectedItem && (
+      <AnimatedOverlay open={Boolean(selectedItem)}>{selectedItem && (
         <div className="template-modal-backdrop" role="presentation" onMouseDown={() => setSelectedItem(null)}>
           <article className="template-detail-modal" role="dialog" aria-modal="true" onMouseDown={(event) => event.stopPropagation()}>
             <button className="template-modal-close" onClick={() => setSelectedItem(null)}>×</button>
@@ -254,9 +247,9 @@ function TemplateSite({ slug }: { slug: string }) {
             </div>
           </article>
         </div>
-      )}
+      )}</AnimatedOverlay>
 
-      {cartOpen && (
+      <AnimatedOverlay open={Boolean(cartOpen)}>{cartOpen && (
         <div className="template-modal-backdrop cart-backdrop" role="presentation" onMouseDown={() => setCartOpen(false)}>
           <aside className="template-cart-drawer" role="dialog" aria-modal="true" onMouseDown={(event) => event.stopPropagation()}>
             <header>
@@ -294,9 +287,9 @@ function TemplateSite({ slug }: { slug: string }) {
             <small className="template-safe-note">{ui.backendPricing}</small>
           </aside>
         </div>
-      )}
+      )}</AnimatedOverlay>
 
-      {bookingItem && (
+      <AnimatedOverlay open={Boolean(bookingItem)}>{bookingItem && (
         <div className="template-modal-backdrop" role="presentation" onMouseDown={() => setBookingItem(null)}>
           <article className="template-booking-modal" role="dialog" aria-modal="true" onMouseDown={(event) => event.stopPropagation()}>
             <button className="template-modal-close" onClick={() => setBookingItem(null)}>×</button>
@@ -453,7 +446,7 @@ function TemplateSite({ slug }: { slug: string }) {
             )}
           </article>
         </div>
-      )}
+      )}</AnimatedOverlay>
 
     </div>
   )

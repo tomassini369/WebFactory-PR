@@ -156,7 +156,7 @@ const initialState: BuilderState = {
     whatsapp: true,
     calls: true,
     social: true,
-    form: true,
+    form: false,
     maps: true,
     stripe: true,
     ath: true,

@@ -75,12 +75,7 @@ try{
     await page.locator('.template-success').waitFor()
     await page.locator('.template-cart-drawer > header').getByRole('button').click()
    }
-   const form=page.locator('.template-demo-contact')
-   await form.locator('input[name="name"]').fill('Template QA')
-   await form.locator('input[name="email"]').fill('qa@example.com')
-   await form.locator('textarea').fill('Test only')
-   await form.getByRole('button').click()
-   assert.ok((await form.getByRole('status').textContent()).includes(lang==='es'?'No se envió':'No message'))
+   assert.equal(await page.locator('.template-demo-contact').count(),0)
    await page.goto('http://127.0.0.1:5191/builder?template='+config.slug)
    await page.locator('iframe').waitFor()
    await page.waitForFunction(slug=>JSON.parse(localStorage.getItem('webfactory-v3-builder-draft')||'{}').design?.templateSlug===slug,config.slug)
@@ -90,6 +85,7 @@ try{
    assert.equal(state.features.services,base.items.some(item=>item.type!=='product'))
    assert.equal(state.features.bookings,base.bookingEnabled)
    assert.equal(state.features.cart,base.cartEnabled)
+   assert.equal(state.features.form,false)
    assert.deepEqual(state.catalog,[]);assert.deepEqual(state.team,[])
    checked++
    if(checked%10===0)console.log(`Completed ${checked}/46 functional cases`)
@@ -99,11 +95,11 @@ try{
  try{
   const page=await preservedBrowser.newPage()
   await page.goto('http://127.0.0.1:5191/builder')
-  await page.evaluate(()=>localStorage.setItem('webfactory-v3-builder-draft',JSON.stringify({business:{name:'Existing business',category:'Barber'},features:{products:false,services:true,cart:false,bookings:false,calendar:false},catalog:[{id:'own-service',type:'service',name:'Own service',price:20,requiresAppointment:false,duration:30}],team:[{id:'own-team',name:'Own team',role:'Professional',serviceIds:['own-service']}]})))
+  await page.evaluate(()=>localStorage.setItem('webfactory-v3-builder-draft',JSON.stringify({business:{name:'Existing business',category:'Barber'},features:{products:false,services:true,cart:false,bookings:false,calendar:false,form:true},catalog:[{id:'own-service',type:'service',name:'Own service',price:20,requiresAppointment:false,duration:30}],team:[{id:'own-team',name:'Own team',role:'Professional',serviceIds:['own-service']}]})))
   await page.goto('http://127.0.0.1:5191/builder?template=luna-market')
   await page.waitForFunction(()=>JSON.parse(localStorage.getItem('webfactory-v3-builder-draft')||'{}').design?.templateSlug==='luna-market')
   const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('webfactory-v3-builder-draft')))
-  assert.equal(saved.business.category,'Barber');assert.equal(saved.features.cart,false);assert.equal(saved.features.products,false);assert.equal(saved.features.bookings,false)
+  assert.equal(saved.business.category,'Barber');assert.equal(saved.features.cart,false);assert.equal(saved.features.products,false);assert.equal(saved.features.bookings,false);assert.equal(saved.features.form,true)
   assert.equal(saved.catalog[0].id,'own-service');assert.equal(saved.team[0].id,'own-team')
  }finally{await preservedBrowser.close()}
  console.log(`Template functions: ${checked} template/language cases passed; commerce actions, employee preselection and fresh Builder defaults verified`)
