@@ -2,14 +2,13 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { ThemeToggle } from './theme'
 
 export default function ShadcnPreview() {
   const [name, setName] = useState('')
   const [message, setMessage] = useState('')
   return <main className="wf-shadcn" style={{minHeight:'100vh',background:'var(--sc-background)',color:'var(--sc-foreground)',padding:'24px',display:'grid',placeItems:'center'}}>
     <div style={{width:'100%',maxWidth:480}}>
-      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:24}}><a href="/">WebFactory PR</a><ThemeToggle/></div>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:24}}><a href="/">WebFactory PR</a></div>
       <Card>
         <CardHeader><CardTitle role="heading" aria-level={1}>Shadcn instalado</CardTitle><CardDescription>Componentes reales: Button, Card e Input. Esta prueba no guarda datos.</CardDescription></CardHeader>
         <CardContent>

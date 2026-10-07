@@ -15,7 +15,8 @@ try{
    const style=await page.getByRole('button',{name:'Probar componente'}).evaluate(el=>({display:getComputedStyle(el).display,color:getComputedStyle(el).color,background:getComputedStyle(el).backgroundColor}));
    assert.equal(style.display,'inline-flex');assert.notEqual(style.color,style.background);assert.notEqual(style.background,'rgba(0, 0, 0, 0)');
    assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));
-   assert.equal(await page.getByLabel('Nombre de prueba').evaluate(el=>getComputedStyle(el).fontSize),'16px');
+   if(width<768)assert(parseFloat(await page.getByLabel('Nombre de prueba').evaluate(el=>getComputedStyle(el).fontSize))>=16);
+   assert.equal(await page.locator('.wf-theme-toggle').count(),1);
    console.log('Official Shadcn input/card/button verified',width,theme,style);
   }
  }

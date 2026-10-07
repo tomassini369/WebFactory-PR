@@ -1,5 +1,5 @@
 /* Shadcn utilities are scoped; existing WebFactory styles keep their cascade. */
-@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/theme.css" layer(theme) important;
 @import "tw-animate-css";
 @source "./components/ui";
 @source "./hooks";
@@ -48,6 +48,14 @@
   --sc-muted: #1c2a40;
   --sc-muted-foreground: #b8c5d7;
   --sc-border: #385071;
+}
+/* Reset only component surfaces; scoped important utilities win over legacy global rules. */
+@layer base {
+  .wf-shadcn *, .wf-shadcn ::before, .wf-shadcn ::after {
+    box-sizing: border-box;
+    border: 0 solid var(--sc-border);
+  }
+  .wf-shadcn button { appearance: none; font: inherit; background: transparent; }
 }
 @layer utilities {
   .wf-shadcn {
