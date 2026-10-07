@@ -122,3 +122,10 @@ html body :is(.ca-login,.wfa-login) input:not([type=checkbox]){font-size:17px!im
  html[data-pg-keyboard] body :is(.ca-login,.wfa-login) .portal-password-field{min-height:44px}
  html[data-pg-keyboard] body :is(.ca-login,.wfa-login) .portal-password-field button{min-height:44px}
 }
+
+/* Home remains available throughout page and account creation, including mobile. */
+html body .wf-creation-header{grid-template-columns:minmax(0,1fr) auto}
+html body .wf-creation-header .wf-creation-home{display:inline-flex;align-items:center;justify-content:center;flex:0 0 52px;width:52px;height:52px;border:1px solid var(--wf-readable-line,#c2cedc);border-radius:14px;background:var(--wf-readable-surface,#fff);color:var(--wf-readable-text,#17263b);text-decoration:none;touch-action:manipulation}
+.wf-creation-home:focus-visible{outline:3px solid #2867b2;outline-offset:3px}
+.wf-creation-home:active{transform:translateY(1px)}
+@media(max-width:480px){html body .wf-creation-header{gap:8px;padding-inline:10px}html body .wf-creation-header .logo{min-width:0}html body .wf-creation-header .logo .wf-adaptive-logo-slot{width:100px;max-width:100%}html body .wf-creation-header .logo img{width:100%;max-width:100%}html body .wf-creation-header .header-actions{gap:6px}html body .wf-creation-header .wf-creation-home{flex-basis:48px;width:48px;height:48px}}
