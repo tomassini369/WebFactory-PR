@@ -15,13 +15,22 @@ export function usePortalNavigation() {
     const reset=()=>{pending=false;window.clearTimeout(navigationTimer);document.documentElement.classList.remove('wf-portal-leaving')}
     reset()
     const viewport=window.visualViewport
+    let restingHeight=viewport?.height??window.innerHeight
     const syncViewport=()=>{
-      document.documentElement.style.setProperty('--pg-viewport-height',`${viewport?.height??window.innerHeight}px`)
+      if(viewport&&Math.abs(viewport.scale-1)>.02)return
+      const height=viewport?.height??window.innerHeight
+      const active=document.activeElement
+      const editing=active instanceof HTMLInputElement&&active.type!=='checkbox'&&Boolean(active.closest('.ca-login,.wfa-login'))
+      if(!editing)restingHeight=Math.max(restingHeight,height)
+      document.documentElement.toggleAttribute('data-pg-keyboard',editing&&restingHeight-height>120)
+      document.documentElement.style.setProperty('--pg-viewport-height',`${height}px`)
       document.documentElement.style.setProperty('--pg-viewport-top',`${viewport?.offsetTop??0}px`)
     }
     syncViewport()
     viewport?.addEventListener('resize',syncViewport)
     viewport?.addEventListener('scroll',syncViewport)
+    document.addEventListener('focusin',syncViewport)
+    document.addEventListener('focusout',syncViewport)
     const click=(event:MouseEvent)=>{
       if(event.defaultPrevented||event.button!==0||event.metaKey||event.ctrlKey||event.altKey||event.shiftKey)return
       const anchor=event.target instanceof Element?event.target.closest<HTMLAnchorElement>('a[href]'):null
@@ -34,6 +43,6 @@ export function usePortalNavigation() {
     }
     document.addEventListener('click',click)
     window.addEventListener('pageshow',reset)
-    return()=>{viewport?.removeEventListener('resize',syncViewport);viewport?.removeEventListener('scroll',syncViewport);document.documentElement.style.removeProperty('--pg-viewport-height');document.documentElement.style.removeProperty('--pg-viewport-top');document.removeEventListener('click',click);window.removeEventListener('pageshow',reset);reset()}
+    return()=>{document.removeEventListener('focusin',syncViewport);document.removeEventListener('focusout',syncViewport);document.documentElement.removeAttribute('data-pg-keyboard');viewport?.removeEventListener('resize',syncViewport);viewport?.removeEventListener('scroll',syncViewport);document.documentElement.style.removeProperty('--pg-viewport-height');document.documentElement.style.removeProperty('--pg-viewport-top');document.removeEventListener('click',click);window.removeEventListener('pageshow',reset);reset()}
   },[])
 }

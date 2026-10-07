@@ -45,5 +45,18 @@ try {
    console.log('Login fields and submit reachable in both themes:',path,viewport);
   }
  }
+ for(const path of ['/client-admin/','/webfactory-admin/']){
+  await page.setViewportSize({width:390,height:844});await page.goto(origin+path);
+  await page.locator('input[type=email]').click();
+  assert.equal(await page.locator('input[type=email]').evaluate(el=>getComputedStyle(el).fontSize),'17px');
+  await page.setViewportSize({width:390,height:400});
+  await page.waitForFunction(()=>document.documentElement.hasAttribute('data-pg-keyboard'));
+  for(const selector of ['.portal-return-home','input[type=email]','input[autocomplete=current-password]','form>button','.ca-link,.wfa-text-button'])assert(await page.locator(selector).evaluate(el=>{const r=el.getBoundingClientRect();return r.top>=0&&r.bottom<=visualViewport.height}),`Keyboard viewport must show ${selector}`);
+  assert.equal(await page.evaluate(()=>visualViewport.scale),1);
+  await page.setViewportSize({width:390,height:844});
+  await page.waitForFunction(()=>!document.documentElement.hasAttribute('data-pg-keyboard'));
+  assert(await page.locator('.wf-adaptive-logo-slot').isVisible());
+  console.log('PASS keyboard viewport and focus text size:',path);
+ }
  assert.deepEqual(errors,[]);
 }finally{await browser?.close();server?.kill()}
