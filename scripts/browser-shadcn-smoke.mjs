@@ -13,7 +13,7 @@ try{
    await page.getByLabel('Nombre de prueba').fill('Kevin');await page.getByRole('button',{name:'Probar componente'}).click();
    await page.getByRole('status').filter({hasText:'Funciona, Kevin.'}).waitFor();
    const style=await page.getByRole('button',{name:'Probar componente'}).evaluate(el=>({display:getComputedStyle(el).display,color:getComputedStyle(el).color,background:getComputedStyle(el).backgroundColor}));
-   assert.equal(style.display,'inline-flex');assert.notEqual(style.color,style.background);assert.notEqual(style.background,'rgba(0, 0, 0, 0)');
+   assert(['inline-flex','flex'].includes(style.display),'Button must retain flex alignment (grid items may be blockified)');assert.notEqual(style.color,style.background);assert.notEqual(style.background,'rgba(0, 0, 0, 0)');
    assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));
    if(width<768)assert(parseFloat(await page.getByLabel('Nombre de prueba').evaluate(el=>getComputedStyle(el).fontSize))>=16);
    assert.equal(await page.locator('.wf-theme-toggle').count(),1);
