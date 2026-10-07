@@ -7,6 +7,13 @@ const server = await createServer({server:{middlewareMode:true}, appType:'custom
 try {
   const {default: Storefront} = await server.ssrLoadModule('/src/ClientStorefront.tsx')
   const {default: Layout} = await server.ssrLoadModule('/src/TemplateLayout.tsx')
+  const {default: Map,googleMapsEmbedUrl} = await server.ssrLoadModule('/src/TemplateMap.tsx')
+  assert.equal(googleMapsEmbedUrl('https://www.google.com/maps?q=Arecibo'), 'https://www.google.com/maps?q=Arecibo&output=embed')
+  assert.equal(googleMapsEmbedUrl('https://www.google.com/maps/place/Business/@18.5,-66.7,17z/data=!3d18.47!4d-66.72'),'https://www.google.com/maps?q=18.47%2C-66.72&output=embed','Business marker takes precedence over camera center')
+  assert.equal(googleMapsEmbedUrl('https://maps.google.com/maps/embed?pb=example'),'https://www.google.com/maps/embed?pb=example','Embeds use the permitted Google host')
+  assert.equal(googleMapsEmbedUrl('https://maps.app.goo.gl/example'),null,'Short links need an address for embedding')
+  assert.equal(googleMapsEmbedUrl('https://untrusted.example/maps/embed'),null,'Never embed a third-party URL')
+  assert.ok(googleMapsEmbedUrl('https://maps.app.goo.gl/example','123 Main St, Arecibo').includes('123%20Main%20St'))
   const {default: CatalogCard} = await server.ssrLoadModule('/src/TemplateCatalogCard.tsx')
   const {templateConfigs} = await server.ssrLoadModule('/src/templateData.ts')
   const {templateUi} = await server.ssrLoadModule('/src/templateI18n.ts')
@@ -14,24 +21,37 @@ try {
   for(const config of templateConfigs) for(const lang of ['en','es']) {
     const site={siteId:'preview',slug:'example',business:{name:'Client business',description:'Client content',category:config.category,phone:'787-555-0100',heroUrl:'',galleryUrls:[]},design:{templateSlug:config.slug,primary:'#123456',secondary:'#abcdef'},features:{products:true,services:true,bookings:true,cart:true},catalog:[{id:'real-service',type:'service',name:'Real client service',description:'Actual service',price:25,inventory:null,requiresAppointment:true,duration:30,imageUrl:''}],employees:[],hours:{},paymentRules:{},settings:{}}
     const live=renderToStaticMarkup(React.createElement(Storefront,{slug:'example',previewSite:site,previewLanguage:lang}))
-    const demo=renderToStaticMarkup(React.createElement(Layout,{config,ui:templateUi[lang],language:lang,setLanguage(){},startBooking(){},setCartOpen(){},setCatalogOpen(){},cart:[],showcaseFeatures:config.features}))
-    for(const className of ['template-header','template-hero','template-hero-content','template-hero-meta','template-feature-strip','template-catalog-gateway','template-story','template-story-images','template-gallery','template-booking-showcase','template-contact','template-footer']) {
+    const demo=renderToStaticMarkup(React.createElement(Layout,{config,ui:templateUi[lang],language:lang,setLanguage(){},startBooking(){},setCartOpen(){},setCatalogOpen(){},cart:[]}))
+    for(const className of ['template-header','template-hero','template-hero-content','template-hero-meta','template-story','template-story-images','template-gallery','template-contact','template-footer']) {
       assert.ok(live.includes(`class="${className}`),`${config.slug}/${lang}: live ${className}`)
       assert.ok(demo.includes(`class="${className}`),`${config.slug}/${lang}: demo ${className}`)
+    }
+    for(const html of [live,demo]) {
+      for(const removed of ['template-feature-strip','template-catalog-gateway','template-booking-showcase'])assert.ok(!html.includes(removed), 'No repeated promotional blocks')
+      assert.equal((html.match(/class="template-glass large"/g)||[]).length,1,'One catalog entry point')
     }
     assert.ok(live.includes('--template-dark:#123456'))
     assert.ok(live.includes('--template-accent:#abcdef'))
     assert.ok(live.includes('Client business') && live.includes('Client content'))
     assert.ok(live.includes(config.heroImage))
     assert.ok(!live.includes('demo-'))
+    assert.ok(live.includes('template-catalog-preview') && live.includes('Real client service'), 'Catalog highlights use real business items')
     assert.ok(!live.includes('id="team"'), 'Never invent demo employees for a client')
     assert.ok(!live.includes('template-mode'), 'No demo functionality in production')
+    assert.ok(!live.includes('cs-contact-form'), 'Contact form remains off without an enabled feature')
+    const edited=renderToStaticMarkup(React.createElement(Storefront,{slug:'example',previewSite:{...site,features:{...site.features,form:true},catalog:[{...site.catalog[0],name:'Edited dashboard service',price:47.5}],business:{...site.business,heroUrl:'/edited-hero.jpg'}},previewLanguage:lang}))
+    assert.ok(edited.includes('Edited dashboard service') && edited.includes('$47.50') && edited.includes('/edited-hero.jpg'), 'Saved dashboard content flows to the new shared composition')
+    assert.ok(edited.includes('cs-contact-form'), 'Existing enabled contact form remains available')
     const off=renderToStaticMarkup(React.createElement(Storefront,{slug:'example',previewSite:{...site,features:{products:false,services:false,bookings:false,cart:false},business:{...site.business,heroUrl:'/custom-hero.jpg',galleryUrls:['/custom-gallery.jpg']}},previewLanguage:lang}))
     assert.ok(!off.includes('id="services"'))
+    assert.ok(!off.includes('template-catalog-preview') && !off.includes('template-glass large'), 'Disabled catalog has no highlights or hero entry point')
     assert.ok(!off.includes('template-cart-button'))
     assert.ok(!off.includes('template-booking-showcase'))
     assert.ok(off.includes('/custom-hero.jpg') && off.includes('/custom-gallery.jpg'))
     assert.ok(!off.includes(config.heroImage), 'Uploaded content overrides sample media')
+    const mapped=renderToStaticMarkup(React.createElement(Storefront,{slug:'example',previewSite:{...site,features:{...site.features,maps:true},business:{...site.business,address:'123 Main St, Arecibo',mapsUrl:'https://www.google.com/maps?q=Arecibo'}},previewLanguage:lang}))
+    assert.ok(mapped.includes('template-location-map')&&mapped.includes('https://www.google.com/maps?q=Arecibo&amp;output=embed'),'Visible configured map in shared storefront')
+    assert.ok(!off.includes('template-location-map'),'Disabled maps remain hidden')
     const styled=renderToStaticMarkup(React.createElement(Storefront,{slug:'example',previewSite:{...site,design:{...site.design,style:'Luxury'}},previewLanguage:lang}))
     assert.ok(styled.includes('visual-luxury'), 'Saved style preference is honored consistently in Builder and live renderer')
     const card=renderToStaticMarkup(React.createElement(CatalogCard,{item:config.items[0],accent:config.accent,language:lang,ui:templateUi[lang],onView(){},onAdd(){},onBook(){},bookEnabled:false,cartEnabled:false,disabled:true}))

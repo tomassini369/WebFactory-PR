@@ -33,12 +33,26 @@ jobs:
         run: npx playwright install --with-deps webkit
       - name: Check Home FAQ desktop/mobile, themes and languages
         run: node scripts/browser-home-faq-smoke.mjs
+      - name: Check homepage responsive controls, tour and demos
+        run: node scripts/browser-home-evolution-smoke.mjs
+      - name: Check all template renderers and saved storefront data
+        run: node scripts/test-template-layout.mjs
+      - name: Check template library and Builder responsive parity
+        run: node scripts/browser-template-workspace-smoke.mjs
+      - name: Check shared glass composition and motion
+        run: node scripts/browser-template-glass-smoke.mjs
+      - name: Check functions for every template and language
+        run: node scripts/browser-template-functions-smoke.mjs
       - name: Check Builder cart and draft interactions
         run: node scripts/browser-interactions-smoke.mjs
       - name: Check ChatGPT configuration on mobile and desktop
         run: node scripts/browser-chatgpt-ui-smoke.mjs
       - name: Check installed Shadcn components on desktop and mobile
         run: node scripts/browser-shadcn-smoke.mjs
+      - name: Check floating portal login cards and return controls
+        run: node scripts/browser-portal-glass-smoke.mjs
+      - name: Check portal workspaces, mobile menus and navigation transitions
+        run: node scripts/browser-portal-workspace-glass-smoke.mjs
       - name: Check portal login fields on desktop and mobile
         run: node scripts/browser-login-layout-smoke.mjs
       - name: Check panel keyboard navigation
