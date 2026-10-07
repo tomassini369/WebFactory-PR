@@ -38,7 +38,7 @@ try {
     assert.equal(await page.locator('.wf-theme-toggle').count(),1);
     assert.equal(await page.locator('button.portal-return-home').count(),1);
     const cardStyle=await page.locator('.ca-login,.wfa-login').evaluate(el=>({radius:getComputedStyle(el).borderRadius,shadow:getComputedStyle(el).boxShadow}));assert.notEqual(cardStyle.radius,'0px');assert.notEqual(cardStyle.shadow,'none');
-    const overlap=await page.locator('.portal-return-home').evaluate(el=>{const a=el.getBoundingClientRect(),b=el.closest('section').querySelector('.portal-language').getBoundingClientRect();return a.left<b.right&&a.right>b.left&&a.top<b.bottom&&a.bottom>b.top});assert.equal(overlap,false,'Home button and language controls must not overlap');
+    const row=await page.locator('.portal-return-home').evaluate(el=>{const a=el.getBoundingClientRect(),group=el.closest('.portal-language');return {inside:!!group,aligned:!!group&&Array.from(group.children).filter(node=>node!==el).every(node=>{const b=node.getBoundingClientRect();return Math.abs(a.top-b.top)<2&&!(a.left<b.right&&a.right>b.left&&a.top<b.bottom&&a.bottom>b.top)})}});assert(row.inside&&row.aligned,'Home icon must share the language row without overlapping other controls');
     assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'Login must not overflow horizontally');
    }
    if(process.env.QA_SCREENSHOT_DIR&&viewport.width===390&&viewport.height===844)await page.screenshot({path:`${process.env.QA_SCREENSHOT_DIR}/${path.includes('client')?'client-login':'admin-login'}.png`});
