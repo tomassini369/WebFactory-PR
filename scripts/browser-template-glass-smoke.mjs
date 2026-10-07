@@ -1,15 +1,15 @@
 import assert from 'node:assert/strict'
-import {createServer} from 'vite'
+import {createServer,preview} from 'vite'
 import {chromium} from 'playwright'
 const server=await createServer({server:{host:'127.0.0.1',port:5194,strictPort:true}})
-await server.listen()
+const production=await preview({preview:{host:'127.0.0.1',port:5194,strictPort:true}})
 const {templateConfigs,templateVisualStyle}=await server.ssrLoadModule('/src/templateData.ts')
 const representatives=[...new Map(templateConfigs.map(t=>[templateVisualStyle(t.category),t])).values()]
 let checked=0
 try {
- const browser=await chromium.launch(process.env.QA_CHROMIUM_PATH?{executablePath:process.env.QA_CHROMIUM_PATH,args:['--single-process']}:undefined)
- try {
   for(const width of [390,1440])for(const config of representatives)for(const language of ['en','es']){
+   const browser=await chromium.launch(process.env.QA_CHROMIUM_PATH?{executablePath:process.env.QA_CHROMIUM_PATH,args:['--single-process']}:undefined)
+   try {
    const page=await browser.newPage({viewport:{width,height:900}})
    const errors=[];page.on('pageerror',e=>errors.push(e.message))
    await page.goto('http://127.0.0.1:5194/templates/'+config.slug)
@@ -54,8 +54,8 @@ try {
    await page.locator('.catalog-close').click()
    await page.locator('.template-catalog-modal').waitFor({state:'detached'})
    assert.deepEqual(errors,[])
-   await page.close();checked++
+   checked++
+   }finally{await browser.close()}
   }
- }finally{await browser.close()}
  console.log(`Glass template QA: ${checked} style/viewport/language cases passed; carousel, menu, exits and reduced motion verified`)
-}finally{await server.close()}
+}finally{await server.close();await new Promise(resolve=>production.httpServer.close(resolve))}
