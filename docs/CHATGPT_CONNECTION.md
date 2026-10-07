@@ -59,3 +59,7 @@ Execution remains idempotent by request UUID. Cross-business access is denied se
 ## Validation
 
 `npm test` covers OAuth scope separation, direct Execute without Propose, tenant isolation, direct normal writes, chat-only sensitive confirmation, exact confirmation text, deletion protection, replay/idempotency, stale revisions, Execute revocation and MCP tool exposure. `npm run build` validates TypeScript and the production bundle.
+
+## Shadcn public component reference
+
+Platform-administrator connections can search/read the official public Shadcn registry through `wf_shadcn_search` and `wf_shadcn_component`. Only external public component code is returned; private WebFactory source, command execution, package installation and deployment remain unavailable. Tenant connections do not expose these tools. See [SHADCN_MCP.md](SHADCN_MCP.md).

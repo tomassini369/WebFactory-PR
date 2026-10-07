@@ -52,3 +52,24 @@ test('Graph context stays in the MCP catalog while tenant access fails closed',a
  const relisted=await serveMcp(request('tools/list'),{...f.grant,scopes:['webfactory.read']},f.user);
  assert.ok((await relisted.json()).result.tools.some(tool=>tool.name==='wf_graph_context'));
 });
+
+test('Shadcn tools are read-only admin-only and use public registry without OAuth credentials',async t=>{
+ const f=fixture(t);await f.prepare();
+ const rpc=async(grant,user,method,params)=>serveMcp(new Request('https://webfactorypr.com/mcp',{method:'POST',headers:{'Content-Type':'application/json',Accept:'application/json, text/event-stream',Authorization:'Bearer private-oauth-token'},body:JSON.stringify({jsonrpc:'2.0',id:1,method,params})}),grant,user);
+ const tenantAdmin={...f.user,roles:['admin']};
+ const tenantList=await (await rpc(f.grant,tenantAdmin,'tools/list',{})).json();
+ assert(!tenantList.result.tools.some(tool=>tool.name.startsWith('wf_shadcn_')));
+ const denied=await (await rpc(f.grant,tenantAdmin,'tools/call',{name:'wf_shadcn_search',arguments:{query:'button'}})).json();
+ assert(denied.error||denied.result?.isError);
+ const grant={...f.grant,platform:true,siteId:undefined,scopes:['webfactory.read']};
+ const listing=await (await rpc(grant,tenantAdmin,'tools/list',{})).json();
+ const tools=listing.result.tools.filter(tool=>tool.name.startsWith('wf_shadcn_'));
+ assert.equal(tools.length,2);assert(tools.every(tool=>tool.annotations.readOnlyHint&&tool.annotations.openWorldHint&&!tool.annotations.destructiveHint));
+ let requests=0;
+ t.mock.method(globalThis,'fetch',async(url,options)=>{requests++;assert.equal(options.credentials,'omit');assert.deepEqual(options.headers,{Accept:'application/json'});assert(!JSON.stringify(options.headers).includes('private-oauth-token'));assert(url.startsWith('https://ui.shadcn.com/r/styles/new-york-v4/'));return Response.json(url.endsWith('registry.json')?{items:[{name:'button',type:'registry:ui'}]}:{name:'button',files:[{path:'ui/button.tsx',content:'public source'}]});});
+ const search=await (await rpc(grant,tenantAdmin,'tools/call',{name:'wf_shadcn_search',arguments:{query:'button'}})).json();assert.equal(JSON.parse(search.result.content[0].text).items[0].name,'button');
+ const component=await (await rpc(grant,tenantAdmin,'tools/call',{name:'wf_shadcn_component',arguments:{name:'button'}})).json();assert.equal(JSON.parse(component.result.content[0].text).selectedFile.content,'public source');
+ const prior=requests;
+ const injection=await (await rpc(grant,tenantAdmin,'tools/call',{name:'wf_shadcn_component',arguments:{name:'button',url:'https://evil.invalid'}})).json();assert(injection.error||injection.result?.isError);assert.equal(requests,prior);
+ await assert.rejects(rpc(grant,f.user,'tools/call',{name:'wf_shadcn_search',arguments:{query:'button'}}),{status:403});assert.equal(requests,prior);
+});
