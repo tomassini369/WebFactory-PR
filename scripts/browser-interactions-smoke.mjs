@@ -24,7 +24,11 @@ try{
   page.once('dialog',dialog=>dialog.accept());await page.getByRole('button',{name:'Leave',exact:true}).click();assert.equal(await page.getByLabel('Draft',{exact:true}).inputValue(),'saved');
   await page.getByLabel('Draft',{exact:true}).fill('persisted');await page.getByRole('button',{name:'Save draft',exact:true}).click();
   let prompted=false;const unexpected=dialog=>{prompted=true;return dialog.dismiss()};page.on('dialog',unexpected);await page.getByRole('button',{name:'Leave',exact:true}).click();assert.equal(prompted,false);page.off('dialog',unexpected);
-  const frame=page.frameLocator('iframe');await frame.getByRole('button',{name:'Explore catalog',exact:true}).click();await frame.locator('.template-card-actions .template-solid').click();await frame.locator('.template-catalog-modal .catalog-close').click();await frame.getByRole('button',{name:/^Cart 1$/}).press('Enter');
+  const frame=page.frameLocator('iframe');await frame.getByRole('button',{name:'Explore catalog',exact:true}).click();
+  const catalog=frame.locator('.template-catalog-modal');const catalogScroll=await catalog.evaluate(el=>el.scrollTop);
+  await frame.locator('.template-card-actions .template-solid').click();await frame.locator('.cs-cart-lines').waitFor();
+  assert.equal(await catalog.isVisible(),false);await frame.locator('.cs-checkout header button').click();await catalog.waitFor({state:'visible'});
+  assert.equal(await catalog.evaluate(el=>el.scrollTop),catalogScroll);await frame.locator('.template-catalog-modal .catalog-close').click();await frame.getByRole('button',{name:/^Cart 1$/}).press('Enter');
   try{await frame.locator('.cs-cart-lines').waitFor({timeout:5000})}catch(error){console.error('Cart diagnostic',await frame.locator('body').innerText());throw error}
   assert.equal((await frame.locator('.cs-cart-lines strong').innerText()).replace(/\s+/g,' '),'Total $20.00');await frame.getByRole('button',{name:'Remove QA product',exact:true}).click();assert.equal(await frame.locator('.cs-cart-line').count(),0);assert.equal(await frame.getByRole('button',{name:'Confirm order · pay in person',exact:true}).isDisabled(),true);
   await frame.getByRole('button',{name:'Undo',exact:true}).click();assert.equal(await frame.locator('.cs-cart-line').count(),1);assert.equal((await frame.locator('.cs-cart-lines strong').innerText()).replace(/\s+/g,' '),'Total $20.00');

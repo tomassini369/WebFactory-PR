@@ -10,7 +10,7 @@ Baseline: main 4a16861115c1ec4705e56c3d13c99c3d0fed1b06. Production publication 
 - PR96: MCP-installed official Dialog source. Added an isolated demonstration and checks for scoped portaled styling, viewport containment, Escape/button closure and restored focus. The optional portalContainer adapter preserves .wf-shadcn CSS/theme isolation. It does not replace business confirmation flows. The registry collision guard will require review if a later component request encounters this adapted file.
 - Retain all existing and incoming CI checks. Homepage, template and portal design rules have separate documents.
 
-Only local review-branch integration has occurred. Original PRs remain open; none were merged into main. No tenant records or provider configuration were modified.
+Integration is available in draft PR97 and its deploy preview. Source PR92–96 remain open; none were merged into main. PR81 and rejected PR91 were closed without merging. No tenant records or provider configuration were modified.
 
 ## Remaining work and boundaries
 
@@ -19,8 +19,8 @@ Only local review-branch integration has occurred. Original PRs remain open; non
 | Design review | Combined sources, 381 backend tests and build passed locally; 46 renderer cases passed | Hosted preview and complete browser matrix must pass; physical iPhone keyboard/PWA confirmation remains distinct |
 | Shadcn autonomous PR creation | Dispatch/install/tests/build/push worked; GitHub Actions PR creation was denied; connector opened PR96 | Future requests need a clear recoverable PR-creation receipt or owner-configured GitHub permission; do not broaden access automatically |
 | Template parity PR83 | Older alternative changes generated-site fields, booking capacity and demo renderer architecture | Reconcile individually against PR93/current main; do not layer incompatible renderers or silently lose current behavior |
-| MCP cancellation PR81 | Alternative commerce authorization fix is open; current main contains a later internal authorization mechanism | Verify current OAuth cancellation with controlled fixtures before adopting or superseding the older patch; never replay failed production actions automatically |
-| Historical design PR88/91 | Earlier previews remain open; user rejected V4 PR91 | Keep rejected V4 out of consolidation; existing approved video/scroll remain the starting point |
+| MCP cancellation PR81 | PR81 was superseded by PR82 internal authorization; tenant scope, revocation and cancellation fixtures passed in the backend suite | Controlled OAuth end-to-end acceptance remains; never replay failed production actions automatically |
+| Historical design PR88/91 | PR88 remains open; rejected V4 PR91 is closed without merge | Keep rejected V4 out of consolidation; existing approved video/scroll remain the starting point |
 | Employee wages and costs | main has BUSINESS_ACCOUNTING.md, hourly rates, approvals, materials/cost records and CSV reporting | Validate operational workflows and reconcile exports; do not rebuild implemented accounting or claim certified tax reporting |
 | Email | Mailjet removed; central Resend and business-owned transports implemented | Flow-specific inbox/render/rebound/limits validation remains; no unrequested mail to third parties |
 | Auth/onboarding | Implemented session, MFA, password and trial controls | Controlled real-device/access/recovery/invitation lifecycle acceptance |
