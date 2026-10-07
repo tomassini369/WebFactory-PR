@@ -50,7 +50,7 @@ Actions classified as sensitive do not execute on the first call. The tool store
 
 Sensitive confirmation currently covers destructive catalog/employee removal, membership removal or replacement, transaction completion/cancellation/payment-state recovery, refunds, recorded POS sales, new checkout creation, integration disconnection, subscription cancellation, complimentary-access revocation, destructive accounting approvals/payment records/voids, and business-page deletion. Page deletion uses a business-specific phrase such as `DELETE NOVA FADE STUDIO`. Normal price/catalog edits, hours, employees without removal, website/business/design/features/settings, ordinary inventory adjustments, customer updates, payment links, booking rescheduling, calendar sync, kitchen status and supported invitations can execute directly.
 
-Provider credentials, passwords, MFA changes, source code, terminal/deployment access, and unsupported account-security operations remain outside the MCP. Provider OAuth still uses its dedicated provider flow.
+Provider credentials, passwords, MFA changes, existing private platform source, arbitrary terminal access, production deployment access, and unsupported account-security operations remain outside the MCP. The administrator-only Shadcn workflow described below can add vetted public component source in an isolated PR. Provider OAuth still uses its dedicated provider flow.
 
 Legacy proposal records and the `/chatgpt` review UI remain readable for compatibility, but newly created MCP actions are not approved there. The page is used to authorize/revoke connection permissions and inspect activity. New sensitive actions can only be confirmed through the MCP chat flow.
 
@@ -59,3 +59,9 @@ Execution remains idempotent by request UUID. Cross-business access is denied se
 ## Validation
 
 `npm test` covers OAuth scope separation, direct Execute without Propose, tenant isolation, direct normal writes, chat-only sensitive confirmation, exact confirmation text, deletion protection, replay/idempotency, stale revisions, Execute revocation and MCP tool exposure. `npm run build` validates TypeScript and the production bundle.
+
+## Administrator Shadcn component workflow
+
+Platform-administrator connections can search/read the official public registry with `wf_shadcn_search` and `wf_shadcn_component`, prepare complete file/dependency changes with `wf_shadcn_prepare`, queue isolated installation with `wf_shadcn_add` (Execute only), and verify workflow/PR/preview receipts with `wf_shadcn_status`. Tenant connections expose none of these tools.
+
+Addition uses an isolated GitHub branch, dependency installation, checks, PR and Netlify preview; production publication is separate. ChatGPT GitHub connector credentials are not inherited by the MCP server. Missing server execution configuration returns `github_connection_required` and the connected GitHub coding workflow can apply the prepared files. Existing private platform source, arbitrary commands, credential access and production deployment remain unavailable through these tools. See [SHADCN_MCP.md](SHADCN_MCP.md) for activation requirements and supported component limits.

@@ -1,0 +1,59 @@
+name: Add Shadcn components
+run-name: shadcn:${{ inputs.request_id }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      components:
+        description: Official UI component names, separated by commas
+        required: true
+        type: string
+      request_id:
+        description: UUID from wf_shadcn_add; reuse for retries
+        required: true
+        type: string
+
+concurrency:
+  group: shadcn-${{ inputs.request_id }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  add-components:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Validate request and establish isolated branch
+        env:
+          REQUEST_ID: ${{ inputs.request_id }}
+        run: |
+          node --input-type=module -e 'if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(process.env.REQUEST_ID))process.exit(1)'
+          git switch -c "feature/shadcn-$REQUEST_ID"
+      - name: Resolve official components and validate every file and dependency
+        env:
+          COMPONENTS: ${{ inputs.components }}
+        run: node scripts/add-shadcn-components.mjs "$COMPONENTS"
+      - name: Install dependencies and update lockfile
+        run: npm install --ignore-scripts
+      - name: Run tests and production build
+        run: |
+          npm test
+          npm run build
+      - name: Commit isolated changes and open pull request
+        env:
+          # A fine-grained/App token triggers ordinary PR CI; GITHUB_TOKEN still runs the validation above.
+          GH_TOKEN: ${{ secrets.WF_COMPONENT_GITHUB_TOKEN || github.token }}
+          REQUEST_ID: ${{ inputs.request_id }}
+          COMPONENTS: ${{ inputs.components }}
+        run: node scripts/shadcn-open-pr.mjs

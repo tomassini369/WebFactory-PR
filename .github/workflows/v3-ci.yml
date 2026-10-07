@@ -37,6 +37,8 @@ jobs:
         run: node scripts/browser-interactions-smoke.mjs
       - name: Check ChatGPT configuration on mobile and desktop
         run: node scripts/browser-chatgpt-ui-smoke.mjs
+      - name: Check installed Shadcn components on desktop and mobile
+        run: node scripts/browser-shadcn-smoke.mjs
       - name: Check portal login fields on desktop and mobile
         run: node scripts/browser-login-layout-smoke.mjs
       - name: Check panel keyboard navigation
