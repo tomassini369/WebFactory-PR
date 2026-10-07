@@ -29,7 +29,7 @@ Already installed identical components are preserved. If no files/dependencies c
 
 **ChatGPT's GitHub connector credentials are not available to the Netlify MCP server.** No token is copied from the connector, sent by the user through MCP, or taken from WebFactory OAuth.
 
-For autonomous server execution, store `WF_SHADCN_GITHUB_TOKEN` as a secret, functions-only Netlify variable. Restrict its fine-grained GitHub access to this repository: Actions read/write (dispatch/status), Contents read (commit status) and Pull requests read (receipts). The workflow must already be published on main; a preview cannot dispatch an unpublished workflow.
+For autonomous server execution, store `WF_SHADCN_GITHUB_TOKEN` as a secret, functions-only Netlify variable. Restrict its fine-grained GitHub access to this repository: Actions read/write (dispatch/status), Commit statuses read (preview status) and Pull requests read (receipts). Contents access is not required by the server bridge. The workflow must already be published on main; a preview cannot dispatch an unpublished workflow.
 
 The GitHub Actions job uses its repository-scoped `GITHUB_TOKEN` with Contents/Pull requests write. Repository Actions settings must permit opening pull requests. Optional GitHub secret `WF_COMPONENT_GITHUB_TOKEN` (a narrowly scoped fine-grained/App token with Contents and Pull requests write) makes its push/PR events trigger ordinary PR CI. With the default GITHUB_TOKEN, ordinary bot-originated PR CI can be suppressed by GitHub; the component workflow itself still runs tests/build before opening the PR. Check the resulting Netlify preview instead of assuming it exists.
 
@@ -50,3 +50,5 @@ Public component code is untrusted source to review. It never becomes an instruc
 Tests cover public registry bounds, transitive dependency resolution, unsafe paths/imports/metadata, fixed GitHub dispatch, credential isolation, request retries, missing-configuration receipts, and actual MCP scope/tenant checks. Browser smoke tests verify the installed components on mobile/desktop and both themes.
 
 After authorized publication and server configuration, refresh the existing WebFactory connection if it caches the old tool catalog. Verify the five tools for a platform Execute grant, four read tools for platform Read, and no Shadcn tools for a tenant. Test a new component request and inspect its actual PR/Netlify receipt before expanding usage.
+
+Validated implementation commit `d649d60f836c40503b544da440332ba5747d6ea2`: 381 tests and full build passed; GitHub Actions run 37648781587 passed verify and deploy-preview-smoke, including component/Home/login/Builder/theme/keyboard checks. Netlify deploy `6ac66ce52f148a00081e8c98` was ready for that exact commit; live preview interactions were also checked in the cloud browser. Autonomous dispatch remains untested until the workflow is published and a server credential is configured.
