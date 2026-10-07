@@ -26,12 +26,15 @@ try {
    assert.equal(composition.ink,'rgb(255, 255, 255)');assert.ok(composition.blur.includes('blur'))
    const rail=page.locator('.template-catalog-preview')
    assert.equal(await rail.locator('article').count(),Math.min(3,config.items.length))
+   assert.ok((await rail.locator('article').evaluateAll(rows=>rows.map(row=>getComputedStyle(row).borderRadius))).every(radius=>radius==='20px'), 'All style variants retain the glass card shape')
    if(config.items.length>1){
     const next=page.getByRole('button',{name:language==='es'?'Siguiente destacado':'Next highlight',exact:true})
+    assert.ok(await next.isEnabled(), `Carousel must scroll: ${width}/${config.slug}`)
+    assert.ok(await rail.evaluate(e=>e.scrollWidth>e.clientWidth+10), 'Highlights overflow only inside their rail')
     if(await next.isEnabled()){
      await next.click()
      await page.waitForFunction(()=>document.querySelector('.template-catalog-preview').scrollLeft>10)
-     assert.ok(await page.getByRole('button',{name:language==='es'?'Destacado anterior':'Previous highlight',exact:true}).isEnabled())
+     await page.waitForFunction(()=>!document.querySelector('.template-carousel-controls button').disabled)
      await rail.press('ArrowLeft')
      await page.waitForFunction(()=>document.querySelector('.template-catalog-preview').scrollLeft<2)
     }
