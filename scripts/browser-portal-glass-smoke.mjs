@@ -13,7 +13,7 @@ try {
  await page.route('**/.netlify/functions/portal-login',()=>{throw new Error('Layout regression must never submit login credentials')});
  // No login is submitted. The local page uses disposable input values only.
  for(const path of ['/client-admin/','/webfactory-admin/']){
-  for(const viewport of [{width:1366,height:600},{width:1280,height:720},{width:1366,height:900},{width:910,height:400},{width:390,height:844},{width:390,height:650},{width:844,height:390}]){
+  for(const viewport of [{width:1366,height:600},{width:1280,height:720},{width:1366,height:900},{width:910,height:400},{width:390,height:844},{width:390,height:650},{width:320,height:568},{width:390,height:350},{width:844,height:390}]){
    await page.setViewportSize(viewport);await page.goto(origin+path);
    const email=page.locator('input[type="email"]'),password=page.locator('input[autocomplete="current-password"]');
    try{await email.waitFor({state:'visible'});await page.locator('.ca-login,.wfa-login').evaluate(el=>Promise.all(el.getAnimations().map(a=>a.finished)))}catch(error){console.error('Login fixture diagnostic',path,await page.locator('body').innerText(),errors);throw error}
@@ -27,6 +27,9 @@ try {
     }
     await email.click();await email.fill('layout-test@example.invalid');assert.equal(await email.inputValue(),'layout-test@example.invalid');
     await password.click();await password.fill('disposable-layout-test');assert.equal(await password.inputValue(),'disposable-layout-test');
+    await page.locator('.portal-password-field button').click();assert.equal(await password.getAttribute('type'),'text');
+    await page.locator('.portal-password-field button').click();assert.equal(await password.getAttribute('type'),'password');
+    for(const language of ['ES','EN']){await page.locator('.portal-language').getByRole('button',{name:language,exact:true}).click();assert.equal(await page.locator('html').getAttribute('lang'),language.toLowerCase())}
     const submit=page.locator('form button:not([type="button"])');
     await submit.scrollIntoViewIfNeeded();
     const reachable=await submit.evaluate(el=>{const r=el.getBoundingClientRect();return r.top>=0&&r.bottom<=innerHeight&&document.elementFromPoint(r.left+r.width/2,r.top+r.height/2)?.closest('button')===el});
