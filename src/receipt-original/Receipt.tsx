@@ -1,4 +1,4 @@
-import { useId } from "react";
+import { AdaptiveLogo } from "../theme";
 import type { ReceiptRecord } from "../ReceiptPaper";
 // Crisp vector sawtooth perforated edge
 function SawtoothTeeth({ direction = 'top' }: { direction?: string }) {
@@ -38,7 +38,7 @@ function SawtoothTeeth({ direction = 'top' }: { direction?: string }) {
 }
 
 export default function Receipt({ receipt, lang, timeZone = 'America/Puerto_Rico' }: { receipt: ReceiptRecord; lang: 'es' | 'en'; timeZone?: string }) {
-  const es = lang === 'es', artId = useId().replaceAll(':', '')
+  const es = lang === 'es'
   const money = (cents: number) => new Intl.NumberFormat(es ? 'es-PR' : 'en-US', { style: 'currency', currency: 'USD' }).format(cents / 100)
   const statuses: Record<string, string> = es ? { paid: 'Pagado', paid_in_person: 'Pagado presencialmente', refunded: 'Reembolsado', partially_refunded: 'Reembolso parcial', due: 'Pendiente' } : { paid: 'Paid', paid_in_person: 'Paid in person', refunded: 'Refunded', partially_refunded: 'Partially refunded', due: 'Due' }
   const date = new Date(receipt.createdAt)
@@ -57,66 +57,8 @@ export default function Receipt({ receipt, lang, timeZone = 'America/Puerto_Rico
 
       {/* Main Body */}
       <div className="receipt-content">
-        {/* Reference Image Photo Banner */}
-        <div className="receipt-photo-banner">
-          <div className="receipt-photo-inner">
-            <svg
-              viewBox="0 0 280 90"
-              className="banner-art-svg"
-              preserveAspectRatio="xMidYMid slice"
-              aria-hidden="true"
-            >
-              <defs>
-                <linearGradient id={artId + "silkBgGrad"} x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#ea580c" />
-                  <stop offset="35%" stopColor="#dc2626" />
-                  <stop offset="70%" stopColor="#b91c1c" />
-                  <stop offset="100%" stopColor="#7f1d1d" />
-                </linearGradient>
-                <linearGradient id={artId + "foldSheen1"} x1="30%" y1="0%" x2="70%" y2="100%">
-                  <stop offset="0%" stopColor="#fb923c" stopOpacity="0.9" />
-                  <stop offset="45%" stopColor="#ef4444" stopOpacity="0.7" />
-                  <stop offset="100%" stopColor="#991b1b" stopOpacity="0.95" />
-                </linearGradient>
-                <linearGradient id={artId + "foldSheen2"} x1="0%" y1="40%" x2="100%" y2="60%">
-                  <stop offset="0%" stopColor="#f87171" stopOpacity="0.8" />
-                  <stop offset="50%" stopColor="#dc2626" stopOpacity="0.85" />
-                  <stop offset="100%" stopColor="#450a0a" stopOpacity="0.9" />
-                </linearGradient>
-                <radialGradient id={artId + "silkHighlight"} cx="45%" cy="35%" r="60%">
-                  <stop offset="0%" stopColor="#fed7aa" stopOpacity="0.85" />
-                  <stop offset="40%" stopColor="#f97316" stopOpacity="0.4" />
-                  <stop offset="100%" stopColor="#b91c1c" stopOpacity="0" />
-                </radialGradient>
-              </defs>
-              <rect width="280" height="90" fill={`url(#${artId}silkBgGrad)`} />
-              <path
-                d="M-20,100 C30,25 65,80 110,12 C155,-20 185,60 225,8 C260,-15 280,35 300,100 Z"
-                fill={`url(#${artId}foldSheen1)`}
-              />
-              <path
-                d="M10,100 C55,10 105,55 145,5 C185,60 235,12 295,65 L295,100 Z"
-                fill={`url(#${artId}foldSheen2)`}
-              />
-              <path
-                d="M70,100 C95,40 135,48 165,24 C195,8 225,48 255,100 Z"
-                fill="#991b1b"
-                opacity="0.65"
-              />
-              <circle cx="120" cy="35" r="60" fill={`url(#${artId}silkHighlight)`} />
-              <path
-                d="M75,90 C105,35 128,25 155,12 C150,16 130,40 102,90 Z"
-                fill="#ffedd5"
-                opacity="0.5"
-              />
-              <path
-                d="M165,90 C190,30 215,20 240,10 C236,13 218,38 196,90 Z"
-                fill="#fee2e2"
-                opacity="0.4"
-              />
-            </svg>
-            <span className="photo-banner-tag">★ {es ? "RECIBO DE PAGO" : "PAYMENT RECEIPT"} ★</span>
-          </div>
+        <div className="receipt-platform-logo">
+          <AdaptiveLogo variant="light" alt="WebFactory PR" width={180} height={108} />
         </div>
 
         {/* Header */}
