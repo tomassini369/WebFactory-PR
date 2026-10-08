@@ -102,11 +102,11 @@ html body :is(.ca-login,.wfa-login) .portal-language .portal-return-home{margin:
 /* Owner-supplied Glassy surfaces retain the approved pre-Glassy page backgrounds.
    Keep geometry, scrolling, authentication controls and operational layouts intact. */
 html body #root :is(.ca-page:has(>.ca-login),.wfa-login-page:has(>.wfa-login)){
- --pg-canvas:#291638;--pg-surface:rgba(255,248,255,.9);--pg-solid:#fff9ff;--pg-soft:#f2e8f7;--pg-text:#291b39;--pg-muted:#64546f;--pg-line:#baa8c8;--pg-accent:#6c32a4;
+ --pg-canvas:#eef0f3;--pg-surface:rgba(255,255,255,.91);--pg-solid:#fff;--pg-soft:#eef0f4;--pg-text:#18202c;--pg-muted:#536072;--pg-line:#c2c7d0;--pg-accent:#2867b2;
  background:radial-gradient(ellipse at 8% 5%,#dce7f5 0,transparent 45%),radial-gradient(ellipse at 95% 95%,#e0e8f0 0,transparent 50%),#edf2f7!important;
 }
-html[data-wf-theme=dark] body #root :is(.ca-page:has(>.ca-login),.wfa-login-page:has(>.wfa-login)){--pg-surface:rgba(45,12,70,.78);--pg-solid:#311548;--pg-soft:#48225f;--pg-text:#faf4ff;--pg-muted:#dccbe9;--pg-line:#80628e;--pg-accent:#e4b5ff;background:radial-gradient(ellipse at 8% 5%,#1b304a 0,transparent 45%),radial-gradient(ellipse at 95% 95%,#19293e 0,transparent 50%),#0d1522!important}
-html body #root :is(.ca-page:has(>.ca-login),.wfa-login-page:has(>.wfa-login))>:is(.ca-login,.wfa-login){background:var(--pg-surface)!important;border-color:var(--pg-line)!important;backdrop-filter:blur(28px) saturate(150%);-webkit-backdrop-filter:blur(28px) saturate(150%);box-shadow:inset 0 1px 0 #ffffff45,0 28px 75px #1f062747!important;border-radius:28px}
+html[data-wf-theme=dark] body #root :is(.ca-page:has(>.ca-login),.wfa-login-page:has(>.wfa-login)){--pg-surface:rgba(24,24,30,.9);--pg-solid:#1c1c24;--pg-soft:#25252e;--pg-text:#f7f7fa;--pg-muted:#bfc0cd;--pg-line:#555560;--pg-accent:#91bfff;background:radial-gradient(ellipse at 8% 5%,#1b304a 0,transparent 45%),radial-gradient(ellipse at 95% 95%,#19293e 0,transparent 50%),#0d1522!important}
+html body #root :is(.ca-page:has(>.ca-login),.wfa-login-page:has(>.wfa-login))>:is(.ca-login,.wfa-login){background:var(--pg-surface)!important;border-color:var(--pg-line)!important;backdrop-filter:blur(28px) saturate(150%);-webkit-backdrop-filter:blur(28px) saturate(150%);box-shadow:inset 0 1px 0 #ffffff45,0 28px 75px #08081030!important;border-radius:28px}
 html body #root :is(.ca-login,.wfa-login) :is(input:not([type=checkbox]),.portal-password-field){border-radius:999px!important;background:var(--pg-solid)!important;border-color:var(--pg-line)!important;color:var(--pg-text)!important}
 html body #root :is(.ca-login,.wfa-login) .portal-password-field input{border:0!important;background:transparent!important}
 html body #root :is(.ca-login,.wfa-login) form>button{background:#3c86f6!important;color:#fff!important;border:1px solid #3c86f6!important;border-radius:999px!important;box-shadow:0 8px 22px #3c86f630}
