@@ -1,4 +1,5 @@
 import PortalLoadingCard from './PortalLoadingCard'
+import {usePortalLanguage} from './portal-language'
 import PortalLoginProgress from './PortalLoginProgress'
 import PortalReturnHome from './PortalReturnHome'
 import { confirmLeaveDrafts, useUnsavedChanges } from './interaction-state'
@@ -97,7 +98,7 @@ function LoginPanel({onLogin,lang,setLang}:{onLogin:(user:User)=>Promise<void>;l
 export default function ClientAdminPage(){
   const [emailPreview,setEmailPreview]=useState('');
   const [accessReady,setAccessReady]=useState(false)
-  const [menuOpen,setMenuOpen]=useState(false);const [lang,setLang]=useState<Language>('en');const [user,setUser]=useState<User|null>(null);const [loading,setLoading]=useState(true);const [resetToken,setResetToken]=useState('');const [inviteToken,setInviteToken]=useState('');const [newPassword,setNewPassword]=useState('');const [authMessage,setAuthMessage]=useState('')
+  const [menuOpen,setMenuOpen]=useState(false);const [lang,setLang]=usePortalLanguage();const [user,setUser]=useState<User|null>(null);const [loading,setLoading]=useState(true);const [resetToken,setResetToken]=useState('');const [inviteToken,setInviteToken]=useState('');const [newPassword,setNewPassword]=useState('');const [authMessage,setAuthMessage]=useState('')
   const [sites,setSites]=useState<Array<{siteId:string;slug:string;businessName:string;status:string}>>([]);const [site,setSite]=useState<ClientSite|null>(null);const [membership,setMembership]=useState<any>(null);const [tab,setTab]=useState<Tab>('overview');const [busy,setBusy]=useState(false);const [message,setMessage]=useState('');const [error,setError]=useState('');const [commerce,setCommerce]=useState<{orders:Transaction[];bookings:Transaction[]}>({orders:[],bookings:[]});const [calendars,setCalendars]=useState<Array<{id:string;summary:string;primary:boolean}>>([]);const [googleConfigured,setGoogleConfigured]=useState(false);const [billing,setBilling]=useState<BillingInfo|null>(null)
 
   const openSite=async(siteId:string,returnToIntegrations=false)=>{if(!confirmLeaveDrafts())return;const detail=await api(`/.netlify/functions/client-admin?siteId=${encodeURIComponent(siteId)}`);setSite(detail.site);setMembership(detail.membership||null);let remembered:Tab='overview';try{const candidate=sessionStorage.getItem('wf-section:'+siteId) as Tab;const safe=['overview','website','catalog','team','locations','orders','bookings','customers','analytics','settings'];const capability=candidate==='team'||candidate==='locations'?'employees':candidate;if(safe.includes(candidate)&&(!detail.membership?.capabilities||detail.membership.capabilities.includes(capability)))remembered=candidate}catch{}setTab(returnToIntegrations?'integrations':remembered);setMessage('');setError('')}

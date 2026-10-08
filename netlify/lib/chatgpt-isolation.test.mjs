@@ -94,3 +94,35 @@ test('MCP Shadcn additions require administrator Execute scope and expose honest
  const injection=await rpc(grant,admin,'tools/call',{name:'wf_shadcn_add',arguments:{...args,sourceCode:'bad',repository:'other/repo'}});assert(injection.error||injection.result?.isError);
  await assert.rejects(rpc(grant,f.user,'tools/call',{name:'wf_shadcn_add',arguments:args}),{status:403});
 });
+
+
+test('Mobile design tools and ECC workflow remain platform-admin only with Execute gating',async t=>{
+ const f=fixture(t);await f.prepare();
+ const admin={...f.user,roles:['admin']};
+ const rpc=async(grant,user,method,params)=>(await serveMcp(new Request('https://webfactorypr.com/mcp',{method:'POST',headers:{'Content-Type':'application/json',Accept:'application/json, text/event-stream'},body:JSON.stringify({jsonrpc:'2.0',id:1,method,params})}),grant,user)).json();
+
+ const tenant=await rpc(f.grant,admin,'tools/list',{});
+ const tenantNames=tenant.result.tools.map(tool=>tool.name);
+ for(const name of ['wf_dev_workflow','wf_design_status','wf_stitch_read','wf_stitch_design','wf_21st_read','wf_21st_generate'])assert(!tenantNames.includes(name));
+
+ const readGrant={...f.grant,platform:true,siteId:undefined,scopes:['webfactory.read']};
+ const readList=await rpc(readGrant,admin,'tools/list',{});
+ const readNames=readList.result.tools.map(tool=>tool.name);
+ for(const name of ['wf_dev_workflow','wf_design_status','wf_stitch_read','wf_21st_read'])assert(readNames.includes(name));
+ for(const name of ['wf_stitch_design','wf_21st_generate'])assert(!readNames.includes(name));
+ const workflow=await rpc(readGrant,admin,'tools/call',{name:'wf_dev_workflow',arguments:{}});
+ const workflowValue=JSON.parse(workflow.result.content[0].text);
+ assert.deepEqual(workflowValue.workflow,['plan','test-current-state','implement','review','verify','improve']);
+
+ const execGrant={...readGrant,scopes:['webfactory.read','webfactory.execute']};
+ const execList=await rpc(execGrant,admin,'tools/list',{});
+ for(const name of ['wf_stitch_design','wf_21st_generate']){
+  const tool=execList.result.tools.find(item=>item.name===name);
+  assert(tool);
+  assert.equal(tool.annotations.readOnlyHint,false);
+  assert.equal(tool.annotations.openWorldHint,true);
+  assert(tool._meta.securitySchemes[0].scopes.includes('webfactory.execute'));
+ }
+
+ await assert.rejects(serveMcp(new Request('https://webfactorypr.com/mcp',{method:'POST',headers:{'Content-Type':'application/json',Accept:'application/json, text/event-stream'},body:JSON.stringify({jsonrpc:'2.0',id:1,method:'tools/list',params:{}})}),readGrant,f.user),{status:403});
+});

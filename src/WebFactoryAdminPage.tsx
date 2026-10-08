@@ -1,4 +1,5 @@
 import PortalLoadingCard from './PortalLoadingCard'
+import {usePortalLanguage} from './portal-language'
 import PortalLoginProgress from './PortalLoginProgress'
 import PortalReturnHome from './PortalReturnHome'
 import ClientAuthenticatorReset from './ClientAuthenticatorReset'
@@ -73,7 +74,7 @@ function Badge({value}:{value:string}){const clean=value.toLowerCase();const kin
 
 export default function WebFactoryAdminPage(){
   const [accessReady,setAccessReady]=useState(false)
-  const [menuOpen,setMenuOpen]=useState(false);const [lang,setLang]=useState<Language>('en');const [user,setUser]=useState<User|null>(null);const [data,setData]=useState<AdminData|null>(null);const [loading,setLoading]=useState(true);const [refreshing,setRefreshing]=useState(false);const [error,setError]=useState('');const [actionMessage,setActionMessage]=useState('');const [tab,setTab]=useState<Tab>('overview');const [query,setQuery]=useState('');const [inviteToken,setInviteToken]=useState('');const [newPassword,setNewPassword]=useState('');const [acceptingInvite,setAcceptingInvite]=useState(false);const [provisioning,setProvisioning]=useState(false);const [revoking,setRevoking]=useState('');const [deleting,setDeleting]=useState('');const [qrClient,setQrClient]=useState<ClientRow|null>(null);const [newClient,setNewClient]=useState({ownerEmail:'',accessType:'trial'})
+  const [menuOpen,setMenuOpen]=useState(false);const [lang,setLang]=usePortalLanguage();const [user,setUser]=useState<User|null>(null);const [data,setData]=useState<AdminData|null>(null);const [loading,setLoading]=useState(true);const [refreshing,setRefreshing]=useState(false);const [error,setError]=useState('');const [actionMessage,setActionMessage]=useState('');const [tab,setTab]=useState<Tab>('overview');const [query,setQuery]=useState('');const [inviteToken,setInviteToken]=useState('');const [newPassword,setNewPassword]=useState('');const [acceptingInvite,setAcceptingInvite]=useState(false);const [provisioning,setProvisioning]=useState(false);const [revoking,setRevoking]=useState('');const [deleting,setDeleting]=useState('');const [qrClient,setQrClient]=useState<ClientRow|null>(null);const [newClient,setNewClient]=useState({ownerEmail:'',accessType:'trial'})
   const navigate=(next:Tab)=>{setTab(next);setMenuOpen(false);document.querySelector('.wfa-work')?.scrollTo({top:0,behavior:'instant'})}
   const load=async(silent=false)=>{if(!silent)setRefreshing(true);setError('');try{setData(await api())}catch(e){setError(e instanceof Error?e.message:'No se pudo cargar el Control Center.')}finally{setRefreshing(false);setAccessReady(true)}}
   useEffect(()=>{document.documentElement.lang=lang},[lang])
