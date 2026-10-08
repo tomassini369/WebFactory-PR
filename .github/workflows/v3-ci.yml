@@ -47,6 +47,8 @@ jobs:
         run: node scripts/browser-template-workspace-smoke.mjs
       - name: Check shared glass composition and motion
         run: node scripts/browser-template-glass-smoke.mjs
+      - name: Check spatial highlights on Chromium and WebKit
+        run: node scripts/browser-spatial-carousel-smoke.mjs
       - name: Check functions for every template and language
         run: node scripts/browser-template-functions-smoke.mjs
       - name: Check Builder cart and draft interactions
