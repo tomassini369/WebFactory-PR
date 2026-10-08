@@ -138,6 +138,22 @@ async function mcpCall(provider,toolName,args,write=false){
  return sanitize(result,[config.apiKey]);
 }
 
+function assertSafeArguments(value,depth=0){
+ if(depth>12)throw oauthError('Design tool arguments are too deeply nested.',400);
+ if(value===null||value===undefined)return;
+ if(Array.isArray(value)){if(value.length>100)throw oauthError('Too many design tool arguments.',400);for(const item of value)assertSafeArguments(item,depth+1);return;}
+ if(typeof value==='object'){
+  for(const [key,item] of Object.entries(value)){
+   if(/(?:authorization|api[_-]?key|access[_-]?token|refresh[_-]?token|secret|credential|endpoint|baseUrl|urlToFetch|command|script|sourceCode)/i.test(key))throw oauthError('Credentials, endpoints and executable instructions are not accepted as design tool arguments.',400);
+   assertSafeArguments(item,depth+1);
+  }
+  return;
+ }
+ if(typeof value==='string'&&value.length>12000)throw oauthError('Design tool argument is too long.',400);
+}
+
 export async function callDesignTool({provider,toolName,args={},write=false}){
+ assertSafeArguments(args);
+ if(JSON.stringify(args).length>20000)throw oauthError('Design tool request is too large.',413);
  return mcpCall(provider,toolName,args,write);
 }
