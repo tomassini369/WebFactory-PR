@@ -154,6 +154,11 @@ html[data-wf-theme=dark] body #root .wf-portal-scene-copy :is(small,h2,p){color:
 html body #root :is(.ca-page,.wfa-login-page,.ca-dashboard,.wfa-dashboard.wfa-premium) :is(button,.wf-theme-toggle){--pg-solid:#fff;--pg-soft:#f0f4f8;--pg-text:#17263b;--pg-line:#c2cedc;--pg-accent:#2867b2}
 html[data-wf-theme=dark] body #root :is(.ca-page,.wfa-login-page,.ca-dashboard,.wfa-dashboard.wfa-premium) :is(button,.wf-theme-toggle){--pg-solid:#132033;--pg-soft:#1e2d42;--pg-text:#f2f6fc;--pg-line:#41536c;--pg-accent:#91bfff}
 
+html body #root :is(.ca-login,.wfa-login) :is(.portal-language button,.wf-theme-toggle,.portal-return-home){background:#fff!important;color:#17263b!important;border-color:#c2cedc!important}
+html body #root :is(.ca-login,.wfa-login) .portal-language button.active{background:#17263b!important;color:#fff!important;border-color:#17263b!important}
+html[data-wf-theme=dark] body #root :is(.ca-login,.wfa-login) :is(.portal-language button,.wf-theme-toggle,.portal-return-home){background:#132033!important;color:#f2f6fc!important;border-color:#41536c!important}
+html[data-wf-theme=dark] body #root :is(.ca-login,.wfa-login) .portal-language button.active{background:#f2f6fc!important;color:#132033!important;border-color:#f2f6fc!important}
+
 @media(forced-colors:active){html body #root :is(.ca-page,.wfa-login-page,.ca-dashboard,.wfa-dashboard.wfa-premium){background:Canvas!important}html body #root :is(.ca-login,.wfa-login,.ca-sidebar,.wfa-sidebar,.ca-panel,.wfa-card,input,select,textarea,button){background:Canvas!important;color:CanvasText!important;border-color:ButtonText!important}.wf-portal-scene-copy{display:none}}
 html body :is(.ca-login,.wfa-login) .portal-return-home svg{width:28px;height:28px}
 
