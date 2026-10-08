@@ -49,7 +49,7 @@ function canonicalCart(site, requested, lang) {
     ids.add(entry.id);
   }
   return requested.map((entry) => {
-    const item = (site.catalog || []).find((candidate) => candidate.id === entry.id && candidate.active !== false && !candidate.requiresAppointment);
+    const item = (site.catalog || []).find((candidate) => candidate.id === entry.id && candidate.active !== false && candidate.purchasable !== false && !candidate.requiresAppointment);
     if (!item) throw Object.assign(new Error("A selected catalog item is unavailable."), { status: 409 });
     const quantity = Math.max(1, Math.min(20, Math.floor(Number(entry.quantity || 1))));
     if (item.type==='product'&&item.trackInventory&&item.inventory!=null&&!item.allowBackorder&&quantity>Number(availableInventory(site,item))) {
@@ -101,11 +101,11 @@ export default async (req) => {
       if (!service || !employee) throw Object.assign(new Error("The selected service or employee is unavailable."), { status: 409 });
       hold = await createBookingHold(site, { ...payload.booking, locationId });
       const fullAmount = Math.round(Number(service.price) * 100);
-      const unitAmount = site.paymentRules?.bookingPayment === "deposit"
+      const unitAmount = site.paymentRules?.bookingPayment !== "in_person" && service.deposit != null ? Math.round(Math.min(service.price,Math.max(0,Number(service.deposit)))*100) : site.paymentRules?.bookingPayment === "deposit"
         ? Math.round(fullAmount * Number(site.paymentRules?.bookingDepositPercent || 25) / 100)
         : fullAmount;
       const serviceName = localizedText(service, lang, "name");
-      items = [{ id: service.id, name: site.paymentRules?.bookingPayment === "deposit" ? `${lang === "es" ? "Depósito" : "Deposit"} — ${serviceName}` : serviceName, description: `${employee.name} · ${new Date(hold.start).toLocaleString(lang === "es" ? "es-PR" : "en-US", { timeZone: site.settings?.timezone || "America/Puerto_Rico" })}`, quantity: 1, unitAmount }];
+      items = [{ id: service.id, name: (site.paymentRules?.bookingPayment !== "in_person" && (service.deposit != null || site.paymentRules?.bookingPayment === "deposit")) ? `${lang === "es" ? "Depósito" : "Deposit"} — ${serviceName}` : serviceName, description: `${employee.name} · ${new Date(hold.start).toLocaleString(lang === "es" ? "es-PR" : "en-US", { timeZone: site.settings?.timezone || "America/Puerto_Rico" })}`, quantity: 1, unitAmount }];
     } else {
       kind = "order";
       items = canonicalCart(site, payload.items, lang);
@@ -164,6 +164,7 @@ export default async (req) => {
       }
       record = await syncBookingCalendar(site, record);
       await clientCommerceStore().setJSON(commerceKey(site.siteId, kind === "booking" ? "bookings" : "orders", transactionId), record);
+      if(hold?.holdId)await clientCommerceStore().delete(commerceKey(site.siteId,"holds",hold.holdId));
       record = await sendBookingConfirmationEmails(site,record, value => clientCommerceStore().setJSON(commerceKey(site.siteId,"bookings",transactionId),value));
       return Response.json({ ok: true, calendarUrl:bookingCalendarUrl(record), manageUrl:bookingManageUrl(record), paymentRequired: false, transactionId, status: record.status, calendarSyncStatus: record.calendarSyncStatus, ...(trackingToken ? { trackingUrl: `${publicBaseUrl()}/track/${trackingToken}` } : {}) });
     }

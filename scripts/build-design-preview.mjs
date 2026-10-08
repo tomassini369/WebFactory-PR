@@ -1,6 +1,7 @@
 // A separate preview bundle uses the existing visual-review identity adapter.
 // Production never compiles or ships that adapter or the sample portal.
 import { build } from 'vite'
+import QRCode from 'qrcode'
 import { readFile, writeFile, rm } from 'node:fs/promises'
 
 if (process.env.CONTEXT === 'production') {
@@ -17,6 +18,7 @@ if (process.env.CONTEXT === 'production') {
     define: { __WF_PREVIEW_REVIEW__: 'false' },
     build: { outDir: 'dist/design-preview/home' },
   })
+  await QRCode.toFile(new URL('../dist/design-preview/portal/sample-business-qr.png', import.meta.url).pathname,'https://webfactorypr.com/',{width:600,margin:3,errorCorrectionLevel:'Q',color:{dark:'#0b1529',light:'#ffffff'}})
   const pages = {
     home: await readFile('dist/design-preview/home/home-preview.html', 'utf8'),
     portal: await readFile('dist/design-preview/portal/preview.html', 'utf8'),

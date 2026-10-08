@@ -1,0 +1,13 @@
+# Template, Builder and portal parity
+
+Templates are sample data rendered by `ClientStorefront`, the same component used for published businesses and Builder previews. `TemplatePreview` supplies data only; it no longer owns separate catalog, booking, cart or checkout interfaces. Only preview notices and simulated data differ. Preview availability/confirmation never makes a transaction, payment, email or calendar write.
+
+A selected template locks its canonical visual style in the renderer and in Builder, portal and MCP design writes. Existing client colors and operational records remain intact. Custom pages can still choose a style. Selecting a template in a new Builder draft initializes its booking/cart feature defaults. Users may explicitly disable features.
+
+`shared/website-fields.json` defines the editable bilingual presentation fields used by the Builder, dashboard and server sanitization. Website editing covers hero and booking button copy, catalog/team section headings and introductions, about copy, booking showcase copy, contact heading, short name/address, highlights and trust statements. The dashboard also uploads/reorders logo, hero and gallery assets through the existing tenant-authorized upload endpoint and previews before saving. Upload references cannot point to another tenant.
+
+Catalog presentation preserves classes/listings, badges, display prices, group capacity, optional per-service deposits and informational items that cannot be purchased. Operational types remain product/service to retain existing commerce contracts. Deposits and purchase restrictions are enforced on the server. Group capacity only admits matching service/time sessions; overlapping different services remain blocked. External Google Calendar conflicts continue to block availability, including occupied sessions; this conservative boundary is preserved.
+
+Bookings share professional buttons, any-professional selection, monthly/upcoming dates, time buttons, checkout and confirmation. Any-professional availability resolves to a real employee and checkout revalidates the slot under the existing booking lock. Per-location restrictions remain enforced. Preview interactions never query business calendars.
+
+Validation: 361 server tests; 46 template/language structural comparisons; Chromium booking journeys for template, Builder and mocked published pages at 390/1280px in EN/ES; dashboard edits and light/dark field contrast; TypeScript and complete build. These tests do not charge a payment provider or write production tenant records. CI runs the parity checks for future changes.

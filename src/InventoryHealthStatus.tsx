@@ -11,7 +11,7 @@ export default function InventoryHealthStatus({siteId,lang}:{siteId:string;lang:
   })
   const load=async()=>{
     const current=++revision.current;setBusy(true);setError('');setHealth(null)
-    try{const result=await request();if(current===revision.current)setHealth(result)}catch(e){if(current===revision.current)setError(e instanceof Error?e.message:'Request failed.')}finally{if(current===revision.current)setBusy(false)}
+    try{const result=await request();if(!result.pos||!result.journal||!Array.isArray(result.reservations)||!Array.isArray(result.pos.rows))throw new Error(es?'La revisión de inventario devolvió datos incompletos. Intenta actualizar.':'Inventory review returned incomplete data. Try refreshing.');if(current===revision.current)setHealth(result)}catch(e){if(current===revision.current)setError(e instanceof Error?e.message:'Request failed.')}finally{if(current===revision.current)setBusy(false)}
   }
   useEffect(()=>{setMessage('');void load();return()=>{revision.current++}},[siteId])
   const maintain=async(action:string,transactionId?:string)=>{

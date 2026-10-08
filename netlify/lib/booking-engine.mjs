@@ -37,10 +37,10 @@ async function reservationsForEmployee(siteId, employeeId, startDay, endDay) {
       if (["cancelled", "failed"].includes(record.status)) continue;
       const start = Date.parse(record.start);
       const end = Date.parse(record.end);
-      if (Number.isFinite(start) && Number.isFinite(end) && overlaps(start, end, startDay, endDay)) records.push({ start, end });
+      if (Number.isFinite(start) && Number.isFinite(end) && overlaps(start, end, startDay, endDay)) records.push({ start, end, serviceId:record.serviceId, holdId:record.holdId, kind });
     }
   }
-  return records;
+  return records.filter(record=>record.kind!=="holds"||!records.some(booking=>booking.kind==="bookings"&&booking.holdId&&booking.holdId===record.holdId));
 }
 
 function bookingServiceAndEmployee(site, serviceId, employeeId, locationId = "") {
@@ -51,7 +51,7 @@ function bookingServiceAndEmployee(site, serviceId, employeeId, locationId = "")
   return { service, employee };
 }
 
-function slotsForSchedule({ date, schedule, service, blocks, timeZone }) {
+export function slotsForSchedule({ date, schedule, service, blocks, timeZone }) {
   if (!schedule?.enabled) return [];
   const dayStart = zonedToUtc(date, schedule.open || "09:00", timeZone);
   const dayEnd = zonedToUtc(date, schedule.close || "17:00", timeZone);
@@ -61,7 +61,11 @@ function slotsForSchedule({ date, schedule, service, blocks, timeZone }) {
   for (let cursor = dayStart.getTime(); cursor + duration * 60_000 <= dayEnd.getTime(); cursor += 15 * 60_000) {
     const end = cursor + (duration + buffer) * 60_000;
     if (cursor < Date.now() + 60 * 60_000) continue;
-    if (!blocks.some((block) => overlaps(cursor, end, block.start, block.end))) {
+    const overlapping=blocks.filter(block=>overlaps(cursor,end,block.start,block.end));
+    const capacity=Math.max(1,Number(service.groupCapacity)||1);
+    const sessionEnd=cursor+duration*60_000;
+    const compatible=overlapping.every(block=>block.serviceId===service.id&&block.start===cursor&&(block.end===sessionEnd||block.end===end));
+    if (!overlapping.length || (capacity>1&&compatible&&overlapping.length<capacity)) {
       slots.push({ start: new Date(cursor).toISOString(), end: new Date(cursor + duration * 60_000).toISOString() });
     }
   }
@@ -70,6 +74,11 @@ function slotsForSchedule({ date, schedule, service, blocks, timeZone }) {
 
 export async function availabilityForDate(site, serviceId, employeeId, date, locationId = "", {strictGoogle=false} = {}) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) throw Object.assign(new Error("Invalid booking date."), { status: 400 });
+  if(employeeId==='any'){
+    const members=(site.employees||[]).filter(member=>member.active!==false&&(member.serviceIds||[]).includes(serviceId)&&(!(site.business?.locations||[]).some(x=>x.active!==false)||(member.locationIds||[]).includes(locationId)));
+    const merged=new Map();for(const member of members)for(const slot of await availabilityForDate(site,serviceId,member.id,date,locationId,{strictGoogle}))if(!merged.has(slot.start))merged.set(slot.start,{...slot,employeeId:member.id});
+    return [...merged.values()].sort((a,b)=>a.start.localeCompare(b.start));
+  }
   const { service, employee } = bookingServiceAndEmployee(site, serviceId, employeeId, locationId);
   const timeZone = site.settings?.timezone || "America/Puerto_Rico";
   const midday = zonedToUtc(date, "12:00", timeZone);
@@ -111,6 +120,10 @@ export function monthAvailabilityFromBlocks({ month, timeZone, service, employee
 
 export async function availabilityForMonth(site, serviceId, employeeId, month, locationId = "") {
   if (!/^\d{4}-\d{2}$/.test(month)) throw Object.assign(new Error("Invalid booking month."), { status: 400 });
+  if(employeeId==='any'){
+    const members=(site.employees||[]).filter(member=>member.active!==false&&(member.serviceIds||[]).includes(serviceId)&&(!(site.business?.locations||[]).some(x=>x.active!==false)||(member.locationIds||[]).includes(locationId)));
+    const combined={};for(const member of members){const days=await availabilityForMonth(site,serviceId,member.id,month,locationId);for(const [date,count] of Object.entries(days))combined[date]=(combined[date]||0)+count;}return combined;
+  }
   const { service, employee } = bookingServiceAndEmployee(site, serviceId, employeeId, locationId);
   const [year, monthNumber] = month.split("-").map(Number);
   if (monthNumber < 1 || monthNumber > 12) throw Object.assign(new Error("Invalid booking month."), { status: 400 });

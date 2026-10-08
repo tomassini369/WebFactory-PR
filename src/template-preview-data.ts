@@ -1,0 +1,11 @@
+import type {TemplateConfig} from './templateData'
+import {localizeTemplate} from './templateI18n'
+import type {StorefrontSite} from './ClientStorefront'
+/** Templates supply sample data to the same storefront used by Builder and production. */
+export function templatePreviewData(config:TemplateConfig):StorefrontSite{
+ const en=localizeTemplate(config,'en'),es=localizeTemplate(config,'es')
+ const fields=['name','shortName','kicker','headline','description','aboutTitle','aboutText','bookingLabel'] as const
+ const business:any={category:config.category,address:config.location,phone:config.phone,email:'template@example.com',heroUrl:config.heroImage,galleryUrls:config.gallery,trust:config.trust,highlights:config.features,hoursLabel:config.hours}
+ for(const key of fields){business[key]=en[key];business[key+'En']=en[key];business[key+'Es']=es[key]}
+ return {siteId:'template-preview',slug:config.slug,business,design:{templateSlug:config.slug,primary:config.dark,secondary:config.accent,preserveTemplateStructure:true},features:{products:true,services:true,bookings:config.bookingEnabled,cart:config.cartEnabled,calls:true,maps:true,form:true,social:false,whatsapp:false},catalog:en.items.map(item=>{const translated=es.items.find(x=>x.id===item.id);return {id:item.id,type:item.appointment?'service':'product',presentationType:item.type,name:item.name,nameEn:item.name,nameEs:translated?.name||item.name,description:item.description,descriptionEn:item.description,descriptionEs:translated?.description||item.description,price:item.price,displayPrice:item.displayPrice,badge:item.badge,inventory:null,requiresAppointment:Boolean(item.appointment),duration:item.duration||30,deposit:item.deposit??null,groupCapacity:item.groupCapacity||1,purchasable:item.purchasable!==false,imageUrl:item.image}}),employees:config.employees.map(member=>({...member,roleEn:en.employees.find(x=>x.id===member.id)?.role,roleEs:es.employees.find(x=>x.id===member.id)?.role,serviceIds:config.items.filter(item=>item.appointment&&(!item.employees?.length||item.employees.some(name=>member.name.startsWith(name)))).map(item=>item.id)})),hours:{},paymentRules:{methods:{stripe:true,ath:true,inPerson:true},stripeAvailable:true,athReady:true,bookingPayment:'full',productPayment:'online'},settings:{locale:'en',timezone:'America/Puerto_Rico'}}
+}

@@ -3,12 +3,12 @@ import { contrastTextColor } from './color-contrast'
 import './business-qr.css'
 
 type Language='es'|'en'
-type Props={siteId?:string;slug?:string;businessName:string;lang:Language;revision?:number;accent?:string;compact?:boolean;onClose?:()=>void}
+type Props={preview?:{imageUrl:string;targetUrl:string};siteId?:string;slug?:string;businessName:string;lang:Language;revision?:number;accent?:string;compact?:boolean;onClose?:()=>void}
 
-export function BusinessQrPanel({siteId,slug,businessName,lang,revision=0,accent='#3C86F6',compact=false,onClose}:Props){
+export function BusinessQrPanel({preview,siteId,slug,businessName,lang,revision=0,accent='#3C86F6',compact=false,onClose}:Props){
   const es=lang==='es'
-  const endpoint=useMemo(()=>`/.netlify/functions/business-qr?${siteId?`siteId=${encodeURIComponent(siteId)}`:'platform=1'}&lang=${lang}&v=${revision}`,[siteId,lang,revision])
-  const url=siteId&&slug?`${location.origin}/sites/${encodeURIComponent(slug)}`:`${location.origin}/`
+  const endpoint=useMemo(()=>preview?.imageUrl||`/.netlify/functions/business-qr?${siteId?`siteId=${encodeURIComponent(siteId)}`:'platform=1'}&lang=${lang}&v=${revision}`,[siteId,lang,revision,preview?.imageUrl])
+  const url=preview?.targetUrl||(siteId&&slug?`${location.origin}/sites/${encodeURIComponent(slug)}`:`${location.origin}/`)
   const [imageFailed,setImageFailed]=useState(false)
   const [feedback,setFeedback]=useState('')
   useEffect(()=>{setImageFailed(false);setFeedback('')},[endpoint])
@@ -19,7 +19,7 @@ export function BusinessQrPanel({siteId,slug,businessName,lang,revision=0,accent
 
   return <section className={`business-qr${compact?' compact':''}`} style={{'--business-qr-accent':accent,'--business-qr-accent-text':contrastTextColor(accent)} as React.CSSProperties}>
     <header><div><small>{es?'COMPARTE TU NEGOCIO':'SHARE YOUR BUSINESS'}</small><h2>{es?'Tu código QR':'Your QR code'}</h2><p>{es?'Al escanearlo, abre la página principal de tu negocio.':'Scanning it opens your business home page.'}</p></div>{onClose&&<button className="business-qr-close" type="button" onClick={onClose} aria-label={es?'Cerrar':'Close'}>×</button>}</header>
-    <div className="business-qr-content"><div className="business-qr-image-wrap">{imageFailed?<div className="business-qr-error">{es?'No se pudo cargar el QR. Intenta de nuevo.':'The QR could not load. Try again.'}</div>:<img className="business-qr-image" src={endpoint} alt={es?`Código QR de ${businessName}`:`${businessName} QR code`} onError={()=>setImageFailed(true)}/>}<strong>{businessName}</strong></div>
+    {preview&&<p role="note">{es?'QR de muestra: abre WebFactory PR. No representa un negocio publicado.':'Sample QR: opens WebFactory PR. It does not represent a published business.'}</p>}<div className="business-qr-content"><div className="business-qr-image-wrap">{imageFailed?<div className="business-qr-error">{es?'No se pudo cargar el QR. Intenta de nuevo.':'The QR could not load. Try again.'}</div>:<img className="business-qr-image" src={endpoint} alt={es?`Código QR de ${businessName}`:`${businessName} QR code`} onError={()=>setImageFailed(true)}/>}<strong>{businessName}</strong></div>
       <div className="business-qr-details"><span>{es?'ENLACE PRINCIPAL':'MAIN LINK'}</span><code>{url}</code><nav><button type="button" onClick={share}><ShareIcon/>{es?'Compartir perfil':'Share profile'}</button><button type="button" onClick={copy}><LinkIcon/>{es?'Copiar enlace':'Copy link'}</button><button type="button" onClick={download}><DownloadIcon/>{es?'Descargar':'Download'}</button></nav>{feedback&&<small role="status">{feedback}</small>}</div></div>
   </section>
 }

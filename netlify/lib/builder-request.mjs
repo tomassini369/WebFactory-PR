@@ -1,31 +1,8 @@
+import {websiteContent,catalogPresentation} from './website-content.mjs';
 import { sanitizePolicies } from "./publication-review.mjs";
 import { cleanText, validEmail } from "./platform-utils.mjs";
 
-const TEMPLATE_CATALOG = {
-  "brisa-cocina": { category: "Restaurant", name: "Brisa Cocina" },
-  "northline-barber": { category: "Barber", name: "Northline Barber Studio" },
-  "aura-beauty": { category: "Beauty", name: "Aura Beauty Lab" },
-  "balance-wellness": { category: "Wellness", name: "Balance Wellness Room" },
-  "luna-market": { category: "Retail", name: "Luna Market Boutique" },
-  "summit-advisory": { category: "Professional Services", name: "Summit Advisory Group" },
-  "isla-living": { category: "Real Estate", name: "Isla Living Realty" },
-  "atelier-nueve": { category: "Other", name: "Atelier Nueve" },
-  "aqua-shine-carwash": { category: "Car Wash", name: "Aqua Shine Car Wash" },
-  "verde-vivo-landscaping": { category: "Landscaping", name: "Verde Vivo Landscaping" },
-  "sonido-vivo-artist": { category: "Music Artist", name: "Sonido Vivo" },
-  "motorlab-garage": { category: "Auto Repair", name: "MotorLab Garage" },
-  "manos-de-confianza-care": { category: "Care Services", name: "Manos de Confianza" },
-  "pour-house-bartending": { category: "Bartending", name: "Pour House Events" },
-  "mesa-boricua-catering": { category: "Catering", name: "Mesa Boricua Catering" },
-  "pulse-dj-services": { category: "DJ Services", name: "Pulse DJ Services" },
-  "solid-build-construction": { category: "Construction", name: "Solid Build Construction" },
-  "fresh-home-cleaning": { category: "House Cleaning", name: "Fresh Home Cleaning" },
-  "sealpro-roofing": { category: "Roof Sealing", name: "SealPro Roofing" },
-  "agua-clara-plumbing": { category: "Plumbing", name: "Agua Clara Plumbing" },
-  "volt-pro-electric": { category: "Electrician", name: "Volt Pro Electric" },
-  "precision-auto-body": { category: "Auto Body", name: "Precision Auto Body" },
-  "bella-vita-salon": { category: "Cosmetology", name: "Bella Vita Salon" },
-};
+import {TEMPLATE_CATALOG,templateStyle} from './template-identity.mjs';
 
 function assetRef(value, draftId) {
   const key = cleanText(value, 700);
@@ -59,6 +36,7 @@ export function sanitizeBuilderRequest(payload) {
   if (!validEmail(customerEmail)) throw new Error("A valid customer email is required.");
 
   const sanitizedCatalog = catalog.map((item, index) => ({
+    ...catalogPresentation(item),
     id: cleanText(item.id || `item-${index + 1}`, 120),
     type: item.type === "service" ? "service" : "product",
     name: cleanText(item.nameEn || item.name || item.nameEs, 220),
@@ -145,6 +123,7 @@ export function sanitizeBuilderRequest(payload) {
       phone: cleanText(client.phone || b.phone, 80),
     },
     business: {
+      ...websiteContent(b),
       policies: sanitizePolicies(b.policies),
       name: businessName,
       nameEn: cleanText(b.nameEn || b.name, 180),
@@ -182,7 +161,7 @@ export function sanitizeBuilderRequest(payload) {
       preserveTemplateStructure: Boolean(template),
       customLayout: ["split","centered","editorial","showcase"].includes(d.customLayout) ? d.customLayout : "split",
       sectionOrder: Array.isArray(d.sectionOrder) ? d.sectionOrder.filter((section) => ["catalog","team","about","gallery","contact"].includes(section)).slice(0,5) : ["catalog","team","about","gallery","contact"],
-      style: ["Modern","Luxury","Minimal","Bold"].includes(d.style) ? d.style : "Modern",
+      style: template ? templateStyle(requestedTemplateSlug) : ["Modern","Luxury","Minimal","Bold"].includes(d.style) ? d.style : "Modern",
       primary: cleanText(d.primary, 30),
       secondary: cleanText(d.secondary, 30),
     },

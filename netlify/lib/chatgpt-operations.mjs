@@ -1,3 +1,4 @@
+import {templateStyle} from './template-identity.mjs';
 import {z} from 'zod';
 import {isPlatformAdmin,authorizeSiteUser,siteRoleCapabilities} from './client-auth.mjs';
 import {getClientSite,publicClientSite,clientCommerceStore,clientSiteStore} from './client-store.mjs';
@@ -61,7 +62,7 @@ export function redesignSite(site,input){
  const proposal=sanitizeFactoryProposal({business:{...site.business,nameEn:site.business?.nameEn||site.business?.name,descriptionEn:site.business?.descriptionEn||site.business?.description,...input.business},design:{...site.design,...input.design},features:{...site.features,...input.features}});
  const {templateSlug,style,primary,secondary}=proposal.design;
  // Deliberately leave all operational entities and integration settings untouched.
- return {...site,business:{...site.business,...proposal.business,name:proposal.business.nameEn||site.business.name,description:proposal.business.descriptionEn||site.business.description},design:{...site.design,templateSlug,templateRoute:templateSlug?`/templates/${templateSlug}`:'',mode:templateSlug?'template_base':'custom',preserveTemplateStructure:Boolean(templateSlug),style,primary,secondary},features:{...site.features,...proposal.features}};
+ return {...site,business:{...site.business,...proposal.business,name:proposal.business.nameEn||site.business.name,description:proposal.business.descriptionEn||site.business.description},design:{...site.design,templateSlug,templateRoute:templateSlug?`/templates/${templateSlug}`:'',mode:templateSlug?'template_base':'custom',preserveTemplateStructure:Boolean(templateSlug),style:templateStyle(templateSlug)||style,primary,secondary},features:{...site.features,...proposal.features}};
 }
 export const readCollections={orders:'orders',bookings:'bookings',customers:'customers',receipts:'payments','payment-links':'payments','inventory-movements':'catalog','review-requests':'marketing'};
 export async function listRecords(siteId,collection,{limit=50,offset=0}={}){

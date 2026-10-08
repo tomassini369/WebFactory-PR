@@ -1,3 +1,5 @@
+import CatalogPresentationFields from './CatalogPresentationFields'
+import WebsiteContentFields from './WebsiteContentFields'
 import './business-policies.css'
 import type {StorefrontSite} from './ClientStorefront'
 import StorefrontPreview from './StorefrontPreview'
@@ -13,6 +15,7 @@ type Device = 'desktop' | 'tablet' | 'mobile'
 type ItemType = 'product' | 'service'
 
 type CatalogItem = {
+  [key:string]:any
   id: string
   type: ItemType
   name: string
@@ -74,6 +77,7 @@ type PaymentConfiguration = {
 
 type BuilderState = {
   business: {
+    [key:string]:any
     policies?: {privacy:string;terms:string;refund:string}
     name: string
     nameEn?: string
@@ -447,6 +451,7 @@ function BusinessStep({state,setState,lang,lockedEmail}:{state:BuilderState;setS
         <label className="wf-field"><span>Business description · English</span><textarea rows={4} value={state.business.descriptionEn ?? state.business.description} onChange={(event)=>setState((current)=>({...current,business:{...current.business,description:event.target.value,descriptionEn:event.target.value}}))} /></label>
         <label className="wf-field"><span>Descripción del negocio · Español</span><textarea rows={4} value={state.business.descriptionEs ?? ''} onChange={(event)=>setBusiness('descriptionEs',event.target.value)} /></label>
       </div>
+      <WebsiteContentFields value={state.business} lang={lang} onChange={business=>setState(current=>({...current,business}))}/>
       <div className="wf-field-grid">
         <Field label={lang==='es'?'Teléfono':'Phone'} value={state.business.phone} onChange={(v)=>setBusiness('phone',v)} />
         <Field label="WhatsApp" value={state.business.whatsapp} onChange={(v)=>setBusiness('whatsapp',v)} />
@@ -507,6 +512,7 @@ function DesignStep({state,setState,lang}:{state:BuilderState;setState:Dispatch<
     const template = templateConfigs.find((entry)=>entry.slug===slug)
     setState((current)=>({
       ...current,
+      features:template?{...current.features,cart:template.cartEnabled,bookings:template.bookingEnabled}:current.features,
       design:{
         ...current.design,
         templateSlug:slug,
@@ -578,7 +584,7 @@ function DesignStep({state,setState,lang}:{state:BuilderState;setState:Dispatch<
       </div>
       <div className="wf-step-intro compact"><small>{lang==='es'?'PERSONALIZACIÓN':'CUSTOMIZATION'}</small><h3>{lang==='es'?'Ajusta estilo y colores.':'Adjust style and colors.'}</h3><p>{lang==='es'?'Estos cambios aplican tu identidad sobre el diseño base seleccionado. Todos los colores permanecen editables.':'These changes apply your identity to the selected base design. Every color remains editable.'}</p></div>
       <div className="wf-style-grid">
-        {styles.map((style)=>(
+        {(selectedTemplate ? [({modern:'Modern',luxury:'Luxury',minimal:'Minimal',bold:'Bold'} as const)[templateVisualStyle(selectedTemplate.category)]] : styles).map((style)=>(
           <button key={style} className={state.design.style===style?'selected':''} onClick={()=>setDesign('style',style)}>
             <span className={`wf-style-thumb ${style.toLowerCase()}`}><i/><i/><i/></span>
             <strong>{style}</strong>
@@ -740,7 +746,7 @@ function CatalogStep({state,setState,lang}:{state:BuilderState;setState:Dispatch
                   <Field label="Name · English" value={editingItem.nameEn ?? editingItem.name} onChange={(v)=>update(editingItem.id,{name:v,nameEn:v})} />
                   <Field label="Nombre · Español" value={editingItem.nameEs ?? ''} onChange={(v)=>update(editingItem.id,{nameEs:v})} />
                 </div>
-                <div className="wf-mini-grid">
+                <CatalogPresentationFields item={editingItem} lang={lang} onChange={patch=>update(editingItem.id,patch)}/><div className="wf-mini-grid">
                   <label className="wf-field"><span>{lang==='es'?'Precio':'Price'}</span><input type="number" min="0" step=".01" value={editingItem.price} onChange={(e)=>update(editingItem.id,{price:Number(e.target.value)})}/></label>
                   {editingItem.type==='service' && <label className="wf-field"><span>{lang==='es'?'Duración':'Duration'}</span><select value={editingItem.duration} onChange={(e)=>update(editingItem.id,{duration:Number(e.target.value)})}>{[15,30,45,60,75,90,120,180,240].map((min)=><option key={min} value={min}>{min} min</option>)}</select></label>}
                 </div>
@@ -1047,6 +1053,7 @@ export default function WebFactoryBuilder({lang}:{lang:Language}) {
     if (template) {
       setState((current)=>({
         ...current,
+        features:{...current.features,cart:template.cartEnabled,bookings:template.bookingEnabled},
         design:{...current.design,templateSlug:template.slug,primary:template.dark,secondary:template.accent,style:({modern:'Modern',luxury:'Luxury',minimal:'Minimal',bold:'Bold'} as const)[templateVisualStyle(template.category)]},
       }))
       setStep(1)
