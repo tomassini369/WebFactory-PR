@@ -35,6 +35,8 @@ jobs:
         run: node scripts/browser-route-transitions-smoke.mjs
       - name: Check stable authentication cards, keyboard and mobile hero
         run: node scripts/browser-auth-stability-smoke.mjs
+      - name: Check initial login visibility, locale handoff and failure states
+        run: node scripts/browser-auth-usability-smoke.mjs
       - name: Check Home FAQ desktop/mobile, themes and languages
         run: node scripts/browser-home-faq-smoke.mjs
       - name: Check homepage responsive controls, tour and demos

@@ -110,7 +110,20 @@ html body :is(.ca-login,.wfa-login) .portal-return-home svg{width:28px;height:28
 
 /* Keep editable text above iOS's automatic focus-zoom threshold, including visibility toggles. */
 html body :is(.ca-login,.wfa-login) input:not([type=checkbox]){font-size:17px!important;-webkit-text-size-adjust:100%;text-size-adjust:100%}
-/* Do not compact or hide login content when iOS AutoFill/keyboard opens. */
+/* Compact spacing at every mobile height, never in response to focus/AutoFill.
+   Keep all content and 44px actions; keyboard-sized cards still scroll. */
+@media(max-width:820px){
+ html body :is(.ca-page,.wfa-login-page)>:is(.ca-login,.wfa-login){padding:16px!important}
+ html body :is(.ca-page,.wfa-login-page)>:is(.ca-login,.wfa-login) .portal-language{margin-bottom:8px}
+ html body :is(.ca-page,.wfa-login-page)>:is(.ca-login,.wfa-login) .wf-adaptive-logo-slot{width:120px!important;margin:8px 0 6px!important}
+ html body :is(.ca-login,.wfa-login)>small{margin-top:6px}
+ html body :is(.ca-page,.wfa-login-page)>:is(.ca-login,.wfa-login) h1{font-size:26px!important;margin:8px 0!important}
+ html body :is(.ca-page,.wfa-login-page)>:is(.ca-login,.wfa-login)>p{font-size:14px;line-height:1.45!important;margin:8px 0!important}
+ html body :is(.ca-page,.wfa-login-page)>:is(.ca-login,.wfa-login) form{gap:10px!important;margin-top:14px!important}
+ html body :is(.ca-login,.wfa-login) :is(input:not([type=checkbox]),.portal-password-field){min-height:44px}
+ html body :is(.ca-login,.wfa-login) .portal-password-field button{min-height:44px}
+ html body :is(.ca-login,.wfa-login) :is(.ca-link,.wfa-text-button){margin-top:4px;padding-block:10px}
+}
 
 /* Home remains available throughout page and account creation, including mobile. */
 html body .wf-creation-header{grid-template-columns:minmax(0,1fr) auto}
