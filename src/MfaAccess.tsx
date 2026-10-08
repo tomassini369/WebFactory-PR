@@ -1,3 +1,4 @@
+import PortalSceneCopy from './PortalSceneCopy'
 import PortalLoadingCard from './PortalLoadingCard'
 import PortalReturnHome from './PortalReturnHome'
 import {usePortalLanguage} from './portal-language'
@@ -59,7 +60,7 @@ export function MfaGate({children}:{children:ReactNode}) {
   if(loading)return <PortalLoadingCard lang={lang}/>
   if(failed)return <main className="mfa-screen"><p role="alert">{lang==='es'?'No se pudo comprobar tu sesión.':'Unable to check your session.'}</p><button className="btn" onClick={()=>window.location.reload()}>{lang==='es'?'Intentar de nuevo':'Try again'}</button><a href="/">{lang==='es'?'Volver a WebFactory PR':'Return to WebFactory PR'}</a></main>
   if(!user?.mfa?.required||(user.mfa.verified&&!holdCodes))return children
-  return <main className="ca-page mfa-login-page"><section className="ca-login mfa-login-card" key="security"><div className="portal-language"><PortalReturnHome lang={lang}/><button className={lang==='en'?'active':''} onClick={()=>setLang('en')}>EN</button><button className={lang==='es'?'active':''} onClick={()=>setLang('es')}>ES</button><ThemeToggle/></div><AdaptiveLogo alt="WebFactory PR"/><SecurityPanel user={user} lang={lang} onCodes={()=>setHoldCodes(true)} onComplete={async()=>{await refreshPortalUser();setHoldCodes(false)}}/><button className="ca-link" onClick={()=>void logout().catch(()=>setFailed(true))}>{lang==='es'?'Cerrar sesión':'Sign out'}</button></section></main>
+  return <main className="ca-page mfa-login-page"><PortalSceneCopy lang={lang}/><section className="ca-login mfa-login-card" key="security"><div className="portal-language"><PortalReturnHome lang={lang}/><button className={lang==='en'?'active':''} onClick={()=>setLang('en')}>EN</button><button className={lang==='es'?'active':''} onClick={()=>setLang('es')}>ES</button><ThemeToggle/></div><AdaptiveLogo alt="WebFactory PR"/><SecurityPanel user={user} lang={lang} onCodes={()=>setHoldCodes(true)} onComplete={async()=>{await refreshPortalUser();setHoldCodes(false)}}/><button className="ca-link" onClick={()=>void logout().catch(()=>setFailed(true))}>{lang==='es'?'Cerrar sesión':'Sign out'}</button></section></main>
 }
 
 export function MfaSettings({lang,allowDisable=false}:{lang:'es'|'en';allowDisable?:boolean}) {

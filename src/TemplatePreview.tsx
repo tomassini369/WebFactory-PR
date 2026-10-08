@@ -1,4 +1,5 @@
 import PortalReturnHome from './PortalReturnHome'
+import { useFlyToCart } from './useFlyToCart'
 import AnimatedOverlay from './AnimatedOverlay'
 import {templateButtonInk} from './templateVisual'
 import CatalogCard from './TemplateCatalogCard'
@@ -27,6 +28,7 @@ function TemplateNotice({ ui, slug }: { ui: TemplateUi; slug: string }) {
 
 
 function TemplateSite({ slug }: { slug: string }) {
+  const flyToCart = useFlyToCart()
   const baseConfig = templateBySlug(slug)
   const [language, setLanguage] = useState<TemplateLanguage>(() => {
     const saved = window.localStorage.getItem('webfactory-template-language')
@@ -106,8 +108,9 @@ function TemplateSite({ slug }: { slug: string }) {
     '--template-cream': config.cream,
   } as CSSProperties
 
-  const addToCart = (item: TemplateItem) => {
+  const addToCart = (item: TemplateItem, source?: HTMLElement) => {
     if (!config.cartEnabled || item.appointment || item.purchasable===false) return
+    flyToCart(source)
     setCart((current) => {
       const existing = current.find((line) => line.item.id === item.id)
       if (existing) {
@@ -212,7 +215,7 @@ function TemplateSite({ slug }: { slug: string }) {
                   item={item}
                   accent={config.accent}
                   onView={() => setSelectedItem(item)}
-                  onAdd={() => addToCart(item)}
+                  onAdd={source => addToCart(item, source)}
                   onBook={() => { setCatalogOpen(false); startBooking(item) }}
                   language={language}
                   ui={ui}
@@ -241,7 +244,7 @@ function TemplateSite({ slug }: { slug: string }) {
                 {selectedItem.appointment && config.bookingEnabled ? (
                   <button className="template-solid" onClick={() => startBooking(selectedItem)}>{ui.reserve}</button>
                 ) : !selectedItem.appointment && selectedItem.purchasable !== false && config.cartEnabled ? (
-                  <button className="template-solid" onClick={() => addToCart(selectedItem)}>{ui.addToCart}</button>
+                  <button className="template-solid" onClick={event => addToCart(selectedItem, event.currentTarget)}>{ui.addToCart}</button>
                 ) : null}
                 <button className="template-outline" onClick={() => setSelectedItem(null)}>{ui.close}</button>
               </div>
@@ -254,7 +257,7 @@ function TemplateSite({ slug }: { slug: string }) {
         <div className="template-modal-backdrop cart-backdrop" role="presentation" onMouseDown={() => setCartOpen(false)}>
           <aside className="template-cart-drawer" role="dialog" aria-modal="true" onMouseDown={(event) => event.stopPropagation()}>
             <header>
-              <div><small>{ui.templateCart}</small><h2>{ui.selections}</h2></div>
+              <div data-cart-flight-target><small>{ui.templateCart}</small><h2>{ui.selections}</h2></div>
               <button onClick={() => setCartOpen(false)}>×</button>
             </header>
             <div className="template-cart-lines">

@@ -31,12 +31,14 @@ try{
  assert.equal(await page.locator('html').evaluate(el=>el.classList.contains('wf-portal-leaving')),false)
  signedIn=true
  for(const path of ['client-admin','webfactory-admin'])for(const width of [390,1280])for(const theme of ['light','dark']){
+  await page.evaluate(()=>sessionStorage.removeItem('wf-section:layout-fixture'))
   await page.setViewportSize({width,height:844});await page.goto('http://127.0.0.1:5196/'+path)
   const root=page.locator(path==='client-admin'?'.ca-dashboard':'.wfa-dashboard');await root.waitFor()
   if(await page.locator('html').getAttribute('data-wf-theme')!==theme)await page.locator('.wf-theme-toggle').click()
   for(const lang of ['ES','EN']){await page.locator('.portal-language button').getByText(lang,{exact:true}).click();assert.equal(await page.locator('html').getAttribute('lang'),lang.toLowerCase())}
   assert.equal(await page.locator('.wf-theme-toggle').count(),1)
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'Workspace must not overflow')
+  if(process.env.QA_SCREENSHOT_DIR){await page.waitForTimeout(350);await page.screenshot({path:`${process.env.QA_SCREENSHOT_DIR}/${path}-overview-${width}-${theme}.png`})}
   if(width===390){await page.locator(path==='client-admin'?'.ca-mobile-menu-toggle':'.wfa-menu-toggle').click();assert.equal(await page.locator(path==='client-admin'?'.ca-mobile-menu-toggle':'.wfa-menu-toggle').getAttribute('aria-expanded'),'true')}
   const nav=page.locator(path==='client-admin'?'.ca-sidebar nav':'.wfa-sidebar nav')
   if(path==='client-admin'){const group=nav.locator('details').filter({has:page.getByText('Business',{exact:true})});if(await group.getAttribute('open')===null)await group.locator('summary').click()}

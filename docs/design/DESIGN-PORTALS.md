@@ -27,3 +27,13 @@ History navigation preserves the current page until the next route is ready, wit
 
 ## 7. Anti-Patterns
 No neon glows, purple gradients, invented metrics, replacement logos, floating form labels, new icon libraries, external fonts, overlapping controls or auth/data changes. Avoid hiding recovery or duplicating language/theme controls. No changes to homepage, Builder, storefront, OAuth, MFA, role checks or tenant isolation.
+
+## Owner-supplied Glassy references · October 8, 2026
+
+This approved reference update supersedes the earlier slate palette and prohibition on purple on authentication surfaces. Use the supplied purple landscape (optimized WebP) with a split desktop welcome area, a frosted pill-input login card, and the same stable mobile loading/login/MFA geometry. Preserve native password types and autofill, password visibility, recovery, remember-email, locale and theme controls. No reference social-login buttons or fake registration flows.
+
+The operating dashboards use the supplied black/gold wave background, softly layered glass cards and gold active sidebar accents. Light mode uses readable white glass over a subdued background. Keep real navigation and data, mobile menus, scrolling, panel tools and tenant brand actions. Do not copy the reference's fake task/chat/calendar/integration records.
+
+Receipt presentation uses a lightweight thermal-printer slot, emerging paper, crease texture, sawtooth edge and monospaced amounts. Display stored receipt items, discounts, taxes, tips, total, status and business timezone. Never synthesize receipt IDs, verified QR/barcodes or recalculate server totals. Existing tenant-scoped PDF and email resend remain functional. No audio, 3D dependency or printer polling.
+
+The cart thumbnail flies in a 700ms transform/opacity arc from the clicked product to the newly opened cart. Cart updates happen immediately; animation cannot defer checkout or quantity changes. Bound decorative actors, cancel them on unmount and skip flight for reduced motion or unavailable images. Shared demo and live storefront behavior also covers Builder previews.
