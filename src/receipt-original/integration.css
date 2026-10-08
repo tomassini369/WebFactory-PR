@@ -1,0 +1,24 @@
+/* Responsive and accessible integration of the original printer. Backgrounds remain WebFactory's. */
+.wf-original-receipt{width:100%;--font-mono:ui-monospace,SFMono-Regular,Consolas,monospace}
+.wf-original-receipt .slot-bezel-chassis{width:min(440px,100%);max-width:100%}
+.wf-original-receipt .slot-paper-feed-viewport{width:min(290px,calc(100% - 32px));max-width:100%}
+html body #root .wf-original-receipt .wf-receipt-paper{width:100%;margin:0;animation:none;transform:none;box-sizing:border-box;padding:18px 14px 24px}
+.wf-original-receipt .console-buttons-row{flex-wrap:wrap;border-radius:24px;max-width:100%;box-sizing:border-box}
+.wf-original-receipt .console-btn{min-height:44px;padding:8px 12px}
+.wf-original-receipt .floating-action-badge{max-width:100%;white-space:normal;text-align:center;cursor:pointer}
+.wf-original-receipt .inspector-modal{position:fixed;inset:0;margin:auto;width:min(520px,calc(100vw - 24px));max-height:calc(100dvh - 24px);padding:0;border:1px solid #cbd5e1;color:#17263b;background:#f8fafc}
+.wf-original-receipt .inspector-modal::backdrop{background:#030711b3;backdrop-filter:blur(8px)}
+.wf-original-receipt .inspector-body{max-height:calc(100dvh - 220px);overflow:auto}
+.wf-original-receipt :is(button,[role=button]):focus-visible{outline:3px solid #3c86f6;outline-offset:3px}
+.wf-receipt-status{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+@media(prefers-reduced-motion:reduce){.wf-original-receipt *{animation:none!important;transition:none!important}.wf-original-receipt .slot-paper-feed-viewport{transform:translateX(-50%)!important}}
+@media print{body:has(.wf-original-receipt dialog[open]) *{visibility:hidden}.wf-original-receipt dialog[open],.wf-original-receipt dialog[open] .inspector-body,.wf-original-receipt dialog[open] .inspector-body *{visibility:visible}.wf-original-receipt dialog[open]{position:absolute;inset:0;max-height:none;border:0;box-shadow:none}.wf-original-receipt .inspector-body{max-height:none;overflow:visible}.wf-original-receipt .inspector-header,.wf-original-receipt .inspector-actions{display:none}}
+
+.wf-original-receipt dialog:not([open]){display:none}
+.wf-original-receipt .btn-primary-print{background:#3c86f6;border-color:#3c86f6;color:#fff}
+
+.wf-original-receipt .receipt-sheet{overflow-wrap:anywhere;user-select:text}.wf-original-receipt .receipt-content{padding-bottom:18px}.wf-original-receipt .receipt-codes-container{font-size:10px;text-align:center;justify-content:center}.wf-original-receipt .col-item{min-width:0}.wf-original-receipt .receipt-row-between{gap:8px}.wf-original-receipt .receipt-row-between .val{max-width:70%;text-align:right}
+
+.wf-original-receipt .btn-primary-print:hover:not(:disabled){background:#3c86f6;border-color:#3c86f6;color:#fff}
+.wf-original-receipt{background:radial-gradient(ellipse at 8% 5%,#dce7f5 0,transparent 45%),radial-gradient(ellipse at 95% 95%,#e0e8f0 0,transparent 50%),#edf2f7;padding:24px 12px;border-radius:24px;box-sizing:border-box}
+html[data-wf-theme=dark] .wf-original-receipt{background:radial-gradient(ellipse at 8% 5%,#1b304a 0,transparent 45%),radial-gradient(ellipse at 95% 95%,#19293e 0,transparent 50%),#0d1522}
