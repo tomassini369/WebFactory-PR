@@ -40,20 +40,17 @@ export function designProviderStatus(){
  }]));
 }
 
-function parseMcpPayload(text){
+function parseMcpPayload(text,requestId){
  const trimmed=String(text||'').trim();
  if(!trimmed)return null;
- try{return JSON.parse(trimmed);}catch{}
+ try{const payload=JSON.parse(trimmed);return payload?.id===requestId?payload:null;}catch{}
  const events=[];
  for(const block of trimmed.split(/\r?\n\r?\n/)){
-  for(const line of block.split(/\r?\n/)){
-   if(!line.startsWith('data:'))continue;
-   const data=line.slice(5).trim();
-   if(!data||data==='[DONE]')continue;
-   try{events.push(JSON.parse(data));}catch{}
-  }
+  const data=block.split(/\r?\n/).filter(line=>line.startsWith('data:')).map(line=>line.slice(5).trimStart()).join('\n');
+  if(!data||data==='[DONE]')continue;
+  try{events.push(JSON.parse(data));}catch{}
  }
- return events.at(-1)||null;
+ return events.findLast(event=>event?.id===requestId)||null;
 }
 
 function sanitize(value,secrets=[]){
@@ -65,16 +62,16 @@ function sanitize(value,secrets=[]){
    .filter(([k])=>!/(?:authorization|api[_-]?key|access[_-]?token|refresh[_-]?token|secret|credential)/i.test(k))
    .map(([k,val])=>[k,walk(val,depth+1)]));
   if(typeof v==='string'){
-   let out=v.slice(0,30000);
+   let out=v;
    for(const secret of secretSet)if(secret.length>=8)out=out.split(secret).join('[REDACTED]');
-   return out;
+   return out.slice(0,30000);
   }
   return v;
  };
  return walk(value);
 }
 
-async function postJsonRpc(config,payload,sessionId='',timeoutMs=READ_TIMEOUT_MS,{allowEmpty=false}={}){
+async function postJsonRpc(config,payload,sessionId='',timeoutMs=READ_TIMEOUT_MS,{allowEmpty=false,protocolVersion=''}={}){
  const controller=new AbortController();
  const timer=setTimeout(()=>controller.abort(),timeoutMs);
  try{
@@ -84,6 +81,7 @@ async function postJsonRpc(config,payload,sessionId='',timeoutMs=READ_TIMEOUT_MS
    [config.authHeader]:config.apiKey
   };
   if(sessionId)headers['mcp-session-id']=sessionId;
+  if(protocolVersion)headers['MCP-Protocol-Version']=protocolVersion;
   const response=await fetch(config.endpoint,{
    method:'POST',
    headers,
@@ -103,9 +101,9 @@ async function postJsonRpc(config,payload,sessionId='',timeoutMs=READ_TIMEOUT_MS
    if(allowEmpty)return {response,payload:null};
    throw oauthError('Design provider returned an empty response.',502);
   }
-  const parsed=parseMcpPayload(text);
+  const parsed=parseMcpPayload(text,payload.id);
   if(!parsed)throw oauthError('Design provider returned an invalid response.',502);
-  if(parsed.error)throw oauthError(String(parsed.error?.message||'Design provider rejected the request.').slice(0,300),502);
+  if(parsed.error)throw oauthError('Design provider rejected the request.',502);
   return {response,payload:parsed};
  }catch(error){
   if(error?.status)throw error;
@@ -124,17 +122,17 @@ async function mcpCall(provider,toolName,args,write=false){
   jsonrpc:'2.0',id:1,method:'initialize',
   params:{protocolVersion:'2025-06-18',capabilities:{},clientInfo:{name:'webfactory-design-gateway',version:'1.0.0'}}
  },'',READ_TIMEOUT_MS);
+ const protocolVersion=init.payload?.result?.protocolVersion;
+ if(!['2025-03-26','2025-06-18','2025-11-25'].includes(protocolVersion))throw oauthError('Design provider negotiated an unsupported MCP version.',502);
  const sessionId=init.response.headers.get('mcp-session-id')||'';
- await postJsonRpc(config,{jsonrpc:'2.0',method:'notifications/initialized'},sessionId,READ_TIMEOUT_MS,{allowEmpty:true});
+ await postJsonRpc(config,{jsonrpc:'2.0',method:'notifications/initialized'},sessionId,READ_TIMEOUT_MS,{allowEmpty:true,protocolVersion});
  const call=await postJsonRpc(config,{
   jsonrpc:'2.0',id:2,method:'tools/call',
   params:{name:toolName,arguments:args||{}}
- },sessionId,write?WRITE_TIMEOUT_MS:READ_TIMEOUT_MS);
+ },sessionId,write?WRITE_TIMEOUT_MS:READ_TIMEOUT_MS,{protocolVersion});
  const result=call.payload?.result;
- if(result?.isError){
-  const message=(result.content||[]).find(x=>x?.type==='text')?.text||'Design provider tool failed.';
-  throw oauthError(String(message).slice(0,300),502);
- }
+ if(!result||typeof result!=='object')throw oauthError('Design provider returned an invalid tool result.',502);
+ if(result.isError)throw oauthError('Design provider tool failed.',502);
  return sanitize(result,[config.apiKey]);
 }
 

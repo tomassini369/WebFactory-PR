@@ -67,3 +67,16 @@ For meaningful WebFactory changes:
 6. improve — convert recurring defects into tests, rules or reusable components.
 
 Generated Stitch/21st output is reference material until deliberately adapted to WebFactory and reviewed. It must not be copied blindly into production.
+
+## Validation before publishing PR #98
+
+The production MCP connection cannot expose tools that exist only in the PR's Deploy Preview. Do not merge or publish just to test them, and do not reuse a production OAuth bearer on the preview: grants are bound to their exact MCP resource.
+
+Create a separate, temporary ChatGPT MCP connection to:
+https://deploy-preview-98--webfactorypr.netlify.app/mcp
+
+Complete the preview's OAuth flow with the platform administrator account and read access. This requires no provider API key in ChatGPT. Keep the existing production connection unchanged.
+
+On that preview connection, call wf_design_status, wf_stitch_read with list_projects, wf_21st_read with get_usage, and wf_dev_workflow. Do not call generation tools during validation. Provider secret variables must be populated in both Production and Deploy Previews, scoped to Functions, followed by a preview redeploy.
+
+The gateway sends the negotiated MCP protocol version on requests after initialization, matches JSON-RPC response IDs even when SSE contains notifications, and rejects malformed responses. Provider error text is replaced by safe messages before crossing the gateway boundary.

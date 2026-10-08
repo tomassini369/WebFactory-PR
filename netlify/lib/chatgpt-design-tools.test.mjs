@@ -31,7 +31,7 @@ test('Stitch gateway uses fixed endpoint and server-side API key without forward
  globalThis.fetch=async(url,options)=>{
   calls.push({url,options});
   const body=JSON.parse(options.body);
-  if(body.method==='initialize')return new Response(JSON.stringify({jsonrpc:'2.0',id:1,result:{serverInfo:{name:'stitch'}}}),{status:200,headers:{'mcp-session-id':'session-a'}});
+  if(body.method==='initialize')return new Response(JSON.stringify({jsonrpc:'2.0',id:1,result:{protocolVersion:'2025-06-18',serverInfo:{name:'stitch'}}}),{status:200,headers:{'mcp-session-id':'session-a'}});
   if(body.method==='notifications/initialized')return new Response('',{status:202});
   return new Response(JSON.stringify({jsonrpc:'2.0',id:2,result:{content:[{type:'text',text:'projects'}]}}),{status:200});
  };
@@ -53,7 +53,7 @@ test('21st gateway supports SSE responses and uses x-api-key only server-side',a
   const body=JSON.parse(options.body);
   assert.equal(url,'https://21st.dev/api/mcp');
   assert.equal(options.headers['x-api-key'],'21st-test-key');
-  if(body.method==='initialize')return new Response('data: '+JSON.stringify({jsonrpc:'2.0',id:1,result:{serverInfo:{name:'21st'}}})+'\n\n',{status:200,headers:{'mcp-session-id':'session-21'}});
+  if(body.method==='initialize')return new Response('data: '+JSON.stringify({jsonrpc:'2.0',id:1,result:{protocolVersion:'2025-06-18',serverInfo:{name:'21st'}}})+'\n\n',{status:200,headers:{'mcp-session-id':'session-21'}});
   if(body.method==='notifications/initialized')return new Response('',{status:202});
   return new Response('event: message\ndata: '+JSON.stringify({jsonrpc:'2.0',id:2,result:{content:[{type:'text',text:'component result'}]}})+'\n\n',{status:200});
  };
@@ -73,4 +73,43 @@ test('design gateway rejects unapproved tools and credential or endpoint injecti
  await assert.rejects(callDesignTool({provider:'21st',toolName:'search',args:{endpoint:'https://evil.invalid'}}),{status:400});
  await assert.rejects(callDesignTool({provider:'21st',toolName:'search',args:{apiKey:'stolen'}}),{status:400});
  assert.equal(calls,0);
+});
+
+
+test('gateway sends negotiated MCP version and selects its response among SSE notifications',async t=>{
+ envFixture(t,{API_KEY_21ST:'fake-test-key'});
+ const prior=globalThis.fetch;
+ globalThis.fetch=async(url,options)=>{
+  const body=JSON.parse(options.body);
+  assert.equal(options.headers.Authorization,undefined);
+  assert.equal(options.redirect,'error');
+  assert.equal(options.credentials,'omit');
+  if(body.method==='initialize')return Response.json({jsonrpc:'2.0',id:1,result:{protocolVersion:'2025-03-26'}});
+  assert.equal(options.headers['MCP-Protocol-Version'],'2025-03-26');
+  if(body.method==='notifications/initialized')return new Response(null,{status:202});
+  return new Response('data: {"jsonrpc":"2.0","id":2,\ndata: "result":{"content":[{"type":"text","text":"usage"}]}}\n\ndata: {"jsonrpc":"2.0","method":"notifications/message"}\n\n');
+ };
+ t.after(()=>{globalThis.fetch=prior;});
+ assert.equal((await callDesignTool({provider:'21st',toolName:'get_usage'})).content[0].text,'usage');
+});
+
+test('gateway fails closed for mismatched replies, invalid initialization and provider errors',async t=>{
+ envFixture(t,{STITCH_API_KEY:'fake-test-key'});
+ const prior=globalThis.fetch;
+ t.after(()=>{globalThis.fetch=prior;});
+ for(const reply of [
+  {jsonrpc:'2.0',id:3,result:{}},
+  {jsonrpc:'2.0',id:1,result:{}},
+  {jsonrpc:'2.0',id:1,error:{message:'fake-test-key'}}
+ ]){
+  globalThis.fetch=async()=>Response.json(reply);
+  await assert.rejects(callDesignTool({provider:'stitch',toolName:'list_projects'}),e=>e.status===502&&!e.message.includes('fake-test-key'));
+ }
+ globalThis.fetch=async(url,options)=>{
+  const body=JSON.parse(options.body);
+  if(body.method==='initialize')return Response.json({jsonrpc:'2.0',id:1,result:{protocolVersion:'2025-06-18'}});
+  if(body.method==='notifications/initialized')return new Response(null,{status:202});
+  return Response.json({jsonrpc:'2.0',id:2,result:{isError:true,content:[{type:'text',text:'fake-test-key'}]}});
+ };
+ await assert.rejects(callDesignTool({provider:'stitch',toolName:'list_projects'}),e=>e.status===502&&!e.message.includes('fake-test-key'));
 });
