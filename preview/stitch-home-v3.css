@@ -1,0 +1,1418 @@
+/* WebFactory PR · StitchDesign V3 homepage
+   Preview-only override. It deliberately preserves the production scroll-tour
+   behavior and keeps the hero video visually unobstructed. */
+
+.wf-premium-home{
+  --hp-bg:#090D12;
+  --hp-bg-2:#0D131B;
+  --hp-panel:#111923;
+  --hp-elevated:#18222E;
+  --hp-text:#F4F7FB;
+  --hp-muted:#8E9BAA;
+  --hp-line:#263443;
+  --hp-line-soft:#1B2733;
+  --hp-blue:#6F9FD8;
+  --hp-blue-strong:#356FBF;
+  --hp-glow:rgba(78,136,216,.16);
+  --hp-glow-soft:rgba(78,136,216,.07);
+  --hp-ok:#4EA98F;
+  --hp-shadow:0 26px 70px -48px rgba(0,0,0,.82);
+  font-family:"Geist","Avenir Next",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+[data-wf-theme=light] .wf-premium-home{
+  --hp-bg:#F5F7FA;
+  --hp-bg-2:#EDF1F5;
+  --hp-panel:#FFFFFF;
+  --hp-elevated:#E8EEF5;
+  --hp-text:#172033;
+  --hp-muted:#657286;
+  --hp-line:#D3DCE6;
+  --hp-line-soft:#E4E9EF;
+  --hp-blue:#356FBF;
+  --hp-blue-strong:#2E62AA;
+  --hp-glow:rgba(53,111,191,.12);
+  --hp-glow-soft:rgba(53,111,191,.06);
+  --hp-ok:#237A66;
+  --hp-shadow:0 24px 66px -48px rgba(29,52,79,.32);
+}
+.wf-premium-home :is(.wf-num,.wf-price>strong,.wf-s-amount,.wf-s-total strong,.wf-s-metrics strong,.wf-cc-mono){
+  font-family:"Geist Mono","SFMono-Regular",ui-monospace,Menlo,monospace;
+  font-variant-numeric:tabular-nums;
+}
+
+/* Floating premium navigation while keeping the existing controls and behavior. */
+@media(min-width:901px){
+  .wf-premium-home .wf-h-header{
+    top:12px;
+    border-bottom:0;
+    padding-inline:14px;
+    background:transparent!important;
+  }
+  .wf-premium-home .wf-h-header-inner{
+    width:min(1360px,100%);
+    min-height:68px;
+    padding:8px 10px 8px 18px;
+    border:1px solid color-mix(in srgb,var(--hp-line) 86%,transparent);
+    border-radius:18px;
+    background:color-mix(in srgb,var(--hp-bg) 84%,transparent);
+    -webkit-backdrop-filter:blur(24px) saturate(125%);
+    backdrop-filter:blur(24px) saturate(125%);
+    box-shadow:0 22px 55px -44px rgba(0,0,0,.82);
+  }
+  .wf-premium-home .wf-h-header.scrolled .wf-h-header-inner{
+    background:color-mix(in srgb,var(--hp-bg) 94%,transparent);
+    border-color:var(--hp-line);
+  }
+  .wf-premium-home .wf-h-logo{width:118px}
+  .wf-premium-home .wf-h-header nav{gap:24px;font-size:13px}
+  .wf-premium-home .wf-h-login{
+    background:transparent;
+    border-color:transparent;
+    padding-inline:10px;
+  }
+}
+
+/* Hero: video is the visual. No dashboard, card or command surface sits over it. */
+.wf-premium-home .wf-hero{
+  min-height:100dvh;
+  display:grid;
+  align-items:center;
+  padding:96px 0 54px;
+}
+.wf-premium-home .wf-hero.has-video{
+  padding-bottom:54px;
+}
+.wf-premium-home .wf-hero-grid{
+  min-height:0;
+  grid-template-columns:minmax(0,.78fr) minmax(0,1.22fr);
+  gap:clamp(40px,7vw,100px);
+}
+.wf-premium-home .wf-hero-copy{
+  max-width:660px;
+  padding-block:44px;
+}
+.wf-premium-home .wf-hero h1{
+  max-width:700px;
+  margin:20px 0 24px;
+  font-size:clamp(48px,6vw,84px);
+  line-height:.94;
+  letter-spacing:-.06em;
+  font-weight:660;
+}
+.wf-premium-home .wf-hero h1 em,
+[data-wf-theme=light] .wf-premium-home .wf-hero h1 em{
+  background:none;
+  -webkit-text-fill-color:currentColor;
+  color:#8BB2E6;
+}
+[data-wf-theme=light] .wf-premium-home .wf-hero h1 em{color:#356FBF}
+.wf-premium-home .wf-hero.has-video .wf-hero-scrim{
+  background:
+    linear-gradient(90deg,rgba(5,9,15,.93) 0%,rgba(5,9,15,.76) 30%,rgba(5,9,15,.32) 52%,rgba(5,9,15,.14) 72%,rgba(5,9,15,.36) 100%),
+    linear-gradient(180deg,rgba(5,9,15,.34) 0%,transparent 28%,transparent 72%,rgba(5,9,15,.74) 100%);
+}
+[data-wf-theme=light] .wf-premium-home .wf-hero.has-video .wf-hero-scrim{
+  background:
+    linear-gradient(90deg,rgba(245,247,250,.95) 0%,rgba(245,247,250,.82) 31%,rgba(245,247,250,.34) 54%,rgba(245,247,250,.16) 74%,rgba(245,247,250,.56) 100%),
+    linear-gradient(180deg,rgba(245,247,250,.28) 0%,transparent 28%,transparent 72%,rgba(245,247,250,.84) 100%);
+}
+.wf-premium-home .wf-hero-modules{max-width:560px;gap:7px!important}
+.wf-premium-home .wf-hero-modules li{
+  border-radius:10px;
+  padding:7px 10px;
+  border-color:color-mix(in srgb,var(--hp-line) 84%,transparent);
+  background:rgba(9,13,18,.58)!important;
+  -webkit-backdrop-filter:blur(10px);
+  backdrop-filter:blur(10px);
+}
+[data-wf-theme=light] .wf-premium-home .wf-hero-modules li{background:rgba(255,255,255,.7)!important}
+.wf-premium-home .wf-btn{
+  min-height:46px;
+  padding-inline:20px;
+  border-radius:11px;
+  background:var(--hp-blue-strong);
+  border-color:color-mix(in srgb,var(--hp-blue) 74%,white);
+  box-shadow:0 14px 28px -20px rgba(53,111,191,.65);
+}
+.wf-premium-home .wf-btn:hover{transform:translateY(-1px);background:color-mix(in srgb,var(--hp-blue-strong) 88%,white);box-shadow:0 18px 30px -22px rgba(53,111,191,.7)}
+.wf-premium-home .wf-btn:active{transform:translateY(1px)}
+.wf-premium-home .wf-scroll-cue{
+  margin-top:12px;
+  font-weight:650;
+  letter-spacing:.02em;
+}
+.wf-premium-home .wf-scroll-cue span{
+  border-radius:8px;
+  border-color:color-mix(in srgb,var(--hp-line) 78%,white);
+}
+
+/* The original scroll-driven product tour remains the main visual transition. */
+.wf-premium-home .wf-tour{
+  padding-top:128px;
+  background:linear-gradient(180deg,var(--hp-bg),var(--hp-bg-2) 42%,var(--hp-bg));
+}
+.wf-premium-home .wf-tour>.wf-shell{width:min(1320px,calc(100% - 96px))}
+.wf-premium-home .wf-tour .wf-heading{max-width:780px;margin-bottom:70px}
+.wf-premium-home .wf-heading h2,
+.wf-premium-home .wf-pricing h2,
+.wf-premium-home .wf-final h2{
+  font-size:clamp(36px,4.8vw,64px);
+  line-height:1;
+  letter-spacing:-.052em;
+  font-weight:650;
+}
+.wf-premium-home .wf-tour-grid{
+  grid-template-columns:minmax(0,.72fr) minmax(480px,1.28fr);
+  gap:clamp(56px,7vw,96px);
+}
+.wf-premium-home .wf-tour-step{min-height:82vh;padding:52px 0}
+.wf-premium-home .wf-tour-step:first-child{min-height:62vh}
+.wf-premium-home .wf-tour-step:last-child{min-height:68vh}
+.wf-premium-home .wf-tour-text{
+  padding-left:28px;
+  border-left:1px solid var(--hp-line);
+}
+.wf-premium-home .wf-tour-step.on .wf-tour-text{
+  border-left:3px solid var(--hp-blue);
+}
+.wf-premium-home .wf-tour-text h3{
+  margin:13px 0 12px;
+  font-size:clamp(28px,3.2vw,42px);
+  letter-spacing:-.045em;
+  line-height:1.05;
+}
+.wf-premium-home .wf-tour-text p{max-width:440px}
+.wf-premium-home .wf-tour-stage{
+  top:calc(50vh - 270px);
+  margin-top:8vh;
+  padding-bottom:8vh;
+}
+.wf-premium-home .wf-tour-stage .wf-cc{
+  border-radius:24px;
+  border-color:var(--hp-line);
+  box-shadow:0 40px 90px -60px rgba(0,0,0,.92);
+}
+.wf-premium-home .wf-tour-stage .wf-cc::before{display:none}
+.wf-premium-home .wf-tour-light{
+  inset:-13% -10%;
+  opacity:.45;
+  background:radial-gradient(44% 44% at 50% 50%,var(--hp-glow),transparent 72%);
+}
+.wf-premium-home .wf-tour-rail{
+  margin-top:18px;
+  padding-top:16px;
+}
+.wf-premium-home .wf-tour-rail button{
+  font-family:"Geist Mono","SFMono-Regular",ui-monospace,monospace;
+  font-size:11px;
+  letter-spacing:.04em;
+}
+
+/* Product capability grid: visibly asymmetrical, but still the same content. */
+.wf-premium-home .wf-section{padding-top:132px}
+.wf-premium-home .wf-platform{
+  display:grid;
+  grid-template-columns:repeat(12,minmax(0,1fr));
+  gap:0;
+  border-top:1px solid var(--hp-line);
+  border-left:1px solid var(--hp-line);
+}
+.wf-premium-home .wf-platform article{
+  grid-column:span 4;
+  min-height:260px;
+  padding:30px;
+  border:0;
+  border-right:1px solid var(--hp-line);
+  border-bottom:1px solid var(--hp-line);
+  border-radius:0;
+  background:color-mix(in srgb,var(--hp-panel) 58%,transparent);
+  box-shadow:none;
+}
+.wf-premium-home .wf-platform article:nth-child(1){grid-column:span 7;min-height:300px}
+.wf-premium-home .wf-platform article:nth-child(2){grid-column:span 5;min-height:300px}
+.wf-premium-home .wf-platform article:hover{
+  transform:translateY(-2px);
+  background:var(--hp-panel);
+  border-color:var(--hp-line);
+  box-shadow:none;
+}
+.wf-premium-home .wf-platform-icon{
+  width:48px;height:48px;
+  border:1px solid var(--hp-line);
+  border-radius:14px;
+  background:var(--hp-elevated);
+  color:var(--hp-blue);
+  box-shadow:none;
+}
+.wf-premium-home .wf-platform h3{font-size:22px;letter-spacing:-.03em}
+.wf-premium-home .wf-platform p{max-width:48ch}
+
+/* Interactive product demo stays interactive, with a more software-like composition. */
+.wf-premium-home .wf-demo{
+  border-radius:24px;
+  background:var(--hp-panel);
+  box-shadow:0 32px 80px -58px rgba(0,0,0,.85);
+}
+.wf-premium-home .wf-demo-tabs{
+  padding:10px 14px;
+  background:var(--hp-bg-2);
+}
+.wf-premium-home .wf-demo-tabs button{
+  min-height:40px;
+  border-radius:9px;
+}
+.wf-premium-home .wf-demo-tabs button[aria-selected=true]{
+  color:var(--hp-text);
+  background:var(--hp-elevated);
+  box-shadow:inset 0 0 0 1px var(--hp-line);
+}
+.wf-premium-home .wf-demo-content{
+  grid-template-columns:minmax(0,.68fr) minmax(0,1.32fr);
+  gap:64px;
+  padding:52px;
+}
+.wf-premium-home .wf-demo-copy h3{font-size:34px;letter-spacing:-.04em}
+.wf-premium-home .wf-demo-art{box-shadow:none}
+.wf-premium-home .wf-demo-cart,
+.wf-premium-home .wf-demo-field,
+.wf-premium-home .wf-demo-booking select,
+.wf-premium-home .wf-demo-amount{
+  box-shadow:none;
+}
+
+/* How it works: divider-driven rhythm instead of equal cards. */
+.wf-premium-home .wf-how{
+  grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);
+  gap:0 54px;
+  border-top:1px solid var(--hp-line);
+}
+.wf-premium-home .wf-how article{
+  min-height:210px;
+  padding:26px 0 26px 26px;
+  border-left:0;
+  border-bottom:1px solid var(--hp-line);
+}
+.wf-premium-home .wf-how article:nth-child(2){margin-top:70px}
+.wf-premium-home .wf-how article:nth-child(3){grid-column:2}
+.wf-premium-home .wf-how h3{font-size:27px;letter-spacing:-.035em}
+
+/* Pricing and FAQ are intentionally calmer. */
+.wf-premium-home .wf-pricing{
+  border-radius:26px;
+  padding:52px;
+  background:var(--hp-panel);
+  box-shadow:0 32px 80px -58px rgba(0,0,0,.82);
+}
+.wf-premium-home .wf-price>strong{
+  font-size:72px;
+  letter-spacing:-.07em;
+}
+.wf-premium-home .wf-faq{
+  max-width:860px;
+  margin-top:54px;
+  border-top:1px solid var(--hp-line);
+}
+.wf-premium-home .wf-faq details{
+  padding:0;
+}
+.wf-premium-home .wf-faq summary{
+  min-height:68px;
+  align-items:center;
+  font-size:16px;
+  font-weight:650;
+}
+.wf-premium-home .wf-faq p{margin:0 0 24px}
+.wf-premium-home .wf-final{
+  border-radius:28px;
+  background:var(--hp-panel);
+  box-shadow:none;
+}
+.wf-premium-home .wf-footer{
+  margin-top:100px;
+}
+
+/* Mobile keeps the hero clean and the original interactive tour converts to its
+   existing inline step behavior from the production stylesheet. */
+@media(max-width:900px){
+  .wf-premium-home .wf-hero{
+    min-height:auto;
+    padding-top:48px;
+  }
+  .wf-premium-home .wf-hero-grid{
+    grid-template-columns:1fr;
+  }
+  .wf-premium-home .wf-hero-copy{
+    max-width:620px;
+    padding-block:46px 18px;
+  }
+  .wf-premium-home .wf-hero h1{
+    font-size:clamp(42px,12vw,62px);
+  }
+  .wf-premium-home .wf-hero.has-video .wf-hero-scrim{
+    background:linear-gradient(180deg,rgba(5,9,15,.70) 0%,rgba(5,9,15,.62) 56%,rgba(5,9,15,.86) 100%);
+  }
+  [data-wf-theme=light] .wf-premium-home .wf-hero.has-video .wf-hero-scrim{
+    background:linear-gradient(180deg,rgba(245,247,250,.80) 0%,rgba(245,247,250,.68) 56%,rgba(245,247,250,.92) 100%);
+  }
+  .wf-premium-home .wf-tour>.wf-shell{width:calc(100% - 48px)}
+  .wf-premium-home .wf-tour-grid{grid-template-columns:1fr;gap:20px}
+  .wf-premium-home .wf-tour-step{min-height:auto;padding:36px 0}
+  .wf-premium-home .wf-tour-stage{display:none}
+  .wf-premium-home .wf-tour-inline{display:block;margin-top:24px}
+  .wf-premium-home .wf-platform{grid-template-columns:1fr}
+  .wf-premium-home .wf-platform article,
+  .wf-premium-home .wf-platform article:nth-child(1),
+  .wf-premium-home .wf-platform article:nth-child(2){
+    grid-column:auto;
+    min-height:220px;
+  }
+  .wf-premium-home .wf-demo-content{grid-template-columns:1fr;padding:32px;gap:34px}
+  .wf-premium-home .wf-how{grid-template-columns:1fr}
+  .wf-premium-home .wf-how article:nth-child(2){margin-top:0}
+  .wf-premium-home .wf-how article:nth-child(3){grid-column:auto}
+}
+@media(max-width:600px){
+  .wf-premium-home .wf-shell{width:calc(100% - 32px)}
+  .wf-premium-home .wf-tour>.wf-shell{width:calc(100% - 32px)}
+  .wf-premium-home .wf-hero{padding-top:34px}
+  .wf-premium-home .wf-hero-copy{padding-top:34px}
+  .wf-premium-home .wf-hero h1{font-size:clamp(40px,13vw,54px)}
+  .wf-premium-home .wf-hero-modules li{font-size:11px}
+  .wf-premium-home .wf-pricing{padding:28px}
+  .wf-premium-home .wf-price>strong{font-size:56px}
+}
+
+@media(prefers-reduced-motion:reduce){
+  .wf-premium-home *,.wf-premium-home *::before,.wf-premium-home *::after{
+    animation:none!important;
+    transition:none!important;
+  }
+}
+
+
+/* ===== Original Premium Pass · StitchDesign ===== */
+
+/* Keep the original architecture. This pass only upgrades polish, motion,
+   hierarchy and tactile feedback inside the isolated deploy preview. */
+
+.wf-premium-home{
+  --premium-radius:22px;
+  --premium-soft:color-mix(in srgb,var(--hp-panel) 78%,transparent);
+}
+
+/* Hero video gets depth from the existing scroll variable instead of UI overlays. */
+.motion .wf-hero-media video{
+  transform:scale(calc(1.015 + var(--hero-p,0) * .018)) translate3d(0,calc(var(--hero-p,0) * -5px),0);
+  transition:filter .35s var(--ease);
+  will-change:transform;
+}
+.wf-premium-home .wf-hero-media video{
+  filter:saturate(.92) contrast(1.04);
+}
+.wf-premium-home .wf-hero-copy{
+  position:relative;
+}
+.wf-premium-home .wf-hero-copy::before{
+  content:"";
+  position:absolute;
+  z-index:-1;
+  inset:-36px -52px -36px -42px;
+  border-radius:36px;
+  background:radial-gradient(70% 80% at 25% 50%,rgba(5,9,15,.36),transparent 76%);
+  pointer-events:none;
+}
+[data-wf-theme=light] .wf-premium-home .wf-hero-copy::before{
+  background:radial-gradient(70% 80% at 25% 50%,rgba(245,247,250,.44),transparent 76%);
+}
+.motion .wf-hero-copy{
+  transform:translate3d(0,calc(var(--hero-p,0) * -7px),0);
+  will-change:transform;
+}
+.wf-premium-home .wf-lead{
+  max-width:570px;
+  font-size:clamp(17px,1.55vw,20px);
+  line-height:1.72;
+}
+.wf-premium-home .wf-actions{
+  gap:24px;
+  margin-top:34px;
+}
+.wf-premium-home .wf-link{
+  position:relative;
+  min-height:44px;
+  display:inline-flex;
+  align-items:center;
+  padding-inline:2px;
+}
+.wf-premium-home .wf-link::after{
+  content:"";
+  position:absolute;
+  left:0;right:0;bottom:6px;
+  height:1px;
+  background:currentColor;
+  transform:scaleX(0);
+  transform-origin:left;
+  transition:transform .25s var(--ease);
+  opacity:.65;
+}
+.wf-premium-home .wf-link:hover::after{transform:scaleX(1)}
+.wf-premium-home .wf-trial{
+  letter-spacing:.01em;
+}
+
+/* Scroll cue remains because it is part of the original WebFactory experience. */
+.wf-premium-home .wf-scroll-cue{
+  opacity:.82;
+  transition:opacity .25s,transform .25s;
+}
+.wf-premium-home .wf-scroll-cue:hover{
+  opacity:1;
+  transform:translateY(2px);
+}
+
+/* Scroll tour gets stronger cinematic continuity while preserving the exact logic. */
+.motion .wf-tour-stage{
+  transform:
+    perspective(1400px)
+    rotateX(calc((var(--tour-p,0) - .5) * -1.8deg))
+    translate3d(0,calc((var(--tour-p,0) - .5) * -12px),0);
+  transition:filter .35s var(--ease);
+  will-change:transform;
+}
+.wf-premium-home .wf-tour-stage .wf-cc{
+  background:color-mix(in srgb,var(--hp-panel) 94%,transparent);
+  -webkit-backdrop-filter:blur(18px);
+  backdrop-filter:blur(18px);
+}
+.wf-premium-home .wf-tour-step .wf-num{
+  display:inline-flex;
+  align-items:center;
+  min-height:28px;
+  padding:0 10px;
+  border:1px solid var(--hp-line);
+  border-radius:999px;
+  background:color-mix(in srgb,var(--hp-panel) 56%,transparent);
+  transition:color .3s,border-color .3s,background .3s,transform .3s;
+}
+.wf-premium-home .wf-tour-step.on .wf-num{
+  color:var(--hp-text);
+  border-color:color-mix(in srgb,var(--hp-blue) 52%,var(--hp-line));
+  background:color-mix(in srgb,var(--hp-blue) 9%,var(--hp-panel));
+  transform:translateX(4px);
+}
+.wf-premium-home .wf-tour-text{
+  transition:border-color .45s var(--ease),opacity .45s var(--ease),transform .45s var(--ease);
+}
+.motion .wf-tour-step:not(.on) .wf-tour-text{
+  transform:translateX(-4px);
+}
+.motion .wf-tour-step.on .wf-tour-text{
+  transform:none;
+}
+.wf-premium-home .wf-tour-rail button{
+  min-height:40px;
+  padding-right:8px;
+}
+.wf-premium-home .wf-tour-rail button[aria-current=step]{
+  font-weight:760;
+}
+.wf-premium-home .wf-tour-rail>i{
+  height:3px;
+  background:color-mix(in srgb,var(--hp-line) 86%,transparent);
+}
+.wf-premium-home .wf-tour-rail>i::after{
+  background:var(--hp-blue);
+}
+
+/* Section rhythm: cleaner transitions, no extra cards or content. */
+.wf-premium-home .wf-section>.wf-heading{
+  margin-bottom:52px;
+}
+.wf-premium-home .wf-section>.wf-heading .wf-eyebrow{
+  margin-bottom:2px;
+}
+.wf-premium-home .wf-section>.wf-heading>p:last-child:not(.wf-eyebrow){
+  font-size:17px;
+  line-height:1.72;
+}
+
+/* Capability grid keeps the original content but feels more crafted. */
+.wf-premium-home .wf-platform article{
+  position:relative;
+  overflow:hidden;
+  transition:transform .32s var(--ease),background .32s,border-color .32s;
+}
+.wf-premium-home .wf-platform article::after{
+  content:"";
+  position:absolute;
+  inset:auto -20% -62% 28%;
+  height:120%;
+  background:radial-gradient(closest-side,color-mix(in srgb,var(--hp-blue) 7%,transparent),transparent);
+  opacity:0;
+  transition:opacity .32s;
+  pointer-events:none;
+}
+.wf-premium-home .wf-platform article:hover::after{opacity:1}
+.wf-premium-home .wf-platform article:hover .wf-platform-icon{
+  transform:translateY(-2px) scale(1.035);
+  border-color:color-mix(in srgb,var(--hp-blue) 38%,var(--hp-line));
+}
+.wf-premium-home .wf-platform-icon{
+  transition:transform .3s var(--ease),border-color .3s,background .3s;
+}
+.wf-premium-home .wf-also{
+  margin-top:26px;
+  gap:9px;
+}
+.wf-premium-home .wf-also span{
+  min-height:34px;
+  display:inline-flex;
+  align-items:center;
+  border-radius:10px;
+  background:color-mix(in srgb,var(--hp-panel) 74%,transparent);
+  transition:border-color .22s,transform .22s;
+}
+.wf-premium-home .wf-also span:hover{
+  transform:translateY(-1px);
+  border-color:color-mix(in srgb,var(--hp-blue) 38%,var(--hp-line));
+}
+
+/* Interactive demo: clearer active states without changing any interaction. */
+.wf-premium-home .wf-demo{
+  position:relative;
+  overflow:hidden;
+}
+.wf-premium-home .wf-demo::before{
+  content:"";
+  position:absolute;
+  z-index:2;
+  left:0;right:0;top:0;
+  height:1px;
+  background:linear-gradient(90deg,transparent,color-mix(in srgb,var(--hp-blue) 45%,transparent),transparent);
+  pointer-events:none;
+}
+.wf-premium-home .wf-demo-tabs button{
+  position:relative;
+  transition:color .2s,background .2s,transform .2s;
+}
+.wf-premium-home .wf-demo-tabs button:hover{
+  color:var(--hp-text);
+  transform:translateY(-1px);
+}
+.wf-premium-home .wf-demo-tabs button[aria-selected=true]::after{
+  content:"";
+  position:absolute;
+  left:18px;right:18px;bottom:-11px;
+  height:2px;
+  border-radius:2px;
+  background:var(--hp-blue);
+}
+.wf-premium-home .wf-demo-product,
+.wf-premium-home .wf-demo-cart,
+.wf-premium-home .wf-demo-booking,
+.wf-premium-home .wf-demo-pay,
+.wf-premium-home .wf-demo-manage{
+  min-width:0;
+}
+.wf-premium-home .wf-demo-quick button{
+  min-height:88px;
+  border-radius:14px;
+  transition:transform .22s var(--ease),border-color .22s,background .22s;
+}
+.wf-premium-home .wf-demo-quick button:hover{
+  transform:translateY(-2px);
+  border-color:color-mix(in srgb,var(--hp-blue) 42%,var(--hp-line));
+}
+
+/* How it works: editorial spacing rather than decorative cards. */
+.wf-premium-home .wf-how article{
+  position:relative;
+}
+.wf-premium-home .wf-how article::before{
+  content:"";
+  position:absolute;
+  left:0;top:0;
+  width:26px;height:1px;
+  background:var(--hp-blue);
+  opacity:.65;
+}
+.wf-premium-home .wf-how span{
+  font-family:"Geist Mono","SFMono-Regular",ui-monospace,monospace;
+  letter-spacing:.08em;
+}
+.wf-premium-home .wf-how p{
+  max-width:48ch;
+}
+
+/* Pricing becomes cleaner and more premium while remaining the same plan. */
+.wf-premium-home .wf-pricing{
+  isolation:isolate;
+}
+.wf-premium-home .wf-pricing::after{
+  content:"";
+  position:absolute;
+  z-index:-1;
+  width:360px;height:360px;
+  right:-150px;top:-170px;
+  border-radius:50%;
+  background:radial-gradient(circle,color-mix(in srgb,var(--hp-blue) 9%,transparent),transparent 68%);
+  pointer-events:none;
+}
+.wf-premium-home .wf-price>strong{
+  font-family:"Geist Mono","SFMono-Regular",ui-monospace,monospace;
+  font-variant-numeric:tabular-nums;
+}
+.wf-premium-home .wf-price .wf-btn{
+  min-height:50px;
+}
+
+/* FAQ feels like a software settings surface, not a card stack. */
+.wf-premium-home .wf-faq summary{
+  transition:color .2s,padding-left .25s var(--ease);
+}
+.wf-premium-home .wf-faq summary:hover{
+  color:var(--hp-blue);
+  padding-left:4px;
+}
+.wf-premium-home .wf-faq details[open] summary{
+  color:var(--hp-text);
+}
+.wf-premium-home .wf-faq details[open] p{
+  animation:wf-premium-faq .28s var(--ease) both;
+}
+
+/* Final CTA stays visually calm to avoid competing with the hero. */
+.wf-premium-home .wf-final{
+  border-color:color-mix(in srgb,var(--hp-line) 92%,transparent);
+}
+.wf-premium-home .wf-final::before{
+  content:"";
+  position:absolute;
+  left:50%;top:-1px;
+  width:180px;height:1px;
+  transform:translateX(-50%);
+  background:var(--hp-blue);
+  opacity:.5;
+}
+.wf-premium-home .wf-footer nav a{
+  transition:color .2s,transform .2s;
+}
+.wf-premium-home .wf-footer nav a:hover{
+  transform:translateY(-1px);
+}
+
+/* Mobile: preserve the original inline tour and keep touch behavior generous. */
+@media(max-width:900px){
+  .motion .wf-tour-stage{transform:none}
+  .wf-premium-home .wf-hero-copy::before{inset:-24px -20px;border-radius:26px}
+  .wf-premium-home .wf-section>.wf-heading{margin-bottom:36px}
+  .wf-premium-home .wf-tour-step .wf-num{min-height:30px}
+  .wf-premium-home .wf-demo-tabs button{min-height:44px}
+}
+@media(max-width:600px){
+  .wf-premium-home .wf-hero h1{
+    line-height:.98;
+    letter-spacing:-.05em;
+  }
+  .wf-premium-home .wf-lead{font-size:16px}
+  .wf-premium-home .wf-actions{
+    align-items:stretch;
+    flex-direction:column;
+    gap:10px;
+  }
+  .wf-premium-home .wf-actions .wf-btn{width:100%}
+  .wf-premium-home .wf-actions .wf-link{justify-content:center}
+  .wf-premium-home .wf-demo-tabs button[aria-selected=true]::after{bottom:-11px}
+  .wf-premium-home .wf-pricing{border-radius:22px}
+}
+
+@keyframes wf-premium-faq{
+  from{opacity:0;transform:translateY(-4px)}
+  to{opacity:1;transform:none}
+}
+
+
+/* ===== Mobile Light Mode QA Fix · Screenshot 2026-10-06 ===== */
+
+/* The design-preview URL is not a production root path, so ThemeProvider adds
+   its generic floating fallback. The Home already has an inline header toggle. */
+.wf-theme-toggle.floating{
+  display:none!important;
+}
+
+/* Keep the hero cinematic even when the rest of the page is in Light Mode.
+   Light Mode should change the surrounding product surface, not wash out video. */
+html[data-wf-theme="light"] .wf-premium-home .wf-hero.has-video{
+  --hp-text:#F4F7FB;
+  --hp-muted:#D5DFEC;
+  --hp-line:#53667D;
+  --hp-line-soft:#324258;
+  --hp-blue:#86B4EB;
+  --hp-blue-strong:#356FBF;
+  color:var(--hp-text);
+}
+html[data-wf-theme="light"] .wf-premium-home .wf-hero.has-video .wf-hero-scrim{
+  background:
+    linear-gradient(90deg,rgba(5,9,15,.90) 0%,rgba(5,9,15,.74) 32%,rgba(5,9,15,.34) 58%,rgba(5,9,15,.18) 76%,rgba(5,9,15,.38) 100%),
+    linear-gradient(180deg,rgba(5,9,15,.30) 0%,transparent 30%,transparent 70%,rgba(5,9,15,.70) 100%)!important;
+}
+html[data-wf-theme="light"] .wf-premium-home .wf-hero-copy::before{
+  background:radial-gradient(72% 82% at 24% 50%,rgba(4,8,14,.46),transparent 76%)!important;
+}
+html[data-wf-theme="light"] .wf-premium-home .wf-hero.has-video h1{
+  color:#F7FAFF;
+  text-shadow:0 1px 18px rgba(0,0,0,.18);
+}
+html[data-wf-theme="light"] .wf-premium-home .wf-hero.has-video h1 em{
+  color:#82B4EE;
+}
+html[data-wf-theme="light"] .wf-premium-home .wf-hero.has-video .wf-lead{
+  color:#D7E1EE;
+}
+html[data-wf-theme="light"] .wf-premium-home .wf-hero.has-video .wf-eyebrow{
+  color:#85B6ED;
+}
+html[data-wf-theme="light"] .wf-premium-home .wf-hero.has-video .wf-dot{
+  background:#65C8AD;
+  box-shadow:0 0 10px rgba(101,200,173,.34);
+}
+html[data-wf-theme="light"] .wf-premium-home .wf-hero.has-video .wf-hero-modules li{
+  color:#F0F5FB;
+  background:rgba(8,14,22,.72)!important;
+  border-color:rgba(150,180,214,.34);
+  -webkit-backdrop-filter:blur(12px);
+  backdrop-filter:blur(12px);
+}
+html[data-wf-theme="light"] .wf-premium-home .wf-hero.has-video .wf-hero-modules svg{
+  color:#88B8EF;
+}
+html[data-wf-theme="light"] .wf-premium-home .wf-hero.has-video .wf-link{
+  color:#F1F6FC;
+}
+html[data-wf-theme="light"] .wf-premium-home .wf-hero.has-video .wf-trial{
+  color:#C3D0E0;
+}
+html[data-wf-theme="light"] .wf-premium-home .wf-hero.has-video .wf-scroll-cue{
+  color:#D3DEEB;
+}
+html[data-wf-theme="light"] .wf-premium-home .wf-hero.has-video .wf-scroll-cue span{
+  border-color:rgba(211,222,235,.68);
+}
+html[data-wf-theme="light"] .wf-premium-home .wf-hero.has-video .wf-scroll-cue span::after{
+  background:#8BB9EE;
+}
+
+/* Mobile header: same controls, tighter and more deliberate spacing. */
+@media(max-width:600px){
+  .wf-premium-home .wf-h-header-inner{
+    padding:8px 12px;
+    gap:7px;
+  }
+  .wf-premium-home .wf-h-logo{
+    width:86px;
+  }
+  .wf-premium-home .wf-h-logo .wf-adaptive-logo-slot,
+  .wf-premium-home .wf-h-logo .wf-adaptive-logo-slot>.wf-adaptive-logo{
+    height:50px;
+  }
+  .wf-premium-home .wf-h-actions{
+    gap:5px;
+  }
+  .wf-premium-home .wf-h-languages{
+    flex-shrink:0;
+  }
+  .wf-premium-home .wf-h-languages button{
+    min-width:30px;
+    min-height:32px;
+    padding:4px 5px;
+  }
+  .wf-premium-home .wf-h-header .wf-theme-toggle,
+  .wf-premium-home .wf-h-menu{
+    width:36px;
+    height:36px;
+    min-height:36px;
+  }
+  .wf-premium-home .wf-h-login{
+    min-height:36px;
+    padding:7px 10px;
+    font-size:12.5px;
+  }
+
+  /* The mobile hero stays dark and readable in either global theme. */
+  html[data-wf-theme="light"] .wf-premium-home .wf-hero.has-video .wf-hero-scrim{
+    background:
+      linear-gradient(180deg,rgba(5,9,15,.64) 0%,rgba(5,9,15,.58) 38%,rgba(5,9,15,.66) 68%,rgba(5,9,15,.88) 100%)!important;
+  }
+  html[data-wf-theme="light"] .wf-premium-home .wf-hero-copy::before{
+    background:radial-gradient(78% 82% at 34% 45%,rgba(4,8,14,.38),transparent 78%)!important;
+  }
+  .wf-premium-home .wf-hero-modules{
+    gap:7px!important;
+  }
+  .wf-premium-home .wf-hero-modules li{
+    min-height:38px;
+    padding:7px 9px;
+  }
+  .wf-premium-home .wf-scroll-cue{
+    min-height:44px;
+    margin-top:20px;
+    font-size:12px;
+  }
+
+  /* Give the inline product scene breathing room above iOS browser chrome. */
+  .wf-premium-home .wf-tour-step{
+    padding-bottom:46px;
+    scroll-margin-block:96px;
+  }
+  .wf-premium-home .wf-tour-inline{
+    margin-top:26px;
+    margin-bottom:calc(24px + env(safe-area-inset-bottom,0px));
+  }
+}
+
+/* ===== Mobile Dynamic Scroll Tour V2 · StitchDesign ===== */
+
+/* Native mobile composition: never scale the desktop Control Center wider than
+   the viewport. The existing HomePage step state and IntersectionObserver stay
+   untouched; only the preview responsive layout changes. */
+@media(max-width:767px){
+  .wf-premium-home .wf-tour{
+    padding-top:78px;
+  }
+
+  .wf-premium-home .wf-tour>.wf-shell{
+    width:calc(100% - 28px);
+  }
+
+  .wf-premium-home .wf-tour-grid{
+    display:flex;
+    flex-direction:column;
+    gap:0;
+  }
+
+  /* Compact sticky visual dock. Explicit height prevents the large empty region
+     seen in the previous mobile recording. */
+  .wf-premium-home .wf-tour-stage{
+    order:0;
+    display:block;
+    position:sticky;
+    z-index:18;
+    top:calc(env(safe-area-inset-top,0px) + 68px);
+    width:100%;
+    height:244px;
+    margin:0 0 16px;
+    padding:8px 0 10px;
+    overflow:visible;
+    background:linear-gradient(
+      180deg,
+      color-mix(in srgb,var(--hp-bg) 97%,transparent) 0%,
+      color-mix(in srgb,var(--hp-bg) 94%,transparent) 84%,
+      transparent 100%
+    );
+    -webkit-backdrop-filter:blur(16px) saturate(118%);
+    backdrop-filter:blur(16px) saturate(118%);
+    transform:none!important;
+  }
+
+  .wf-premium-home .wf-tour-stage::after{
+    content:"";
+    position:absolute;
+    left:0;
+    right:0;
+    bottom:0;
+    height:1px;
+    background:linear-gradient(90deg,transparent,var(--hp-line),transparent);
+    opacity:.7;
+    pointer-events:none;
+  }
+
+  .wf-premium-home .wf-tour-light{
+    inset:-5% -3% 18%;
+    opacity:.2;
+    transform:none!important;
+  }
+
+  .wf-premium-home .wf-tour-stage>div[aria-hidden="true"]{
+    position:relative;
+    width:100%;
+    height:178px;
+    overflow:hidden;
+    border-radius:16px;
+  }
+
+  /* Real phone-width Control Center: no width inflation, no transform scaling. */
+  .wf-premium-home .wf-tour-stage .wf-cc{
+    width:100%;
+    height:178px;
+    transform:none!important;
+    transform-origin:center;
+    border-radius:16px;
+    box-shadow:0 18px 46px -34px rgba(0,0,0,.78);
+    font-size:9px;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-cc-top{
+    min-height:30px;
+    padding:6px 8px;
+    gap:6px;
+    font-size:9px;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-cc-top strong{
+    font-size:9px;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-cc-crumb{
+    display:none;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-cc-sample{
+    max-width:82px;
+    overflow:hidden;
+    padding:2px 6px;
+    font-size:7px;
+    text-overflow:ellipsis;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-cc-body{
+    height:147px;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-cc-body>aside{
+    width:34px;
+    padding:7px 4px;
+    gap:5px;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-cc-mono{
+    margin-bottom:2px;
+    font-size:10px;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-cc-body aside>div:not(.wf-cc-mono){
+    padding:4px;
+    border-radius:6px;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-cc-body aside svg{
+    width:12px;
+    height:12px;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-cc-main{
+    height:147px;
+    overflow:hidden;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-cc-scene{
+    padding:8px;
+    overflow:hidden;
+    transform:translateY(8px) scale(.995);
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-cc-scene.past{
+    transform:translateY(-8px) scale(.995);
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-cc-scene.on{
+    transform:none;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-s-label{
+    margin-bottom:6px;
+    gap:6px;
+    font-size:8px;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-s-label span{
+    font-size:7px;
+  }
+
+  /* Force compact two-zone scenes after the original container query. */
+  .wf-premium-home .wf-tour-stage :is(.wf-s-website,.wf-s-sell,.wf-s-book,.wf-s-pay,.wf-s-manage){
+    grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;
+    gap:7px!important;
+    align-items:start;
+  }
+
+  /* CREATE */
+  .wf-premium-home .wf-tour-stage .wf-s-ai{
+    padding:7px;
+    border-radius:8px;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-s-ai-head{
+    gap:4px;
+    font-size:7.5px;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-s-ai-head svg{
+    width:10px;
+    height:10px;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-s-ai p{
+    display:none!important;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-s-ai li{
+    padding:3px 0;
+    gap:4px;
+    font-size:7px;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-s-ai li svg{
+    width:9px;
+    height:9px;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-s-ai li:nth-child(n+4){
+    display:none;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-s-site{
+    border-radius:8px;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-s-site-bar{
+    padding:4px 5px;
+    gap:3px;
+    font-size:6px;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-s-site-bar i{
+    width:4px;
+    height:4px;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-s-site-hero{
+    margin:5px;
+    padding:7px;
+    border-radius:6px;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-s-site-hero small{
+    font-size:5.5px;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-s-site-hero strong{
+    margin:3px 0 5px;
+    font-size:8px;
+    line-height:1.15;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-s-site-hero span{
+    padding:2px 5px;
+    border-radius:4px;
+    font-size:5.5px;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-s-site-cards{
+    grid-template-columns:1fr 1fr;
+    gap:4px;
+    margin:0 5px 5px;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-s-site-cards div{
+    padding:4px;
+    font-size:5.5px;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-s-site-cards div:nth-child(3){
+    display:none;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-s-site-cards i{
+    height:18px;
+    margin-bottom:3px;
+  }
+
+  /* SELL */
+  .wf-premium-home .wf-tour-stage .wf-s-catalog>div{
+    grid-template-columns:1fr 1fr!important;
+    gap:5px;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-s-catalog article{
+    padding:5px;
+    border-radius:7px;
+    font-size:6.5px;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-s-catalog article:nth-child(3){
+    display:none!important;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-s-art{
+    height:28px;
+    border-radius:5px;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-s-catalog article span{
+    margin-top:4px;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-s-catalog article strong{
+    margin:2px 0 3px;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-s-catalog article em{
+    padding:3px;
+    font-size:6px;
+  }
+
+  .wf-premium-home .wf-tour-stage :is(.wf-s-cart,.wf-s-slots,.wf-s-receipt,.wf-s-checkout,.wf-s-calendar,.wf-s-chart,.wf-s-quick){
+    padding:7px;
+    border-radius:8px;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-s-cart p,
+  .wf-premium-home .wf-tour-stage .wf-s-receipt p{
+    padding:3px 0;
+    font-size:6.5px;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-s-total{
+    margin-top:3px;
+    padding-top:4px;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-s-total small{
+    font-size:6px;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-s-total strong{
+    font-size:11px;
+  }
+
+  /* BOOK */
+  .wf-premium-home .wf-tour-stage .wf-s-grid{
+    gap:2px;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-s-grid small{
+    font-size:5.5px;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-s-grid span{
+    padding:2px 0;
+    font-size:6px;
+    border-radius:4px;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-s-pros{
+    gap:3px;
+    margin-bottom:5px;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-s-pros span{
+    width:18px;
+    height:18px;
+    font-size:6px;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-s-slots p{
+    margin-top:3px;
+    padding:3px 5px;
+    font-size:6.5px;
+  }
+
+  /* PAY */
+  .wf-premium-home .wf-tour-stage .wf-s-amount{
+    margin:2px 0 6px;
+    font-size:15px;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-s-methods{
+    gap:3px;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-s-methods span{
+    padding:3px 5px;
+    border-radius:5px;
+    font-size:6px;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-s-status{
+    gap:4px;
+    margin-top:7px;
+    font-size:6px;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-s-receipt em{
+    margin-top:4px;
+    padding:2px 5px;
+    font-size:6px;
+  }
+
+  /* MANAGE */
+  .wf-premium-home .wf-tour-stage .wf-s-manage{
+    grid-template-columns:minmax(0,1.25fr) minmax(0,.75fr)!important;
+    gap:6px!important;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-s-metrics{
+    grid-column:1/-1;
+    grid-template-columns:repeat(3,1fr)!important;
+    gap:4px;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-s-metrics div{
+    padding:5px 6px;
+    border-radius:7px;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-s-metrics span{
+    font-size:5.5px;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-s-metrics strong{
+    font-size:10px;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-s-chart>div{
+    height:42px;
+    gap:4px;
+    padding-top:3px;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-s-quick>div{
+    gap:3px;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-s-quick span{
+    gap:3px;
+    padding:3px 4px;
+    font-size:5.5px;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-s-quick span svg{
+    width:8px;
+    height:8px;
+  }
+
+  /* Progress: one compact row directly below the live visual. */
+  .wf-premium-home .wf-tour-rail{
+    grid-template-columns:repeat(5,minmax(0,1fr));
+    gap:3px;
+    margin-top:7px;
+    padding-top:8px;
+  }
+
+  .wf-premium-home .wf-tour-rail>i{
+    height:2px;
+  }
+
+  .wf-premium-home .wf-tour-rail button{
+    min-width:0;
+    min-height:42px;
+    padding:7px 2px 2px;
+    overflow:hidden;
+    border-radius:8px;
+    color:var(--hp-muted);
+    font-size:8.5px;
+    line-height:1.1;
+    letter-spacing:-.015em;
+    text-align:center;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+
+  .wf-premium-home .wf-tour-rail button[aria-current=step]{
+    color:var(--hp-blue);
+    background:color-mix(in srgb,var(--hp-blue) 8%,transparent);
+  }
+
+  .wf-premium-home .wf-tour-steps{
+    order:1;
+    position:relative;
+    z-index:1;
+  }
+
+  /* Natural reading rhythm: enough scroll distance for each state change, but
+     no giant blank spaces between the live dock and narrative. */
+  .wf-premium-home .wf-tour-step,
+  .wf-premium-home .wf-tour-step:first-child,
+  .wf-premium-home .wf-tour-step:last-child{
+    min-height:54dvh;
+    padding:32px 0 36px;
+    justify-content:flex-start;
+    scroll-margin-top:calc(env(safe-area-inset-top,0px) + 330px);
+  }
+
+  .wf-premium-home .wf-tour-step:first-child{
+    min-height:50dvh;
+    padding-top:26px;
+  }
+
+  .wf-premium-home .wf-tour-step:last-child{
+    min-height:52dvh;
+    padding-bottom:calc(74px + env(safe-area-inset-bottom,0px));
+  }
+
+  .wf-premium-home .wf-tour-text{
+    max-width:100%;
+    padding:15px 4px 17px 16px;
+    border-left-width:1px;
+    border-radius:0 12px 12px 0;
+    background:linear-gradient(
+      90deg,
+      color-mix(in srgb,var(--hp-panel) 42%,transparent),
+      transparent 86%
+    );
+  }
+
+  .wf-premium-home .wf-tour-step.on .wf-tour-text{
+    border-left-width:3px;
+    background:linear-gradient(
+      90deg,
+      color-mix(in srgb,var(--hp-blue) 7%,var(--hp-panel)),
+      transparent 90%
+    );
+  }
+
+  .wf-premium-home .wf-tour-text h3{
+    margin:10px 0 8px;
+    font-size:clamp(24px,7vw,30px);
+  }
+
+  .wf-premium-home .wf-tour-text p{
+    max-width:34ch;
+    margin:0;
+    font-size:15px;
+    line-height:1.58;
+  }
+
+  .wf-premium-home .wf-tour-inline{
+    display:none!important;
+  }
+}
+
+@media(max-width:390px){
+  .wf-premium-home .wf-tour-stage{
+    top:calc(env(safe-area-inset-top,0px) + 64px);
+    height:232px;
+  }
+
+  .wf-premium-home .wf-tour-stage>div[aria-hidden="true"],
+  .wf-premium-home .wf-tour-stage .wf-cc{
+    height:168px;
+  }
+
+  .wf-premium-home .wf-tour-stage .wf-cc-body,
+  .wf-premium-home .wf-tour-stage .wf-cc-main{
+    height:137px;
+  }
+
+  .wf-premium-home .wf-tour-rail button{
+    font-size:8px;
+  }
+}
+
+@media(max-width:767px) and (prefers-reduced-motion:reduce){
+  .wf-premium-home .wf-tour-stage .wf-cc-scene,
+  .wf-premium-home .wf-tour-step .wf-tour-text{
+    transform:none!important;
+    transition:none!important;
+  }
+}
