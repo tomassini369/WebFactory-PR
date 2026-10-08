@@ -99,13 +99,13 @@ html body .ca-dashboard :is(.bcc-hero,.bcc-training) :is(h2,h3,p,.bcc-eyebrow){c
 html body :is(.ca-login,.wfa-login) .portal-language{width:100%;align-items:center;flex-wrap:nowrap}
 html body :is(.ca-login,.wfa-login) .portal-language .portal-return-home{margin:0 auto 0 0;flex:0 0 52px;width:52px;height:52px;min-height:52px;padding:11px}
 
-/* Owner-supplied Glassy surfaces retain the approved pre-Glassy page backgrounds.
+/* October owner-supplied Glassy references supersede the earlier slate palette.
    Keep geometry, scrolling, authentication controls and operational layouts intact. */
 html body #root :is(.ca-page:has(>.ca-login),.wfa-login-page:has(>.wfa-login)){
  --pg-canvas:#291638;--pg-surface:rgba(255,248,255,.9);--pg-solid:#fff9ff;--pg-soft:#f2e8f7;--pg-text:#291b39;--pg-muted:#64546f;--pg-line:#baa8c8;--pg-accent:#6c32a4;
- background:radial-gradient(ellipse at 8% 5%,#dce7f5 0,transparent 45%),radial-gradient(ellipse at 95% 95%,#e0e8f0 0,transparent 50%),#edf2f7!important;
+ background:linear-gradient(90deg,rgba(27,9,45,.36),rgba(38,12,58,.14)),url('/portal-violet-landscape.webp') center/cover no-repeat!important;
 }
-html[data-wf-theme=dark] body #root :is(.ca-page:has(>.ca-login),.wfa-login-page:has(>.wfa-login)){--pg-surface:rgba(45,12,70,.78);--pg-solid:#311548;--pg-soft:#48225f;--pg-text:#faf4ff;--pg-muted:#dccbe9;--pg-line:#80628e;--pg-accent:#e4b5ff;background:radial-gradient(ellipse at 8% 5%,#1b304a 0,transparent 45%),radial-gradient(ellipse at 95% 95%,#19293e 0,transparent 50%),#0d1522!important}
+html[data-wf-theme=dark] body #root :is(.ca-page:has(>.ca-login),.wfa-login-page:has(>.wfa-login)){--pg-surface:rgba(45,12,70,.78);--pg-solid:#311548;--pg-soft:#48225f;--pg-text:#faf4ff;--pg-muted:#dccbe9;--pg-line:#80628e;--pg-accent:#e4b5ff}
 html body #root :is(.ca-page:has(>.ca-login),.wfa-login-page:has(>.wfa-login))>:is(.ca-login,.wfa-login){background:var(--pg-surface)!important;border-color:var(--pg-line)!important;backdrop-filter:blur(28px) saturate(150%);-webkit-backdrop-filter:blur(28px) saturate(150%);box-shadow:inset 0 1px 0 #ffffff45,0 28px 75px #1f062747!important;border-radius:28px}
 html body #root :is(.ca-login,.wfa-login) :is(input:not([type=checkbox]),.portal-password-field){border-radius:999px!important;background:var(--pg-solid)!important;border-color:var(--pg-line)!important;color:var(--pg-text)!important}
 html body #root :is(.ca-login,.wfa-login) .portal-password-field input{border:0!important;background:transparent!important}
@@ -122,9 +122,9 @@ html body #root :is(.ca-login,.wfa-login) :is(input,button,a):focus-visible{outl
 }
 html body #root :is(.ca-dashboard,.wfa-dashboard.wfa-premium){
  --pg-canvas:#eef0f3;--pg-surface:rgba(255,255,255,.91);--pg-solid:#fff;--pg-soft:#eef0f4;--pg-text:#18202c;--pg-muted:#536072;--pg-line:#c2c7d0;--pg-accent:#765200;
- background:radial-gradient(ellipse at 8% 5%,#dce7f5 0,transparent 45%),radial-gradient(ellipse at 95% 95%,#e0e8f0 0,transparent 50%),#edf2f7!important;
+ background:linear-gradient(120deg,rgba(241,243,246,.94),rgba(241,243,246,.87)),url('/portal-gold-waves.webp') center/cover fixed!important;
 }
-html[data-wf-theme=dark] body #root :is(.ca-dashboard,.wfa-dashboard.wfa-premium){--pg-canvas:#101014;--pg-surface:rgba(24,24,30,.9);--pg-solid:#1c1c24;--pg-soft:#25252e;--pg-text:#f7f7fa;--pg-muted:#bfc0cd;--pg-line:#555560;--pg-accent:#ffd600;background:radial-gradient(ellipse at 8% 5%,#1b304a 0,transparent 45%),radial-gradient(ellipse at 95% 95%,#19293e 0,transparent 50%),#0d1522!important}
+html[data-wf-theme=dark] body #root :is(.ca-dashboard,.wfa-dashboard.wfa-premium){--pg-canvas:#101014;--pg-surface:rgba(24,24,30,.9);--pg-solid:#1c1c24;--pg-soft:#25252e;--pg-text:#f7f7fa;--pg-muted:#bfc0cd;--pg-line:#555560;--pg-accent:#ffd600;background:linear-gradient(120deg,rgba(12,12,17,.65),rgba(12,12,17,.8)),url('/portal-gold-waves.webp') center/cover fixed!important}
 html body #root :is(.ca-dashboard,.wfa-dashboard.wfa-premium) :is(.ca-panel,.wfa-card,.wfa-stat,.bcc-card,.bcc-metrics article,.bcc-action-grid button,.bcc-hero,.bcc-training,.ca-work>header,.wfa-top){background:linear-gradient(135deg,rgba(255,255,255,.12),transparent 70%),var(--pg-surface)!important;border:1px solid var(--pg-line)!important;border-radius:24px;box-shadow:inset 0 1px 0 #ffffff24,0 18px 45px #08081012;backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);color:var(--pg-text)}
 html body #root :is(.ca-dashboard,.wfa-dashboard.wfa-premium) :is(.ca-sidebar,.wfa-sidebar){background:linear-gradient(145deg,#ffffff0b,#15151dd9),#101017!important;border-color:#ffffff30!important;box-shadow:inset -1px 0 0 #ffffff0b,12px 0 35px #0002;backdrop-filter:blur(26px);-webkit-backdrop-filter:blur(26px)}
 html body #root :is(.ca-dashboard,.wfa-dashboard.wfa-premium) :is(.ca-sidebar,.wfa-sidebar) nav button.active{color:#ffd600!important;background:#ffd60012!important;border-color:#ffd60055!important;box-shadow:inset 3px 0 0 #ffd600}
@@ -139,15 +139,6 @@ html body #root :is(.ca-dashboard,.wfa-dashboard.wfa-premium) :is(.ca-transactio
  html body #root :is(.ca-dashboard,.wfa-dashboard.wfa-premium){background-attachment:scroll!important}
  html body #root :is(.ca-dashboard,.wfa-dashboard.wfa-premium) :is(.ca-panel,.wfa-card,.bcc-card,.bcc-metrics article,.bcc-action-grid button){backdrop-filter:none;-webkit-backdrop-filter:none}
 }
-/* Restore the previous solid mobile login canvas; glass surfaces stay unchanged. */
-@media(max-width:820px){
- html body #root :is(.ca-page:has(>.ca-login),.wfa-login-page:has(>.wfa-login)){background:#edf2f7!important}
- html[data-wf-theme=dark] body #root :is(.ca-page:has(>.ca-login),.wfa-login-page:has(>.wfa-login)){background:#0d1522!important}
-}
-/* Welcome copy must remain readable against the restored light canvas. */
-html body #root .wf-portal-scene-copy :is(small,h2,p){color:#17263b;text-shadow:none}
-html[data-wf-theme=dark] body #root .wf-portal-scene-copy :is(small,h2,p){color:#f2f6fc}
-
 @media(prefers-reduced-transparency:reduce){html body #root :is(.ca-page,.wfa-login-page,.ca-dashboard,.wfa-dashboard.wfa-premium){--pg-surface:var(--pg-solid)}html body #root :is(.ca-login,.wfa-login,.ca-sidebar,.wfa-sidebar,.ca-panel,.wfa-card,.bcc-card){backdrop-filter:none;-webkit-backdrop-filter:none}}
 @supports not (backdrop-filter:blur(1px)){html body #root :is(.ca-page,.wfa-login-page,.ca-dashboard,.wfa-dashboard.wfa-premium){--pg-surface:var(--pg-solid)}}
 @media(forced-colors:active){html body #root :is(.ca-page,.wfa-login-page,.ca-dashboard,.wfa-dashboard.wfa-premium){background:Canvas!important}html body #root :is(.ca-login,.wfa-login,.ca-sidebar,.wfa-sidebar,.ca-panel,.wfa-card,input,select,textarea,button){background:Canvas!important;color:CanvasText!important;border-color:ButtonText!important}.wf-portal-scene-copy{display:none}}
