@@ -83,7 +83,8 @@
 .wf-premium-home .wf-hero-copy{max-width:580px}
 .wf-premium-home .wf-hero.has-video .wf-hero-scrim{background:linear-gradient(90deg,rgba(4,9,20,.76) 0%,rgba(4,9,20,.56) 34%,rgba(4,9,20,.12) 67%,rgba(4,9,20,.22) 100%),linear-gradient(180deg,rgba(4,9,20,.2),transparent 25%,transparent 75%,rgba(4,9,20,.55))}
 @media(max-width:960px){
- .wf-premium-home .wf-hero.has-video .wf-hero-scrim{background:linear-gradient(180deg,rgba(4,9,20,.48),rgba(4,9,20,.58) 60%,rgba(4,9,20,.68))}
+ /* The video contains template text: keep it visible as atmosphere, not competing copy. */
+ .wf-premium-home .wf-hero.has-video .wf-hero-scrim{background:linear-gradient(180deg,rgba(4,9,20,.94),rgba(4,9,20,.91) 65%,rgba(4,9,20,.72))}
 }
 
 /* ChatGPT setup follows the existing homepage theme and responsive shell. */

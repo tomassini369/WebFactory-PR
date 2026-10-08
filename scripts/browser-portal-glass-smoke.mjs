@@ -51,7 +51,12 @@ try {
   assert.equal(await page.locator('input[type=email]').evaluate(el=>getComputedStyle(el).fontSize),'17px');
   await page.setViewportSize({width:390,height:400});
   await page.waitForFunction(()=>document.documentElement.hasAttribute('data-pg-keyboard'));
-  for(const selector of ['.portal-return-home','input[type=email]','input[autocomplete=current-password]','form>button','.ca-link,.wfa-text-button'])assert(await page.locator(selector).evaluate(el=>{const r=el.getBoundingClientRect();return r.top>=0&&r.bottom<=visualViewport.height}),`Keyboard viewport must show ${selector}`);
+  assert(await page.locator('.wf-adaptive-logo-slot').isVisible(),'AutoFill must not remove the logo');
+  assert(await page.locator('h1').isVisible(),'AutoFill must not remove the heading');
+  for(const selector of ['.portal-return-home','input[type=email]','input[autocomplete=current-password]','form>button','.ca-link,.wfa-text-button']){
+   await page.locator(selector).scrollIntoViewIfNeeded();
+   assert(await page.locator(selector).evaluate(el=>{const r=el.getBoundingClientRect();return r.top>=0&&r.bottom<=visualViewport.height}),`Keyboard viewport must keep ${selector} reachable by scrolling`);
+  }
   assert.equal(await page.evaluate(()=>visualViewport.scale),1);
   await page.setViewportSize({width:390,height:844});
   await page.waitForFunction(()=>!document.documentElement.hasAttribute('data-pg-keyboard'));
