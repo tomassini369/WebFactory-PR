@@ -31,6 +31,26 @@
  .template-site .template-header-actions{gap:6px}
  .template-site .template-hero-meta div{padding:14px 16px}
 }
+/* Shared responsive structure, with each template's typography and colors intact. */
+.template-site :is(.template-languages button,.template-menu-button){min-width:44px;min-height:44px}
+.wf-template-notice a{display:inline-flex;align-items:center;min-height:44px}
+.template-site :is(button,a):focus-visible{outline:3px solid var(--template-accent);outline-offset:3px}
+@media(max-width:767px){
+ .template-site .template-header{grid-template-columns:minmax(0,1fr) auto;gap:8px;padding:12px 16px}
+ .template-site .template-brand{min-width:0;font-size:1.05rem}
+ .template-site .template-header-actions{grid-column:1/-1;justify-content:space-between}
+ .template-site .template-header nav{top:100%;z-index:1}
+ .template-site .template-menu-button{display:inline-flex;align-items:center;justify-content:center}
+ .template-site .template-header-actions .template-outline{display:inline-flex}
+ .template-site .template-hero-content{padding-inline:24px}
+ .template-site .template-hero-content h1{font-size:clamp(2.4rem,9vw,4rem)}
+ .template-site :is(.template-team-grid,.template-story,.template-gallery,.template-contact,.template-booking-showcase){grid-template-columns:minmax(0,1fr)}
+ .template-site .template-hero-actions{flex-wrap:wrap}
+ .template-site .template-hero-actions :is(a,button){max-width:100%;white-space:normal}
+ .template-site .template-header-actions :is(button,a){white-space:normal}
+ .template-site .template-hero-meta{overflow-wrap:anywhere}
+ .wf-template-notice{flex-wrap:wrap;gap:4px 16px;padding:8px 16px}
+}
 @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){.template-site .template-header{background:#fff}.template-site :is(.template-glass,.template-hero-meta){background:#14202bea}}
 @media(prefers-reduced-transparency:reduce),(prefers-contrast:more){
  .template-site .template-header{background:#fff;-webkit-backdrop-filter:none;backdrop-filter:none}

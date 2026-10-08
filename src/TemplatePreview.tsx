@@ -1,6 +1,8 @@
+import AnimatedOverlay from './AnimatedOverlay'
 import {templateButtonInk} from './templateVisual'
 import CatalogCard from './TemplateCatalogCard'
 import TemplateLayout from './TemplateLayout'
+import TemplateMap from './TemplateMap'
 import { useEffect, useMemo, useState, type CSSProperties } from 'react'
 import { templateBySlug, templateVisualStyle, type TemplateItem } from './templateData'
 import { templateUi, localizeTemplate, type TemplateLanguage, type TemplateUi } from './templateI18n'
@@ -12,12 +14,12 @@ type CartLine = { item: TemplateItem; quantity: number }
 const money = (value: number, language: TemplateLanguage) =>
   new Intl.NumberFormat(language === 'es' ? 'es-US' : 'en-US', { style: 'currency', currency: 'USD' }).format(value)
 
-function TemplateNotice({ ui }: { ui: TemplateUi }) {
+function TemplateNotice({ ui, slug }: { ui: TemplateUi; slug: string }) {
   return (
     <div className="wf-template-notice">
       <a href="/templates">← WebFactory PR</a>
       <span>{ui.templateNotice}</span>
-      <a href="/#builder">{ui.createWebsite}</a>
+      <a href={`/builder?template=${encodeURIComponent(slug)}`}>{ui.createWebsite}</a>
     </div>
   )
 }
@@ -51,6 +53,7 @@ function TemplateSite({ slug }: { slug: string }) {
   const [bookingCustomerName, setBookingCustomerName] = useState<string>(ui.defaultCustomer)
   const [bookingCustomerEmail, setBookingCustomerEmail] = useState('template@example.com')
   const [checkoutComplete, setCheckoutComplete] = useState(false)
+  const [cartPaymentMethod,setCartPaymentMethod]=useState<'stripe'|'ath'>('stripe')
 
   const subtotal = useMemo(
     () => cart.reduce((sum, line) => sum + line.item.price * line.quantity, 0),
@@ -91,17 +94,19 @@ function TemplateSite({ slug }: { slug: string }) {
     )
   }
 
-  const showcaseFeatures = Array.from(new Set([...config.features, language === 'es' ? 'Calendario mensual de disponibilidad' : 'Monthly availability calendar', 'WhatsApp', 'Direct calls', 'Social media', 'Contact form', 'Google Maps', 'Google Calendar']))
 
   const styles = {
     '--template-accent': config.accent,
     '--template-button-ink':templateButtonInk(config.accent),
     '--template-accent-2': config.accent2,
     '--template-dark': config.dark,
+    '--template-dark-ink': templateButtonInk(config.dark),
+    '--template-cream-ink': templateButtonInk(config.cream),
     '--template-cream': config.cream,
   } as CSSProperties
 
   const addToCart = (item: TemplateItem) => {
+    if (!config.cartEnabled || item.appointment || item.purchasable===false) return
     setCart((current) => {
       const existing = current.find((line) => line.item.id === item.id)
       if (existing) {
@@ -126,12 +131,14 @@ function TemplateSite({ slug }: { slug: string }) {
     setRemoved(null)
   }
 
-  const startBooking = (item?: TemplateItem) => {
+  const startBooking = (item?: TemplateItem, employeeId?: string) => {
+    if (!config.bookingEnabled) return
     const target = item ?? config.items.find((entry) => entry.appointment)
     if (!target) return
     setSelectedItem(null)
     setBookingItem(target)
-    setSelectedEmployee('')
+    const employee=config.employees.find(entry=>entry.id===employeeId && (!target.employees?.length || target.employees.some(name=>entry.name.startsWith(name))))
+    setSelectedEmployee(employee?.name || '')
     setSelectedDate('')
     setCalendarView(true)
     const parts = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Puerto_Rico', year: 'numeric', month: '2-digit' }).formatToParts(new Date()).reduce((acc, part) => ({ ...acc, [part.type]: part.value }), {} as Record<string, string>)
@@ -180,18 +187,18 @@ function TemplateSite({ slug }: { slug: string }) {
   }
 
   const verifyTemplatePayment = () => {
-    if (!bookingCustomerName.trim() || !bookingCustomerEmail.trim()) return
+    if (!bookingCustomerName.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(bookingCustomerEmail.trim())) return
     setBookingStage('verified')
   }
 
   return (
     <div className={`template-site visual-${templateVisualStyle(config.category)}`} style={styles}>
-      <TemplateNotice ui={ui} />
+      <TemplateNotice ui={ui} slug={slug} />
 
-      <TemplateLayout config={config} ui={ui} language={language} setLanguage={setLanguage} startBooking={startBooking} setCatalogOpen={setCatalogOpen} setCartOpen={setCartOpen} cart={cart} showcaseFeatures={showcaseFeatures} />
+      <TemplateLayout config={config} ui={ui} language={language} setLanguage={setLanguage} startBooking={startBooking} setCatalogOpen={setCatalogOpen} setCartOpen={setCartOpen} cart={cart} map={<TemplateMap location={config.location} language={language} sample/>} contact={<></>} />
 
-      {catalogOpen && (
-        <div className="template-modal-backdrop" role="presentation" onMouseDown={() => setCatalogOpen(false)}>
+      <AnimatedOverlay open={Boolean(catalogOpen)}>{catalogOpen && (
+        <div className="template-modal-backdrop" role="presentation" style={{visibility:selectedItem || bookingItem || cartOpen ? 'hidden' : undefined}} aria-hidden={Boolean(selectedItem || bookingItem || cartOpen)} onMouseDown={() => setCatalogOpen(false)}>
           <section className="template-catalog-modal" role="dialog" aria-modal="true" onMouseDown={(event) => event.stopPropagation()}>
             <header>
               <div><small>{ui.catalog}</small><h2>{ui.catalogTitle}</h2><p>{ui.catalogSelect}</p></div>
@@ -203,8 +210,8 @@ function TemplateSite({ slug }: { slug: string }) {
                   key={item.id}
                   item={item}
                   accent={config.accent}
-                  onView={() => { setCatalogOpen(false); setSelectedItem(item) }}
-                  onAdd={() => { setCatalogOpen(false); addToCart(item) }}
+                  onView={() => setSelectedItem(item)}
+                  onAdd={() => addToCart(item)}
                   onBook={() => { setCatalogOpen(false); startBooking(item) }}
                   language={language}
                   ui={ui}
@@ -213,9 +220,9 @@ function TemplateSite({ slug }: { slug: string }) {
             </div>
           </section>
         </div>
-      )}
+      )}</AnimatedOverlay>
 
-      {selectedItem && (
+      <AnimatedOverlay open={Boolean(selectedItem)}>{selectedItem && (
         <div className="template-modal-backdrop" role="presentation" onMouseDown={() => setSelectedItem(null)}>
           <article className="template-detail-modal" role="dialog" aria-modal="true" onMouseDown={(event) => event.stopPropagation()}>
             <button className="template-modal-close" onClick={() => setSelectedItem(null)}>×</button>
@@ -230,9 +237,9 @@ function TemplateSite({ slug }: { slug: string }) {
               {selectedItem.groupCapacity ? <span>{ui.groupCapacity} · {selectedItem.groupCapacity}</span> : null}
               {selectedItem.employees?.length ? <span>{ui.availableWith} · {selectedItem.employees.join(', ')}</span> : null}
               <div className="template-detail-actions">
-                {selectedItem.appointment ? (
+                {selectedItem.appointment && config.bookingEnabled ? (
                   <button className="template-solid" onClick={() => startBooking(selectedItem)}>{ui.reserve}</button>
-                ) : selectedItem.purchasable !== false ? (
+                ) : !selectedItem.appointment && selectedItem.purchasable !== false && config.cartEnabled ? (
                   <button className="template-solid" onClick={() => addToCart(selectedItem)}>{ui.addToCart}</button>
                 ) : null}
                 <button className="template-outline" onClick={() => setSelectedItem(null)}>{ui.close}</button>
@@ -240,9 +247,9 @@ function TemplateSite({ slug }: { slug: string }) {
             </div>
           </article>
         </div>
-      )}
+      )}</AnimatedOverlay>
 
-      {cartOpen && (
+      <AnimatedOverlay open={Boolean(cartOpen)}>{cartOpen && (
         <div className="template-modal-backdrop cart-backdrop" role="presentation" onMouseDown={() => setCartOpen(false)}>
           <aside className="template-cart-drawer" role="dialog" aria-modal="true" onMouseDown={(event) => event.stopPropagation()}>
             <header>
@@ -267,7 +274,7 @@ function TemplateSite({ slug }: { slug: string }) {
               <strong>{ui.totalPreview} <b>{money(subtotal, language)}</b></strong>
             </div>
             <div className="template-payment-options">
-              <button>Stripe</button><button>ATH Móvil</button>
+              <button className={cartPaymentMethod==='stripe'?'selected':''} onClick={()=>setCartPaymentMethod('stripe')}>Stripe</button><button className={cartPaymentMethod==='ath'?'selected':''} onClick={()=>setCartPaymentMethod('ath')}>ATH Móvil</button>
             </div>
             <button
               className="template-solid template-checkout"
@@ -280,9 +287,9 @@ function TemplateSite({ slug }: { slug: string }) {
             <small className="template-safe-note">{ui.backendPricing}</small>
           </aside>
         </div>
-      )}
+      )}</AnimatedOverlay>
 
-      {bookingItem && (
+      <AnimatedOverlay open={Boolean(bookingItem)}>{bookingItem && (
         <div className="template-modal-backdrop" role="presentation" onMouseDown={() => setBookingItem(null)}>
           <article className="template-booking-modal" role="dialog" aria-modal="true" onMouseDown={(event) => event.stopPropagation()}>
             <button className="template-modal-close" onClick={() => setBookingItem(null)}>×</button>
@@ -308,13 +315,24 @@ function TemplateSite({ slug }: { slug: string }) {
                   <p>{bookingItem.duration ? `${bookingItem.duration} min` : ui.appointment} · {bookingPaymentLabel}</p>
                 </header>
 
+                <section>
+                  <label>{language === 'es' ? 'Selecciona un servicio' : 'Choose a service'}
+                    <select value={bookingItem.id} onChange={event => {
+                      const service = config.items.find(item => item.id === event.target.value && item.appointment)
+                      if (service) startBooking(service)
+                    }}>
+                      {config.items.filter(item => item.appointment).map(item => <option key={item.id} value={item.id}>{item.name}</option>)}
+                    </select>
+                  </label>
+                </section>
+
                 {employeesForBooking.length > 0 && (
                   <section>
                     <strong>1 · {ui.chooseProfessional}</strong>
                     <div className="template-choice-grid">
-                      <button className={selectedEmployee === 'any' ? 'selected' : ''} onClick={() => setSelectedEmployee('any')}>{ui.anyAvailable}</button>
+                      <button className={selectedEmployee === 'any' ? 'selected' : ''} onClick={() => { setSelectedEmployee('any'); setSelectedDate(''); setSelectedTime('') }}>{ui.anyAvailable}</button>
                       {employeesForBooking.map((employee) => (
-                        <button key={employee.id} className={selectedEmployee === employee.name ? 'selected' : ''} onClick={() => setSelectedEmployee(employee.name)}>
+                        <button key={employee.id} className={selectedEmployee === employee.name ? 'selected' : ''} onClick={() => { setSelectedEmployee(employee.name); setSelectedDate(''); setSelectedTime('') }}>
                           {employee.name}<small>{employee.role}</small>
                         </button>
                       ))}
@@ -373,7 +391,7 @@ function TemplateSite({ slug }: { slug: string }) {
 
                 <div className="template-booking-order">
                   <span><b>{ui.service}</b><strong>{bookingItem.name}</strong></span>
-                  <span><b>{ui.professional}</b><strong>{selectedEmployee === 'any' ? ui.anyAvailable : selectedEmployee}</strong></span>
+                  <span><b>{ui.professional}</b><strong>{selectedEmployee === 'any' ? ui.anyAvailable : selectedEmployee || config.shortName}</strong></span>
                   <span><b>{ui.dateTime}</b><strong>{formattedSelectedDate} · {selectedTime}</strong></span>
                   <span><b>{bookingItem.deposit ? ui.depositDue : ui.amountDue}</b><strong>{money(bookingCharge, language)}</strong></span>
                 </div>
@@ -383,13 +401,13 @@ function TemplateSite({ slug }: { slug: string }) {
                   <label><span>{ui.email}</span><input type="email" value={bookingCustomerEmail} onChange={(event)=>setBookingCustomerEmail(event.target.value)} /></label>
                 </div>
 
-                <section className="template-payment-step">
+                {bookingRequiresPayment && <section className="template-payment-step">
                   <strong>{ui.choosePayment}</strong>
                   <div className="template-payment-options booking">
                     <button className={bookingPaymentMethod === 'stripe' ? 'selected' : ''} onClick={() => setBookingPaymentMethod('stripe')}>Stripe</button>
                     <button className={bookingPaymentMethod === 'ath' ? 'selected' : ''} onClick={() => setBookingPaymentMethod('ath')}>ATH Móvil</button>
                   </div>
-                </section>
+                </section>}
 
                 <div className="template-hold">
                   <span>{ui.bookingHold}</span>
@@ -398,7 +416,7 @@ function TemplateSite({ slug }: { slug: string }) {
 
                 <div className="template-booking-actions">
                   <button className="template-outline" onClick={() => setBookingStage('selection')}>{ui.back}</button>
-                  <button className="template-solid" disabled={!bookingCustomerName.trim() || !bookingCustomerEmail.trim()} onClick={verifyTemplatePayment}>{ui.simulatePayment}</button>
+                  <button className="template-solid" disabled={!bookingCustomerName.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(bookingCustomerEmail.trim())} onClick={verifyTemplatePayment}>{bookingRequiresPayment?ui.simulatePayment:ui.continueNoPayment}</button>
                 </div>
                 <small className="template-safe-note">{ui.noExternalRecord}</small>
               </div>
@@ -439,7 +457,7 @@ function TemplateSite({ slug }: { slug: string }) {
             )}
           </article>
         </div>
-      )}
+      )}</AnimatedOverlay>
 
     </div>
   )

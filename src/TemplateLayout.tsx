@@ -3,23 +3,26 @@ import type { TemplateConfig, TemplateItem } from './templateData'
 import type { TemplateLanguage, TemplateUi } from './templateI18n'
 import './template-preview.css'
 import './template-polish.css'
+import './template-evolution.css'
+import './template-glass.css'
+import TemplateHighlights from './TemplateHighlights'
 
 type Props = {
  config: TemplateConfig; ui: {[K in keyof TemplateUi]: TemplateUi[K] extends string ? string : TemplateUi[K]}; language: TemplateLanguage; setLanguage: (language: TemplateLanguage) => void;
- startBooking: (item?: TemplateItem) => void; setCatalogOpen: (open: boolean) => void; setCartOpen: (open: boolean) => void;
- cart: Array<{quantity: number}>; showcaseFeatures: string[]; contact?: ReactNode; footer?: ReactNode; extraSections?: ReactNode;
+ startBooking: (item?: TemplateItem, employeeId?: string) => void; setCatalogOpen: (open: boolean) => void; setCartOpen: (open: boolean) => void;
+ cart: Array<{quantity: number}>; contact?: ReactNode; map?: ReactNode; footer?: ReactNode; extraSections?: ReactNode;
  catalogEnabled?: boolean; mainClass?: string; sectionOrder?: string[]; logoUrl?: string; locationHref?: string; phoneHref?: string;
 }
 /** The product layout. Demo, Builder and live storefront all render this component. */
-export default function TemplateLayout({config,ui,language,setLanguage,startBooking,setCatalogOpen,setCartOpen,cart,showcaseFeatures,contact,footer,extraSections,catalogEnabled=true,mainClass='',sectionOrder,logoUrl,locationHref,phoneHref}: Props) {
+export default function TemplateLayout({config,ui,language,setLanguage,startBooking,setCatalogOpen,setCartOpen,cart,contact,map,footer,extraSections,catalogEnabled=true,mainClass='',sectionOrder,logoUrl,locationHref,phoneHref}: Props) {
  const [menuOpen,setMenuOpen] = useState(false)
  const sectionStyle = (key:string): CSSProperties | undefined => sectionOrder ? {order:sectionOrder.includes(key)?sectionOrder.indexOf(key)+2:99} : undefined
  return <>      <header className="template-header">
         <a className="template-brand" href="#template-top">{logoUrl ? <img className="cs-template-logo" src={logoUrl} alt={config.shortName}/> : config.shortName}</a>
-        <button className="template-menu-button" onClick={() => setMenuOpen((v) => !v)} aria-expanded={menuOpen}>
+        <button className="template-menu-button" onClick={() => setMenuOpen((v) => !v)} aria-expanded={menuOpen} aria-controls="template-main-nav">
           {ui.menu}
         </button>
-        <nav className={menuOpen ? 'open' : ''}>
+        <nav id="template-main-nav" aria-label={ui.menu} className={menuOpen ? 'open' : ''}>
           {catalogEnabled && <a href="#services" onClick={() => setMenuOpen(false)}>{ui.services}</a>}
           {config.employees.length > 0 && <a href="#team" onClick={() => setMenuOpen(false)}>{ui.team}</a>}
           <a href="#about" onClick={() => setMenuOpen(false)}>{ui.about}</a>
@@ -30,7 +33,6 @@ export default function TemplateLayout({config,ui,language,setLanguage,startBook
             <button className={language === 'en' ? 'active' : ''} onClick={() => setLanguage('en')} aria-pressed={language === 'en'}>EN</button>
             <button className={language === 'es' ? 'active' : ''} onClick={() => setLanguage('es')} aria-pressed={language === 'es'}>ES</button>
           </div>
-          {config.bookingEnabled && <button className="template-outline" onClick={() => startBooking()}>{config.bookingLabel}</button>}
           {config.cartEnabled && (
             <button className="template-cart-button" onClick={() => setCartOpen(true)}>
               {ui.cart} <b>{cart.reduce((sum, line) => sum + line.quantity, 0)}</b>
@@ -49,7 +51,7 @@ export default function TemplateLayout({config,ui,language,setLanguage,startBook
             <span>{config.description}</span>
             <div className="template-hero-actions">
               {config.bookingEnabled && <button className="template-solid large" onClick={() => startBooking()}>{config.bookingLabel}</button>}
-              <button className="template-glass large" onClick={() => setCatalogOpen(true)}>{config.cartEnabled ? ui.exploreCatalog : ui.viewServices}</button>
+              {catalogEnabled && <button className="template-glass large" onClick={() => setCatalogOpen(true)}>{config.cartEnabled ? ui.exploreCatalog : ui.viewServices}</button>}
             </div>
           </div>
           <aside className="template-hero-meta">
@@ -57,15 +59,6 @@ export default function TemplateLayout({config,ui,language,setLanguage,startBook
             {config.hours && <div><small>{ui.hours}</small><strong>{config.hours}</strong></div>}
             {config.phone && <div><small>{ui.call}</small>{phoneHref ? <a href={phoneHref}>{config.phone}</a> : <strong>{config.phone}</strong>}</div>}
           </aside>
-        </section>
-
-        <section className="template-feature-strip">
-          {showcaseFeatures.map((feature, index) => (
-            <div key={feature}>
-              <span>0{index + 1}</span>
-              <strong>{feature}</strong>
-            </div>
-          ))}
         </section>
 
         {catalogEnabled && <section className="template-section template-catalog" id="services" style={sectionStyle("catalog")}>
@@ -76,10 +69,7 @@ export default function TemplateLayout({config,ui,language,setLanguage,startBook
             </div>
             <p>{ui.catalogIntro}</p>
           </div>
-          <div className="template-catalog-gateway">
-            <div><small>{ui.catalogAvailable}</small><strong>{config.items.length} {ui.productsServices}</strong><span>{ui.catalogHint}</span></div>
-            <button className="template-solid" onClick={() => setCatalogOpen(true)}>{ui.viewCatalog}</button>
-          </div>
+          <TemplateHighlights items={config.items} language={language}/>
         </section>
 
         }
@@ -99,9 +89,9 @@ export default function TemplateLayout({config,ui,language,setLanguage,startBook
                   <small>{employee.role}</small>
                   <h3>{employee.name}</h3>
                   <div>{employee.services.map((service) => <b key={service}>{service}</b>)}</div>
-                  <button onClick={() => {
+                  <button disabled={!config.bookingEnabled || !config.items.some(item=>item.appointment && item.employees?.some(name=>employee.name.startsWith(name)))} onClick={() => {
                     const matching = config.items.find((item) => item.appointment && item.employees?.some((name) => employee.name.startsWith(name)))
-                    if (matching) startBooking(matching)
+                    if (matching) startBooking(matching,employee.id)
                   }}>{ui.viewAvailability}</button>
                 </article>
               ))}
@@ -132,24 +122,6 @@ export default function TemplateLayout({config,ui,language,setLanguage,startBook
           ))}
         </section>
 
-        {(config.bookingEnabled || config.cartEnabled) && <section className="template-booking-showcase">
-          <div>
-            <small>{ui.livePreview}</small>
-            <h2>{config.bookingEnabled ? ui.bookingPreview : ui.commercePreview}</h2>
-            <p>{ui.interactHint}</p>
-          </div>
-          <div className="template-showcase-card">
-            <span className="template-pulse" />
-            <small>{ui.templateMode}</small>
-            <strong>{config.bookingEnabled ? ui.availabilityReady : ui.commerceReady}</strong>
-            <div>
-              {config.bookingEnabled && <button className="template-solid" onClick={() => startBooking()}>{config.bookingLabel}</button>}
-              {config.cartEnabled && <button className="template-outline" onClick={() => setCartOpen(true)}>{ui.openCart}</button>}
-            </div>
-          </div>
-        </section>
-
-        }
         {extraSections}
         <section className="template-contact" id="contact" style={sectionStyle("contact")}>
           <div>
@@ -167,14 +139,8 @@ export default function TemplateLayout({config,ui,language,setLanguage,startBook
             <i />
             <b>{config.location}</b>
           </div>
-          <div className="template-function-showcase">
-            <article><small>WHATSAPP</small><strong>Chat directo</strong><span>Ejemplo de acceso rápido al número configurado.</span></article>
-            <article><small>CALL</small><strong>Llamada con un toque</strong><span>El teléfono del negocio abre la función de llamadas.</span></article>
-            <article><small>SOCIAL</small><strong>Instagram · Facebook · X</strong><span>Las redes activas aparecen como enlaces públicos.</span></article>
-            <article><small>FORM</small><strong>Formulario de contacto</strong><span>El visitante puede enviar un mensaje al email del negocio.</span></article>
-            <article><small>MAPS</small><strong>Google Maps</strong><span>La ubicación configurada se enlaza desde la página.</span></article>
-            <article><small>CALENDAR</small><strong>Google Calendar</strong><span>Ejemplo de sincronización con disponibilidad y reservaciones.</span></article>
-          </div></>}
+</>}
+          {map}
         </section>
       </main>
 
