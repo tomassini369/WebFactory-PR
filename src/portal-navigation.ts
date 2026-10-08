@@ -8,7 +8,7 @@ export function navigatePortal(href:string) {
   else window.location.assign(href)
 }
 
-const supportedPath=(path:string)=>/^\/(?:client-admin\/?|webfactory-admin\/?|templates\/?)?$/.test(path)
+const supportedPath=(path:string)=>/^\/(?:client-admin\/?|webfactory-admin\/?|templates(?:\/[a-z0-9-]+)?\/?)?$/.test(path)
 export function usePortalNavigation() {
   const [pathname,setPathname]=useState(window.location.pathname)
   const [pending,startTransition]=useTransition()

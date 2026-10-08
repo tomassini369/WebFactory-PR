@@ -1,4 +1,5 @@
 import PortalLoadingCard from './PortalLoadingCard'
+import './public-route-loading.css'
 import PortalReturnHome from './PortalReturnHome'
 import {usePortalNavigation} from './portal-navigation'
 import { Suspense, lazy, useEffect, useState, type ReactNode } from 'react'
@@ -26,8 +27,10 @@ const ShadcnPreview = __WF_PREVIEW_REVIEW__ ? lazy(() => import('./ShadcnPreview
 
 const TemplateParityReview = __WF_PREVIEW_REVIEW__ ? lazy(() => import('./TemplateParityReview')) : null
 
-function RouteView({children}:{children:ReactNode}){
-  return <Suspense fallback={<PortalLoadingCard/>}>{children}</Suspense>
+function RouteView({children,portal=false}:{children:ReactNode;portal?:boolean}){
+  const es=document.documentElement.lang==='es'
+  const fallback=portal?<PortalLoadingCard lang={es?'es':'en'}/>:<div className="public-route-loading" aria-busy="true"><div aria-hidden="true"><span/><span/></div><p role="status">{es?'Cargando página…':'Loading page…'}</p></div>
+  return <Suspense fallback={fallback}>{children}</Suspense>
 }
 
 type Language = 'es' | 'en'
@@ -69,13 +72,13 @@ function App(){
   if (ShadcnPreview && /^\/shadcn-preview\/?$/.test(pathname)) return <RouteView><ShadcnPreview/></RouteView>
   if (TemplateParityReview && /^\/template-parity-preview\/?$/.test(pathname)) return <RouteView><TemplateParityReview/></RouteView>
   if (PreviewReviewPage && /^\/preview-review\/?$/.test(pathname)) return <RouteView><PreviewReviewPage lang={lang} setLang={setLang} /></RouteView>
-  if (/^\/chatgpt\/?$/.test(pathname)) return <RouteView><MfaGate><ChatgptControlPage lang={lang} setLang={setLang} /></MfaGate></RouteView>
-  if (identityRecoveryRoute) return <RouteView><PasswordRecoveryPage /></RouteView>
+  if (/^\/chatgpt\/?$/.test(pathname)) return <RouteView portal><MfaGate><ChatgptControlPage lang={lang} setLang={setLang} /></MfaGate></RouteView>
+  if (identityRecoveryRoute) return <RouteView portal><PasswordRecoveryPage /></RouteView>
   if (privacyRoute) return <RouteView><LegalPage kind="privacy" /></RouteView>
   if (termsRoute) return <RouteView><LegalPage kind="terms" /></RouteView>
   if (refundRoute) return <RouteView><LegalPage kind="refund" /></RouteView>
-  if (webFactoryAdminRoute || identityInviteRoute) return <RouteView><MfaGate><WebFactoryAdminPage /></MfaGate></RouteView>
-  if (clientAdminRoute) return <RouteView><MfaGate><ClientAdminPage /></MfaGate></RouteView>
+  if (webFactoryAdminRoute || identityInviteRoute) return <RouteView portal><MfaGate><WebFactoryAdminPage /></MfaGate></RouteView>
+  if (clientAdminRoute) return <RouteView portal><MfaGate><ClientAdminPage /></MfaGate></RouteView>
   if (clientSiteMatch) return <RouteView><ClientStorefront slug={decodeURIComponent(clientSiteMatch[1])} /></RouteView>
   if (paymentLinkMatch) return <RouteView><PaymentLinkPage slug={decodeURIComponent(paymentLinkMatch[1])} token={decodeURIComponent(paymentLinkMatch[2])} /></RouteView>
   if (trackingMatch) return <RouteView><OrderTrackingPage token={decodeURIComponent(trackingMatch[1])} /></RouteView>

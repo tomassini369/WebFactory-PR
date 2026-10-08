@@ -6,6 +6,8 @@ const browser=await chromium.launch();const page=await browser.newPage();const o
 let documents=0;const errors=[];let signedIn=false
 page.on('request',req=>{if(req.resourceType()==='document'&&req.frame()===page.mainFrame())documents++})
 page.on('pageerror',e=>errors.push(e.message))
+// Cold/slow public chunks must never display the authentication skeleton.
+await page.route('**/src/TemplatesPage.tsx*',async route=>{await new Promise(r=>setTimeout(r,1200));await route.continue()})
 // Delay real presentation reads; credentials and business writes never leave this fixture.
 await page.route('**/.netlify/functions/**',async route=>{
  const request=route.request(),name=new URL(request.url()).pathname.split('/').at(-1)
@@ -30,12 +32,27 @@ try{
   assert.equal(await page.locator('#app-manifest').getAttribute('href'),'/manifest.webmanifest')
   await page.evaluate(()=>{window.__stopNavigationFrames=true});const frames=await page.evaluate(()=>window.__navigationFrames)
   assert(frames.length>0);assert(frames.every(frame=>Number(frame.opacity)>0&&!frame.circle),'No hidden root or circular loading interstitial')
-  await page.goto(origin+'/templates');await page.locator('.templates-page').waitFor()
+  await page.goto(origin+'/templates');await page.locator('.public-route-loading').waitFor()
+  assert.equal(await page.locator('.portal-loading-card').count(),0,'Templates initial load is not an authentication screen')
+  assert.equal(await page.locator('.wf-adaptive-logo-slot').count(),1,'Only the public header has a platform logo')
+  await page.locator('.templates-page').waitFor()
   const home=page.locator('.header .portal-return-home');assert(await home.isVisible());const box=await home.boundingBox();assert(box.width>=44&&box.height>=44&&box.x>=0&&box.x+box.width<=width)
   assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'Template header fits narrow screens')
   await home.click();await page.locator('.wf-h-login').waitFor()
   await page.goBack();await page.locator('.templates-page').waitFor();await page.goForward();await page.locator('.wf-h-login').waitFor()
-  await page.goto(origin+'/templates/brisa-cocina');const demoHome=page.locator('.wf-template-notice .portal-return-home');await demoHome.waitFor();assert(await demoHome.isVisible());await demoHome.click();await page.locator('.wf-h-login').waitFor()
+  await page.goto(origin+'/templates');await page.locator('.templates-page').waitFor()
+  const templateDocuments=documents
+  await page.evaluate(()=>{window.__templateFrames=[];window.__stopTemplateFrames=false;const sample=()=>{if(location.pathname.startsWith('/templates'))window.__templateFrames.push({portal:!!document.querySelector('.portal-loading-card'),logos:document.querySelectorAll('.wf-adaptive-logo-slot,img[alt="WebFactory PR"]').length,rootOpacity:Number(getComputedStyle(document.querySelector('#root')).opacity)});if(!window.__stopTemplateFrames)requestAnimationFrame(sample)};requestAnimationFrame(sample)})
+  await page.locator('.template-card-actions a[href="/templates/brisa-cocina"]').click()
+  const demoHome=page.locator('.wf-template-notice .portal-return-home');await demoHome.waitFor();assert(await demoHome.isVisible())
+  await page.waitForFunction(()=>!document.documentElement.hasAttribute('data-wf-platform-theme'))
+  await page.locator('.wf-template-notice a[href="/templates"]').click();await page.locator('.templates-page').waitFor()
+  await page.waitForFunction(()=>document.documentElement.getAttribute('data-wf-platform-theme')==='true')
+  assert.equal(documents,templateDocuments,'Library/demo/return must not reload the document')
+  await page.locator('.template-card-actions a[href="/templates/brisa-cocina"]').click();await demoHome.waitFor();await demoHome.click();await page.locator('.wf-h-login').waitFor()
+  assert.equal(documents,templateDocuments,'Demo Home must navigate in-app')
+  await page.evaluate(()=>{window.__stopTemplateFrames=true});const templateFrames=await page.evaluate(()=>window.__templateFrames)
+  assert(templateFrames.every(frame=>!frame.portal&&frame.logos<=1&&frame.rootOpacity>0),'Public template transitions must not expose login loading, duplicate logos or an invisible root')
   console.log('PASS smooth portal entry/return, history and visible template Home:',width,theme)
  }
  await page.emulateMedia({reducedMotion:'reduce'});await page.goto(origin+'/client-admin');await page.locator('input[type=email]').waitFor();assert.equal(await page.locator('.ca-login').evaluate(el=>getComputedStyle(el).animationName),'none')
