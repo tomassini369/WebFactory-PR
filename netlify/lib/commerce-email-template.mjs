@@ -1,8 +1,10 @@
+import { renderReceiptEmail } from "./receipt-email-template.mjs";
 import { emailBrand, emailButton, emailFields, emailParagraph, renderEmailLayout } from './email-design.mjs';
 import { publicBaseUrl } from './platform-utils.mjs';
 
 const money = (cents, es) => new Intl.NumberFormat(es ? 'es-PR' : 'en-US', {style:'currency',currency:'USD'}).format(Number(cents || 0) / 100);
 export function renderCommerceEmail(site, record, {audience = 'customer', receipt = false} = {}) {
+  if (receipt && audience === 'customer') return renderReceiptEmail(site,record);
   const language = record.language || site.settings?.locale || 'en', es = language === 'es', brand = emailBrand(site, language);
   const title = receipt ? (es ? 'Tu recibo' : 'Your receipt') : audience === 'business' ? (es ? 'Nuevo pedido confirmado' : 'New confirmed order') : (es ? 'Tu pedido está confirmado' : 'Your order is confirmed');
   const payment = record.paymentStatus === 'due' ? (es ? 'Pago pendiente en el negocio' : 'Payment due at the business') : record.paymentStatus === 'paid_in_person' || record.paymentMethod === 'manual_ath' ? (es ? 'Pago registrado por el negocio' : 'Payment recorded by the business') : record.paymentStatus === 'paid' ? (es ? 'Pago confirmado' : 'Payment confirmed') : receipt ? (es ? 'Recibo registrado por el negocio' : 'Receipt recorded by the business') : (es ? 'Consulta el estado del pago con el negocio' : 'Contact the business for payment status');

@@ -3,7 +3,7 @@ import { findStockReservation } from '../lib/inventory-archive.mjs';
 import { applyCustomerTransaction } from '../lib/customer-transactions.mjs';
 import { applyStockOperation,projectStockMovements } from '../lib/inventory-operations.mjs';
 import { withBookingLock } from "../lib/booking-lock.mjs";
-import { sendBookingConfirmationEmails } from "../lib/client-notifications.mjs";
+import { sendCommerceConfirmationEmails } from "../lib/client-notifications.mjs";
 import crypto from "node:crypto";
 import { clientCommerceStore, clientEventStore, commerceKey, getClientSite } from "../lib/client-store.mjs";
 import { syncBookingCalendar } from "../lib/booking-calendar.mjs";
@@ -107,7 +107,7 @@ async function finalizeTransaction(event) {
   await clientCommerceStore().setJSON(finalKey, record);
   await clientCommerceStore().setJSON(key, record);
 
-  record = await sendBookingConfirmationEmails(site,record,async value => {
+  record = await sendCommerceConfirmationEmails(site,record,async value => {
     await clientCommerceStore().setJSON(finalKey,value);
     await clientCommerceStore().setJSON(key,value);
   });

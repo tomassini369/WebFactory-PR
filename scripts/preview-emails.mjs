@@ -15,14 +15,17 @@ await copyFile(new URL('../assets/webfactory-pr-logo.png',import.meta.url),resol
 const samples=[];
 for(const language of ['es','en']){
   for(const [slug,name,primary,secondary] of [['barber-demo','Northline Demo','#182A36','#FFCA70'],['beauty-demo','Aura Demo','#402B53','#D9B8F0'],['fitness-demo','Pulse Demo','#142926','#92F0B6']]){
-    const site={siteId:slug,slug,business:{name,nameEs:name,nameEn:name,email:'business@example.invalid',phone:'787-555-0100',address:'Dirección de prueba / Test address',mapsUrl:'https://example.invalid/maps'},design:{primary,secondary},settings:{locale:language,timezone:'America/Puerto_Rico'},employees:[{id:'test',name:'Profesional Demo'}]};
+    await writeFile(resolve(directory,`${slug}-logo.svg`),`<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96"><rect width="96" height="96" rx="20" fill="${secondary}"/><text x="48" y="65" text-anchor="middle" font-family="Arial" font-size="52" fill="${primary}">${name[0]}</text></svg>`);
+    const site={siteId:slug,slug,business:{name,nameEs:name,nameEn:name,logoUrl:`https://preview.example.invalid/${slug}-logo.svg`,email:'business@example.invalid',phone:'787-555-0100',address:'Dirección de prueba / Test address',mapsUrl:'https://example.invalid/maps'},design:{primary,secondary},settings:{locale:language,timezone:'America/Puerto_Rico'},employees:[{id:'test',name:'Profesional Demo'}]};
     const record={language,kind:'booking',transactionId:'DEMO-ORDER-001',bookingCode:'DEMO0001',calendarToken:'preview-fixture-only',paymentStatus:'due',start:'2026-10-12T14:00:00Z',end:'2026-10-12T14:30:00Z',employeeId:'test',customer:{name:'Cliente Demo',email:'customer@example.invalid'},items:[{name:language==='es'?'Servicio de prueba':'Test service',quantity:1,unitAmount:2500}],amountTotal:2788};
     const add=(type,mail)=>samples.push({id:`${slug}-${language}-${type}`,name:`${name} · ${language.toUpperCase()} · ${type}`,mail});
     for(const change of ['confirmed','rescheduled','cancelled','reminder'])add(`booking-${change}`,renderBookingEmail(site,record,{change,hours:24}));
     add('booking-business',renderBookingEmail(site,record,{audience:'business'}));
     add('order',renderCommerceEmail(site,record));
     add('order-business',renderCommerceEmail(site,record,{audience:'business'}));
-    add('receipt',renderCommerceEmail(site,{...record,receiptId:'DEMO-RECEIPT-001',items:[{name:'Servicio Demo',quantity:1,amount:2500}],total:2788,tax:288},{receipt:true}));
+    const receipt={...record,receiptId:'DEMO-RECEIPT-001',createdAt:'2026-10-08T20:00:00Z',paymentStatus:'paid',paymentMethod:'stripe',items:[{name:language==='es'?'Servicio Demo':'Demo service',quantity:1,amount:2500}],subtotal:2500,discounts:0,total:2788,tax:288,tip:0};
+    add('receipt',renderCommerceEmail(site,receipt,{receipt:true}));
+    add('booking-paid-receipt',renderBookingEmail(site,{...record,paymentStatus:'paid'},{receipt}));
     add('review',renderReviewEmail({...site,reviewSettings:{postalAddress:'Dirección de prueba'}},{reviewRequestId:'demo-review',customer:record.customer,reviewUrl:'https://example.invalid/review'},'https://example.invalid/unsubscribe'));
     add('contact',renderContactEmail(site,{language,name:'Cliente Demo',email:'customer@example.invalid',phone:'787-555-0100',message:'Mensaje ficticio para revisar el diseño. / Fictional message to preview the design.'}));
   }
@@ -31,7 +34,7 @@ for(const language of ['es','en']){
 samples.push({id:'platform-security',name:'WebFactory · ES/EN · security',mail:renderSecurityResetEmail({requestId:'DEMO-AUDIT-001',at:'2026-10-03T03:45:27Z'})});
 const previews={};
 for(const sample of samples){
-  const html=sample.mail.html.replace('https://preview.example.invalid/assets/webfactory-pr-logo.png','webfactory-pr-logo.png').replace('<meta charset="utf-8">','<meta charset="utf-8"><meta name="robots" content="noindex,nofollow">');
+  const html=sample.mail.html.replace('https://preview.example.invalid/assets/webfactory-pr-logo.png','webfactory-pr-logo.png').replaceAll('https://preview.example.invalid/','').replace('<meta charset="utf-8">','<meta charset="utf-8"><meta name="robots" content="noindex,nofollow">');
   previews[sample.id]=html;
   await writeFile(resolve(directory,`${sample.id}.html`),html);await writeFile(resolve(directory,`${sample.id}.txt`),sample.mail.text);
 }
