@@ -36,7 +36,7 @@ try{
   await page.goto(origin+'/client-admin');await page.locator('input[type=email]').waitFor()
   if(shotDir){await page.waitForTimeout(450);await page.screenshot({path:`${shotDir}/login-${width}-${theme}.png`,fullPage:true})}
   signedIn=true;await page.reload();await page.locator('.ca-dashboard').waitFor()
-  const nav=page.locator('.ca-sidebar nav')
+  const nav=page.locator('.wf-sidebar-frame nav')
   if(width===390)await page.locator('.ca-mobile-menu-toggle').click()
   const payments=nav.getByRole('button',{name:'Payments',exact:true,includeHidden:true})
   await payments.evaluate(button=>button.closest('details')?.setAttribute('open',''))
