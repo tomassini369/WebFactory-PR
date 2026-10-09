@@ -48,6 +48,11 @@ try{
   await page.waitForFunction(()=>document.querySelector('.wf-original-receipt')?.dataset.printState==='completed')
   await dialog.screenshot({path:`${shots}/template-${width}-${theme}-${lang}.png`})
   await page.keyboard.press('Escape');await dialog.waitFor({state:'detached'})
+  await page.locator('.template-catalog-card').filter({has:page.locator('.template-solid')}).first().locator('.template-solid').click()
+  assert.equal(await page.locator('.template-cart-lines article').count(),1)
+  assert.match(await page.locator('.template-cart-lines article span').innerText(),/(?:Qty|Cant\.) 1/)
+  assert.match(await page.locator('.template-cart-summary > strong').innerText(),/22[.,]00/)
+  await page.keyboard.press('Escape')
   assert.equal(writes.length,0,'Template demo must never post payments, emails or orders')
   // Real route must survive React StrictMode and use saved totals, not catalog prices.
   await page.goto(origin+'/sites/fixture?checkout=success&receipt='+ 'a'.repeat(32)+'&tracking='+'b'.repeat(32))
@@ -88,6 +93,11 @@ try{
  await page.evaluate(()=>document.documentElement.setAttribute('data-wf-theme','light'));await page.waitForTimeout(50);assert.equal(await frame.locator('html').getAttribute('data-wf-theme'),'light')
  assert.notEqual(await frame.locator('.wf-original-receipt').evaluate(el=>getComputedStyle(el).backgroundColor),darkBackground)
  await page.screenshot({path:`${shots}/builder.png`})
+ await frame.locator('.wf-buyer-receipt > header button').click()
+ await frame.locator('.template-catalog-card .template-solid').first().click()
+ assert.equal(await frame.locator('.cs-cart-line').count(),1)
+ assert.match(await frame.locator('.cs-cart-line').innerText(),/× 1/)
+ assert.match(await frame.locator('.cs-cart-lines > strong').innerText(),/12[.,]34/)
  console.log('PASS Builder iframe demo and synchronized theme')
  await page.close()
 }finally{await browser.close();await server.close()}

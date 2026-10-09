@@ -115,7 +115,7 @@ export default function ClientStorefront({slug,previewSite,previewLanguage='en'}
         const result=await response.json()
         if(!active)return
         if(!response.ok)throw new Error('receipt-unavailable')
-        if(result.status==='ready'){setBuyerReceipt(result.receipt);setReceiptTimeZone(result.timeZone);setReceiptStatus('');return}
+        if(result.status==='ready'){setCart([]);setRemoved(null);setBuyerReceipt(result.receipt);setReceiptTimeZone(result.timeZone);setReceiptStatus('');return}
         if(result.status==='failed'){setReceiptStatus(lang==='es'?'Pago no confirmado. Consulta al negocio antes de intentar otro cobro.':'Payment not confirmed. Contact the business before trying another payment.');return}
         if(++attempts<30){timer=window.setTimeout(poll,2000);return}
         setReceiptStatus(lang==='es'?'El pago sigue en verificación. Consulta tu correo o contacta al negocio.':'Payment is still being verified. Check your email or contact the business.')
@@ -187,7 +187,7 @@ export default function ClientStorefront({slug,previewSite,previewLanguage='en'}
       const selected=booking?site?.catalog.find(item=>item.id===booking.serviceId):null
       const items=selected?[{name:itemName(selected),quantity:1,unitAmount:Math.round(selected.price*100),amount:Math.round(selected.price*100)}]:cartItems.map(({line,item})=>({name:itemName(item!),quantity:line.quantity,unitAmount:Math.round(item!.price*100),amount:Math.round(item!.price*100)*line.quantity}))
       if(!site||!items.length)return
-      setBuyerReceipt(demoReceipt(businessName,items,paymentProvider,customer,site.business.logoUrl));setCheckoutOpen(false);setBooking(null);setError('');return
+      setBuyerReceipt(demoReceipt(businessName,items,paymentProvider,customer,site.business.logoUrl));if(!booking){setCart([]);setRemoved(null)}setCheckoutOpen(false);setBooking(null);setError('');return
     }
     if(!site||busy||(!booking&&cartItems.length===0))return
     setRemoved(null)

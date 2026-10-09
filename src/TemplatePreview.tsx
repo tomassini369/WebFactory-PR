@@ -287,7 +287,7 @@ function TemplateSite({ slug }: { slug: string }) {
             <button
               className="template-solid template-checkout"
               disabled={cart.length === 0}
-              onClick={() => { setCheckoutComplete(true); setCartOpen(false); setBuyerReceipt(demoReceipt(config.name, cart.map(({item,quantity})=>({name:item.name,quantity,unitAmount:Math.round(item.price*100),amount:Math.round(item.price*100)*quantity})), cartPaymentMethod)) }}
+              onClick={() => { setCheckoutComplete(true); setCartOpen(false); setBuyerReceipt(demoReceipt(config.name, cart.map(({item,quantity})=>({name:item.name,quantity,unitAmount:Math.round(item.price*100),amount:Math.round(item.price*100)*quantity})), cartPaymentMethod)); setCart([]); setRemoved(null) }}
             >
               {ui.templateCheckout}
             </button>
