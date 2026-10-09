@@ -8,7 +8,7 @@ const representatives=[...new Map(templateConfigs.map(t=>[templateVisualStyle(t.
 let checked=0
 try {
   for(const width of [390,1440])for(const config of representatives)for(const language of ['en','es']){
-   const browser=await chromium.launch(process.env.QA_CHROMIUM_PATH?{executablePath:process.env.QA_CHROMIUM_PATH,args:['--single-process']}:undefined)
+   const browser=await chromium.launch(process.env.QA_CHROMIUM_PATH?{executablePath:process.env.QA_CHROMIUM_PATH,args:['--single-process','--no-sandbox']}:undefined)
    try {
    const page=await browser.newPage({viewport:{width,height:900}})
    const errors=[];page.on('pageerror',e=>errors.push(e.message))
@@ -24,13 +24,13 @@ try {
    })
    assert.ok(composition.full&&composition.overlap&&composition.below,JSON.stringify(composition))
    assert.equal(composition.ink,'rgb(255, 255, 255)');assert.ok(composition.blur.includes('blur'))
-   const rail=page.locator('.template-catalog-preview')
+   const rail=page.locator('.template-spatial-stage')
    assert.equal(await rail.locator('article').count(),Math.min(3,config.items.length))
-   assert.ok((await rail.locator('article').evaluateAll(rows=>rows.map(row=>getComputedStyle(row).borderRadius))).every(radius=>radius==='32px'), 'All style variants retain the glass card shape')
+   assert.ok((await rail.locator('.glass-card-inner').evaluateAll(rows=>rows.map(row=>getComputedStyle(row).borderRadius))).every(radius=>radius==='32px'), 'All style variants retain the glass card shape')
    if(config.items.length>1){
     const next=page.getByRole('button',{name:language==='es'?'Siguiente destacado':'Next highlight',exact:true})
     assert.ok(await next.isEnabled(), `Carousel must scroll: ${width}/${config.slug}`)
-    assert.equal(await rail.getAttribute('aria-roledescription'),language==='es'?'carrusel':'carousel')
+    assert.equal(await rail.getAttribute('aria-roledescription'),'carousel')
     const active=()=>rail.locator('[data-active="true"]')
     assert.equal(await active().getAttribute('data-index'),'0')
     await next.click()

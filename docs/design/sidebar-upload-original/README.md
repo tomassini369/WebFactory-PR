@@ -14,4 +14,8 @@ Follow-up destination repair: the existing `LocationEditor` is now mounted for t
 
 `scripts/browser-portal-menu-destinations-smoke.mjs` exercises eight viewport/theme/language combinations with isolated writes: location form, unsaved-draft cancellation, save payload/feedback, selected-tab state, actual Builder navigation and inactive-plan gating. It is included in CI.
 
+The earlier remote CI run exposed obsolete `.template-catalog-preview` selectors in the browser template workspace test after restoration of the original carousel. Those assertions now target `.template-highlights`, retain item-count and demo/Builder style parity checks, and pass all 36 local library and demo/Builder cases. The application carousel code is unchanged by this test repair.
+
+The glass browser smoke now checks the actual `.template-spatial-stage` region and original `.glass-card-inner` corners, rather than the removed outer card. All 16 composition cases and all 16 Chromium spatial-carousel cases pass locally. The functional test checks that highlights do not duplicate purchase/booking controls and captures catalog scroll position at the actual activation event, after Playwright's automatic button visibility adjustment. WebKit and the complete remote CI suite remain subject to CI verification.
+
 QA uses isolated accounts and stubbed requests, never real credentials or business mutations. The workspace smoke checks both dashboards, five screen sizes (including short landscape), two themes, languages, 74/240 widths, search, original blur/nav height, draft cancellation/acceptance, section persistence, magnification/tooltips and logout failure/success. Original receipt/cart regression smoke is retained.

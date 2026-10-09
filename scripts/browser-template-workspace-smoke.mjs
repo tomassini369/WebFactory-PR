@@ -7,7 +7,7 @@ const origin='http://127.0.0.1:5188'
 const {templateConfigs,templateVisualStyle}=await server.ssrLoadModule('/src/templateData.ts')
 const {localizeTemplate}=await server.ssrLoadModule('/src/templateI18n.ts')
 const representatives=[...new Map(templateConfigs.map(t=>[templateVisualStyle(t.category),t])).values()]
-const launch=()=>chromium.launch(process.env.QA_CHROMIUM_PATH?{executablePath:process.env.QA_CHROMIUM_PATH,args:['--single-process']}:undefined)
+const launch=()=>chromium.launch(process.env.QA_CHROMIUM_PATH?{executablePath:process.env.QA_CHROMIUM_PATH,args:['--single-process','--no-sandbox']}:undefined)
 async function geometry(page,selector){return page.locator(selector).evaluateAll(elements=>elements.filter(e=>e.getBoundingClientRect().width>0).map(e=>{const r=e.getBoundingClientRect();return {text:e.textContent,width:r.width,height:r.height}}))}
 async function noOverflow(page,label){assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),`${label}: horizontal overflow`)}
 let checked=0
@@ -49,7 +49,7 @@ try{
    await noOverflow(page,`demo ${config.slug}/${width}`)
    for(const box of await geometry(page,'.template-languages button,.template-menu-button,.template-cart-button'))assert.ok(box.width>=43.5&&box.height>=43.5,`demo target ${config.slug}/${width}: ${JSON.stringify(box)}`)
    if(width<768){await page.locator('.template-menu-button').click();assert.equal(await page.locator('.template-menu-button').getAttribute('aria-expanded'),'true');await page.locator('#template-main-nav a').first().click();assert.equal(await page.locator('.template-menu-button').getAttribute('aria-expanded'),'false')}
-   assert.equal(await page.locator('.template-catalog-preview article').count(),Math.min(3,config.items.length))
+   assert.equal(await page.locator('.template-highlights article').count(),Math.min(3,config.items.length))
    if(process.env.QA_SCREENSHOTS&&width===390)await page.screenshot({path:`/tmp/template-hero-${templateVisualStyle(config.category)}.png`})
    if(config.items.length){
     await page.locator('.template-hero-actions .template-glass').click()
@@ -67,7 +67,7 @@ try{
     if(config.bookingEnabled){await page.locator('.template-hero-actions .template-solid').click();await page.locator('.template-booking-modal').waitFor();await page.locator('.template-booking-modal .template-modal-close').click()}
     if(process.env.QA_SCREENSHOTS&&width===390){await page.locator('#services').scrollIntoViewIfNeeded();await page.screenshot({path:`/tmp/template-catalog-${templateVisualStyle(config.category)}.png`})}
    }
-   const selectors=['.template-hero','.template-hero>img','.template-hero-content','.template-hero-content h1','.template-catalog-preview']
+   const selectors=['.template-hero','.template-hero>img','.template-hero-content','.template-hero-content h1','.template-highlights']
    const readStyle=e=>{const c=getComputedStyle(e);return {display:c.display,columns:c.gridTemplateColumns,fontSize:c.fontSize,position:c.position,borderRadius:c.borderRadius}}
    const demoStyles=[]
    if(width!==320)for(const selector of selectors)demoStyles.push(await page.locator(selector).evaluate(readStyle))
@@ -83,7 +83,7 @@ try{
    assert.equal(await frame.locator('.template-site').evaluate(e=>e.style.getPropertyValue('--template-accent')),config.accent)
    await noOverflow(page,`builder ${config.slug}/${width}`)
    assert.ok(await frame.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'iframe overflow')
-   assert.equal(await frame.locator('.template-catalog-preview article').count(),Math.min(3,config.items.length))
+   assert.equal(await frame.locator('.template-highlights article').count(),Math.min(3,config.items.length))
    assert.equal(await frame.locator('.template-location-map iframe').count(),1,'Builder displays configured map')
    for(const selector of ['.template-feature-strip','.template-catalog-gateway','.template-booking-showcase'])assert.equal(await frame.locator(selector).count(),0)
    const purchasable=config.items.find(item=>!item.appointment&&item.purchasable!==false)

@@ -11,7 +11,7 @@ await server.listen()
 let checked=0
 try{
  for(const engine of process.env.QA_SKIP_WEBKIT?[chromium]:[chromium,webkit]){
- const browser=await engine.launch(engine===chromium&&process.env.QA_CHROMIUM_PATH?{executablePath:process.env.QA_CHROMIUM_PATH,args:['--single-process']}:undefined)
+ const browser=await engine.launch(engine===chromium&&process.env.QA_CHROMIUM_PATH?{executablePath:process.env.QA_CHROMIUM_PATH,args:['--single-process','--no-sandbox']}:undefined)
  const page=await browser.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message))
  try{for(const width of [320,390,768,1440])for(const theme of ['light','dark'])for(const lang of ['en','es']){
   await page.setViewportSize({width,height:900})

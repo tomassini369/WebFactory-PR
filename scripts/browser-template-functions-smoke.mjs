@@ -21,7 +21,7 @@ try{
    assert.equal(await page.locator('.template-hero-actions .template-solid').count(),config.bookingEnabled?1:0)
    for(const selector of ['.template-function-showcase','.template-feature-strip','.template-catalog-gateway','.template-booking-showcase'])assert.equal(await page.locator(selector).count(),0,'No repeated feature blocks')
    assert.equal(await page.getByRole('button',{name:config.bookingLabel,exact:true}).count(),Number(config.bookingEnabled),'One primary reservation action')
-   assert.equal(await page.locator('.template-catalog-preview button').count(),0,'Highlights do not repeat catalog actions')
+   assert.equal(await page.locator('.template-highlights .template-solid,.template-highlights .template-glass').count(),0,'Highlights do not repeat catalog actions')
    await page.locator('.template-hero-actions .template-glass').click()
    await page.locator('.template-catalog-modal').waitFor()
    for(const item of config.items){
@@ -67,11 +67,14 @@ try{
     await page.locator('.template-hero-actions .template-glass').click()
     const add=page.locator('.template-catalog-card').filter({has:page.getByRole('heading',{name:product.name,exact:true})}).locator('.template-solid')
     await add.scrollIntoViewIfNeeded()
-    const catalogPosition=await page.locator('.template-catalog-modal').evaluate(el=>el.scrollTop)
+    // Playwright may scroll again to expose the button before dispatching the click.
+    // Capture the user's actual position at activation, not before that adjustment.
+    await add.evaluate(button=>button.addEventListener('click',()=>{window.__catalogReturnPosition=button.closest('.template-catalog-modal').scrollTop},{once:true}))
     await add.click()
+    const catalogPosition=await page.evaluate(()=>window.__catalogReturnPosition)
     await page.locator('.template-cart-drawer > header').getByRole('button').click()
     await page.locator('.template-catalog-modal').waitFor({state:'visible'})
-    assert.equal(await page.locator('.template-catalog-modal').evaluate(el=>el.scrollTop),catalogPosition,'Cart returns to the same catalog position')
+    assert.equal(await page.locator('.template-catalog-modal').evaluate(el=>el.scrollTop),catalogPosition,config.slug+'/'+lang+': Cart returns to the same catalog position')
     assert.ok((await page.locator('.template-header .template-cart-button').textContent()).includes('1'),'Cart keeps the item')
     await page.locator('.catalog-close').click()
     await page.locator('.template-header .template-cart-button').click()
