@@ -37,6 +37,8 @@ try{
   assert.equal(await page.getByRole('dialog').locator('h2').textContent(),title)
   await page.keyboard.press('Escape');await page.getByRole('dialog').waitFor({state:'hidden'})
   await page.goto(origin+'/preview-review#styles');await page.locator('.pr-style-review .template-highlights').waitFor()
+  const salesImages=page.locator('.pr-style-review img[src*="/sales-"]');assert.equal(await salesImages.count(),3)
+  await page.waitForFunction(()=>Array.from(document.querySelectorAll('.pr-style-review img[src*="/sales-"]')).every(img=>img.complete&&img.naturalWidth>0))
   assert.ok(await page.locator('.pr-style-review .template-highlights .bottom-pill').isVisible())
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1))
   assert.deepEqual(errors,[])
