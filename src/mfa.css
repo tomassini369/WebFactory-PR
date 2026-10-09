@@ -2,3 +2,9 @@
 html[data-wf-theme=dark] .mfa-screen,html[data-wf-theme=dark] .mfa-panel{--portal-bg:#0c1828;--portal-card:rgba(24,43,64,.9);--portal-text:#e7eff8;--portal-border:#38506b}html[data-wf-theme=dark] .mfa-panel [role=alert]{color:#ffabb7}@supports(backdrop-filter:blur(12px)){.mfa-panel{backdrop-filter:blur(12px)}}
 
 .mfa-authenticator-setup img{display:block;max-width:100%;height:auto;background:#fff;border-radius:12px}.mfa-authenticator-setup input[readonly]{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.85rem}.mfa-panel input[autocomplete="one-time-code"]{letter-spacing:.25em;max-width:240px}
+.mfa-login-card .mfa-panel{margin:14px 0;padding:0;border:0;border-radius:0;background:transparent;color:inherit;box-shadow:none;backdrop-filter:none}
+.mfa-login-card .mfa-panel h2{font-size:26px;line-height:1.15;letter-spacing:-.03em}
+.mfa-login-card .mfa-panel p{color:var(--pg-muted);font-size:15px}
+.mfa-login-card .mfa-panel :is(button,input){min-height:44px}
+.mfa-login-card .mfa-panel [role=alert]{color:#ba243c}
+html[data-wf-theme=dark] .mfa-login-card .mfa-panel [role=alert]{color:#ffabb7}

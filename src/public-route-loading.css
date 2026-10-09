@@ -1,0 +1,10 @@
+/* Public routes never reuse the authentication card or repeat the header logo. */
+.public-route-loading{min-height:240px;padding:40px 24px;color:#17263b;background:#f5f7fa}
+.public-route-loading>div{display:grid;gap:18px;max-width:640px;margin:0 auto}
+.public-route-loading span{display:block;height:32px;border-radius:8px;background:#dce3ec}
+.public-route-loading span:last-child{width:72%;height:72px}
+.public-route-loading p{max-width:640px;margin:20px auto;font-size:14px;opacity:0;animation:public-route-label .2s .8s forwards}
+html[data-wf-theme=dark] .public-route-loading{color:#f1f5fb;background:#0b1220}
+html[data-wf-theme=dark] .public-route-loading span{background:#1e2d42}
+@keyframes public-route-label{to{opacity:1}}
+@media(prefers-reduced-motion:reduce){.public-route-loading p{animation:none;opacity:1}}

@@ -1,4 +1,4 @@
-import {useState,useRef,useEffect} from 'react'
+import {useState,useRef,useEffect,useLayoutEffect} from 'react'
 import {createPortal} from 'react-dom'
 import ClientStorefront,{type StorefrontSite} from './ClientStorefront'
 import './builder.css'
@@ -10,9 +10,15 @@ export default function StorefrontPreview({previewSite,lang,device='desktop'}:{p
   const viewportWidth=device==='mobile'?390:device==='tablet'?768:1280
   const viewportHeight=device==='mobile'?740:800
   const scale=Math.min(1,availableWidth/viewportWidth)
-  useEffect(()=>{const element=shell.current;if(!element)return;const observer=new ResizeObserver(entries=>setAvailableWidth(entries[0].contentRect.width));observer.observe(element);return()=>observer.disconnect()},[])
+  useLayoutEffect(()=>{const element=shell.current;if(!element)return;setAvailableWidth(element.clientWidth);const observer=new ResizeObserver(entries=>setAvailableWidth(entries[0].contentRect.width));observer.observe(element);return()=>observer.disconnect()},[])
   const [body,setBody]=useState<HTMLElement|null>(null)
   useEffect(()=>{if(body)body.ownerDocument.documentElement.lang=lang},[body,lang])
+  useEffect(()=>{
+    if(!body)return
+    const sync=()=>body.ownerDocument.documentElement.setAttribute('data-wf-theme',document.documentElement.getAttribute('data-wf-theme')||'dark')
+    sync();const observer=new MutationObserver(sync);observer.observe(document.documentElement,{attributes:true,attributeFilter:['data-wf-theme']})
+    return()=>observer.disconnect()
+  },[body])
   return <div ref={shell} className={`wf-template-preview-shell ${device}`} style={{height:viewportHeight*scale}}>
     <iframe title={lang==='es'?'Preview del website':'Website preview'} srcDoc={'<!doctype html><html><head></head><body></body></html>'} className="wf-template-preview-frame" style={{width:viewportWidth,height:viewportHeight,transform:`scale(${scale})`,transformOrigin:'top left'}} onLoad={event=>{
       const doc=event.currentTarget.contentDocument

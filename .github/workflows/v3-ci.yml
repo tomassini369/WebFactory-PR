@@ -12,7 +12,7 @@ on:
 jobs:
   verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -31,14 +31,42 @@ jobs:
         run: npx playwright install --with-deps --only-shell chromium
       - name: Install WebKit for mobile FAQ QA
         run: npx playwright install --with-deps webkit
+      - name: Check portal route transitions and template Home controls
+        run: node scripts/browser-route-transitions-smoke.mjs
+      - name: Check stable authentication cards, keyboard and mobile hero
+        run: node scripts/browser-auth-stability-smoke.mjs
+      - name: Check initial login visibility, locale handoff and failure states
+        run: node scripts/browser-auth-usability-smoke.mjs
       - name: Check Home FAQ desktop/mobile, themes and languages
         run: node scripts/browser-home-faq-smoke.mjs
+      - name: Check homepage responsive controls, tour and demos
+        run: node scripts/browser-home-evolution-smoke.mjs
+      - name: Check all template renderers and saved storefront data
+        run: node scripts/test-template-layout.mjs
+      - name: Check template library and Builder responsive parity
+        run: node scripts/browser-template-workspace-smoke.mjs
+      - name: Check shared glass composition and motion
+        run: node scripts/browser-template-glass-smoke.mjs
+      - name: Check spatial highlights on Chromium and WebKit
+        run: node scripts/browser-spatial-carousel-smoke.mjs
+      - name: Check functions for every template and language
+        run: node scripts/browser-template-functions-smoke.mjs
       - name: Check Builder cart and draft interactions
         run: node scripts/browser-interactions-smoke.mjs
       - name: Check ChatGPT configuration on mobile and desktop
         run: node scripts/browser-chatgpt-ui-smoke.mjs
       - name: Check installed Shadcn components on desktop and mobile
         run: node scripts/browser-shadcn-smoke.mjs
+      - name: Check floating portal login cards and return controls
+        run: node scripts/browser-portal-glass-smoke.mjs
+      - name: Check portal workspaces, mobile menus and navigation transitions
+        run: node scripts/browser-portal-workspace-glass-smoke.mjs
+      - name: Check sidebar destinations, location drafts and redesign plan access
+        run: node scripts/browser-portal-menu-destinations-smoke.mjs
+      - name: Check receipt presentation and cart flight without changing commerce
+        run: node scripts/browser-reference-styles-smoke.mjs
+      - name: Check automatic buyer receipts, demo isolation, PDF and printing
+        run: node scripts/browser-buyer-receipt-smoke.mjs
       - name: Check portal login fields on desktop and mobile
         run: node scripts/browser-login-layout-smoke.mjs
       - name: Check panel keyboard navigation

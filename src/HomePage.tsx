@@ -4,6 +4,7 @@ import { FeedbackPreferences } from './feedback/FeedbackPreferences'
 import ChatgptHomeSection from './ChatgptHomeSection'
 import './home-premium.css'
 import './home-apple.css'
+import './home-evolution.css'
 import { useSelectionPill } from './useSelectionPill'
 
 type Language = 'en' | 'es'
@@ -366,15 +367,6 @@ export default function HomePage({ lang, setLang }: { lang: Language, setLang: (
   const tourRef = useRef<HTMLElement>(null)
   const stepRefs = useRef<(HTMLElement | null)[]>([])
 
-  // Active tour step follows the step nearest the middle of the viewport.
-  useEffect(() => {
-    const observer = new IntersectionObserver(entries => {
-      entries.forEach(entry => { if (entry.isIntersecting) setStep(Number((entry.target as HTMLElement).dataset.step)) })
-    }, { rootMargin: '-45% 0px -45% 0px' })
-    stepRefs.current.forEach(el => el && observer.observe(el))
-    return () => observer.disconnect()
-  }, [lang])
-
   // Reveal-on-scroll and scroll-linked depth. Passive listeners only: scrolling is never blocked.
   useEffect(() => {
     const root = rootRef.current
@@ -388,6 +380,18 @@ export default function HomePage({ lang, setLang }: { lang: Language, setLang: (
       frame = 0
       const y = window.scrollY
       setScrolled(y > 8)
+      // Select the nearest step deterministically, including tall mobile panels.
+      // IntersectionObserver callback order must not choose the active scene.
+      const midpoint = window.innerHeight * 0.5
+      let nearest = 0
+      let distance = Infinity
+      stepRefs.current.forEach((el, i) => {
+        if (!el) return
+        const rect = el.getBoundingClientRect()
+        const nextDistance = Math.abs(rect.top + rect.height / 2 - midpoint)
+        if (nextDistance < distance) { distance = nextDistance; nearest = i }
+      })
+      setStep(nearest)
       if (reduced) return
       root.style.setProperty('--hero-p', Math.min(1, y / Math.max(1, window.innerHeight)).toFixed(3))
       const tour = tourRef.current

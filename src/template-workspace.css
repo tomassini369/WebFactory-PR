@@ -1,0 +1,18 @@
+/* Editing controls use the platform visual language; storefront colors stay local. */
+.wf-builder-app .wf-device-switcher{border-radius:10px;padding:3px;gap:2px;flex-wrap:wrap}
+.wf-builder-app .wf-device-switcher button{min-width:44px;min-height:44px;padding:0 12px;font-size:.75rem}
+.wf-builder-app .wf-device-switcher button span{display:inline}
+.wf-builder-app .wf-live-panel>header{flex-wrap:wrap;padding:12px;gap:12px}
+.wf-builder-app .wf-device-switcher button:focus-visible{outline:3px solid #2563eb;outline-offset:2px}
+html:has(.templates-page,.standalone-builder) .header{grid-template-columns:auto minmax(0,1fr)}
+html:has(.templates-page,.standalone-builder) .header-actions{justify-self:end}
+html:has(.templates-page,.standalone-builder) .header .langs button{min-width:44px;min-height:44px}
+@media(max-width:767px){
+ html:has(.templates-page,.standalone-builder) .header{min-height:80px;padding:12px 16px;gap:12px}
+ html:has(.templates-page,.standalone-builder) .header .logo{min-width:0;flex-shrink:1}
+ html:has(.templates-page,.standalone-builder) .header .logo img{max-width:140px;width:100%;height:auto}
+ html:has(.templates-page,.standalone-builder) .header .header-actions{flex-shrink:0;gap:4px}
+ .wf-builder-app .wf-device-switcher{width:100%}
+ .wf-builder-app .wf-device-switcher button{flex:1;padding-inline:8px}
+}
+@media(max-width:360px){html:has(.templates-page,.standalone-builder) .header{padding-inline:10px;gap:6px}html:has(.templates-page,.standalone-builder) .header .logo img{max-width:120px}}

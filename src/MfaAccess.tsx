@@ -1,3 +1,7 @@
+import PortalSceneCopy from './PortalSceneCopy'
+import PortalLoadingCard from './PortalLoadingCard'
+import PortalReturnHome from './PortalReturnHome'
+import {usePortalLanguage} from './portal-language'
 import { useEffect, useState, type ReactNode } from 'react'
 import { startRegistration, startAuthentication } from '@simplewebauthn/browser'
 import { getUser, logout, onAuthChange, refreshPortalUser, requestPasswordRecovery, type User } from './portal-auth'
@@ -50,12 +54,13 @@ function SecurityPanel({user,lang,onComplete,onCodes,allowDisable=false}:{user:U
 }
 
 export function MfaGate({children}:{children:ReactNode}) {
-  const [user,setUser]=useState<User|null>(null),[loading,setLoading]=useState(true),[failed,setFailed]=useState(false),[holdCodes,setHoldCodes]=useState(false),[lang,setLang]=useState<'es'|'en'>('en')
+  const [user,setUser]=useState<User|null>(null),[loading,setLoading]=useState(true),[failed,setFailed]=useState(false),[holdCodes,setHoldCodes]=useState(false)
+  const [lang,setLang]=usePortalLanguage()
   useEffect(()=>{let active=true;const stop=onAuthChange((_event,next)=>{if(active){setUser(next);setLoading(false);setFailed(false)}});void getUser().then(next=>{if(active)setUser(next)}).catch(()=>{if(active)setFailed(true)}).finally(()=>{if(active)setLoading(false)});return()=>{active=false;stop()}},[])
-  if(loading)return <main className="route-loading" role="status">Loading WebFactory…</main>
-  if(failed)return <main className="mfa-screen"><p role="alert">Unable to check your session.</p><button className="btn" onClick={()=>window.location.reload()}>Try again</button><a href="/">Return to WebFactory PR</a></main>
+  if(loading)return <PortalLoadingCard lang={lang}/>
+  if(failed)return <main className="mfa-screen"><p role="alert">{lang==='es'?'No se pudo comprobar tu sesión.':'Unable to check your session.'}</p><button className="btn" onClick={()=>window.location.reload()}>{lang==='es'?'Intentar de nuevo':'Try again'}</button><a href="/">{lang==='es'?'Volver a WebFactory PR':'Return to WebFactory PR'}</a></main>
   if(!user?.mfa?.required||(user.mfa.verified&&!holdCodes))return children
-  return <main className="mfa-screen"><header><a href="/"><AdaptiveLogo alt="WebFactory PR"/></a><div><button onClick={()=>setLang(lang==='es'?'en':'es')}>{lang==='es'?'EN':'ES'}</button><ThemeToggle/></div></header><SecurityPanel user={user} lang={lang} onCodes={()=>setHoldCodes(true)} onComplete={async()=>{await refreshPortalUser();setHoldCodes(false)}}/><a href="/">{lang==='es'?'Volver a WebFactory PR':'Return to WebFactory PR'}</a><button onClick={()=>void logout().catch(()=>setFailed(true))}>{lang==='es'?'Cerrar sesión':'Sign out'}</button></main>
+  return <main className="ca-page mfa-login-page"><PortalSceneCopy lang={lang}/><section className="ca-login mfa-login-card" key="security"><div className="portal-language"><PortalReturnHome lang={lang}/><button className={lang==='en'?'active':''} onClick={()=>setLang('en')}>EN</button><button className={lang==='es'?'active':''} onClick={()=>setLang('es')}>ES</button><ThemeToggle/></div><AdaptiveLogo alt="WebFactory PR"/><SecurityPanel user={user} lang={lang} onCodes={()=>setHoldCodes(true)} onComplete={async()=>{await refreshPortalUser();setHoldCodes(false)}}/><button className="ca-link" onClick={()=>void logout().catch(()=>setFailed(true))}>{lang==='es'?'Cerrar sesión':'Sign out'}</button></section></main>
 }
 
 export function MfaSettings({lang,allowDisable=false}:{lang:'es'|'en';allowDisable?:boolean}) {

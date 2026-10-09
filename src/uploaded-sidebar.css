@@ -1,0 +1,658 @@
+/* ==========================================================================
+   Ultra-realistic Glassmorphic Sidebar with macOS Dock Magnification
+   ========================================================================== */
+
+.wf-sidebar-frame .sidebar-container {
+  position: relative;
+  width: 74px;
+  padding: 16px 0 20px 0;
+  border-radius: 28px;
+  box-sizing: border-box;
+  user-select: none;
+  z-index: 100;
+  overflow: visible;
+
+  /* Frosted Glass Translucency */
+  background: linear-gradient(
+    180deg,
+    rgba(64, 82, 108, 0.38) 0%,
+    rgba(35, 53, 78, 0.35) 25%,
+    rgba(17, 32, 54, 0.42) 65%,
+    rgba(11, 21, 41, 0.52) 100%
+  );
+  -webkit-backdrop-filter: blur(24px) saturate(180%) contrast(108%);
+  backdrop-filter: blur(24px) saturate(180%) contrast(108%);
+
+  /* Multi-layer Glass Borders & Depth */
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-top: 1px solid rgba(255, 255, 255, 0.42);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+
+  box-shadow: 
+    0 30px 60px -10px rgba(0, 0, 0, 0.6),
+    0 12px 28px -6px rgba(0, 0, 0, 0.4),
+    inset 0 1px 1px 0 rgba(255, 255, 255, 0.5),
+    inset 0 0 14px 0 rgba(255, 255, 255, 0.05),
+    inset 0 -1px 1px 0 rgba(255, 255, 255, 0.1);
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Glass Specular Reflection Highlight Overlay */
+.wf-sidebar-frame .sidebar-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 40%;
+  border-radius: 28px 28px 0 0;
+  background: linear-gradient(
+    145deg,
+    rgba(255, 255, 255, 0.18) 0%,
+    rgba(255, 255, 255, 0.06) 40%,
+    transparent 100%
+  );
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* ==========================================================================
+   macOS Traffic Lights
+   ========================================================================== */
+.wf-sidebar-frame .sidebar-traffic-lights {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  height: 14px;
+  display: flex;
+  gap: 5.5px;
+  align-items: center;
+  padding-left: 21px;
+  margin-bottom: 10px;
+  box-sizing: border-box;
+}
+
+.wf-sidebar-frame .sidebar-traffic-lights .dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.wf-sidebar-frame .sidebar-traffic-lights .dot-red {
+  background-color: #ff5f56;
+  box-shadow: 0 0 4px rgba(255, 95, 86, 0.7);
+}
+
+.wf-sidebar-frame .sidebar-traffic-lights .dot-yellow {
+  background-color: #ffbd2e;
+  box-shadow: 0 0 4px rgba(255, 189, 46, 0.7);
+}
+
+.wf-sidebar-frame .sidebar-traffic-lights .dot-green {
+  background-color: #27c93f;
+  box-shadow: 0 0 4px rgba(39, 201, 63, 0.7);
+}
+
+/* ==========================================================================
+   Brand Logo / Header Section (Fixed 30px height to prevent vertical jump)
+   ========================================================================== */
+.wf-sidebar-frame .sidebar-brand-wrapper {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  margin-bottom: 6px;
+  box-sizing: border-box;
+}
+
+/* Collapsed Logo: Bold "S" */
+.wf-sidebar-frame .sidebar-brand-collapsed {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.wf-sidebar-frame .sidebar-brand-logo {
+  font-size: 26px;
+  font-weight: 800;
+  color: #ffffff;
+  line-height: 1;
+  letter-spacing: -0.5px;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+
+/* Expanded Header: "SideBar UI" + Bell with badge */
+.wf-sidebar-frame .sidebar-brand-expanded {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px 0 20px;
+  box-sizing: border-box;
+}
+
+.wf-sidebar-frame .sidebar-expanded-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: -0.3px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+/* Notification Bell with red '4' badge */
+.wf-sidebar-frame .sidebar-bell-btn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  cursor: pointer;
+  margin-right: 4px;
+}
+
+.wf-sidebar-frame .sidebar-bell-badge {
+  position: absolute;
+  top: -4px;
+  right: -5px;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: #3C86F6;
+  color: #ffffff;
+  font-size: 8.5px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 4px rgba(60, 134, 246, 0.6);
+}
+
+/* Floating Expand/Collapse Button on Right Edge */
+.wf-sidebar-frame .sidebar-expand-btn {
+  position: absolute;
+  right: -9px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 7px rgba(0, 0, 0, 0.35);
+  padding: 0;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease;
+  z-index: 10;
+}
+
+.wf-sidebar-frame .sidebar-expand-btn:hover {
+  transform: translateY(-50%) scale(1.15);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.5);
+}
+
+.wf-sidebar-frame .sidebar-expand-btn:active {
+  transform: translateY(-50%) scale(0.95);
+}
+
+/* "Collapse" Tooltip Pill */
+.wf-sidebar-frame .sidebar-collapse-pill {
+  position: absolute;
+  left: calc(100% + 8px);
+  top: 50%;
+  transform: translateY(-50%);
+  background: #ffffff;
+  color: #2867b2;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 12px;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+  white-space: nowrap;
+  pointer-events: none;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  animation: fadeIn 0.2s ease forwards;
+}
+
+/* ==========================================================================
+   Laser Glowing Glass Dividers (Fixed 1px height, 8px margin)
+   ========================================================================== */
+.wf-sidebar-frame .sidebar-divider {
+  position: relative;
+  z-index: 2;
+  height: 1px;
+  margin: 8px 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.15) 20%,
+    rgba(255, 255, 255, 0.75) 50%,
+    rgba(255, 255, 255, 0.15) 80%,
+    transparent 100%
+  );
+  box-shadow: 0 0 8px 0.5px rgba(255, 255, 255, 0.35);
+}
+
+/* ==========================================================================
+   User Profile Section & Card (Fixed 44px height)
+   ========================================================================== */
+.wf-sidebar-frame .sidebar-profile-section {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+}
+
+.wf-sidebar-frame .sidebar-profile-card {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  padding: 0 17px;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.wf-sidebar-frame .sidebar-avatar-wrapper {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid rgba(255, 255, 255, 0.32);
+  box-shadow: 
+    0 4px 12px rgba(0, 0, 0, 0.45),
+    inset 0 1px 1px rgba(255, 255, 255, 0.4);
+  overflow: hidden;
+  flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.08);
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.wf-sidebar-frame .sidebar-profile-card:hover .sidebar-avatar-wrapper {
+  transform: scale(1.05);
+  border-color: rgba(255, 255, 255, 0.65);
+}
+
+.wf-sidebar-frame .sidebar-avatar-img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Profile Details (Expanded) */
+.wf-sidebar-frame .sidebar-profile-details {
+  display: flex;
+  flex-direction: column;
+  margin-left: 12px;
+  flex: 1;
+  text-align: left;
+  overflow: hidden;
+}
+
+.wf-sidebar-frame .sidebar-profile-name {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #ffffff;
+  line-height: 1.2;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+.wf-sidebar-frame .sidebar-profile-switch {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 9.5px;
+  color: rgba(255, 255, 255, 0.6);
+  margin-top: 2px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+.wf-sidebar-frame .sidebar-profile-chevron {
+  color: rgba(255, 255, 255, 0.65);
+  flex-shrink: 0;
+  margin-left: 6px;
+}
+
+/* ==========================================================================
+   Search Row: Lozenge + Input Box (Fixed 28px height)
+   ========================================================================== */
+.wf-sidebar-frame .sidebar-search-row {
+  width: 100%;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  padding: 0 17px;
+  gap: 10px;
+  margin-bottom: 4px;
+  box-sizing: border-box;
+}
+
+.wf-sidebar-frame .sidebar-menu-lozenge {
+  width: 40px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.wf-sidebar-frame .sidebar-menu-lozenge::before {
+  content: '';
+  width: 13px;
+  height: 7.5px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.26);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.3);
+  transform: rotate(-25deg);
+  position: absolute;
+}
+
+.wf-sidebar-frame .sidebar-lozenge-dot {
+  position: relative;
+  z-index: 2;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 0 3px #ffffff;
+}
+
+/* Search Box (Expanded) */
+.wf-sidebar-frame .sidebar-search-box {
+  flex: 1;
+  height: 26px;
+  border-radius: 13px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.25);
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.wf-sidebar-frame .sidebar-search-input {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.8px;
+  width: 100%;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+.wf-sidebar-frame .sidebar-search-input::placeholder {
+  color: rgba(255, 255, 255, 0.45);
+  font-size: 9.5px;
+  font-weight: 600;
+}
+
+/* ==========================================================================
+   Section Labels (MENU, DISCOVERY, GENERAL - Fixed 16px height)
+   ========================================================================== */
+.wf-sidebar-frame .sidebar-section {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.wf-sidebar-frame .sidebar-section-title {
+  width: 100%;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  font-size: 8.5px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.65);
+  letter-spacing: 0.9px;
+  text-transform: uppercase;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  margin-bottom: 4px;
+  padding-left: 20px;
+  box-sizing: border-box;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+}
+
+.wf-sidebar-frame .sidebar-container.collapsed .sidebar-section-title {
+  justify-content: center;
+  padding-left: 0;
+}
+
+/* ==========================================================================
+   Navigation Items & List (Fixed 38px height on EVERY item)
+   ========================================================================== */
+.wf-sidebar-frame .sidebar-nav-list {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+
+.wf-sidebar-frame .sidebar-nav-item {
+  position: relative;
+  width: 100%;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 0 17px;
+  background: transparent;
+  border: none !important;
+  outline: none !important;
+  cursor: pointer;
+  color: rgba(255, 255, 255, 0.68);
+  margin: 0;
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+  transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+.wf-sidebar-frame .sidebar-nav-item:focus,
+.wf-sidebar-frame .sidebar-nav-item:focus-visible,
+.wf-sidebar-frame .sidebar-nav-item:active {
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.wf-sidebar-frame .sidebar-nav-item:hover {
+  color: #ffffff;
+  border: none !important;
+  outline: none !important;
+}
+
+/* Icon Slot (Fixed 40px width - Anchors icons perfectly in place) */
+.wf-sidebar-frame .sidebar-nav-icon-slot {
+  width: 40px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* macOS Dock Icon Spring Magnification Wrapper */
+.wf-sidebar-frame .sidebar-dock-icon-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform-origin: center center;
+  will-change: transform;
+  pointer-events: none;
+}
+
+/* Label (Smooth Slide-in without vertical jitter) */
+.wf-sidebar-frame .sidebar-nav-label {
+  margin-left: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.88);
+  flex: 1;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  letter-spacing: -0.1px;
+}
+
+/* Red Badge '7' on "My List" */
+.wf-sidebar-frame .sidebar-item-badge {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #3C86F6;
+  color: #ffffff;
+  font-size: 9.5px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: auto;
+  box-shadow: 0 2px 6px rgba(60, 134, 246, 0.5);
+  flex-shrink: 0;
+}
+
+/* Active State: Clean Red Bar without any white borders */
+.wf-sidebar-frame .sidebar-nav-item.active {
+  background: #3C86F6 !important;
+  color: #ffffff !important;
+  height: 38px;
+  width: 100%;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.wf-sidebar-frame .sidebar-nav-item.active .sidebar-nav-label {
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.wf-sidebar-frame .sidebar-nav-item.active:hover {
+  background: #4d96f3 !important;
+  border: none !important;
+  outline: none !important;
+}
+
+/* Active State for badge circle */
+.wf-sidebar-frame .sidebar-nav-item.active .sidebar-badge-circle {
+  background: rgba(255, 255, 255, 0.22);
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* Frosted Glass Badge Circles (Play, Plus, Star) */
+.wf-sidebar-frame .sidebar-badge-circle {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.16);
+  border: none;
+  box-shadow: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.15s ease;
+}
+
+.wf-sidebar-frame .sidebar-nav-item:hover .sidebar-badge-circle {
+  background: rgba(255, 255, 255, 0.28);
+}
+
+/* SVG Icon Base */
+.wf-sidebar-frame .sidebar-svg-icon {
+  display: block;
+}
+
+/* ==========================================================================
+   Tooltips (Collapsed Mode Only)
+   ========================================================================== */
+.wf-sidebar-frame .sidebar-container.collapsed .sidebar-nav-item[data-tooltip]::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  left: calc(100% + 14px);
+  top: 50%;
+  transform: translateY(-50%) translateX(-4px);
+  background: rgba(18, 19, 22, 0.88);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: #ffffff;
+  padding: 4px 9px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 500;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.18s ease, transform 0.18s ease;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.55);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  letter-spacing: 0.2px;
+  z-index: 200;
+}
+
+.wf-sidebar-frame .sidebar-container.collapsed .sidebar-nav-item[data-tooltip]::before {
+  content: '';
+  position: absolute;
+  left: calc(100% + 8px);
+  top: 50%;
+  transform: translateY(-50%);
+  border-width: 4px 6px 4px 0;
+  border-style: solid;
+  border-color: transparent rgba(18, 19, 22, 0.88) transparent transparent;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.18s ease;
+  z-index: 200;
+}
+
+.wf-sidebar-frame .sidebar-container.collapsed .sidebar-nav-item[data-tooltip]:hover::after {
+  opacity: 1;
+  transform: translateY(-50%) translateX(0);
+}
+
+.wf-sidebar-frame .sidebar-container.collapsed .sidebar-nav-item[data-tooltip]:hover::before {
+  opacity: 1;
+}
+
+/* Fade In Helper */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-50%) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(-50%) scale(1);
+  }
+}

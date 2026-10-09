@@ -17,17 +17,23 @@ try{
  </script></body></html>`);
  server=spawn(process.execPath,['node_modules/vite/bin/vite.js','--host','127.0.0.1','--port','5179','--strictPort'],{stdio:'ignore'});
  for(let i=0;i<80;i++){try{if((await fetch(origin)).ok)break}catch{}await new Promise(r=>setTimeout(r,100))}
- browser=await chromium.launch();const page=await browser.newPage();const errors=[];page.on('pageerror',error=>errors.push(error.message));
+ browser=await chromium.launch(process.env.QA_CHROMIUM_PATH?{executablePath:process.env.QA_CHROMIUM_PATH,args:['--single-process','--no-sandbox']}:{});const page=await browser.newPage();const errors=[];page.on('pageerror',error=>errors.push(error.message));
  for(const width of [390,1280]){
   await page.setViewportSize({width,height:844});await page.goto(origin+'/'+fixture);
   await page.getByLabel('Draft',{exact:true}).fill('unsaved');page.once('dialog',dialog=>dialog.dismiss());await page.getByRole('button',{name:'Leave',exact:true}).click();assert.equal(await page.locator('#result').textContent(),'');
   page.once('dialog',dialog=>dialog.accept());await page.getByRole('button',{name:'Leave',exact:true}).click();assert.equal(await page.getByLabel('Draft',{exact:true}).inputValue(),'saved');
   await page.getByLabel('Draft',{exact:true}).fill('persisted');await page.getByRole('button',{name:'Save draft',exact:true}).click();
   let prompted=false;const unexpected=dialog=>{prompted=true;return dialog.dismiss()};page.on('dialog',unexpected);await page.getByRole('button',{name:'Leave',exact:true}).click();assert.equal(prompted,false);page.off('dialog',unexpected);
-  const frame=page.frameLocator('iframe');await frame.getByRole('button',{name:'Explore catalog',exact:true}).click();await frame.locator('.template-card-actions .template-solid').click();await frame.locator('.template-catalog-modal .catalog-close').click();await frame.getByRole('button',{name:/^Cart 1$/}).press('Enter');
+  const frame=page.frameLocator('iframe');await frame.getByRole('button',{name:'Explore catalog',exact:true}).click();
+  const catalog=frame.locator('.template-catalog-modal');const catalogScroll=await catalog.evaluate(el=>el.scrollTop);
+  await frame.locator('.template-card-actions .template-solid').click();await frame.locator('.cs-cart-lines').waitFor();
+  assert.equal(await catalog.isVisible(),false);await frame.locator('.cs-checkout > header > button').click();await catalog.waitFor({state:'visible'});
+  assert.equal(await catalog.evaluate(el=>el.scrollTop),catalogScroll);await frame.locator('.template-catalog-modal .catalog-close').click();await frame.getByRole('button',{name:/^Cart 1$/}).press('Enter');
   try{await frame.locator('.cs-cart-lines').waitFor({timeout:5000})}catch(error){console.error('Cart diagnostic',await frame.locator('body').innerText());throw error}
-  assert.equal((await frame.locator('.cs-cart-lines strong').innerText()).replace(/\s+/g,' '),'Total $20.00');await frame.getByRole('button',{name:'Remove QA product',exact:true}).click();assert.equal(await frame.locator('.cs-cart-line').count(),0);assert.equal(await frame.getByRole('button',{name:'Confirm order · pay in person',exact:true}).isDisabled(),true);
-  await frame.getByRole('button',{name:'Undo',exact:true}).click();assert.equal(await frame.locator('.cs-cart-line').count(),1);assert.equal((await frame.locator('.cs-cart-lines strong').innerText()).replace(/\s+/g,' '),'Total $20.00');
+  const confirmPreview=frame.getByRole('button',{name:'Simulate payment · View receipt',exact:true});
+  assert.equal(await confirmPreview.isEnabled(),true);
+  assert.equal((await frame.locator('.cs-cart-lines strong').innerText()).replace(/\s+/g,' '),'Total $20.00');await frame.getByRole('button',{name:'Remove QA product',exact:true}).click();assert.equal(await frame.locator('.cs-cart-line').count(),0);assert.equal(await confirmPreview.isDisabled(),true);
+  await frame.getByRole('button',{name:'Undo',exact:true}).click();assert.equal(await frame.locator('.cs-cart-line').count(),1);assert.equal((await frame.locator('.cs-cart-lines strong').innerText()).replace(/\s+/g,' '),'Total $20.00');assert.equal(await confirmPreview.isEnabled(),true);
   await page.emulateMedia({reducedMotion:'reduce'});assert.equal(await page.getByRole('button',{name:'Save draft',exact:true}).evaluate(el=>getComputedStyle(el).scale),'none');
   console.log('Draft cancellation, saved state, Builder iframe cart remove/undo and reduced motion:',width);
  }

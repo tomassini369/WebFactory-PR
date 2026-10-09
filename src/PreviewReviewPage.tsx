@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react'
 import { AdaptiveLogo, ThemeToggle } from './theme'
 import './preview-review.css'
+import StyleReferenceReview from './StyleReferenceReview'
 
 /* Preview-only visual comparison. This page is compiled out of production builds (see vite.config.ts)
    and its assets are removed from production output (scripts/strip-preview-review.mjs). */
 
 type Language = 'en' | 'es'
-type View = 'side' | 'current' | 'new' | 'hero' | 'video' | 'concept'
+type View = 'side' | 'current' | 'new' | 'hero' | 'video' | 'concept' | 'styles'
 type Theme = 'dark' | 'light'
 type Device = 'desktop' | 'mobile'
 
@@ -18,7 +19,7 @@ const copy = {
     eyebrow: 'WEBFACTORY PR · REVISIÓN VISUAL', title: 'Homepage: estado actual y rediseño',
     lead: 'Compara la homepage publicada con el nuevo rediseño y las referencias visuales. Esta herramienta solo existe en el preview; no forma parte de la homepage pública.',
     badge: 'Solo preview · No se publica en producción',
-    views: { side: 'Lado a lado', current: 'Estado actual publicado', new: 'Nuevo rediseño', hero: 'Hero: con / sin video', video: 'Video de referencia', concept: 'Mockup conceptual' },
+    views: { side: 'Lado a lado', current: 'Estado actual publicado', new: 'Nuevo rediseño', hero: 'Hero: con / sin video', video: 'Video de referencia', concept: 'Mockup conceptual', styles: 'Estilos Glassy' },
     desktop: 'Desktop', mobile: 'Móvil', device: 'Dispositivo', viewsLabel: 'Vistas de comparación',
     currentCaption: 'Captura de página completa de webfactorypr.com tomada el 30 de septiembre de 2026 en modo solo lectura. Producción no se modificó.',
     newCaption: 'Fotogramas del recorrido con scroll de este preview: hero, los cinco pasos del Control Center, plataforma, demos y planes. Todo usa datos de ejemplo.',
@@ -34,7 +35,7 @@ const copy = {
     eyebrow: 'WEBFACTORY PR · VISUAL REVIEW', title: 'Homepage: current state and redesign',
     lead: 'Compare the published homepage with the new redesign and the visual references. This tool exists only in the preview; it is not part of the public homepage.',
     badge: 'Preview only · Not published to production',
-    views: { side: 'Side by side', current: 'Current published state', new: 'New redesign', hero: 'Hero: with / without video', video: 'Reference video', concept: 'Concept mockup' },
+    views: { side: 'Side by side', current: 'Current published state', new: 'New redesign', hero: 'Hero: with / without video', video: 'Reference video', concept: 'Concept mockup', styles: 'Glassy styles' },
     desktop: 'Desktop', mobile: 'Mobile', device: 'Device', viewsLabel: 'Comparison views',
     currentCaption: 'Full-page capture of webfactorypr.com taken on September 30, 2026, read-only. Production was not changed.',
     newCaption: 'Scroll-tour frames from this preview: hero, the five Control Center steps, platform, demos and plans. Everything uses sample data.',
@@ -50,8 +51,8 @@ const copy = {
 
 export default function PreviewReviewPage({ lang, setLang }: { lang: Language, setLang: (value: Language) => void }) {
   const t = copy[lang]
-  const [view, setView] = useState<View>('side')
-  const [device, setDevice] = useState<Device>('desktop')
+  const [view, setView] = useState<View>(() => window.location.hash === '#styles' ? 'styles' : 'side')
+  const [device, setDevice] = useState<Device>(() => window.location.hash === '#styles' && window.matchMedia('(max-width:700px)').matches ? 'mobile' : 'desktop')
   const [shotTheme, setShotTheme] = useState<Theme>('dark')
   const views = Object.keys(t.views) as View[]
   useEffect(() => { document.title = `${t.title} · Preview` }, [t.title])
@@ -66,13 +67,14 @@ export default function PreviewReviewPage({ lang, setLang }: { lang: Language, s
       <div className="pr-header-actions"><div className="pr-langs" role="group" aria-label="Language / Idioma"><button aria-pressed={lang === 'en'} onClick={() => setLang('en')}>EN</button><button aria-pressed={lang === 'es'} onClick={() => setLang('es')}>ES</button></div><ThemeToggle /></div>
     </header>
     <main className="pr-main">
-      <section className="pr-intro"><p className="pr-eyebrow">{t.eyebrow}</p><h1>{t.title}</h1><p>{t.lead}</p></section>
+      <section className="pr-intro"><p className="pr-eyebrow">{t.eyebrow}</p><h1>{view === 'styles' ? t.views.styles : t.title}</h1><p>{view === 'styles' ? (lang === 'es' ? 'Login, paneles, recibos y carrito adaptados a WebFactory PR.' : 'Login, dashboards, receipts and cart adapted to WebFactory PR.') : t.lead}</p></section>
       <div className="pr-controls">
         <div className="pr-tabs" role="tablist" aria-label={t.viewsLabel}>{views.map((v, i) => <button key={v} id={`pr-tab-${v}`} role="tab" aria-selected={view === v} aria-controls="pr-panel" tabIndex={view === v ? 0 : -1} onClick={() => setView(v)} onKeyDown={e => { if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { e.preventDefault(); const next = views[(i + (e.key === 'ArrowRight' ? 1 : views.length - 1)) % views.length]; setView(next); document.getElementById(`pr-tab-${next}`)?.focus() } }}>{t.views[v]}</button>)}</div>
-        {view === 'hero' && <div className="pr-devices" role="group" aria-label={t.themeLabel}><button aria-pressed={shotTheme === 'dark'} onClick={() => setShotTheme('dark')}>{t.dark}</button><button aria-pressed={shotTheme === 'light'} onClick={() => setShotTheme('light')}>{t.light}</button></div>}
-        {(view === 'side' || view === 'current' || view === 'new' || view === 'hero') && <div className="pr-devices" role="group" aria-label={t.device}><button aria-pressed={device === 'desktop'} onClick={() => setDevice('desktop')}>{t.desktop}</button><button aria-pressed={device === 'mobile'} onClick={() => setDevice('mobile')}>{t.mobile}</button></div>}
+        {(view === 'hero' || view === 'styles') && <div className="pr-devices" role="group" aria-label={t.themeLabel}><button aria-pressed={shotTheme === 'dark'} onClick={() => setShotTheme('dark')}>{t.dark}</button><button aria-pressed={shotTheme === 'light'} onClick={() => setShotTheme('light')}>{t.light}</button></div>}
+        {(view === 'side' || view === 'current' || view === 'new' || view === 'hero' || view === 'styles') && <div className="pr-devices" role="group" aria-label={t.device}><button aria-pressed={device === 'desktop'} onClick={() => setDevice('desktop')}>{t.desktop}</button><button aria-pressed={device === 'mobile'} onClick={() => setDevice('mobile')}>{t.mobile}</button></div>}
       </div>
       <section id="pr-panel" role="tabpanel" aria-labelledby={`pr-tab-${view}`} className="pr-panel">
+        {view === 'styles' && <StyleReferenceReview lang={lang} device={device} theme={shotTheme}/>}
         {view === 'side' && <div className="pr-side">
           <div><h2>{t.views.current}</h2><p className="pr-caption">{t.currentCaption}</p>{current}</div>
           <div><h2>{t.views.new}</h2><p className="pr-caption">{t.newCaption} <a href="/">{t.openNew} ↗</a></p>{redesign}</div>

@@ -53,19 +53,25 @@ function applyDocumentTheme(theme: Theme, isPlatformSurface: boolean) {
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setThemeState] = useState<Theme>(getInitialTheme)
+  const [pathname,setPathname]=useState(()=>typeof window==='undefined'?'/':window.location.pathname)
+  useEffect(()=>{
+    const sync=()=>setPathname(window.location.pathname)
+    window.addEventListener('wf-route-change',sync)
+    return()=>window.removeEventListener('wf-route-change',sync)
+  },[])
   const isPlatformSurface = useMemo(
-    () => typeof window === 'undefined' ? true : platformSurfaceForPath(window.location.pathname),
-    [],
+    () => platformSurfaceForPath(pathname),
+    [pathname],
   )
   const hasInlineThemeToggle = useMemo(
     () => typeof window !== 'undefined' && (
-      legalPlatformPath(window.location.pathname)
-      || window.location.pathname === '/'
-      || /^\/(?:builder|templates|preview-review|chatgpt)\/?$/.test(window.location.pathname)
-      || /^\/(?:webfactory-admin|client-admin|password|password-recovery)\/?$/.test(window.location.pathname)
+      legalPlatformPath(pathname)
+      || pathname === '/'
+      || /^\/(?:builder|templates|preview-review|chatgpt)\/?$/.test(pathname)
+      || /^\/(?:webfactory-admin|client-admin|password|password-recovery)\/?$/.test(pathname)
       || /^#(?:invite_token|recovery_token)=/.test(window.location.hash)
     ),
-    [],
+    [pathname],
   )
 
   useLayoutEffect(() => {

@@ -1,6 +1,6 @@
 import { deleteGoogleEvent } from "../lib/google-calendar.mjs";
 import { clientCommerceStore, clientSiteStore, commerceKey, getClientSite } from "../lib/client-store.mjs";
-import { sendBusinessCommerceEmail, sendCustomerCommerceEmail, sendBookingConfirmationEmails } from "../lib/client-notifications.mjs";
+import { sendCommerceConfirmationEmails, sendBookingConfirmationEmails } from "../lib/client-notifications.mjs";
 import { syncBookingCalendar, bookingCanSync } from "../lib/booking-calendar.mjs";
 import {finishBookingChange} from "../lib/booking-management.mjs";
 import {withBookingLock} from "../lib/booking-lock.mjs";
@@ -34,12 +34,15 @@ export default async () => {
       try {
         const finalKey = commerceKey(siteId, record.kind === "booking" ? "bookings" : "orders", record.transactionId);
         record = await syncBookingCalendar(site, record);
-        if (!record.customerEmailSent) { await sendCustomerCommerceEmail(site, record); record.customerEmailSent = true; }
-        if (!record.businessEmailSent && site.business?.email) { await sendBusinessCommerceEmail(site, record); record.businessEmailSent = true; }
-        record.emailsSentAt = new Date().toISOString();
+        record = await sendCommerceConfirmationEmails(site,record,async value => {
+          await clientCommerceStore().setJSON(blob.key,value);
+          await clientCommerceStore().setJSON(finalKey,value);
+        });
+        const delivered = (!record.customer?.email || record.customerEmailSent) && (!site.business?.email || record.businessEmailSent);
+        if (delivered) record.emailsSentAt = new Date().toISOString();
         await clientCommerceStore().setJSON(blob.key, record);
         await clientCommerceStore().setJSON(finalKey, record);
-        completed += 1;
+        if (delivered) completed += 1;
       } catch (error) { console.error("retry-client-commerce", record.transactionId, error?.message || error); }
     }
     // In-person appointments have no payment transaction: retry their calendar sync separately.

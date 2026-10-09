@@ -15,7 +15,7 @@ export default function CatalogCard({
   item: TemplateItem
   accent: string
   onView: () => void
-  onAdd: () => void
+  onAdd: (source: HTMLElement) => void
   onBook: () => void
   language: TemplateLanguage
   ui: TemplateUi
@@ -41,7 +41,7 @@ export default function CatalogCard({
           {item.appointment && bookEnabled ? (
             <button className="template-solid" disabled={disabled} onClick={onBook}>{ui.reserve}</button>
           ) : !item.appointment && item.purchasable !== false && cartEnabled ? (
-            <button className="template-solid" disabled={disabled} onClick={onAdd}>{ui.add}</button>
+            <button className="template-solid" disabled={disabled} onClick={event => onAdd(event.currentTarget)}>{ui.add}</button>
           ) : null}
         </div>
       </div>

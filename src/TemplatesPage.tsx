@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react'
 import { templateConfigs, templateGroups, templateVisualStyle } from './templateData'
+import { localizeTemplate } from './templateI18n'
 import './templates.css'
+import './template-workspace.css'
 
 type Language = 'es' | 'en'
 
@@ -16,7 +18,7 @@ export default function TemplatesPage({lang}:{lang:Language}) {
     <section className="templates-hero">
       <div className="shell">
         <p className="eyebrow">WEBFACTORY TEMPLATES</p>
-        <h1>{lang==='es'?'Escoge una categoría. Luego encuentra tu estructura.':'Choose a category. Then find your structure.'}</h1>
+        <h1>{lang==='es'?'Tu próximo diseño empieza aquí.':'Your next design starts here.'}</h1>
         <p>{lang==='es'?'Cada template es una base editable. Conserva la composición y reemplaza marca, imágenes, contenido y funciones con los datos reales de tu negocio.':'Every template is an editable base. Keep the composition and replace branding, images, content and features with your real business information.'}</p>
       </div>
     </section>
@@ -29,7 +31,7 @@ export default function TemplatesPage({lang}:{lang:Language}) {
         <div className="template-group-list">
           {templateGroups.map((entry)=>{
             const count=templateConfigs.filter((template)=>entry.categories.includes(template.category)).length
-            return <button key={entry.id} className={entry.id===groupId?'active':''} onClick={()=>setGroupId(entry.id)}>
+            return <button key={entry.id} className={entry.id===groupId?'active':''} aria-pressed={entry.id===groupId} onClick={()=>setGroupId(entry.id)}>
               <span>{lang==='es'?entry.nameEs:entry.nameEn}</span><b>{count}</b>
             </button>
           })}
@@ -38,12 +40,14 @@ export default function TemplatesPage({lang}:{lang:Language}) {
       <div className="template-results">
         <header>
           <div><small>{lang==='es'?'SELECCIÓN ACTUAL':'CURRENT SELECTION'}</small><h2>{group?(lang==='es'?group.nameEs:group.nameEn):''}</h2></div>
-          <span>{templates.length} {lang==='es'?'templates':'templates'}</span>
+          <span role="status">{templates.length} {lang==='es'?'templates':'templates'}</span>
         </header>
         <div className="template-card-grid">
-          {templates.map((template)=>(
-            <article className={`template-card visual-${templateVisualStyle(template.category)}`} key={template.slug}>
-              <a className="template-card-art" href={'/templates/'+template.slug} style={{backgroundImage:`linear-gradient(180deg,rgba(5,10,16,.05),rgba(5,10,16,.55)),url(${template.heroImage})`}}>
+          {templates.map((baseTemplate)=>{
+            const template = localizeTemplate(baseTemplate,lang)
+            return (
+            <article className={`template-card visual-${templateVisualStyle(baseTemplate.category)}`} key={template.slug}>
+              <a className="template-card-art" aria-label={`${lang==='es'?'Ver':'View'} ${template.name}`} href={'/templates/'+template.slug} style={{backgroundImage:`linear-gradient(180deg,rgba(5,10,16,.05),rgba(5,10,16,.55)),url(${template.heroImage})`}}>
                 <span>{template.category}</span>
               </a>
               <div>
@@ -56,7 +60,7 @@ export default function TemplatesPage({lang}:{lang:Language}) {
                 </div>
               </div>
             </article>
-          ))}
+          )})}
         </div>
       </div>
     </section>

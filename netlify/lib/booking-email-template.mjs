@@ -1,3 +1,4 @@
+import { renderReceiptBlock } from "./receipt-email-template.mjs";
 import { escapeHtml, bookingCalendarUrl } from "./booking-calendar-export.mjs";
 import { publicBaseUrl } from "./platform-utils.mjs";
 import { emailBrand, emailButton, emailFields, emailParagraph, renderEmailLayout } from "./email-design.mjs";
@@ -26,7 +27,7 @@ export function bookingDetails(site, record) {
     payment:record.paymentStatus === "due" ? (es ? "Pago al llegar" : "Payment due at appointment") : ["paid","paid_in_person"].includes(record.paymentStatus) ? (es ? "Pago confirmado" : "Payment confirmed") : (es ? "Contacta al negocio" : "Contact the business"),
   };
 }
-export function renderBookingEmail(site, record, {audience="customer",change="confirmed",hours}={}) {
+export function renderBookingEmail(site, record, {audience="customer",change="confirmed",hours,receipt}={}) {
   const d = bookingDetails(site,record), es=d.es, e=escapeHtml;
   const title = change === "reminder" ? (es ? `Recordatorio de tu cita (${hours} h)` : `Appointment reminder (${hours} h)`) : change === "cancelled" ? (es ? "Tu cita fue cancelada" : "Your appointment is cancelled") : change === "rescheduled" ? (es ? "Tu cita fue reprogramada" : "Your appointment is rescheduled") : (es ? "Tu cita está confirmada" : "You're booked in");
   const heading = change === "reminder" ? title : audience === "business" ? `${es ? "Reservación" : "Booking"}: ${change === "cancelled" ? (es ? "cancelada" : "cancelled") : change === "rescheduled" ? (es ? "reprogramada" : "rescheduled") : (es ? "confirmada" : "confirmed")}` : title;
@@ -42,7 +43,8 @@ export function renderBookingEmail(site, record, {audience="customer",change="co
   const caveat=es?"Si ya aceptaste la invitación de Google, no añadas otra copia. Las copias guardadas manualmente no se actualizan solas; revisa tu calendario después de un cambio.":"If you accepted the Google invitation, do not add another copy. Manually saved copies do not update automatically; check your calendar after a change.";
   const text=[d.name,heading,...fields.filter(([,value])=>value).map(([label,value])=>`${label}: ${value}`),d.address,explanation,manage?`${es?'Administrar reserva':'Manage booking'}: ${manage}`:"",active&&calendar?`${es?'Añadir al calendario':'Add to calendar'}: ${calendar}`:"",d.maps?`${es?'Cómo llegar':'Get directions'}: ${d.maps}`:"",d.email,d.phone,active?caveat:""].filter(Boolean).join("\n");
   const contact=[d.address,d.email,d.phone].filter(Boolean).join("\n");
-  const bodyHtml=`<table role="presentation" width="100%" cellspacing="0" cellpadding="0">${emailFields(fields)}</table>${emailParagraph(explanation)}${controls}<hr style="border:0;border-top:1px solid #dce8f7;margin:24px 0">${contact?emailParagraph(contact):""}${button(d.maps,es?"Cómo llegar":"Get directions")}${button(d.website,es?"Reservar otra cita":"Book another appointment")}${active?emailParagraph(caveat):""}`;
+  const receiptBlock = receipt && audience === "customer" ? renderReceiptBlock(site,receipt,es?"es":"en") : null;
+  const bodyHtml=`<table role="presentation" width="100%" cellspacing="0" cellpadding="0">${emailFields(fields)}</table>${receiptBlock?.html || ""}${emailParagraph(explanation)}${controls}<hr style="border:0;border-top:1px solid #dce8f7;margin:24px 0">${contact?emailParagraph(contact):""}${button(d.maps,es?"Cómo llegar":"Get directions")}${button(d.website,es?"Reservar otra cita":"Book another appointment")}${active?emailParagraph(caveat):""}`;
   const html=renderEmailLayout({brand,language:es?"es":"en",title:heading,bodyHtml,footer:es?"Mensaje relacionado con tu reservación. Tecnología de WebFactory PR.":"Message about your booking. Powered by WebFactory PR."});
-  return {text,html,subject:`${d.name} — ${heading} · ${d.date}`};
+  return {text:receiptBlock ? `${text}\n\n${receiptBlock.text}` : text,html,subject:`${d.name} — ${heading} · ${d.date}`};
 }
