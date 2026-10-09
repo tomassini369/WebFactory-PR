@@ -61,6 +61,8 @@ jobs:
         run: node scripts/browser-portal-glass-smoke.mjs
       - name: Check portal workspaces, mobile menus and navigation transitions
         run: node scripts/browser-portal-workspace-glass-smoke.mjs
+      - name: Check sidebar destinations, location drafts and redesign plan access
+        run: node scripts/browser-portal-menu-destinations-smoke.mjs
       - name: Check receipt presentation and cart flight without changing commerce
         run: node scripts/browser-reference-styles-smoke.mjs
       - name: Check automatic buyer receipts, demo isolation, PDF and printing

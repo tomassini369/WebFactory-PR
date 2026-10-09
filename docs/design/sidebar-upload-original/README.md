@@ -10,4 +10,8 @@ Approved integration changes: actual WebFactory branding, account identity (init
 
 No auth endpoints, commerce data, payment processing, chart calculations, permissions or dependencies change. Reduced-motion users do not receive dock magnification; Escape collapses the menu. Production is unchanged; this work targets the existing draft preview branch.
 
+Follow-up destination repair: the existing `LocationEditor` is now mounted for the `locations` tab and saves the selected site's business locations through the existing business endpoint, preserving its other fields. The `redesign` tab now presents the existing site-specific Builder entry and the same active-plan gate as Overview; it does not introduce another redesign engine or bypass subscription checks. No sidebar visuals change.
+
+`scripts/browser-portal-menu-destinations-smoke.mjs` exercises eight viewport/theme/language combinations with isolated writes: location form, unsaved-draft cancellation, save payload/feedback, selected-tab state, actual Builder navigation and inactive-plan gating. It is included in CI.
+
 QA uses isolated accounts and stubbed requests, never real credentials or business mutations. The workspace smoke checks both dashboards, five screen sizes (including short landscape), two themes, languages, 74/240 widths, search, original blur/nav height, draft cancellation/acceptance, section persistence, magnification/tooltips and logout failure/success. Original receipt/cart regression smoke is retained.
