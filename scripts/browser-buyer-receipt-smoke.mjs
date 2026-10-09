@@ -1,12 +1,12 @@
 import assert from 'node:assert/strict'
-import { mkdir, readFile } from 'node:fs/promises'
+import { mkdir } from 'node:fs/promises'
 import { createServer } from 'vite'
 import { chromium } from 'playwright'
 import { PDFDocument } from 'pdf-lib'
 const server=await createServer({server:{host:'127.0.0.1',port:5220,strictPort:true}});await server.listen()
 const origin='http://127.0.0.1:5220',shots='/tmp/wf-buyer-qa';await mkdir(shots,{recursive:true})
 const browser=await chromium.launch(process.env.QA_CHROMIUM_PATH?{executablePath:process.env.QA_CHROMIUM_PATH,args:['--no-sandbox']}:undefined)
-const site={siteId:'fixture',slug:'fixture',business:{name:'Business fixture',category:'Retail'},design:{templateSlug:'brisa-cocina'},features:{products:true,cart:true},catalog:[{id:'product',type:'product',name:'Stored product',price:12.34,inventory:10,description:'QA',imageUrl:'/portal-gold-waves.webp'}],employees:[],settings:{locale:'en',timezone:'America/Puerto_Rico'},hours:{},paymentRules:{}}
+const site={siteId:'fixture',slug:'fixture',business:{name:'Business fixture',category:'Retail'},design:{templateSlug:'brisa-cocina',primary:'#5a194d',secondary:'#e8aa35'},features:{products:true,cart:true},catalog:[{id:'product',type:'product',name:'Stored product',price:12.34,inventory:10,description:'QA',imageUrl:'/portal-gold-waves.webp'}],employees:[],settings:{locale:'en',timezone:'America/Puerto_Rico'},hours:{},paymentRules:{}}
 const receipt={receiptId:'saved',transactionId:'saved-txn',total:4567,subtotal:4321,tax:246,paymentStatus:'paid',paymentMethod:'stripe',createdAt:'2026-10-08T16:00:00Z',items:[{name:'Stored saved item',quantity:1,unitAmount:4321,amount:4321}],customer:{name:'',email:''},businessName:'Business fixture'}
 try{
  for(const width of (process.env.QA_BUILDER_ONLY?[]:process.env.QA_WIDTH?[Number(process.env.QA_WIDTH)]:[390,1280]))for(const theme of ['light','dark'])for(const lang of ['en','es']){
@@ -30,24 +30,37 @@ try{
   assert.match(await dialog.locator('header small').first().innerText(),/DEMO|DEMOSTRACI/)
   assert.match(await dialog.locator('.receipt-header').first().innerText(),/Brisa/)
   assert(await dialog.locator('.receipt-platform-logo img').first().evaluate(img=>img.complete&&img.naturalWidth>0))
-  console.log('Downloading PDF:',width,theme,lang);
-  const [file]=await Promise.all([page.waitForEvent('download'),dialog.locator('nav button').nth(1).click({timeout:10000})]).catch(async error=>{await dialog.screenshot({path:`${shots}/download-failed.png`});console.error('PDF failure UI:',await dialog.innerText(),errors);throw error})
-  const pdf=await PDFDocument.load(await readFile(await file.path()));assert(pdf.getPageCount()>=1)
-  await page.evaluate(()=>{window.print=()=>{window.__printed=true}});await dialog.locator('nav button').first().click();assert(await page.evaluate(()=>window.__printed))
-  await page.emulateMedia({media:'print'});assert(await dialog.locator('.wf-buyer-receipt-print').isVisible());assert.equal(await dialog.locator('.wf-buyer-receipt-animation').isVisible(),false);await page.emulateMedia({media:'screen'})
+  assert.equal(await dialog.locator(':scope > nav').count(),0,'Use only the original printer controls')
+  const printer=dialog.locator('.wf-original-receipt')
+  assert(await printer.evaluate(el=>getComputedStyle(el).backgroundImage.includes('color(')))
+  await printer.locator('.btn-action-tear').click()
+  const inspector=printer.locator('.inspector-modal[open]');await inspector.waitFor()
+  await page.evaluate(()=>{window.print=()=>{window.__printed=true}})
+  await inspector.locator('.inspector-action-btn.secondary').click();assert(await page.evaluate(()=>window.__printed))
+  await page.emulateMedia({media:'print'});assert(await dialog.locator('.wf-buyer-receipt-print').isVisible());assert.equal(await dialog.locator('.wf-buyer-receipt-animation').isVisible(),false)
+  assert.match(await dialog.locator('.wf-buyer-receipt-print').innerText(),/22[.,]00/)
+  const pdf=await PDFDocument.load(await page.pdf());assert(pdf.getPageCount()>=1)
+  await page.emulateMedia({media:'screen'})
+  await inspector.locator('.inspector-action-btn.primary').click()
+  await page.waitForFunction(()=>document.querySelector('.wf-original-receipt')?.dataset.printState==='completed')
+  await printer.locator('.console-btn').filter({hasText:/RESET|REINICIAR/}).click();assert.equal(await printer.getAttribute('data-print-state'),'idle')
+  await printer.locator('.btn-primary-print').click()
+  await page.waitForFunction(()=>document.querySelector('.wf-original-receipt')?.dataset.printState==='completed')
   await dialog.screenshot({path:`${shots}/template-${width}-${theme}-${lang}.png`})
   await page.keyboard.press('Escape');await dialog.waitFor({state:'detached'})
   assert.equal(writes.length,0,'Template demo must never post payments, emails or orders')
   // Real route must survive React StrictMode and use saved totals, not catalog prices.
   await page.goto(origin+'/sites/fixture?checkout=success&receipt='+ 'a'.repeat(32)+'&tracking='+'b'.repeat(32))
   await page.locator('.wf-buyer-receipt[open]').waitFor()
+  assert.equal(await page.locator('.wf-original-receipt').evaluate(el=>el.style.getPropertyValue('--receipt-brand-primary')),'#5a194d')
+  assert.equal(await page.locator('.wf-original-receipt').evaluate(el=>el.style.getPropertyValue('--receipt-brand-secondary')),'#e8aa35')
   assert.match(await page.locator('.wf-buyer-receipt .wf-receipt-total').first().innerText(),/45[.,]67/)
   assert.equal(new URL(page.url()).searchParams.has('receipt'),false)
   assert(writes.every(name=>name==='public-buyer-receipt'))
   await page.keyboard.press('Escape')
   assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1))
   assert.deepEqual(errors,[])
-  console.log('PASS template demo/PDF/print and automatic confirmed receipt:',width,theme,lang)
+  console.log('PASS original printer controls/native print/PDF and automatic confirmed receipt:',width,theme,lang)
   await page.close()
  }
  // Render the actual Builder iframe component using an isolated fixture.
@@ -59,8 +72,21 @@ try{
  await frame.locator('.cs-checkout input').nth(0).fill('Demo');await frame.locator('input[type=email]').fill('demo@example.invalid')
  await frame.locator('.cs-checkout form>button').click();await frame.locator('.wf-buyer-receipt[open]').waitFor()
  assert.match(await frame.locator('.wf-buyer-receipt .wf-receipt-total').first().innerText(),/12[.,]34/)
+ await frame.locator('.wf-original-receipt[data-print-state=completed]').waitFor()
+ assert.equal(await frame.locator('.wf-original-receipt').evaluate(el=>el.style.getPropertyValue('--receipt-brand-secondary')),'#e8aa35')
+ const darkBackground=await frame.locator('.wf-original-receipt').evaluate(el=>getComputedStyle(el).backgroundColor)
+ const previewFrame=page.frames().find(entry=>entry.url()==='about:srcdoc')
+ assert(previewFrame)
+ await previewFrame.evaluate(()=>{window.print=()=>{window.__printed=true}})
+ await frame.locator('.btn-action-tear').click()
+ await frame.locator('.inspector-modal[open]').waitFor()
+ await frame.locator('.inspector-action-btn.secondary').click()
+ assert(await previewFrame.evaluate(()=>window.__printed),'Original print must target the Builder iframe')
+ assert.equal(await page.evaluate(()=>Boolean(window.__printed)),false,'Do not print the outer Builder form')
+ await frame.locator('.inspector-close-btn').click()
  assert.equal(await frame.locator('html').getAttribute('data-wf-theme'),'dark')
  await page.evaluate(()=>document.documentElement.setAttribute('data-wf-theme','light'));await page.waitForTimeout(50);assert.equal(await frame.locator('html').getAttribute('data-wf-theme'),'light')
+ assert.notEqual(await frame.locator('.wf-original-receipt').evaluate(el=>getComputedStyle(el).backgroundColor),darkBackground)
  await page.screenshot({path:`${shots}/builder.png`})
  console.log('PASS Builder iframe demo and synchronized theme')
  await page.close()

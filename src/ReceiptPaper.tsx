@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react'
 import ReceiptDetails from './receipt-original/Receipt'
 import SlotPrinter from './receipt-original/SlotPrinter'
 import { sound } from './receipt-original/audio'
@@ -14,12 +14,16 @@ export type ReceiptRecord = {
   subtotal?: number; discounts?: number; tax?: number; tip?: number; paymentMethod?: string
 }
 
+export type ReceiptColors = { primary?: string; secondary?: string }
+type ReceiptProps = { receipt: ReceiptRecord; lang: 'es' | 'en'; timeZone?: string; colors?: ReceiptColors }
+const brandColor = (value: string | undefined, fallback: string) => /^#[0-9a-f]{3}([0-9a-f]{3})?$/i.test(value || '') ? value! : fallback
+
 /** Original printer timeline and 3D interactions, bound to the saved receipt. */
-export default function ReceiptPaper(props: { receipt: ReceiptRecord; lang: 'es' | 'en'; timeZone?: string }) {
+export default function ReceiptPaper(props: ReceiptProps) {
   // Changing records cancels all pending effects and starts a fresh printer.
   return <ReceiptPrinter key={props.receipt.receiptId + props.receipt.transactionId} {...props} />
 }
-function ReceiptPrinter(props: { receipt: ReceiptRecord; lang: 'es' | 'en'; timeZone?: string }) {
+function ReceiptPrinter(props: ReceiptProps) {
   const es = props.lang === 'es'
   const [inspectorOpen, setInspectorOpen] = useState(false)
   const [printState, setPrintState] = useState('printing')
@@ -84,7 +88,7 @@ function ReceiptPrinter(props: { receipt: ReceiptRecord; lang: 'es' | 'en'; time
     })
     return () => { clear(); unsubscribe(); media.removeEventListener('change', onMotion) }
   }, [])
-  return <div className="wf-original-receipt" data-print-state={printState}>
+  return <div className="wf-original-receipt" data-print-state={printState} style={{'--receipt-brand-primary':brandColor(props.colors?.primary,'#17263b'),'--receipt-brand-secondary':brandColor(props.colors?.secondary,'#3c86f6')} as CSSProperties}>
     <SlotPrinter lang={props.lang} maxPaperHeight={paperHeight} printState={printState} printProgress={printProgress}
       onStartPrint={() => startPrint()} onTearReceipt={tear} onOpenInspector={inspect}
       onFeedPaper={() => { if (state.current === 'printing') return; sound.startPrintSound(); feedTimer.current = setTimeout(() => sound.stopPrintSound(), 200) }}

@@ -20,8 +20,8 @@ html body #root .wf-original-receipt .wf-receipt-paper{width:100%;margin:0;anima
 .wf-original-receipt .receipt-sheet{overflow-wrap:anywhere;user-select:text}.wf-original-receipt .receipt-content{padding-bottom:18px}.wf-original-receipt .receipt-codes-container{font-size:10px;text-align:center;justify-content:center}.wf-original-receipt .col-item{min-width:0}.wf-original-receipt .receipt-row-between{gap:8px}.wf-original-receipt .receipt-row-between .val{max-width:70%;text-align:right}
 
 .wf-original-receipt .btn-primary-print:hover:not(:disabled){background:#3c86f6;border-color:#3c86f6;color:#fff}
-.wf-original-receipt{background:radial-gradient(ellipse at 8% 5%,#dce7f5 0,transparent 45%),radial-gradient(ellipse at 95% 95%,#e0e8f0 0,transparent 50%),#edf2f7;padding:24px 12px;border-radius:24px;box-sizing:border-box}
-html[data-wf-theme=dark] .wf-original-receipt{background:radial-gradient(ellipse at 8% 5%,#1b304a 0,transparent 45%),radial-gradient(ellipse at 95% 95%,#19293e 0,transparent 50%),#0d1522}
+.wf-original-receipt{background:radial-gradient(ellipse at 8% 5%,color-mix(in srgb,var(--receipt-brand-secondary) 24%,#f8fafc) 0,transparent 45%),radial-gradient(ellipse at 95% 95%,color-mix(in srgb,var(--receipt-brand-primary) 14%,#f8fafc) 0,transparent 50%),color-mix(in srgb,var(--receipt-brand-secondary) 8%,#f8fafc);padding:24px 12px;border-radius:24px;box-sizing:border-box}
+html[data-wf-theme=dark] .wf-original-receipt{background:radial-gradient(ellipse at 8% 5%,color-mix(in srgb,var(--receipt-brand-secondary) 32%,#0d1522) 0,transparent 45%),radial-gradient(ellipse at 95% 95%,color-mix(in srgb,var(--receipt-brand-primary) 38%,#0d1522) 0,transparent 50%),color-mix(in srgb,var(--receipt-brand-primary) 20%,#0d1522)}
 
 /* Receipt paper is light in both page themes; keep the official light-surface mark. */
 .wf-original-receipt .receipt-platform-logo{display:flex;justify-content:center;padding:8px 0 12px}

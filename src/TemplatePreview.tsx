@@ -201,7 +201,7 @@ function TemplateSite({ slug }: { slug: string }) {
   return (
     <div className={`template-site visual-${templateVisualStyle(config.category)}`} style={styles}>
       <TemplateNotice ui={ui} slug={slug} />
-      {buyerReceipt && <BuyerReceipt receipt={buyerReceipt} lang={language} onClose={()=>setBuyerReceipt(null)}/>}
+      {buyerReceipt && <BuyerReceipt receipt={buyerReceipt} lang={language} colors={{primary:config.dark,secondary:config.accent}} onClose={()=>setBuyerReceipt(null)}/>}
 
       <TemplateLayout config={config} ui={ui} language={language} setLanguage={setLanguage} startBooking={startBooking} setCatalogOpen={setCatalogOpen} setCartOpen={setCartOpen} cart={cart} map={<TemplateMap location={config.location} language={language} sample/>} contact={<></>} />
 
