@@ -63,6 +63,8 @@ jobs:
         run: node scripts/browser-portal-workspace-glass-smoke.mjs
       - name: Check receipt presentation and cart flight without changing commerce
         run: node scripts/browser-reference-styles-smoke.mjs
+      - name: Check automatic buyer receipts, demo isolation, PDF and printing
+        run: node scripts/browser-buyer-receipt-smoke.mjs
       - name: Check portal login fields on desktop and mobile
         run: node scripts/browser-login-layout-smoke.mjs
       - name: Check panel keyboard navigation

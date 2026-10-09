@@ -1,3 +1,4 @@
+import { issueBuyerReceiptAccess } from '../lib/buyer-receipt-access.mjs';
 import { availableInventory } from '../lib/inventory-availability.mjs';
 import { createInPersonOrder } from '../lib/in-person-orders.mjs';
 import { createReservedStripeCheckout } from '../lib/reserved-stripe-checkout.mjs';
@@ -168,8 +169,11 @@ export default async (req) => {
       return Response.json({ ok: true, calendarUrl:bookingCalendarUrl(record), manageUrl:bookingManageUrl(record), paymentRequired: false, transactionId, status: record.status, calendarSyncStatus: record.calendarSyncStatus, ...(trackingToken ? { trackingUrl: `${publicBaseUrl()}/track/${trackingToken}` } : {}) });
     }
 
+    const receiptAccess = await issueBuyerReceiptAccess(site.siteId, transactionId);
+    record.buyerReceiptHash = receiptAccess.hash;
+    const receiptReturn = `receipt=${encodeURIComponent(receiptAccess.token)}`;
     if(payload.paymentProvider === "ath_movil") {
-      const result=await createAthCheckout(site,record,{lang,requestUrl:req.url,returnUrl:`/sites/${encodeURIComponent(site.slug)}${trackingToken?`?tracking=${encodeURIComponent(trackingToken)}`:""}`});
+      const result=await createAthCheckout(site,record,{lang,requestUrl:req.url,returnUrl:`/sites/${encodeURIComponent(site.slug)}?${receiptReturn}${trackingToken?`&tracking=${encodeURIComponent(trackingToken)}`:""}`});
       return Response.json(result,{headers:{"Cache-Control":"no-store"}});
     }
     if(payload.paymentProvider && payload.paymentProvider !== "stripe") throw Object.assign(new Error("Unsupported payment provider."),{status:400});
@@ -182,7 +186,7 @@ export default async (req) => {
 
     const params = new URLSearchParams();
     params.set("mode", "payment");
-    params.set("success_url", `${publicBaseUrl()}/sites/${encodeURIComponent(site.slug)}?checkout=success&session_id={CHECKOUT_SESSION_ID}${trackingToken ? `&tracking=${encodeURIComponent(trackingToken)}` : ""}`);
+    params.set("success_url", `${publicBaseUrl()}/sites/${encodeURIComponent(site.slug)}?checkout=success&${receiptReturn}&session_id={CHECKOUT_SESSION_ID}${trackingToken ? `&tracking=${encodeURIComponent(trackingToken)}` : ""}`);
     params.set("cancel_url", `${publicBaseUrl()}/sites/${encodeURIComponent(site.slug)}?checkout=cancelled`);
     params.set("customer_email", customer.email);
     params.set("client_reference_id", transactionId);

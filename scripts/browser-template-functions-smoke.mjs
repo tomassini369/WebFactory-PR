@@ -53,8 +53,14 @@ try{
     assert.equal(await page.locator('.template-payment-step').count(),(service.deposit??service.price)>0?1:0,'Free reservations do not ask for payment')
     if((service.deposit??service.price)>0)await page.locator('.template-booking-actions .template-solid').click()
     await page.locator('.template-booking-verified .template-solid').click()
-    await page.locator('.template-booking-confirmed').waitFor()
-    await page.locator('.template-booking-modal .template-modal-close').click()
+    if((service.deposit??service.price)>0){
+      await page.locator('.wf-buyer-receipt[open]').waitFor()
+      assert.match(await page.locator('.wf-buyer-receipt>header small').innerText(),/DEMO|DEMOSTRACI/)
+      await page.locator('.wf-buyer-receipt>header button').click()
+    }else{
+      await page.locator('.template-booking-confirmed').waitFor()
+      await page.locator('.template-booking-modal .template-modal-close').click()
+    }
    }
    const product=config.items.find(item=>!item.appointment&&item.purchasable!==false)
    if(config.cartEnabled&&product){
@@ -72,8 +78,9 @@ try{
     await page.locator('.template-cart-drawer .template-payment-options').getByRole('button',{name:'ATH Móvil',exact:true}).click()
     assert.equal(await page.locator('.template-cart-drawer .template-payment-options button.selected').textContent(),'ATH Móvil')
     await page.locator('.template-cart-drawer > .template-solid').click()
-    await page.locator('.template-success').waitFor()
-    await page.locator('.template-cart-drawer > header').getByRole('button').click()
+    await page.locator('.wf-buyer-receipt[open]').waitFor()
+    assert.match(await page.locator('.wf-buyer-receipt .receipt-header').first().innerText(),/DEMO|DEMOSTRACI/)
+    await page.locator('.wf-buyer-receipt>header button').click()
    }
    assert.equal(await page.locator('.template-demo-contact').count(),0)
    await page.goto('http://127.0.0.1:5191/builder?template='+config.slug)

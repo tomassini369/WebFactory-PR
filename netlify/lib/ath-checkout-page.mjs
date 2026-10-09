@@ -29,6 +29,7 @@ export function renderAthCheckoutPage({site, session, record, token, publicToken
           const result=await response.json();if(!response.ok||!result.paid)throw new Error(result.message||'Verification pending.');
           document.getElementById('ATHMovil_Checkout_Button_payment').hidden=true;recovery.hidden=true;
           message.textContent=(es?'Pago verificado. Referencia: ':'Payment verified. Reference: ')+result.referenceNumber;
+          location.assign(${safeAthJson(session.returnUrl || `/sites/${site.slug}`)});
         }catch(error){message.textContent=error.message;recovery.hidden=false;document.getElementById('reference').value=referenceNumber||'';}
         finally{verifying=false;document.getElementById('verify').disabled=false;}
       }

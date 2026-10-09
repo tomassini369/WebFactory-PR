@@ -40,7 +40,7 @@ function SawtoothTeeth({ direction = 'top' }: { direction?: string }) {
 export default function Receipt({ receipt, lang, timeZone = 'America/Puerto_Rico' }: { receipt: ReceiptRecord; lang: 'es' | 'en'; timeZone?: string }) {
   const es = lang === 'es'
   const money = (cents: number) => new Intl.NumberFormat(es ? 'es-PR' : 'en-US', { style: 'currency', currency: 'USD' }).format(cents / 100)
-  const statuses: Record<string, string> = es ? { paid: 'Pagado', paid_in_person: 'Pagado presencialmente', refunded: 'Reembolsado', partially_refunded: 'Reembolso parcial', due: 'Pendiente' } : { paid: 'Paid', paid_in_person: 'Paid in person', refunded: 'Refunded', partially_refunded: 'Partially refunded', due: 'Due' }
+  const statuses: Record<string, string> = es ? { demo: 'Demostración', paid: 'Pagado', paid_in_person: 'Pagado presencialmente', refunded: 'Reembolsado', partially_refunded: 'Reembolso parcial', due: 'Pendiente' } : { demo: 'Demo', paid: 'Paid', paid_in_person: 'Paid in person', refunded: 'Refunded', partially_refunded: 'Partially refunded', due: 'Due' }
   const date = new Date(receipt.createdAt)
   const displayTime = Number.isFinite(date.getTime()) ? date.toLocaleString(es ? 'es-PR' : 'en-US', { timeZone }) : receipt.createdAt
 
@@ -58,13 +58,13 @@ export default function Receipt({ receipt, lang, timeZone = 'America/Puerto_Rico
       {/* Main Body */}
       <div className="receipt-content">
         <div className="receipt-platform-logo">
-          <AdaptiveLogo variant="light" alt="WebFactory PR" width={180} height={108} />
+          {receipt.logoUrl ? <img src={receipt.logoUrl} alt={receipt.businessName || ''} width={180} style={{height:'auto',objectFit:'contain'}}/> : <AdaptiveLogo variant="light" alt="WebFactory PR" width={180} height={108} />}
         </div>
 
         {/* Header */}
         <div className="receipt-header">
-          <div className="receipt-brand-badge">{es ? "RECIBO DE PAGO" : "PAYMENT RECEIPT"}</div>
-          <h2 className="receipt-store-title">{es ? "Recibo" : "Receipt"}</h2>
+          <div className="receipt-brand-badge">{receipt.demo ? (es ? "DEMOSTRACIÓN · SIN COBROS" : "DEMO · NO CHARGE") : (es ? "RECIBO DE PAGO" : "PAYMENT RECEIPT")}</div>
+          <h2 className="receipt-store-title">{receipt.businessName || (es ? "Recibo" : "Receipt")}</h2>
           <div className="receipt-tagline">{receipt.customer?.name || receipt.customer?.email}</div>
           <div className="receipt-meta-info font-mono-sm">{receipt.customer?.name && receipt.customer.email}</div>
         </div>

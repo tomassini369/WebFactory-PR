@@ -9,6 +9,7 @@ import './receipt-original/integration.css'
 export type ReceiptRecord = {
   receiptId: string; transactionId: string; total: number; paymentStatus: string; createdAt: string
   customer: { name: string; email: string }
+  businessName?: string; logoUrl?: string; demo?: boolean
   items?: Array<{ name: string; quantity: number; unitAmount: number; amount: number }>
   subtotal?: number; discounts?: number; tax?: number; tip?: number; paymentMethod?: string
 }
@@ -96,7 +97,7 @@ function ReceiptPrinter(props: { receipt: ReceiptRecord; lang: 'es' | 'en'; time
       {inspectorOpen && <>
       <div className="inspector-header"><div className="inspector-title"><h3>{es ? 'Recibo desprendido' : 'Collected receipt'}</h3></div><button type="button" className="inspector-close-btn" autoFocus onClick={() => dialog.current?.close()} aria-label={es ? 'Cerrar' : 'Close'}>✕</button></div>
       <div className="inspector-body"><div className="inspector-receipt-wrapper"><ReceiptDetails {...props} /></div></div>
-      <div className="inspector-actions"><button type="button" className="inspector-action-btn secondary" onClick={() => window.print()}>{es ? 'Imprimir en papel' : 'Print to physical paper'}</button><button type="button" className="inspector-action-btn primary" onClick={() => startPrint()}>{es ? 'Reimprimir este recibo' : 'Reprint this receipt'}</button></div>
+      <div className="inspector-actions"><button type="button" className="inspector-action-btn secondary" onClick={() => dialog.current?.ownerDocument.defaultView?.print()}>{es ? 'Imprimir / Guardar PDF' : 'Print / Save PDF'}</button><button type="button" className="inspector-action-btn primary" onClick={() => startPrint()}>{es ? 'Reimprimir este recibo' : 'Reprint this receipt'}</button></div>
       </>}
     </dialog>
   </div>

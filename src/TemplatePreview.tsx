@@ -1,3 +1,5 @@
+import BuyerReceipt, { demoReceipt } from './BuyerReceipt'
+import type { ReceiptRecord } from './ReceiptPaper'
 import PortalReturnHome from './PortalReturnHome'
 import { useFlyToCart } from './useFlyToCart'
 import AnimatedOverlay from './AnimatedOverlay'
@@ -55,6 +57,7 @@ function TemplateSite({ slug }: { slug: string }) {
   const [bookingPaymentMethod, setBookingPaymentMethod] = useState<'stripe' | 'ath'>('stripe')
   const [bookingCustomerName, setBookingCustomerName] = useState<string>(ui.defaultCustomer)
   const [bookingCustomerEmail, setBookingCustomerEmail] = useState('template@example.com')
+  const [buyerReceipt, setBuyerReceipt] = useState<ReceiptRecord | null>(null)
   const [checkoutComplete, setCheckoutComplete] = useState(false)
   const [cartPaymentMethod,setCartPaymentMethod]=useState<'stripe'|'ath'>('stripe')
 
@@ -198,6 +201,7 @@ function TemplateSite({ slug }: { slug: string }) {
   return (
     <div className={`template-site visual-${templateVisualStyle(config.category)}`} style={styles}>
       <TemplateNotice ui={ui} slug={slug} />
+      {buyerReceipt && <BuyerReceipt receipt={buyerReceipt} lang={language} onClose={()=>setBuyerReceipt(null)}/>}
 
       <TemplateLayout config={config} ui={ui} language={language} setLanguage={setLanguage} startBooking={startBooking} setCatalogOpen={setCatalogOpen} setCartOpen={setCartOpen} cart={cart} map={<TemplateMap location={config.location} language={language} sample/>} contact={<></>} />
 
@@ -283,7 +287,7 @@ function TemplateSite({ slug }: { slug: string }) {
             <button
               className="template-solid template-checkout"
               disabled={cart.length === 0}
-              onClick={() => setCheckoutComplete(true)}
+              onClick={() => { setCheckoutComplete(true); setCartOpen(false); setBuyerReceipt(demoReceipt(config.name, cart.map(({item,quantity})=>({name:item.name,quantity,unitAmount:Math.round(item.price*100),amount:Math.round(item.price*100)*quantity})), cartPaymentMethod)) }}
             >
               {ui.templateCheckout}
             </button>
@@ -438,7 +442,7 @@ function TemplateSite({ slug }: { slug: string }) {
                   {bookingRequiresPayment ? <b>✓ {bookingPaymentMethod === 'stripe' ? 'Stripe' : 'ATH Móvil'} {ui.paymentVerifiedLine}</b> : <b>{ui.paymentSkipped}</b>}
                   <b>{ui.calendarPassed}</b>
                 </div>
-                <button className="template-solid" onClick={() => setBookingStage('confirmed')}>{ui.confirmBooking}</button>
+                <button className="template-solid" onClick={() => { setBookingStage('confirmed'); if(bookingRequiresPayment) { setBookingItem(null); setBuyerReceipt(demoReceipt(config.name,[{name:bookingItem.name,quantity:1,unitAmount:Math.round(bookingCharge*100),amount:Math.round(bookingCharge*100)}],bookingPaymentMethod,{name:bookingCustomerName,email:bookingCustomerEmail})) } }}>{ui.confirmBooking}</button>
                 <small className="template-safe-note">{ui.checksVisual}</small>
               </div>
             )}
