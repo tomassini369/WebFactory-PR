@@ -32,6 +32,7 @@ try{
   assert.equal(await active().evaluate(e=>getComputedStyle(e).transitionDuration),'0s')
   const box=await stage.boundingBox();const x=box.x+box.width/2,y=box.y+100
   await page.mouse.move(x,y);await page.mouse.down();await page.mouse.move(x-90,y,{steps:10});await page.mouse.up()
+  await page.waitForFunction(()=>document.querySelector('.template-spatial-card[data-active="true"]').dataset.index==='1')
   assert.equal(await active().getAttribute('data-index'),'1','Horizontal dragging advances exactly one item')
   await page.mouse.move(x,y);await page.mouse.down();await page.mouse.move(x,y+90,{steps:10});await page.mouse.up()
   assert.equal(await active().getAttribute('data-index'),'1','Vertical gestures do not change the selection')
@@ -52,7 +53,9 @@ try{
    await page.evaluate(()=>scrollTo(0,0))
   }
   await stage.press('Home')
-  await page.mouse.click(box.x+Math.min(box.width-10,box.width/2+250),y)
+  await page.waitForTimeout(300) // Let the original drag spring settle and release click suppression.
+  await page.mouse.click(box.x+Math.min(box.width-10,box.width/2+250),box.y+box.height/2)
+  await page.waitForTimeout(750) // Original spring completes before measuring the new front card.
   assert.equal(await active().getAttribute('data-index'),'1','Clicking the exposed side card selects it')
   // Geometry includes the full active card and dock, with no horizontal page overflow.
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1))
@@ -60,6 +63,24 @@ try{
   assert.ok(geometry.inside);assert.equal(geometry.ink,'rgb(255, 255, 255)')
   for(const button of await page.locator('.template-spatial-dock button').evaluateAll(es=>es.map(e=>({w:e.getBoundingClientRect().width,h:e.getBoundingClientRect().height}))))assert.ok(button.w>=44&&button.h>=44)
   const description=active().locator('p');assert.ok(await description.evaluate(e=>e.clientHeight>20&&e.scrollHeight>e.clientHeight));await description.focus();await description.press('End');await page.waitForFunction(()=>document.querySelector('.template-spatial-card[data-active="true"] p').scrollTop>0)
+  const favorite=page.locator('.template-spatial-dock button[aria-pressed]')
+  await favorite.click();assert.equal(await favorite.getAttribute('aria-pressed'),'true')
+  const more=active().locator('.card-more-btn');await more.click()
+  const options=page.locator('.wf-carousel-menu');await options.waitFor()
+  assert.equal(await options.locator('button').first().evaluate(e=>e===document.activeElement),true)
+  await page.keyboard.press('Escape');await options.waitFor({state:'detached'});assert.equal(await more.evaluate(e=>e===document.activeElement),true)
+  await active().locator('.card-expand-btn').click()
+  const dialog=page.getByRole('dialog');await dialog.waitFor();assert.equal(await dialog.locator('h2').textContent(),'Business highlight 1')
+  await page.keyboard.press('Escape');await dialog.waitFor({state:'hidden'})
+  assert.equal(await active().locator('.card-expand-btn').evaluate(e=>e===document.activeElement),true)
+  if(width===390&&theme==='light'&&lang==='en'){
+   await page.evaluate(()=>document.querySelector('.template-site').style.setProperty('--template-accent','#147354'))
+   assert.equal(await favorite.evaluate(e=>getComputedStyle(e).color),'rgb(20, 115, 84)','Controls inherit business brand')
+   await page.emulateMedia({reducedMotion:'no-preference'})
+   await page.getByRole('button',{name:'Play slideshow',exact:true}).click();await page.waitForTimeout(4650)
+   assert.equal(await active().getAttribute('data-index'),'2')
+   await page.getByRole('button',{name:'Pause slideshow',exact:true}).click()
+  }
   await page.evaluate(()=>window.renderHighlights(2));await page.waitForFunction(()=>document.querySelectorAll('.template-spatial-card').length===2);assert.equal(await stage.locator('article').count(),2)
   await page.getByRole('button',{name:'Next highlight',exact:true}).click();assert.equal(await stage.locator('[data-active="true"]').count(),1)
   await page.evaluate(()=>window.renderHighlights(1,'en',true));await page.waitForFunction(()=>document.querySelectorAll('.template-spatial-card').length===1);assert.equal(await active().getAttribute('data-index'),'0');assert.ok(await page.getByRole('button',{name:'Next highlight',exact:true}).isDisabled())

@@ -1,85 +1,67 @@
-import { useRef, useState, type CSSProperties } from 'react'
-import type { TemplateItem } from './templateData'
-import type { TemplateLanguage } from './templateI18n'
+import {useEffect,useRef,useState} from 'react'
+import {motion} from 'framer-motion'
+import {usePrefersReducedMotion} from './usePrefersReducedMotion'
+import type {TemplateItem} from './templateData'
+import type {TemplateLanguage} from './templateI18n'
+import {GlassCarousel} from './carousel-original/GlassCarousel'
+import {BottomControlDock} from './carousel-original/BottomControlDock'
+import type {Highlight} from './carousel-original/GlassCard'
+import './carousel-original/original.css'
 import './template-spatial-carousel.css'
 
-/** Glasssy V2's spatial arc, adapted to real business highlights without catalog actions. */
-export default function TemplateHighlights({items, language}: {items: TemplateItem[]; language: TemplateLanguage}) {
-  const highlights = items.slice(0, 3)
-  const [selectedId, setSelectedId] = useState<string | null>(null)
-  const gesture = useRef<{id: number; x: number; y: number} | null>(null)
-  const suppressClick = useRef(false)
-  const rail = useRef<HTMLDivElement>(null)
-  const found = highlights.findIndex(item => item.id === selectedId)
-  const activeIndex = Math.max(0, found)
-  const total = highlights.length
-  const es = language === 'es'
-  const move = (direction: number) => {
-    if (total > 1) setSelectedId(highlights[(activeIndex + direction + total) % total].id)
-  }
-  if (!total) return null
-  return <div className="template-highlights template-spatial-highlights">
-    <div ref={rail} className="template-catalog-preview template-spatial-stage" tabIndex={0} role="region"
-      aria-roledescription={es ? 'carrusel' : 'carousel'}
-      aria-label={es ? 'Productos y servicios destacados' : 'Featured products and services'}
-      onKeyDown={event => {
-        if (event.target !== event.currentTarget) return
-        if (event.key === 'ArrowRight' || event.key === 'ArrowLeft') { event.preventDefault(); move(event.key === 'ArrowRight' ? 1 : -1) }
-        if (event.key === 'Home' || event.key === 'End') { event.preventDefault(); setSelectedId(highlights[event.key === 'Home' ? 0 : total - 1].id) }
-      }}
-      onPointerDown={event => {
-        if (!event.isPrimary || (event.pointerType === 'mouse' && event.button !== 0)) return
-        suppressClick.current = false
-        gesture.current = {id: event.pointerId, x: event.clientX, y: event.clientY}
-      }}
-      onPointerMove={event => {
-        const start = gesture.current
-        if (start && event.pointerType === 'mouse' && Math.abs(event.clientX - start.x) > 10) {
-          event.currentTarget.setPointerCapture(event.pointerId)
-        }
-      }}
-      onPointerUp={event => {
-        const start = gesture.current
-        gesture.current = null
-        if (!start || start.id !== event.pointerId) return
-        const dx = event.clientX - start.x, dy = event.clientY - start.y
-        if (Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(dy) * 1.2) {
-          suppressClick.current = true
-          move(dx < 0 ? 1 : -1)
-        }
-      }}
-      onPointerCancel={() => { gesture.current = null }}>
-      {highlights.map((item, index) => {
-        let diff = index - activeIndex
-        if (diff > total / 2) diff -= total
-        if (diff < -total / 2) diff += total
-        const active = diff === 0
-        return <article key={item.id} data-active={active} data-index={index}
-          className="template-spatial-card" style={{'--card-slot': diff} as CSSProperties}
-          role={active ? 'group' : 'button'} tabIndex={active ? undefined : 0}
-          aria-label={active ? `${index + 1} / ${total}: ${item.name}` : `${es ? 'Mostrar' : 'Show'} ${item.name}`}
-          onClick={() => { if (!suppressClick.current && !active) setSelectedId(item.id) }}
-          onKeyDown={event => {
-            if (!active && (event.key === 'Enter' || event.key === ' ')) {
-              event.preventDefault(); setSelectedId(item.id); rail.current?.focus({preventScroll: true})
-            }
-          }}>
-          <div className="template-spatial-media" aria-hidden="true">
-            {item.image && <img src={item.image} alt="" loading="lazy" draggable={false} />}
+/** Supplied Glasssy V2 components, bound to business data instead of the movie demonstration. */
+export default function TemplateHighlights({items,language}:{items:TemplateItem[];language:TemplateLanguage}) {
+  const highlights=items.slice(0,3)
+  const [selectedId,setSelectedId]=useState<string|null>(null)
+  const [favorites,setFavorites]=useState<string[]>([])
+  const [playing,setPlaying]=useState(false)
+  const [expanded,setExpanded]=useState<Highlight|null>(null)
+  const [menu,setMenu]=useState<Highlight|null>(null)
+  const dialog=useRef<HTMLDialogElement>(null)
+  const menuPanel=useRef<HTMLDivElement>(null)
+  const container=useRef<HTMLDivElement>(null)
+  const reduced=usePrefersReducedMotion()
+  const es=language==='es',total=highlights.length
+  const activeIndex=Math.max(0,highlights.findIndex(item=>item.id===selectedId))
+  const movies:Highlight[]=highlights.map(item=>({id:item.id,title:item.name,image:item.image,description:item.description,
+    location:item.displayPrice||new Intl.NumberFormat(es?'es-PR':'en-US',{style:'currency',currency:'USD'}).format(item.price),
+    coordinates:item.badge||'',shortLocation:item.badge||'',subtitle:item.badge||'',es}))
+  const move=(direction:number)=>{if(total>1)setSelectedId(highlights[(activeIndex+direction+total)%total].id)}
+  const toggleFavorite=(id:string)=>setFavorites(current=>current.includes(id)?current.filter(v=>v!==id):[...current,id])
+  useEffect(()=>{
+    // Original 4500ms rotation is opt-in; pause inspection and hidden tabs.
+    if(!playing||reduced||total<2||expanded||menu)return
+    const timer=window.setInterval(()=>{if(!document.hidden)setSelectedId(current=>{
+      const index=Math.max(0,highlights.findIndex(item=>item.id===current));return highlights[(index+1)%total].id
+    })},4500)
+    return()=>window.clearInterval(timer)
+  },[playing,reduced,total,expanded,menu,items])
+  useEffect(()=>{if(expanded&&!dialog.current?.open)dialog.current?.showModal()},[expanded])
+  useEffect(()=>{if(menu)menuPanel.current?.querySelector<HTMLButtonElement>('button')?.focus()},[menu])
+  const closeMenu=()=>{setMenu(null);container.current?.querySelector<HTMLButtonElement>('.is-active .card-more-btn')?.focus()}
+  if(!total)return null
+  const current=movies[activeIndex]
+  return <div ref={container} className="template-highlights template-spatial-highlights">
+    <GlassCarousel movies={movies} activeIndex={activeIndex} onChangeIndex={index=>setSelectedId(highlights[index].id)} onExpandMovie={setExpanded} onOpenMenu={setMenu}/>
+    <BottomControlDock currentMovie={current} activeIndex={activeIndex} total={total} onPrev={()=>move(-1)} onNext={()=>move(1)}
+      isPlaying={playing&&!reduced} onTogglePlay={()=>setPlaying(value=>!value)} isFavorite={favorites.includes(current.id)}
+      onToggleFavorite={()=>toggleFavorite(current.id)} onSelectCurrent={()=>setExpanded(current)}/>
+    <span className="wf-carousel-status" role="status" aria-live="polite" aria-atomic="true">{activeIndex+1} / {total}: {current.title}</span>
+    {menu&&<div ref={menuPanel} className="wf-carousel-menu" role="group" aria-label={es?'Opciones del destacado':'Highlight options'} onKeyDown={event=>{if(event.key==='Escape'){event.preventDefault();closeMenu()}}}>
+      <button type="button" onClick={()=>{setExpanded(menu);setMenu(null)}}>{es?'Ampliar detalles':'Expand details'}</button>
+      <button type="button" aria-pressed={favorites.includes(menu.id)} onClick={()=>toggleFavorite(menu.id)}>{favorites.includes(menu.id)?(es?'Quitar de favoritos':'Remove from favorites'):(es?'Añadir a favoritos':'Add to favorites')}</button>
+      <button type="button" onClick={closeMenu}>{es?'Cerrar':'Close'}</button>
+    </div>}
+    <dialog ref={dialog} className="wf-carousel-dialog" aria-label={es?'Detalles del destacado':'Highlight details'} onClose={()=>setExpanded(null)} onClick={event=>{if(event.target===event.currentTarget)dialog.current?.close()}}>
+      {expanded&&<motion.div className="glass-modal-window" initial={reduced?false:{opacity:0,scale:.88,y:30}} animate={{opacity:1,scale:1,y:0}} transition={reduced?{duration:0}:{type:'spring',damping:25,stiffness:280}}>
+        <div className="glass-reflection-rim"/>
+        <button className="modal-close-btn" type="button" autoFocus aria-label={es?'Cerrar detalles':'Close details'} onClick={()=>dialog.current?.close()}>×</button>
+        <div className="modal-content-grid"><div className="modal-poster-col"><div className="modal-poster-frame"><img className="modal-poster-img" src={expanded.image} alt={expanded.title}/></div></div>
+          <div className="modal-info-col"><h2 className="modal-title">{expanded.title}</h2><p className="modal-description">{expanded.description}</p><strong>{expanded.location}</strong>{expanded.coordinates&&<p>{expanded.coordinates}</p>}
+            <div className="modal-actions-row"><button type="button" className="modal-action-primary" aria-pressed={favorites.includes(expanded.id)} onClick={()=>toggleFavorite(expanded.id)}>{favorites.includes(expanded.id)?(es?'Guardado':'Saved'):(es?'Guardar favorito':'Bookmark')}</button></div>
           </div>
-          <div className="template-spatial-copy">
-            {item.badge && <small>{item.badge}</small>}
-            <h3>{item.name}</h3>
-            <p tabIndex={active ? 0 : undefined}>{item.description}</p>
-            <strong>{item.displayPrice || new Intl.NumberFormat(es ? 'es-US' : 'en-US', {style: 'currency', currency: 'USD'}).format(item.price)}</strong>
-          </div>
-        </article>
-      })}
-    </div>
-    <div className="template-carousel-controls template-spatial-dock" role="group" aria-label={es ? 'Navegar destacados' : 'Navigate highlights'}>
-      <button type="button" disabled={total < 2} onClick={() => move(-1)} aria-label={es ? 'Destacado anterior' : 'Previous highlight'}>←</button>
-      <span role="status" aria-live="polite" aria-atomic="true">{activeIndex + 1} / {total}<b>{highlights[activeIndex].name}</b></span>
-      <button type="button" disabled={total < 2} onClick={() => move(1)} aria-label={es ? 'Siguiente destacado' : 'Next highlight'}>→</button>
-    </div>
+        </div>
+      </motion.div>}
+    </dialog>
   </div>
 }

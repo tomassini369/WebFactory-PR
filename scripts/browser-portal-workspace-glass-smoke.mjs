@@ -35,6 +35,8 @@ try{
   await page.setViewportSize({width,height:844});await page.goto('http://127.0.0.1:5196/'+path)
   const root=page.locator(path==='client-admin'?'.ca-dashboard':'.wfa-dashboard');await root.waitFor()
   if(await page.locator('html').getAttribute('data-wf-theme')!==theme)await page.locator('.wf-theme-toggle').click()
+  assert.equal(await root.evaluate(e=>getComputedStyle(e).getPropertyValue('--pg-accent').trim()),theme==='dark'?'#91bfff':'#2867b2','Original accents must use platform blue')
+  assert.equal(await root.locator('.gd-dock-curve-svg stop').first().evaluate(e=>getComputedStyle(e).stopColor),theme==='dark'?'rgb(145, 191, 255)':'rgb(40, 103, 178)')
   for(const lang of ['ES','EN']){await page.locator('.portal-language button').getByText(lang,{exact:true}).click();assert.equal(await page.locator('html').getAttribute('lang'),lang.toLowerCase())}
   assert.equal(await page.locator('.wf-theme-toggle').count(),1)
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'Workspace must not overflow')

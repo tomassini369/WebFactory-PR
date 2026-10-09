@@ -1,0 +1,434 @@
+/* =========================================
+   Form 2: Desert Landscape Glassy Login Form
+========================================= */
+
+.form2-scene {
+  position: relative;
+  width: 100vw;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-size: cover;
+  background-position: center center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  background-color: #2b0c3d;
+  overflow-x: hidden;
+  box-sizing: border-box;
+}
+
+/* =========================================
+   Geometric Wireframe Overlay Shapes
+========================================= */
+.wireframe-shapes {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.wireframe-circle {
+  position: absolute;
+  border-radius: 50%;
+  border: 4px solid rgba(255, 255, 255, 0.16);
+}
+
+.top-left-circle {
+  top: -80px;
+  left: 20px;
+  width: 200px;
+  height: 200px;
+  opacity: 0.35;
+}
+
+.bottom-left-circle {
+  bottom: -60px;
+  left: 140px;
+  width: 180px;
+  height: 180px;
+  opacity: 0.4;
+}
+
+.top-right-triangle {
+  position: absolute;
+  top: 10px;
+  right: 120px;
+  width: 140px;
+  height: 140px;
+  opacity: 0.35;
+}
+
+.top-right-triangle svg {
+  width: 100%;
+  height: 100%;
+}
+
+.bottom-right-ring-1 {
+  bottom: 15px;
+  right: 20px;
+  width: 170px;
+  height: 170px;
+  opacity: 0.4;
+}
+
+.bottom-right-ring-2 {
+  bottom: 90px;
+  right: -30px;
+  width: 160px;
+  height: 160px;
+  opacity: 0.35;
+}
+
+/* =========================================
+   Main Grid / Layout
+========================================= */
+.form2-container {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  max-width: 1380px;
+  min-height: 100vh;
+  padding: 60px 80px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-sizing: border-box;
+}
+
+/* Left Hero Section */
+.hero-left-section {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 80vh;
+  max-width: 600px;
+  padding-bottom: 20px;
+  box-sizing: border-box;
+}
+
+.hero-text-wrapper {
+  margin-top: auto;
+  margin-bottom: auto;
+}
+
+.hero-welcome-title {
+  font-family: 'Outfit', 'Plus Jakarta Sans', sans-serif;
+  font-size: 80px;
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: -1.5px;
+  color: #ffffff;
+  margin: 0 0 12px 0;
+  text-shadow: 0 4px 25px rgba(0, 0, 0, 0.35);
+}
+
+.hero-welcome-subtitle {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 22px;
+  font-weight: 400;
+  letter-spacing: 0.8px;
+  color: rgba(255, 255, 255, 0.95);
+  margin: 0;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+/* Visit Site Pill Button */
+.visit-site-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(236, 215, 245, 0.82);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 9999px;
+  padding: 10px 24px;
+  color: #1e092b;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+  transition: all 0.25s ease;
+  width: fit-content;
+}
+
+.visit-site-pill:hover {
+  background: rgba(255, 255, 255, 0.95);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35);
+}
+
+.visit-arrow {
+  font-size: 15px;
+  font-weight: 800;
+}
+
+/* =========================================
+   Right Glassmorphism Login Card
+========================================= */
+.login-card-section {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.form2-glass-card {
+  width: 440px;
+  min-height: 600px;
+  background: rgba(45, 12, 70, 0.38);
+  backdrop-filter: blur(28px) saturate(150%);
+  -webkit-backdrop-filter: blur(28px) saturate(150%);
+  border-radius: 24px;
+  border: 1.2px solid rgba(255, 255, 255, 0.12);
+  box-shadow:
+    0 35px 70px rgba(0, 0, 0, 0.45),
+    inset 0 1.5px 2px rgba(255, 255, 255, 0.25),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.3);
+  padding: 56px 42px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.form2-auth-form {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Input Fields */
+.form2-input-group {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 24px;
+}
+
+.form2-label {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.92);
+  margin-bottom: 8px;
+  letter-spacing: 0.1px;
+}
+
+.form2-pill-input {
+  width: 100%;
+  height: 48px;
+  background: rgba(140, 80, 180, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 9999px;
+  padding: 0 24px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 14.5px;
+  font-weight: 500;
+  color: #ffffff;
+  outline: none;
+  box-sizing: border-box;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+  transition: all 0.25s ease;
+}
+
+.form2-pill-input::placeholder {
+  color: rgba(255, 255, 255, 0.55);
+  font-weight: 400;
+}
+
+.form2-pill-input:focus {
+  background: rgba(160, 90, 200, 0.45);
+  border-color: rgba(255, 255, 255, 0.45);
+  box-shadow:
+    0 0 15px rgba(168, 85, 247, 0.45),
+    inset 0 1px 2px rgba(255, 255, 255, 0.2);
+}
+
+/* Password Masking to prevent browser suggestions */
+.form2-password-masked {
+  -webkit-text-security: disc !important;
+  text-security: disc !important;
+  letter-spacing: 2px;
+}
+
+.form2-password-masked::placeholder {
+  letter-spacing: normal;
+}
+
+/* Remember Me Checkbox */
+.form2-options-row {
+  display: flex;
+  align-items: center;
+  margin-top: -4px;
+  margin-bottom: 32px;
+}
+
+.form2-remember-checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.form2-remember-checkbox input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.form2-custom-check {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1.2px solid rgba(255, 255, 255, 0.35);
+  border-radius: 4px;
+  color: transparent;
+  transition: all 0.2s ease;
+}
+
+.form2-remember-checkbox input:checked + .form2-custom-check {
+  background: #ffffff;
+  border-color: #ffffff;
+  color: #3b0764;
+}
+
+.form2-remember-text {
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* SIGN IN Submit CTA Button */
+.form2-submit-btn {
+  width: 100%;
+  height: 48px;
+  border: none;
+  border-radius: 9999px;
+  background: linear-gradient(90deg, #6b21a8 0%, #86198f 50%, #581c87 100%);
+  color: #ffffff;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  cursor: pointer;
+  box-shadow:
+    0 10px 25px rgba(107, 33, 168, 0.55),
+    inset 0 1px 1px rgba(255, 255, 255, 0.3);
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 28px;
+}
+
+.form2-submit-btn:hover {
+  transform: translateY(-2px);
+  background: linear-gradient(90deg, #7e22ce 0%, #9d174d 50%, #6b21a8 100%);
+  box-shadow:
+    0 14px 30px rgba(107, 33, 168, 0.7),
+    inset 0 1px 1px rgba(255, 255, 255, 0.5);
+  filter: brightness(1.1);
+}
+
+.form2-submit-btn:active {
+  transform: translateY(1px);
+}
+
+/* Footer Links */
+.form2-footer-links {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  text-align: center;
+}
+
+.form2-switch-mode {
+  font-size: 13.5px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.85);
+  margin: 0;
+}
+
+.form2-link-btn {
+  background: transparent;
+  border: none;
+  color: #ffffff;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 13.5px;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.2s ease;
+}
+
+.form2-link-btn:hover {
+  color: #f472b6;
+}
+
+.form2-forgot-link {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.65);
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.2s ease;
+}
+
+.form2-forgot-link:hover {
+  color: rgba(255, 255, 255, 0.95);
+  text-decoration: underline;
+}
+
+/* =========================================
+   Responsive Design
+========================================= */
+@media (max-width: 1024px) {
+  .form2-container {
+    padding: 40px 30px;
+    flex-direction: column;
+    justify-content: center;
+    gap: 40px;
+  }
+
+  .hero-left-section {
+    height: auto;
+    max-width: 100%;
+    text-align: center;
+    align-items: center;
+  }
+
+  .hero-welcome-title {
+    font-size: 56px;
+  }
+
+  .hero-welcome-subtitle {
+    font-size: 18px;
+  }
+
+  .visit-site-pill {
+    margin-top: 20px;
+  }
+
+  .login-card-section {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .form2-glass-card {
+    width: 100%;
+    max-width: 440px;
+  }
+}

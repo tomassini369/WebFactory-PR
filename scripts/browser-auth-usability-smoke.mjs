@@ -6,7 +6,7 @@ const server=await createServer({server:{host:'127.0.0.1',port:5200,strictPort:t
 await server.listen()
 let browser
 try{
- browser=await chromium.launch()
+ browser=await chromium.launch(process.env.QA_CHROMIUM_PATH?{executablePath:process.env.QA_CHROMIUM_PATH,args:['--no-sandbox','--single-process']}:undefined)
  const page=await browser.newPage()
  const origin='http://127.0.0.1:5200',errors=[]
  page.on('pageerror',error=>errors.push(error.message))
