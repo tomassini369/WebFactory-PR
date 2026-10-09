@@ -1,5 +1,6 @@
 import { useLayoutEffect, useRef, useState, type ReactNode, type MouseEvent, type FocusEvent } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
+import { LayoutDashboard, BookOpen, FilePenLine, Palette, QrCode, CookingPot, ShoppingBag, CalendarDays, ContactRound, Package, UsersRound, MapPin, ScanLine, CreditCard, Megaphone, BarChart3, Plug, ShieldCheck, Settings, ReceiptText, Building2, ClipboardList, Server, Bot, ExternalLink, LogOut, type LucideIcon } from 'lucide-react';
 import './uploaded-sidebar.css';
 import './uploaded-sidebar-integration.css';
 // Source-derived adapter: original SVGs, glass layers, dimensions and springs.
@@ -57,6 +58,36 @@ const originalIcons = [
                   <line x1="5" y1="12" x2="15" y2="12" />
                 </svg>),
 ];
+// Use each navigation item's stable ID instead of its display label or legacy icon index.
+// This keeps icon semantics consistent across client/admin portals and ES/EN.
+const semanticIcons: Record<string, LucideIcon> = {
+  overview: LayoutDashboard,
+  training: BookOpen,
+  website: FilePenLine,
+  redesign: Palette,
+  share: QrCode,
+  kitchen: CookingPot,
+  orders: ShoppingBag,
+  bookings: CalendarDays,
+  customers: ContactRound,
+  catalog: Package,
+  team: UsersRound,
+  locations: MapPin,
+  pos: ScanLine,
+  payments: CreditCard,
+  marketing: Megaphone,
+  analytics: BarChart3,
+  integrations: Plug,
+  security: ShieldCheck,
+  settings: Settings,
+  billing: ReceiptText,
+  clients: Building2,
+  operations: ClipboardList,
+  resources: Server,
+  chatgpt: Bot,
+  'website-link': ExternalLink,
+  logout: LogOut,
+};
 export default function UploadedSidebar({groups,activeItem,name,email,lang,isExpanded,onExpandedChange,onNavigate,onLogout,logoutLabel,links,controls,navigationId,mobileToggleClass}:Props) {
   const [hoveredIndex,setHoveredIndex]=useState<number|null>(null);
   const [query,setQuery]=useState('');
@@ -85,11 +116,11 @@ export default function UploadedSidebar({groups,activeItem,name,email,lang,isExp
   const term=query.trim().toLocaleLowerCase(lang);
   const renderItem=(item:Item)=>{
     const index=items.findIndex(i=>i.id===item.id);
-    const iconMap:Record<string,number>={overview:0,training:1,website:3,redesign:4,share:2,kitchen:4,orders:4,bookings:3,customers:1,catalog:2,team:1,locations:6,pos:5,payments:4,marketing:7,analytics:6,integrations:6,security:8,settings:8,billing:4};
+    const SemanticIcon = semanticIcons[item.id];
     const showTooltip=(e:MouseEvent<HTMLElement>|FocusEvent<HTMLElement>)=>{setHoveredIndex(index);if(!isExpanded&&frame.current){const rect=e.currentTarget.getBoundingClientRect();setTooltip({label:item.label,top:rect.top+rect.height/2-frame.current.getBoundingClientRect().top})}};
     const content=<><div className="sidebar-nav-icon-slot"><motion.div className="sidebar-dock-icon-wrapper"
       animate={{scale:getDockScale(index)}} transition={reducedMotion?{duration:0}:{type:'spring',stiffness:420,damping:24}}>
-      {originalIcons[item.icon??iconMap[item.id]??6]}
+      {SemanticIcon ? <SemanticIcon className="sidebar-svg-icon" size={19} strokeWidth={2.1} aria-hidden="true" /> : originalIcons[item.icon ?? 6]}
     </motion.div></div>{isExpanded&&<span className="sidebar-nav-label">{item.label}</span>}</>;
     const common={className:'sidebar-nav-item'+(activeItem===item.id?' active':''),'aria-label':item.label,
       'data-tooltip':!isExpanded?item.label:undefined,onMouseEnter:showTooltip,onFocus:showTooltip,onMouseLeave:()=>setTooltip(null),onBlur:()=>{setHoveredIndex(null);setTooltip(null)}};
