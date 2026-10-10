@@ -49,6 +49,20 @@ The first `src/` scan produced **21 findings**: 19 warnings and
 - The report is available as the `impeccable-design-audit` artifact from
   the GitHub Actions run. Re-run on subsequent PR updates to compare.
 
+## Phase 2 — visible refinement on the existing V3 UI
+
+- Homepage: feature capabilities arranged in one editorial first card and four
+  smaller cards, numbered labels, restrained backgrounds and consistent spacing;
+  simplified three-step cards, distinct pricing surface and clearer FAQ cards.
+- Client Business Control Center: actual revenue card visually prioritized,
+  preserved real metrics and charts, clearer action/insight separation.
+- Platform Control Center: actual platform statistics and revenue cards improved
+  with theme-aware surface contrast, spacing and accessible actions.
+- Scope is styling only, except the Home CSS import. No new API/DB calls,
+  fake charts, checkout behavior or authentication modifications.
+- Verify via `browser-home-evolution-smoke.mjs` and existing V3 CI.
+  Private dashboard QA still requires authenticated testing.
+
 ## Human acceptance checklist
 
 - Homepage: preserve Hero video **behind** content, scroll-driven tour,

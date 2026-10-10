@@ -87,3 +87,63 @@ html .wfa-dashboard.wfa-premium :is(.wfa-provision input,.wfa-provision select,.
 @media(max-width:1100px){.wfa-revenue-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:560px){.wfa-revenue-metrics article{padding:12px}.wfa-revenue-chart{gap:5px}.wfa-revenue-chart span,.wfa-revenue-chart small{font-size:9px}.wfa-revenue-chart>div{grid-template-rows:36px 100px 20px}}
 @media(max-width:380px){.wfa-revenue-metrics strong{font-size:16px;letter-spacing:-.045em}}
+
+
+/* Phase 2: clearer live-data hierarchy across platform-wide summary and sales. */
+html .wfa-dashboard.wfa-premium .wfa-stats {
+  grid-template-columns: minmax(0,1.2fr) repeat(3,minmax(0,1fr));
+  gap: clamp(10px,1.6vw,18px);
+  align-items: stretch;
+}
+html .wfa-dashboard.wfa-premium .wfa-stat {
+  min-width: 0;
+  box-shadow: 0 1px 0 color-mix(in srgb,var(--wfa-navy) 5%,transparent) inset;
+}
+html .wfa-dashboard.wfa-premium .wfa-stat:first-child {
+  background: var(--wfa-soft);
+  border-color: color-mix(in srgb,#3c86f6 30%,var(--wfa-line));
+}
+html .wfa-dashboard.wfa-premium .wfa-stat strong {
+  font-variant-numeric: tabular-nums;
+  line-height: 1.15;
+}
+html .wfa-dashboard.wfa-premium .wfa-quick-actions button {
+  min-height: 68px;
+  border-radius: 16px;
+}
+html .wfa-dashboard.wfa-premium .wfa-quick-actions button:hover {
+  border-color: color-mix(in srgb,#3c86f6 43%,var(--wfa-line));
+}
+html .wfa-dashboard.wfa-premium .wfa-card header button,
+html .wfa-dashboard.wfa-premium .wfa-row-actions button {
+  min-height: 44px;
+}
+html .wfa-dashboard.wfa-premium .wfa-revenue-metrics article {
+  border-color: var(--wfa-line);
+  background: var(--wfa-surface);
+  border-radius: 16px;
+  box-shadow: 0 1px 0 color-mix(in srgb,var(--wfa-navy) 4%,transparent) inset;
+}
+html .wfa-dashboard.wfa-premium .wfa-revenue-metrics article:first-child {
+  background: var(--wfa-soft);
+  border-color: color-mix(in srgb,#3c86f6 30%,var(--wfa-line));
+}
+html .wfa-dashboard.wfa-premium .wfa-revenue-chart span,
+html .wfa-dashboard.wfa-premium .wfa-revenue-chart small {
+  font-variant-numeric: tabular-nums;
+}
+@media(max-width:1100px) {
+  html .wfa-dashboard.wfa-premium .wfa-stats {
+    grid-template-columns: repeat(2,minmax(0,1fr));
+  }
+}
+@media(max-width:480px) {
+  html .wfa-dashboard.wfa-premium .wfa-stat { padding: 15px; }
+  html .wfa-dashboard.wfa-premium .wfa-revenue-metrics article { padding: 14px; }
+}
+@media(prefers-contrast:more) {
+  html .wfa-dashboard.wfa-premium .wfa-stat:first-child,
+  html .wfa-dashboard.wfa-premium .wfa-revenue-metrics article:first-child {
+    border-color: var(--wfa-navy);
+  }
+}
