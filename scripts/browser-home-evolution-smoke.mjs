@@ -20,9 +20,10 @@ try {
         await page.waitForFunction(() => getComputedStyle(document.querySelector('.wf-hero-copy .wf-actions')).opacity === '1')
         assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, `${width}: page overflow`)
         // Phase-2 anti-slop visual structure must survive all locales/themes.
-        assert.equal(await page.locator('.wf-platform article').count(), 5, `${width}: capabilities present`)
+        assert.equal(await page.locator('#plataforma .wf-platform article').count(), 5, `${width}: capabilities present`)
+        assert.equal(await page.locator('.wf-mcp .wf-platform article').count(), 3, `${width}: MCP cards retained`)
         assert.equal(await page.locator('.wf-how article').count(), 3, `${width}: steps present`)
-        const craft = await page.locator('.wf-platform article').first().evaluate(el => ({
+        const craft = await page.locator('#plataforma .wf-platform article').first().evaluate(el => ({
           height: el.getBoundingClientRect().height,
           layout: getComputedStyle(el).display,
         }))
