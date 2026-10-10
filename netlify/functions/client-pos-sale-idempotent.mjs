@@ -1,3 +1,4 @@
+import { requirePosAdjustments } from '../lib/pos-permissions.mjs';
 import crypto from "node:crypto";
 import { withBookingLock } from "../lib/booking-lock.mjs";
 import { assertSameOrigin, errorResponse, requireSiteCapability } from "../lib/client-auth.mjs";
@@ -12,7 +13,8 @@ export default async(req)=>{
     if(req.method!=="POST") return Response.json({ok:false,message:"Method not allowed."},{status:405});
     assertSameOrigin(req);
     const payload=await req.clone().json();
-    const {site}=await requireSiteCapability(payload.siteId,"pos");
+    const {site,membership}=await requireSiteCapability(payload.siteId,"pos");
+    requirePosAdjustments(membership,payload);
     const saleAttemptId=cleanText(payload.saleAttemptId,120).replace(/[^a-zA-Z0-9_-]/g,"");
     if(saleAttemptId.length<8) throw Object.assign(new Error("A valid sale attempt ID is required."),{status:400});
 

@@ -1,3 +1,4 @@
+import { requirePosAdjustments } from '../lib/pos-permissions.mjs';
 import { applyCustomerTransaction } from '../lib/customer-transactions.mjs';
 import { applyStockOperation,projectStockMovements } from '../lib/inventory-operations.mjs';
 import { withBookingLock } from "../lib/booking-lock.mjs";
@@ -14,7 +15,8 @@ export default async (req) => {
     if (req.method !== "POST") return Response.json({ ok: false, message: "Method not allowed." }, { status: 405 });
     assertSameOrigin(req);
     const payload = await req.json();
-    let { site, user } = await requireSiteCapability(payload.siteId, "pos");
+    let { site, user, membership } = await requireSiteCapability(payload.siteId, "pos");
+    requirePosAdjustments(membership,payload);
     return await withBookingLock(clientCommerceStore(), `locks/commerce/${site.siteId}`, async () => {
     site = await getClientSite(site.siteId);
 

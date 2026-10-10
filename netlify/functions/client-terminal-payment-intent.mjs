@@ -1,3 +1,4 @@
+import { requirePosAdjustments } from '../lib/pos-permissions.mjs';
 import { createReservedTerminalIntent } from '../lib/reserved-terminal-intent.mjs';
 import crypto from "node:crypto";
 import { assertSameOrigin, errorResponse, requireSiteCapability } from "../lib/client-auth.mjs";
@@ -10,7 +11,8 @@ export default async(req)=>{
     if(req.method!=="POST")return Response.json({ok:false,message:"Method not allowed."},{status:405});
     assertSameOrigin(req);
     const payload=await req.json();
-    const {site,user}=await requireSiteCapability(payload.siteId,"pos");
+    const {site,user,membership}=await requireSiteCapability(payload.siteId,"pos");
+    requirePosAdjustments(membership,payload);
     const requested=Array.isArray(payload.items)?payload.items.slice(0,50):[];
     if(!requested.length)throw Object.assign(new Error("Add at least one item to the sale."),{status:400});
 
