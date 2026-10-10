@@ -5,7 +5,7 @@ export function createWorkforceHandler({authorize=requireSiteAccess,getStore=cli
  try{
   if(!['GET','POST'].includes(req.method))return new Response(null,{status:405,headers:{Allow:'GET, POST'}});assertSameOrigin(req);
   const url=new URL(req.url),raw=req.method==='POST'?await req.text():'';if(raw.length>10000)throw wfFail('Request too large.',413);
-  const input=raw?JSON.parse(raw):{},siteId=req.method==='POST'?input.siteId:url.searchParams.get('siteId');if(!/^[a-zA-Z0-9_-]{1,120}$/.test(siteId||''))throw wfFail('Invalid business.');
+  const input=raw?JSON.parse(raw):{};if(!input||typeof input!=='object'||Array.isArray(input))throw wfFail('Invalid attendance request / Solicitud de asistencia inválida.');const siteId=req.method==='POST'?input.siteId:url.searchParams.get('siteId');if(!/^[a-zA-Z0-9_-]{1,120}$/.test(siteId||''))throw wfFail('Invalid business.');
   const {site,user,membership}=await authorize(siteId,['owner','manager','employee','cashier']);const store=getStore(),now=clock();
   const state=req.method==='POST'?await updateWorkforce(store,site,input,user,membership,now):(await store.get(workforceKey(siteId),{type:'json'}))||emptyWorkforce(siteId);
   if(state.siteId!==siteId)throw wfFail('Tenant mismatch.',403);
