@@ -22,5 +22,5 @@ export function posBrandPair(value:string){
  const color=/^#[a-f\d]{6}$/i.test(value)?value:'#285fa6',l=luminance(color),ink=luminance('#0b1529')
  if(1.05/(l+.05)>=4.5)return {background:color,foreground:'#ffffff'}
  if((l+.05)/(ink+.05)>=4.5)return {background:color,foreground:'#0b1529'}
- return {background:'#285fa6',foreground:'#ffffff'}
+ return {background:color,foreground:'#000000'}
 }

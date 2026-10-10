@@ -26,6 +26,7 @@ import BusinessControlCenter from './BusinessControlCenter'
 import {WorkforcePanel} from './WorkforcePanel'
 import { BusinessQrPanel } from './BusinessQrPanel'
 import { contrastTextColor } from './color-contrast'
+import { posBrandPair } from './pos-domain'
 import { PortalTraining } from './PortalTraining'
 
 type CatalogItem={id:string;type:'product'|'service';name:string;nameEn?:string;nameEs?:string;description:string;descriptionEn?:string;descriptionEs?:string;price:number;active:boolean;inventory:number|null;requiresAppointment:boolean;duration:number;bufferMinutes:number;imageAssetKey?:string}
@@ -126,6 +127,7 @@ export default function ClientAdminPage(){
 
   const publicUrl=`/sites/${site.slug}`;const t=portalCopy[lang];const displayBusinessName=lang==='es'?(site.business.nameEs||site.business.nameEn||site.business.name):(site.business.nameEn||site.business.name||site.business.nameEs||'')
   const accentColor = site.design?.secondary || '#3C86F6'
+  const posAccent = posBrandPair(site.design?.secondary || '')
   const isFoodBusiness=Boolean(site.business.category&&/restaurant|food|catering|bakery|cafe|coffee|comida|alimento|panader|cafeter|restaurante/i.test(`${site.business.category||''} ${site.business.name||''}`))
   const allowedNav=(items:Array<[Tab,string]>)=>items.filter(([id])=>id==='training'||id==='security'||!membership?.capabilities||membership.capabilities.includes(id==='team'||id==='locations'?'employees':id==='redesign'?'website':id))
   const navGroups=[
@@ -135,7 +137,7 @@ export default function ClientAdminPage(){
     {title:lang==='es'?'Negocio':'Business',items:allowedNav([['catalog',lang==='es'?'Productos y servicios':'Products and services'],['team',lang==='es'?'Empleados':'Employees'],['locations',lang==='es'?'Sucursales':'Locations'],['pos','POS'],['payments',lang==='es'?'Cobros y pagos':'Payments'],['marketing',lang==='es'?'Promoción y reseñas':'Marketing and reviews'],['analytics',lang==='es'?'Resultados':'Business results']])},
     {title:lang==='es'?'Cuenta y ajustes':'Account and settings',items:allowedNav([['security',lang==='es'?'Seguridad de mi cuenta':'Account security'],['integrations',lang==='es'?'Conexiones':'Connected apps'],['settings',lang==='es'?'Ajustes del negocio':'Business settings'],['billing',lang==='es'?'Plan y pagos WebFactory':'WebFactory plan']])}
   ].filter(group=>group.items.length)
-  return <PortalPanelProvider lang={lang}><main className="ca-dashboard" style={{'--ca-pos-primary':/^#[a-f\d]{6}$/i.test(site.design?.primary||'')?site.design!.primary:'#0b1529','--ca-primary':site.design?.primary||'#0B1529','--ca-accent':accentColor,'--ca-accent-text':contrastTextColor(accentColor)} as React.CSSProperties}>
+  return <PortalPanelProvider lang={lang}><main className="ca-dashboard" style={{'--ca-pos-accent':posAccent.background,'--ca-pos-accent-text':posAccent.foreground,'--ca-pos-primary':/^#[a-f\d]{6}$/i.test(site.design?.primary||'')?site.design!.primary:'#0b1529','--ca-primary':site.design?.primary||'#0B1529','--ca-accent':accentColor,'--ca-accent-text':contrastTextColor(accentColor)} as React.CSSProperties}>
     <UploadedSidebar lang={lang} activeItem={tab} name={displayBusinessName||site.slug} email={user.email||""} isExpanded={menuOpen} onExpandedChange={setMenuOpen} navigationId="ca-business-menu" mobileToggleClass="ca-mobile-menu-toggle"
       groups={navGroups.map(group=>({title:group.title,items:group.items.map(([id,label])=>({id,label}))}))}
       onNavigate={value=>{const id=value as Tab;if(id!==tab&&!confirmLeaveDrafts())return;setTab(id);try{sessionStorage.setItem('wf-section:'+site.siteId,id)}catch{}if(matchMedia('(max-width:820px)').matches)setMenuOpen(false);setMessage('');setError('')}}
