@@ -14,7 +14,8 @@ export function boundEmployee(state,site,user,membership){
  const employee=(site.employees||[]).find(e=>e.id===binding?.employeeId&&e.active!==false);
  if(!binding||!employee||(binding.userId&&binding.userId!==id))throw wfFail('Ask an administrator to link your employee record / Solicita vincular tu registro de empleado.',403);
  const locations=site.business?.locations||[];
- if(binding.locationId&&(!locations.some(l=>l.id===binding.locationId)||((membership.locationIds||[]).length&&!membership.locationIds.includes(binding.locationId))||((employee.locationIds||[]).length&&!employee.locationIds.includes(binding.locationId))))throw wfFail('Branch assignment is not authorized / Sucursal no autorizada.',403);
+ if(!binding.locationId&&(locations.length||(membership.locationIds||[]).length||(employee.locationIds||[]).length))throw wfFail('An authorized branch assignment is required / Se requiere una sucursal autorizada.',403);
+ if(binding.locationId&&(!locations.some(l=>l.id===binding.locationId&&l.active!==false)||((membership.locationIds||[]).length&&!membership.locationIds.includes(binding.locationId))||((employee.locationIds||[]).length&&!employee.locationIds.includes(binding.locationId))))throw wfFail('Branch assignment is not authorized / Sucursal no autorizada.',403);
  return {binding,employee,userId:id};
 }
 export function shiftMinutes(shift,now=Date.now()){
@@ -45,7 +46,8 @@ export function transitionWorkforce(state,input,site,user,membership,now=Date.no
   if(next.shifts.some(s=>!s.end&&(s.employeeId===employee.id||s.employeeId===current?.employeeId)))throw wfFail('Close the active shift before changing assignment / Cierra el turno antes de reasignar.',409);
   const locationId=String(input.locationId||'');
   if(!locationAllowed(membership,locationId))throw wfFail('Branch is outside your permissions / Sucursal fuera de tus permisos.',403);
-  if(locationId&&(!(site.business?.locations||[]).some(l=>l.id===locationId)||((member.locationIds||[]).length&&!member.locationIds.includes(locationId))||((employee.locationIds||[]).length&&!employee.locationIds.includes(locationId))))throw wfFail('Invalid branch assignment / Asignación de sucursal inválida.');
+  if(!locationId&&((site.business?.locations||[]).length||(member.locationIds||[]).length||(employee.locationIds||[]).length))throw wfFail('Choose an assigned branch / Selecciona una sucursal asignada.');
+  if(locationId&&(!(site.business?.locations||[]).some(l=>l.id===locationId&&l.active!==false)||((member.locationIds||[]).length&&!member.locationIds.includes(locationId))||((employee.locationIds||[]).length&&!employee.locationIds.includes(locationId))))throw wfFail('Invalid branch assignment / Asignación de sucursal inválida.');
   next.bindings=next.bindings.filter(b=>b.email!==email);next.bindings.push({email,employeeId:employee.id,locationId,userId:current?.employeeId===employee.id?current.userId||'':'',boundAt:at});employeeId=employee.id;
  }else if(action==='close_shift'){
   const shift=next.shifts.find(s=>s.id===input.shiftId),reason=String(input.reason||'').trim();
@@ -122,7 +124,7 @@ export function workforceView(state,site,user,membership,now=Date.now()){
  const employees=(site.employees||[]).filter(e=>e.active!==false&&(!(membership.role==='manager'&&(membership.locationIds||[]).length)||(e.locationIds||[]).some(id=>membership.locationIds.includes(id)))&&(admin||e.id===bound?.employee.id)).map(e=>({id:e.id,name:e.name,locationIds:e.locationIds||[]}));
  const timeZone=site.settings?.timezone||'America/Puerto_Rico';
  const totals=attendanceTotals(shifts.filter(s=>s.employeeId===bound?.employee.id&&s.userId===bound?.userId),now,timeZone);
- return {totals,timeZone:site.settings?.timezone||'America/Puerto_Rico',confirmedOperationIds:state.events.filter(e=>e.actor===String(user.id||user.sub||'')).map(e=>e.id),enabled:state.enabled,paidBreaks:state.paidBreaks,revision:state.revision,serverNow:new Date(now).toISOString(),admin,employeeId:bound?.employee.id||'',shifts,requests,employees,bindings:admin?state.bindings.filter(b=>locationAllowed(membership,b.locationId)):[],events:admin?state.events.filter(e=>!e.shiftId||shifts.some(s=>s.id===e.shiftId)):state.events.filter(e=>e.actor===bound?.userId),locations:(site.business?.locations||[]).filter(l=>locationAllowed(membership,l.id)&&(admin||l.id===bound?.binding.locationId)).map(l=>({id:l.id,name:l.name}))};
+ return {totals,timeZone:site.settings?.timezone||'America/Puerto_Rico',confirmedOperationIds:state.events.filter(e=>e.actor===String(user.id||user.sub||'')).map(e=>e.id),enabled:state.enabled,paidBreaks:state.paidBreaks,revision:state.revision,serverNow:new Date(now).toISOString(),admin,employeeId:bound?.employee.id||'',shifts,requests,employees,bindings:admin?state.bindings.filter(b=>locationAllowed(membership,b.locationId)):[],events:admin?state.events.filter(e=>!e.shiftId||shifts.some(s=>s.id===e.shiftId)):state.events.filter(e=>e.actor===bound?.userId),locations:(site.business?.locations||[]).filter(l=>locationAllowed(membership,l.id)&&(admin||l.id===bound?.binding.locationId)).map(l=>({id:l.id,name:l.name,active:l.active!==false}))};
 }
 export function attendanceCsv(view,from='',to='',employeeId='',locationId=''){
  const validDate=v=>/^\d{4}-\d{2}-\d{2}$/.test(v)&&Number.isFinite(Date.parse(v))&&new Date(v).toISOString().slice(0,10)===v;
