@@ -30,7 +30,7 @@ export default function StorefrontPreview({previewSite,lang,device='desktop'}:{p
       doc.addEventListener('click',event=>{
         const anchor=(event.target as Element | null)?.closest('a')
         const href=anchor?.getAttribute('href')
-        if(href?.startsWith('#')){event.preventDefault();doc.getElementById(href.slice(1))?.scrollIntoView({behavior:'smooth'})}
+        if(href?.startsWith('#')){event.preventDefault();doc.getElementById(href.slice(1))?.scrollIntoView({behavior:doc.defaultView?.matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'})}
       })
       setBody(doc.body)
     }}/>
