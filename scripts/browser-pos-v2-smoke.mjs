@@ -50,12 +50,15 @@ try{
    const rgb=color=>{const c=document.createElement('canvas'),ctx=c.getContext('2d');ctx.fillStyle=color;ctx.fillRect(0,0,1,1);return [...ctx.getImageData(0,0,1,1).data].slice(0,3)}
    const lum=color=>{const c=rgb(color).map(v=>{v/=255;return v<=.04045?v/12.92:((v+.055)/1.055)**2.4});return .2126*c[0]+.7152*c[1]+.0722*c[2]}
    const ratio=(a,b)=>{const x=lum(a),y=lum(b);return (Math.max(x,y)+.05)/(Math.min(x,y)+.05)}
+   const sidebar=getComputedStyle(document.querySelector('.sidebar-nav-item.active')),dashboard=getComputedStyle(document.querySelector('.ca-dashboard'))
    const root=getComputedStyle(el),order=getComputedStyle(el.querySelector('.pos-order')),muted=getComputedStyle(el.querySelector('.pos-heading p'))
-   return {primary:root.getPropertyValue('--pos-primary').trim(),body:ratio(root.color,root.backgroundColor),muted:ratio(muted.color,root.backgroundColor),order:ratio(order.color,order.backgroundColor),orderMuted:ratio(getComputedStyle(el.querySelector('.pos-order-empty')).color,order.backgroundColor),control:ratio(getComputedStyle(el.querySelector('.pos-search input')).borderTopColor,getComputedStyle(el.querySelector('.pos-search input')).backgroundColor),canvas:root.backgroundColor,colors:[root.color,order.backgroundColor,getComputedStyle(el.querySelector('.pos-order-empty')).color,getComputedStyle(el.querySelector('.pos-search input')).borderTopColor,getComputedStyle(el.querySelector('.pos-search input')).backgroundColor]}
+   return {sidebarBrand:rgb(sidebar.backgroundColor),expectedSidebarBrand:rgb(dashboard.getPropertyValue('--ca-accent')),sidebarContrast:ratio(sidebar.color,sidebar.backgroundColor),primary:root.getPropertyValue('--pos-primary').trim(),body:ratio(root.color,root.backgroundColor),muted:ratio(muted.color,root.backgroundColor),order:ratio(order.color,order.backgroundColor),orderMuted:ratio(getComputedStyle(el.querySelector('.pos-order-empty')).color,order.backgroundColor),control:ratio(getComputedStyle(el.querySelector('.pos-search input')).borderTopColor,getComputedStyle(el.querySelector('.pos-search input')).backgroundColor),canvas:root.backgroundColor,colors:[root.color,order.backgroundColor,getComputedStyle(el.querySelector('.pos-order-empty')).color,getComputedStyle(el.querySelector('.pos-search input')).borderTopColor,getComputedStyle(el.querySelector('.pos-search input')).backgroundColor]}
   })
   assert.equal(await page.locator('.ca-dashboard').evaluate(el=>getComputedStyle(el).backgroundImage),'none','POS canvas must not retain the global portal wallpaper')
   tenantCanvases[theme].add(contrast.canvas)
   assert.equal(contrast.primary,site.design.primary,'Use this business primary rather than a portal default')
+  assert.deepEqual(contrast.sidebarBrand,contrast.expectedSidebarBrand,'Active POS navigation follows business accent')
+  assert(contrast.sidebarContrast>=4.5,`Business navigation text contrast ${JSON.stringify(contrast)}`)
   assert(contrast.control>=3,`Tenant input boundary contrast ${JSON.stringify(contrast)}`)
   assert(contrast.body>=4.5&&contrast.muted>=4.5&&contrast.order>=4.5&&contrast.orderMuted>=4.5,`Tenant palette text contrast ${JSON.stringify(contrast)}`)
   await pos.getByRole('button',{name:lang==='es'?'Servicios':'Services',exact:true}).click();assert.equal(await pos.locator('.pos-product').count(),1)

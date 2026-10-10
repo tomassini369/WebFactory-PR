@@ -55,3 +55,4 @@ html[data-wf-theme=dark] body #root .ca-dashboard:has(.pos-workspace){--pg-surfa
 html body #root .ca-dashboard:has(.pos-workspace) .sidebar-container{background:color-mix(in srgb,var(--ca-pos-primary) 25%,#0b1018)!important}
 html body #root .ca-dashboard .ca-panel.pos-workspace.wf-portal-panel :is(input,select){background:var(--pos-surface)!important;color:var(--pos-ink)!important;border-color:var(--pos-control)!important}
 html body #root .ca-dashboard .ca-panel.pos-workspace.wf-portal-panel :is(.pos-order-empty,.pos-note,.pos-device-note p,.pos-empty p){color:var(--pos-muted)!important}
+html body #root .ca-dashboard:has(.pos-workspace) .sidebar-container .sidebar-nav-item.active{background:var(--ca-accent)!important;color:var(--ca-accent-text)!important}
