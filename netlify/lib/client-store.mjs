@@ -1,5 +1,6 @@
 import { availableInventory, reservedQuantity } from './inventory-availability.mjs';
 import crypto from "node:crypto";
+import { renamePublicSiteSlug } from "./client-site-slug.mjs";
 import { getDeployStore, getStore } from "@netlify/blobs";
 import { cleanText } from "./platform-utils.mjs";
 
@@ -113,6 +114,13 @@ export async function patchClientSite(siteId, patch, {expectedRevision} = {}) {
     ...patch,
     revision: Number(current.revision || 0) + 1,
     updatedAt: new Date().toISOString(),
+  });
+}
+
+export async function renameClientSiteSlug(siteId, requestedSlug, expectedRevision) {
+  return renamePublicSiteSlug({
+    siteId, requestedSlug, expectedRevision,
+    loadSite: getClientSite, patchSite: patchClientSite, store: clientSiteStore(),
   });
 }
 
