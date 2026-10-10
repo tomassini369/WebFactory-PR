@@ -5,6 +5,7 @@ import ChatgptHomeSection from './ChatgptHomeSection'
 import './home-premium.css'
 import './home-apple.css'
 import './home-evolution.css'
+import './home-craft-phase2.css'
 import { useSelectionPill } from './useSelectionPill'
 
 type Language = 'en' | 'es'

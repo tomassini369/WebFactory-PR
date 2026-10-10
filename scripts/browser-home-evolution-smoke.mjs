@@ -19,6 +19,21 @@ try {
         if (lang === 'es') await page.getByRole('button', { name: 'ES', exact: true }).click()
         await page.waitForFunction(() => getComputedStyle(document.querySelector('.wf-hero-copy .wf-actions')).opacity === '1')
         assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, `${width}: page overflow`)
+        // Phase-2 anti-slop visual structure must survive all locales/themes.
+        assert.equal(await page.locator('#plataforma .wf-platform article').count(), 5, `${width}: capabilities present`)
+        assert.equal(await page.locator('.wf-mcp .wf-platform article').count(), 3, `${width}: MCP cards retained`)
+        assert.equal(await page.locator('.wf-how article').count(), 3, `${width}: steps present`)
+        const craft = await page.locator('#plataforma .wf-platform article').first().evaluate(el => ({
+          height: el.getBoundingClientRect().height,
+          layout: getComputedStyle(el).display,
+        }))
+        assert(craft.height >= 95, `${width}: feature card readable`)
+        assert(craft.layout === 'grid' || craft.layout === 'flex', `${width}: feature layout`)
+        const price = await page.locator('.wf-price').evaluate(el => ({
+          width: el.getBoundingClientRect().width,
+          parentWidth: el.parentElement?.getBoundingClientRect().width || 0,
+        }))
+        assert(price.width > 0 && price.width <= price.parentWidth, `${width}: price card containment`)
         const controls = await page.locator('.wf-h-actions button,.wf-h-login').evaluateAll(elements => elements.map(el => {
           const r = el.getBoundingClientRect(); return { x:r.x,y:r.y,right:r.right,bottom:r.bottom,width:r.width,height:r.height }
         }).filter(r => r.width && r.height))

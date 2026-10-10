@@ -70,7 +70,7 @@ try{
   assert.equal(await sidebar.getByText('Dorian',{exact:true}).count(),0)
   assert.equal(await sidebar.locator('.sidebar-bell-badge,.sidebar-item-badge').count(),0)
   assert((await sidebar.evaluate(el=>getComputedStyle(el).backdropFilter)).includes('blur(24px)'))
-  assert.equal(await sidebar.locator('[aria-current=page]').evaluate(el=>el.getBoundingClientRect().height),38)
+  assert.equal(await sidebar.locator('[aria-current=page]').evaluate(el=>el.getBoundingClientRect().height),width<=820?44:38)
   assert(await sidebar.evaluate(el=>el.getBoundingClientRect().bottom<=innerHeight+1),'Short screens must keep navigation scrollable')
   if(process.env.QA_SCREENSHOT_DIR){await page.locator(path==='client-admin'?'.ca-work':'.wfa-work').evaluate(el=>el.scrollTop=0);await page.waitForTimeout(350);await page.screenshot({path:`${process.env.QA_SCREENSHOT_DIR}/${path}-sidebar-${width}-${theme}.png`})}
   const search=sidebar.getByRole('textbox',{name:'Search sections'})

@@ -64,3 +64,53 @@ html[data-wf-theme=dark] .bcc-action-icon{color:#83b6ff}
 @media(max-width:480px){.bcc .bcc-card{padding:18px}.bcc-metrics article{padding:18px 14px}.bcc-metrics strong{font-size:1.75rem}.bcc-metrics small{font-size:.8125rem}.bcc-card>header{flex-wrap:wrap}.bcc-chart{gap:5px}.bcc-chart span{font-size:.6875rem}.bcc-action-grid button{padding:18px 14px}.bcc-hero-actions{width:100%;gap:8px}.bcc-hero-actions button{flex:1}.bcc .wf-panel-expanded{inset:8px!important;padding:18px!important}.bcc-section-title{gap:8px}.bcc-bookings time{min-width:85px}.ca-dashboard:has(.bcc) .ca-work>header h1{font-size:1.4rem}}
 @media(prefers-reduced-motion:reduce){.bcc button:not(:disabled):active{transform:none;background:var(--bcc-soft)}.bcc-hero-actions button:not(:disabled):active{background:#245bba}}
 @media(prefers-contrast:more){.bcc-metrics article,.bcc .bcc-card,.bcc-action-grid button{border-color:var(--bcc-muted)}.bcc .wf-panel-tools button{color:var(--bcc-text);border-color:var(--bcc-muted)}}
+
+
+/* Phase 2 craft: prioritize genuine revenue and bookings, never simulated values.
+   All colors come from the existing portal theme tokens. */
+.bcc-metrics {
+  grid-template-columns: minmax(0,1.25fr) repeat(3,minmax(0,1fr));
+  align-items: stretch;
+}
+.bcc-metrics article {
+  min-width: 0;
+  position: relative;
+  border-color: var(--bcc-line);
+  background: var(--bcc-surface);
+  box-shadow: 0 1px 0 color-mix(in srgb,var(--bcc-text) 4%,transparent) inset;
+}
+.bcc-metrics article:first-child {
+  background: var(--bcc-soft);
+  border-color: color-mix(in srgb,#3c86f6 28%,var(--bcc-line));
+}
+.bcc-metrics article:first-child strong {
+  font-size: clamp(1.9rem,2.7vw,2.6rem);
+}
+.bcc .bcc-card {
+  border-color: var(--bcc-line);
+  box-shadow: 0 16px 40px -34px #08132665;
+}
+.bcc .bcc-card > header {
+  border-bottom: 1px solid var(--bcc-line);
+  padding-bottom: 16px;
+  margin-top: 0;
+}
+.bcc .bcc-card header button {
+  min-height: 44px;
+}
+.bcc .bcc-chart-track {
+  background: var(--bcc-soft);
+}
+.bcc-action-grid button {
+  box-shadow: 0 1px 0 color-mix(in srgb,var(--bcc-text) 4%,transparent) inset;
+}
+@media(max-width:1200px) {
+  .bcc-metrics { grid-template-columns: repeat(2,minmax(0,1fr)); }
+}
+@media(max-width:480px) {
+  .bcc-metrics article:first-child strong { font-size: 1.8rem; }
+  .bcc .bcc-card > header { align-items: flex-start; }
+}
+@media(prefers-contrast:more) {
+  .bcc-metrics article:first-child { border-color: var(--bcc-text); }
+}

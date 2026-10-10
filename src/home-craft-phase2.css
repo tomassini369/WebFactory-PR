@@ -1,0 +1,263 @@
+/* WebFactory PR — second-pass visual craft. These styles refine the approved
+   public Home without changing JSX hierarchy, navigation or Hero/scroll behavior.
+   DESIGN.md is authoritative; avoid fake metrics and decorative gradients. */
+.wf-premium-home {
+  --wf-craft-hairline: color-mix(in srgb, var(--hp-muted) 24%, transparent);
+  --wf-craft-plate: color-mix(in srgb, var(--hp-panel) 91%, var(--hp-elevated));
+}
+.wf-premium-home .wf-section > .wf-heading {
+  max-width: 52rem;
+  margin-bottom: clamp(26px, 4vw, 48px);
+}
+.wf-premium-home .wf-section > .wf-heading h2 {
+  max-width: 19ch;
+  line-height: 1.1;
+}
+.wf-premium-home #plataforma .wf-platform {
+  counter-reset: wf-capability;
+  grid-template-columns: repeat(2, minmax(0,1fr));
+  gap: clamp(12px, 1.6vw, 20px);
+}
+.wf-premium-home #plataforma .wf-platform article,
+.wf-premium-home #plataforma .wf-platform article:nth-child(n) {
+  counter-increment: wf-capability;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  grid-column: auto;
+  min-width: 0;
+  min-height: 218px;
+  padding: clamp(22px, 3vw, 34px);
+  border: 1px solid var(--wf-craft-hairline);
+  border-radius: 18px;
+  background: var(--wf-craft-plate);
+  box-shadow: 0 1px 0 color-mix(in srgb, var(--hp-text) 4%, transparent) inset;
+}
+.wf-premium-home #plataforma .wf-platform article::before {
+  content: counter(wf-capability,decimal-leading-zero);
+  position: absolute;
+  top: 23px;
+  right: 25px;
+  font-size: 12px;
+  font-weight: 650;
+  letter-spacing: .12em;
+  color: var(--hp-muted);
+  font-variant-numeric: tabular-nums;
+}
+.wf-premium-home #plataforma .wf-platform article::after { display: none; }
+.wf-premium-home #plataforma .wf-platform article:first-child {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: 66px minmax(0,1fr);
+  grid-template-rows: auto auto;
+  align-content: center;
+  column-gap: clamp(18px, 3vw, 34px);
+  min-height: 210px;
+  background: var(--hp-elevated);
+  border-color: color-mix(in srgb, var(--hp-blue) 38%, var(--hp-line));
+}
+.wf-premium-home #plataforma .wf-platform article:first-child .wf-platform-icon {
+  grid-column: 1;
+  grid-row: 1 / span 2;
+  width: 60px;
+  height: 60px;
+  margin: 0;
+  align-self: center;
+}
+.wf-premium-home #plataforma .wf-platform article:first-child h3 {
+  grid-column: 2;
+  font-size: clamp(1.55rem, 2.8vw, 2.25rem);
+  max-width: 26ch;
+  margin: 0 0 12px;
+}
+.wf-premium-home #plataforma .wf-platform article:first-child p {
+  grid-column: 2;
+  max-width: 53ch;
+  font-size: clamp(.94rem, 1.4vw, 1.04rem);
+}
+.wf-premium-home #plataforma .wf-platform article:not(:first-child) .wf-platform-icon {
+  width: 46px;
+  height: 46px;
+  background: color-mix(in srgb, var(--hp-blue) 15%, var(--hp-panel));
+  border: 1px solid color-mix(in srgb, var(--hp-blue) 24%, var(--hp-line));
+  color: var(--hp-blue);
+  box-shadow: none;
+  margin-bottom: 24px;
+}
+.wf-premium-home #plataforma .wf-platform article:not(:first-child) h3 {
+  font-size: clamp(1.2rem, 1.8vw, 1.45rem);
+  margin-bottom: 9px;
+}
+.wf-premium-home #plataforma .wf-platform article p { max-width: 42ch; }
+.wf-premium-home .wf-also {
+  gap: 10px;
+  margin-top: 23px;
+}
+.wf-premium-home .wf-also b {
+  flex-basis: 100%;
+  font-weight: 600;
+  margin-bottom: 1px;
+}
+.wf-premium-home .wf-also span {
+  padding: 8px 13px;
+  border-color: var(--wf-craft-hairline);
+  border-radius: 9px;
+  background: transparent;
+  font-size: 12px;
+  line-height: 1.4;
+}
+.wf-premium-home .wf-how {
+  gap: clamp(12px,1.8vw,20px);
+}
+.wf-premium-home .wf-how article {
+  display: grid;
+  grid-template-columns: 38px minmax(0,1fr);
+  grid-template-rows: auto 1fr;
+  align-content: start;
+  gap: 8px 16px;
+  padding: clamp(20px,2.8vw,28px);
+  border: 1px solid var(--wf-craft-hairline);
+  border-radius: 16px;
+  background: var(--hp-panel);
+}
+.wf-premium-home .wf-how article > span {
+  grid-column: 1;
+  grid-row: 1 / 3;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  padding-top: 6px;
+  font-weight: 700;
+}
+.wf-premium-home .wf-how h3 {
+  grid-column: 2;
+  font-size: clamp(1.24rem, 2vw, 1.6rem);
+  margin: 0;
+}
+.wf-premium-home .wf-how p {
+  grid-column: 2;
+  font-size: .94rem;
+  max-width: 45ch;
+  line-height: 1.65;
+}
+.wf-premium-home .wf-demo {
+  border: 1px solid var(--wf-craft-hairline);
+  box-shadow: 0 25px 60px -43px #0008;
+}
+.wf-premium-home .wf-demo-copy h3 { font-size: clamp(1.55rem,2.4vw,2rem); }
+.wf-premium-home .wf-demo-product,
+.wf-premium-home .wf-demo-cart {
+  min-width: 0;
+}
+.wf-premium-home .wf-pricing {
+  display: grid;
+  grid-template-columns: minmax(0,1.15fr) minmax(0,.85fr);
+  align-items: center;
+  gap: clamp(28px,4vw,56px);
+  padding: clamp(28px,5vw,60px);
+  background: var(--hp-panel);
+  border: 1px solid var(--wf-craft-hairline);
+  border-radius: 22px;
+}
+.wf-premium-home .wf-price {
+  width: 100%;
+  min-width: 0;
+  padding: clamp(22px,3vw,34px);
+  border: 1px solid color-mix(in srgb,var(--hp-blue) 34%,var(--hp-line));
+  border-radius: 18px;
+  background: var(--hp-elevated);
+}
+.wf-premium-home .wf-price > strong {
+  font-variant-numeric: tabular-nums;
+  font-size: clamp(2.9rem, 4vw, 3.75rem);
+}
+.wf-premium-home .wf-price > a { min-height: 50px; }
+.wf-premium-home .wf-faq {
+  max-width: 920px;
+  display: grid;
+  gap: 10px;
+  margin: clamp(30px,5vw,52px) auto 0;
+}
+.wf-premium-home .wf-faq details {
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--wf-craft-hairline);
+  border-radius: 13px;
+  background: var(--hp-panel);
+  overflow: clip;
+}
+.wf-premium-home .wf-faq details[open] {
+  background: var(--hp-elevated);
+  border-color: color-mix(in srgb,var(--hp-blue) 32%,var(--hp-line));
+}
+.wf-premium-home .wf-faq summary {
+  align-items: center;
+  padding: 18px clamp(17px,2.4vw,26px);
+  min-height: 56px;
+  font-weight: 620;
+  font-size: clamp(.9rem,1.3vw,1rem);
+}
+.wf-premium-home .wf-faq p {
+  margin: 0;
+  padding: 0 clamp(17px,2.4vw,26px) 22px;
+  max-width: 75ch;
+}
+.wf-premium-home .wf-faq summary:focus-visible {
+  outline: 3px solid var(--hp-blue);
+  outline-offset: -3px;
+}
+@media (hover:hover) and (pointer:fine) {
+  .wf-premium-home #plataforma .wf-platform article:hover {
+    border-color: color-mix(in srgb,var(--hp-blue) 48%,var(--hp-line));
+    box-shadow: 0 18px 45px -32px #0008;
+    transform: translateY(-2px);
+  }
+}
+@media (max-width:767px) {
+  .wf-premium-home #plataforma .wf-platform { grid-template-columns: minmax(0,1fr); }
+  .wf-premium-home #plataforma .wf-platform article,
+  .wf-premium-home #plataforma .wf-platform article:nth-child(n) {
+    grid-column: 1;
+    min-height: 0;
+    padding: 22px;
+  }
+  .wf-premium-home #plataforma .wf-platform article:first-child {
+    display: grid;
+    grid-template-columns: 52px minmax(0,1fr);
+    min-height: 0;
+    column-gap: 16px;
+  }
+  .wf-premium-home #plataforma .wf-platform article:first-child .wf-platform-icon {
+    width: 48px;
+    height: 48px;
+  }
+  .wf-premium-home #plataforma .wf-platform article::before { top: 18px; right: 20px; }
+  .wf-premium-home .wf-how { grid-template-columns: minmax(0,1fr); }
+  .wf-premium-home .wf-how article,
+  .wf-premium-home .wf-how article:last-child { grid-column: 1; }
+  .wf-premium-home .wf-pricing {
+    display: grid;
+    grid-template-columns: minmax(0,1fr);
+    padding: 24px 20px;
+    gap: 24px;
+  }
+  .wf-premium-home .wf-price { margin-top: 0; }
+}
+@media (max-width:380px) {
+  .wf-premium-home #plataforma .wf-platform article:first-child {
+    display: flex;
+    flex-direction: column;
+  }
+  .wf-premium-home #plataforma .wf-platform article:first-child .wf-platform-icon { margin-bottom: 18px; }
+  .wf-premium-home .wf-faq summary { padding: 16px; }
+  .wf-premium-home .wf-faq p { padding: 0 16px 18px; }
+}
+@media (prefers-reduced-motion:reduce) {
+  .wf-premium-home #plataforma .wf-platform article:hover { transform: none; }
+}
+@media (prefers-contrast:more) {
+  .wf-premium-home #plataforma .wf-platform article,
+  .wf-premium-home .wf-how article,
+  .wf-premium-home .wf-pricing,
+  .wf-premium-home .wf-price,
+  .wf-premium-home .wf-faq details { border-color: var(--hp-text); }
+}

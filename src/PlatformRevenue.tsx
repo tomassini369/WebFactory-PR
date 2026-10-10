@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { PortalPanel } from './PortalPanel'
+import RevenueChart from './RevenueChart'
 import { withAuthRetry } from './auth-retry'
 import './platform-sales.css'
 
@@ -8,9 +9,8 @@ export default function PlatformRevenue({lang,refreshKey}:{lang:'en'|'es';refres
   const es=lang==='es';const [revenue,setRevenue]=useState<Revenue|null>(null);const [loading,setLoading]=useState(true);const [retry,setRetry]=useState(0)
   useEffect(()=>{let active=true;setLoading(true);withAuthRetry(async()=>{const response=await fetch('/.netlify/functions/webfactory-admin-revenue',{credentials:'include',cache:'no-store'});const result=await response.json();if(!response.ok||result.ok===false)throw new Error('Revenue unavailable');return result.revenue as Revenue}).then(value=>{if(active)setRevenue(value)}).catch(()=>{if(active)setRevenue({available:false,reason:'temporarily_unavailable'})}).finally(()=>{if(active)setLoading(false)});return()=>{active=false}},[refreshKey,retry])
   const money=(cents:number)=>new Intl.NumberFormat(es?'es-PR':'en-US',{style:'currency',currency:'USD'}).format(cents/100)
-  const chartAmount=(cents:number)=>new Intl.NumberFormat(es?'es-PR':'en-US',{notation:cents>=100000?'compact':'standard',maximumFractionDigits:cents>=100000?1:2}).format(cents/100)
   const date=(value:string)=>new Date(`${value}T12:00:00Z`).toLocaleDateString(es?'es-PR':'en-US',{month:'short',day:'numeric',timeZone:'America/Puerto_Rico'})
-  const days=revenue?.days||[];const max=Math.max(1,...days.map(day=>day.netCents));const ready=!loading&&revenue?.available
+  const days=revenue?.days||[];const ready=!loading&&revenue?.available
   const metrics=[[es?'Ventas netas · 30 días':'Net sales · 30 days',money(revenue?.netCents||0),es?'Cobros menos reembolsos':'Payments less refunds'],[es?'Ventas · últimos 7 días':'Sales · last 7 days',money(revenue?.last7DaysCents||0),es?'Total de la gráfica diaria':'Daily chart total'],[es?'Pagos confirmados':'Confirmed payments',String(revenue?.paymentCount||0),es?'Dentro del período':'Within this period'],[es?'Reembolsos aplicados':'Applied refunds',money(revenue?.refundedCents||0),es?'Sobre cobros del período':'On payments in this period']]
   const breakdown=[[es?'Cobros recibidos':'Captured payments',revenue?.capturedCents??((revenue?.netCents||0)+(revenue?.refundedCents||0))],[es?'Reembolsos':'Refunds',revenue?.refundedCents||0]] as Array<[string,number]>
   const breakdownMax=Math.max(1,...breakdown.map(([,amount])=>amount))
@@ -21,7 +21,7 @@ export default function PlatformRevenue({lang,refreshKey}:{lang:'en'|'es';refres
     <div className="wfa-sales-metrics">{metrics.map(([label,value,note])=><article className="wfa-stat" key={label}><small>{label}</small><strong>{ready?value:'—'}</strong><span>{ready?note:(es?'Pendiente de datos verificados':'Awaiting verified data')}</span></article>)}</div>
     <div className="wfa-sales-charts">
       <PortalPanel className="wfa-card wfa-sales-chart"><header><div><small>{es?'RENDIMIENTO':'PERFORMANCE'}</small><h3>{es?'Ventas de los últimos 7 días':'Sales in the last 7 days'}</h3></div><strong>{ready?money(revenue.last7DaysCents||0):'—'}</strong></header>
-        {ready?<div className="wfa-revenue-chart" role="img" aria-label={days.map(day=>`${date(day.date)}: ${money(day.netCents)}`).join('; ')}>{days.map(day=><div key={day.date}><span title={money(day.netCents)}>{chartAmount(day.netCents)}</span><div className="wfa-revenue-track"><i style={{height:`${day.netCents/max*100}%`}}/></div><small>{new Date(`${day.date}T12:00:00Z`).toLocaleDateString(es?'es-PR':'en-US',{weekday:'short',timeZone:'America/Puerto_Rico'})}</small></div>)}</div>:<p className="wfa-sales-empty">{es?'La gráfica aparecerá cuando se puedan consultar los cobros.':'The chart will appear when payments can be retrieved.'}</p>}
+        {ready?<RevenueChart variant="platform" lang={lang} days={days.map(day=>({key:day.date,dateLabel:date(day.date),label:new Date(`${day.date}T12:00:00Z`).toLocaleDateString(es?'es-PR':'en-US',{weekday:'short',timeZone:'America/Puerto_Rico'}),amount:day.netCents}))}/>:<p className="wfa-sales-empty">{es?'La gráfica aparecerá cuando se puedan consultar los cobros.':'The chart will appear when payments can be retrieved.'}</p>}
         <p className="wfa-note">{es?'USD · Cobros netos · Zona horaria de Puerto Rico':'USD · Net payments · Puerto Rico time zone'}</p>
       </PortalPanel>
       <PortalPanel className="wfa-card wfa-sales-chart"><header><div><small>{es?'RESUMEN DE COBROS':'PAYMENT SUMMARY'}</small><h3>{es?'Cobros y reembolsos':'Payments and refunds'}</h3></div></header>

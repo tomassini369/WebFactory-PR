@@ -74,3 +74,55 @@
  .wf-premium-home .wf-hero .wf-actions .wf-link{justify-content:center}
 }
 @media(prefers-reduced-motion:reduce){.wf-premium-home.motion .wf-tour-inline .wf-cc{transform:none}}
+
+
+/* Anti-slop / mobile usability polish: meet the approved 44px target size.
+   Scoped to the existing Home, without changing the hero, scroll or routing. */
+.wf-premium-home .wf-h-header .wf-theme-toggle {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+}
+.wf-premium-home .wf-h-menu {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  padding-inline: 12px;
+}
+.wf-premium-home .wf-h-login {
+  min-height: 44px;
+}
+.wf-premium-home .wf-h-header nav a {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 1100px) {
+  .wf-premium-home .wf-h-header nav.open {
+    max-height: min(70dvh, 560px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    box-shadow: 0 18px 42px rgba(4, 9, 20, .26);
+  }
+}
+
+/* Keep demo cart actions reachable on a phone without altering cart logic. */
+.wf-premium-home .wf-demo-product .wf-btn {
+  min-height: 44px;
+}
+.wf-premium-home .wf-demo-cart p button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+}
+.wf-premium-home .wf-demo-cart > .wf-link {
+  min-height: 44px;
+  padding-inline: 8px;
+}

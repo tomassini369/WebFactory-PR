@@ -1,0 +1,116 @@
+/* Native typography and a blue data accent connect the operational workspaces.
+   Nested surfaces stay opaque enough to read without another layer of blur. */
+.bcc .bcc-metrics,.wfa-sales .wfa-sales-metrics {gap:0;border:1px solid var(--pg-line,var(--bcc-line));border-radius:18px;overflow:hidden;background:var(--pg-solid,var(--bcc-surface));}
+.bcc .bcc-metrics article,.wfa-sales .wfa-sales-metrics .wfa-stat {border:0;border-radius:0;box-shadow:none;background:transparent;border-inline-end:1px solid var(--pg-line,var(--bcc-line));padding:24px;align-content:start;}
+.bcc .bcc-metrics article:last-child,.wfa-sales .wfa-sales-metrics .wfa-stat:last-child {border-inline-end:0;}
+.bcc .bcc-metrics article:first-child,.wfa-sales .wfa-sales-metrics .wfa-stat:first-child {background:var(--pg-soft,var(--bcc-soft));}
+.bcc-metrics strong,.wfa-sales-metrics strong {overflow-wrap:anywhere;}
+.bcc-chart-filter {display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:20px;color:var(--bcc-muted);font-size:.8125rem;}
+.bcc-chart-filter select {min-height:44px;max-width:100%;padding:8px 32px 8px 12px;border:1px solid var(--bcc-muted);border-radius:10px;background:var(--bcc-surface);color:var(--bcc-text);font:inherit;}
+.bcc-chart-filter select:focus-visible {outline:3px solid #285fa6;outline-offset:3px;}
+.bcc-bookings time {padding:10px;border-radius:10px;background:var(--bcc-soft);border:1px solid var(--bcc-line);}
+.bcc .bcc-hero-actions button:not(.bcc-secondary) {background:#285fa6;border-color:#285fa6;color:#fff;}
+.bcc .bcc-card,.wfa-dashboard .wfa-card {border-radius:18px;}
+.wfa-dashboard .wfa-card>header {padding-bottom:16px;border-bottom:1px solid var(--pg-line);align-items:flex-start;}
+.wfa-dashboard .wfa-stats {gap:12px;}
+.wfa-dashboard .wfa-stat {font-variant-numeric:tabular-nums;min-width:0;}
+.wfa-dashboard .wfa-quick-actions {gap:0;border-block:1px solid var(--pg-line);padding-block:8px;}
+.wfa-dashboard .wfa-quick-actions button {background:transparent;border:0;border-radius:10px;box-shadow:none;min-height:76px;}
+.wfa-dashboard .wfa-quick-actions button:hover {background:var(--pg-soft);}
+.wfa-dashboard .metric-row {gap:14px;padding-block:10px;}
+.wfa-dashboard .metric-row>span {font-size:.875rem;line-height:1.5;}
+.wfa-dashboard .metric-row em,.wfa-dashboard .wfa-sales-track i {background:#285fa6;}
+html[data-wf-theme="dark"] .wfa-dashboard .metric-row em,html[data-wf-theme="dark"] .wfa-dashboard .wfa-sales-track i {background:#78a7e4;}
+.wfa-dashboard .wfa-table-wrap {border:1px solid var(--pg-line);border-radius:12px;}
+.wfa-dashboard table th {padding-block:14px;background:var(--pg-soft);font-size:.75rem;letter-spacing:.03em;}
+.wfa-dashboard table td {padding-block:16px;line-height:1.5;}
+.wfa-dashboard table tbody tr:hover {background:var(--pg-soft);}
+.wf-builder-app {--builder-plate:#fff;--builder-soft:#f1f5fb;--builder-ink:#0f1f36;--builder-muted:#52647c;--builder-edge:#c2cedc;--builder-accent:#285fa6;border-radius:20px;box-shadow:0 24px 60px -40px #070d1a70;}
+html[data-wf-theme="dark"] .wf-builder-app {--builder-plate:#0e1829;--builder-soft:#15243b;--builder-ink:#eef4ff;--builder-muted:#b8c6d9;--builder-edge:#41536c;--builder-accent:#78a7e4;}
+.wf-builder-app .wf-builder-topbar {padding:18px 22px;gap:14px;flex-wrap:wrap;background:var(--builder-plate);}
+.wf-builder-app .wf-builder-topbar>div:first-child {display:grid;gap:6px;}
+.wf-builder-app .wf-builder-topbar span {font-size:.75rem;letter-spacing:.04em;color:var(--builder-muted);}
+.wf-builder-app .wf-builder-topbar strong {font-size:.8125rem;color:var(--builder-ink);}
+.wf-builder-app .wf-builder-status {flex-wrap:wrap;}
+.wf-builder-app .wf-builder-status button {min-height:44px;font-size:.8125rem;padding-inline:14px;}
+.wf-builder-app .wf-builder-workspace {grid-template-columns:180px minmax(320px,420px) minmax(0,1fr);background:var(--builder-plate);backdrop-filter:none;}
+.wf-builder-app .wf-builder-progress i {width:100%;transform-origin:left;transition:transform 150ms;background:#285fa6;}
+.wf-builder-app .wf-builder-status span {display:block;min-width:0;text-align:left;}
+.wf-builder-app .wf-builder-nav {padding:16px 10px;background:var(--builder-soft);}
+.wf-builder-app .wf-builder-nav button {font-size:.8125rem;min-height:48px;font-weight:600;gap:10px;}
+.wf-builder-app .wf-builder-nav button.selected {color:var(--builder-accent);background:var(--builder-plate);box-shadow:inset 3px 0 var(--builder-accent);}
+.wf-builder-app .wf-builder-nav button.selected b {background:#285fa6;color:#fff;}
+.wf-builder-app .wf-setup-guidance {background:var(--builder-soft);border-color:var(--builder-edge);box-shadow:none;padding:16px;}
+.wf-builder-app .wf-setup-guidance strong {font-size:1.125rem;line-height:1.4;}
+.wf-builder-app .wf-setup-guidance small {font-size:.6875rem;color:var(--builder-muted);}
+.wf-builder-app .wf-step-intro h3 {font-size:clamp(1.5rem,2vw,1.875rem);line-height:1.2;}
+.wf-builder-app .wf-step-intro p {font-size:.9375rem;line-height:1.65;color:var(--builder-muted);}
+.wf-builder-app .wf-field>span {font-size:.8125rem;color:var(--builder-muted);font-weight:600;}
+.wf-builder-app .wf-field :is(input,select,textarea) {font-size:1rem;min-height:48px;background:var(--builder-plate);color:var(--builder-ink);border-color:var(--builder-edge);}
+.wf-builder-app :is(.wf-field,.wf-upload,.wf-toggle,.wf-template-grid article,.wf-custom-layout-grid button) {backdrop-filter:none;transition:border-color 150ms,background 150ms;}
+.wf-builder-app :is(.wf-field:focus-within,.wf-upload:hover,.wf-toggle:hover,.wf-template-grid article:nth-of-type(n),.wf-custom-layout-grid button:hover) {transform:none;box-shadow:none;}
+.wf-builder-app .wf-template-grid article.selected {box-shadow:inset 0 0 0 2px var(--builder-accent);border-color:var(--builder-accent);}
+.wf-builder-app .wf-template-grid article strong {font-size:.875rem;}
+.wf-builder-app .wf-template-grid article :is(small,em),.wf-builder-app .wf-template-grid article>a {font-size:.75rem;line-height:1.5;}
+.wf-builder-app .wf-live-panel {min-width:0;background:var(--builder-soft);}
+.wf-builder-app .wf-live-panel>header {padding:16px;border-bottom:1px solid var(--builder-edge);}
+.wf-preview-context {display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;padding:14px 18px;color:var(--builder-ink);border-bottom:1px solid var(--builder-edge);font-size:.875rem;}
+.wf-preview-context small {font-size:.75rem;font-variant-numeric:tabular-nums;color:var(--builder-muted);}
+.wf-builder-app .wf-live-stage {padding:18px;background:var(--builder-soft);}
+.wf-builder-app .wf-builder-navigation {padding-top:20px;border-top:1px solid var(--builder-edge);gap:8px;flex-wrap:wrap;}
+.wf-builder-app .wf-builder-navigation button {min-height:48px;font-size:.875rem;padding-inline:16px;}
+.wf-builder-app :is(button,a,input,select,textarea):focus-visible {outline:3px solid var(--builder-accent);outline-offset:3px;}
+.wf-premium-home .wf-how {gap:0;border-block:1px solid var(--hp-line);}
+.wf-premium-home .wf-how article {border:0;border-radius:0;background:transparent;padding-block:30px;}
+.wf-premium-home .wf-how article+article {border-inline-start:1px solid var(--hp-line);}
+.wf-premium-home .wf-price {padding:clamp(24px,4vw,42px);background:var(--hp-elevated);border:1px solid var(--hp-line);border-radius:18px;}
+.wf-premium-home .wf-price .wf-btn {min-height:48px;}
+.wf-premium-home .wf-h-actions button,.wf-premium-home .wf-h-login {scale:1;}
+.wf-premium-home .wf-h-actions button:is(:active,:hover),.wf-premium-home .wf-h-login:is(:active,:hover) {transform:none;scale:1;}
+@media(max-width:820px) {.wf-sidebar-frame .sidebar-nav-item {min-height:44px;}}
+@media(min-width:1024px) {
+  .wf-premium-home #plataforma {display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr);gap:32px 64px;align-items:start;}
+  .wf-premium-home #plataforma>.wf-heading {position:sticky;top:120px;margin:0;}
+  .wf-premium-home #plataforma .wf-platform {grid-template-columns:1fr;gap:0;}
+  .wf-premium-home #plataforma .wf-platform article:nth-child(n) {display:grid;grid-template-columns:48px minmax(0,1fr);gap:10px 20px;min-height:0;padding:26px 12px;border:0;border-bottom:1px solid var(--hp-line);border-radius:0;background:transparent;box-shadow:none;}
+  .wf-premium-home #plataforma .wf-platform article:nth-child(n)::before {display:none;}
+  .wf-premium-home #plataforma .wf-platform article:nth-child(n) .wf-platform-icon {grid-row:1/3;grid-column:1;width:44px;height:44px;margin:0;align-self:start;}
+  .wf-premium-home #plataforma .wf-platform article:nth-child(n) h3 {grid-column:2;margin:0;font-size:1.5rem;}
+  .wf-premium-home #plataforma .wf-platform article:nth-child(n) p {grid-column:2;margin:0;font-size:1rem;max-width:48ch;}
+  .wf-premium-home #plataforma>.wf-also {grid-column:1/-1;padding-top:12px;}
+}
+@media(max-width:1200px) {.wf-builder-app .wf-builder-workspace {grid-template-columns:160px minmax(0,1fr);} .wf-builder-app .wf-live-panel {grid-column:1/-1;} }
+@media(max-width:767px) {
+  .bcc .bcc-metrics,.wfa-sales .wfa-sales-metrics {grid-template-columns:repeat(2,minmax(0,1fr));}
+  .bcc .bcc-metrics article,.wfa-sales .wfa-sales-metrics .wfa-stat {padding:20px 14px;border-bottom:1px solid var(--pg-line,var(--bcc-line));}
+  .bcc .bcc-metrics article:nth-child(2n),.wfa-sales .wfa-sales-metrics .wfa-stat:nth-child(2n) {border-inline-end:0;}
+  .bcc .bcc-metrics article:nth-last-child(-n+2),.wfa-sales .wfa-sales-metrics .wfa-stat:nth-last-child(-n+2) {border-bottom:0;}
+  .wfa-sales-metrics strong {font-size:clamp(1.375rem,6vw,1.875rem);}
+  .wf-builder-app .wf-builder-workspace {grid-template-columns:minmax(0,1fr);min-height:0;}
+  .wf-builder-app .wf-builder-nav {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));border-right:0;border-bottom:1px solid var(--builder-edge);gap:6px;padding:12px;}
+  .wf-builder-app .wf-builder-nav button {white-space:normal;min-width:0;padding:8px;font-size:.75rem;}
+  .wf-builder-app .wf-builder-panel {padding:20px 16px;border-right:0;}
+  .wf-builder-app .wf-field-grid {grid-template-columns:minmax(0,1fr);}
+  .wf-builder-app .wf-live-stage {padding:12px;}
+  .wf-builder-app .wf-live-panel {grid-column:auto;}
+  .wf-premium-home .wf-how article+article {border-inline-start:0;border-top:1px solid var(--hp-line);}
+}
+@media(prefers-reduced-motion:reduce) {.wf-builder-app *, .bcc-chart-filter select {transition:none!important;scroll-behavior:auto!important;} }
+@media(prefers-reduced-transparency:reduce) {.wf-builder-app .wf-builder-workspace {background:var(--builder-plate);} }
+
+/* The uploaded glass layer has important declarations; limit this override to
+   the two revenue strips so each nested metric does not blur and cast a shadow. */
+html body #root :is(.ca-dashboard,.wfa-dashboard.wfa-premium) :is(.bcc-metrics article,.wfa-sales-metrics .wfa-stat) {
+  background:transparent!important;border:0!important;border-inline-end:1px solid var(--pg-line)!important;
+  border-radius:0;box-shadow:none!important;backdrop-filter:none;-webkit-backdrop-filter:none;
+}
+html body #root :is(.ca-dashboard,.wfa-dashboard.wfa-premium) :is(.bcc-metrics article,.wfa-sales-metrics .wfa-stat):first-child {background:var(--pg-soft)!important;}
+html body #root :is(.ca-dashboard,.wfa-dashboard.wfa-premium) :is(.bcc-metrics article,.wfa-sales-metrics .wfa-stat):last-child {border-inline-end:0!important;}
+html body #root :is(.ca-dashboard,.wfa-dashboard.wfa-premium) :is(.bcc-card,.wfa-sales-chart) {border-radius:18px;backdrop-filter:none;-webkit-backdrop-filter:none;}
+@media(max-width:767px) {
+  html body .ca-dashboard .bcc .bcc-metrics {grid-template-columns:repeat(2,minmax(0,1fr));}
+  html body #root :is(.ca-dashboard,.wfa-dashboard.wfa-premium) :is(.bcc-metrics article,.wfa-sales-metrics .wfa-stat) {border-bottom:1px solid var(--pg-line)!important;}
+  html body #root :is(.ca-dashboard,.wfa-dashboard.wfa-premium) :is(.bcc-metrics article,.wfa-sales-metrics .wfa-stat):is(:first-child,:last-child) {grid-column:1/-1;border-inline-end:0!important;}
+  html body #root :is(.ca-dashboard,.wfa-dashboard.wfa-premium) :is(.bcc-metrics article,.wfa-sales-metrics .wfa-stat):nth-child(3) {border-inline-end:0!important;}
+  html body #root :is(.ca-dashboard,.wfa-dashboard.wfa-premium) :is(.bcc-metrics article,.wfa-sales-metrics .wfa-stat):last-child {border-bottom:0!important;}
+}

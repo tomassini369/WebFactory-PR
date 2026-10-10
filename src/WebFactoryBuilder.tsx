@@ -1137,12 +1137,12 @@ export default function WebFactoryBuilder({lang}:{lang:Language}) {
         </div>
       </div>
 
-      <div className="wf-builder-progress"><i style={{width:`${completion}%`}} /></div>
+      <div className="wf-builder-progress" role="progressbar" aria-label={lang==='es'?'Progreso de configuración':'Setup progress'} aria-valuemin={0} aria-valuemax={100} aria-valuenow={completion}><i style={{transform:`scaleX(${completion/100})`}} /></div>
 
       <div className="wf-builder-workspace">
-        <aside className="wf-builder-nav">
+        <aside className="wf-builder-nav" aria-label={lang==='es'?'Pasos de configuración':'Setup steps'}>
           {labels.map((label,index)=>(
-            <button key={label} className={step===index?'selected':''} onClick={()=>setStep(index)}>
+            <button key={label} aria-current={step===index?'step':undefined} className={step===index?'selected':''} onClick={()=>setStep(index)}>
               <b>{index+1}</b><span>{label}</span>{index<step&&<em>✓</em>}
             </button>
           ))}
@@ -1173,6 +1173,7 @@ export default function WebFactoryBuilder({lang}:{lang:Language}) {
             </div>
             <strong>{PRICE} / {lang==='es'?'mes':'month'}</strong>
           </header>
+          <div className="wf-preview-context"><span>{templateConfigs.find(template=>template.slug===state.design.templateSlug)?.name || (lang==='es'?'Diseño personalizado':'Custom design')}</span><small>{device==='mobile'?'390':device==='tablet'?'768':'1280'} px · {lang==='es'?'Vista previa':'Preview'}</small></div>
           <div className="wf-live-stage">
             <Preview state={state} device={device} lang={lang}/>
           </div>
