@@ -40,9 +40,12 @@ jobs:
       - name: Check Home FAQ desktop/mobile, themes and languages
         run: node scripts/browser-home-faq-smoke.mjs
       - name: Check POS 2.0 responsive checkout and retry protection
+        env:
+          QA_BUILT: 1
         run: node scripts/browser-pos-v2-smoke.mjs
       - name: Check POS 2.0 on touch WebKit
         env:
+          QA_BUILT: 1
           QA_ENGINE: webkit
           QA_PORT: 5221
           QA_WIDTHS: 320,375,390,430

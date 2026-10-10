@@ -1,9 +1,12 @@
 import assert from 'node:assert/strict'
 import {mkdir,readFile} from 'node:fs/promises'
-import {createServer} from 'vite'
+import {createServer,preview} from 'vite'
 import {chromium,webkit} from 'playwright'
 const port=Number(process.env.QA_PORT||5220),engine=process.env.QA_ENGINE==='webkit'?webkit:chromium
-const server=await createServer({server:{host:'127.0.0.1',port,strictPort:true}});await server.listen()
+const built=process.env.QA_BUILT==='1'
+const instance=built?await preview({preview:{host:'127.0.0.1',port,strictPort:true}}):await createServer({server:{host:'127.0.0.1',port,strictPort:true}})
+if(!built)await instance.listen()
+const server=built?{close:()=>new Promise((resolve,reject)=>instance.httpServer.close(error=>error?reject(error):resolve()))}:instance
 const browser=await engine.launch(process.env.QA_ENGINE==='webkit'?(process.env.QA_WEBKIT_PATH?{executablePath:process.env.QA_WEBKIT_PATH}:undefined):(process.env.QA_CHROMIUM_PATH?{executablePath:process.env.QA_CHROMIUM_PATH,args:['--no-sandbox']}:undefined))
 const output='/tmp/webfactory-pos-v2';await mkdir(output,{recursive:true});const photo=await readFile(new URL('../assets/template-images/262978.jpg',import.meta.url))
 const user={id:'pos-qa-user',email:'pos@example.invalid',user_metadata:{full_name:'POS QA fixture'},app_metadata:{},mfa:{required:false}}

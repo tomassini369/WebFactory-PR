@@ -1,5 +1,5 @@
 /* Solid selling surfaces keep the existing portal glass at the workspace edge. */
-html body #root .ca-dashboard .ca-panel.pos-workspace.wf-portal-panel{--pos-canvas:#f6f9fe;--pos-surface:#fff;--pos-ink:#17263b;--pos-muted:#52647a;--pos-line:#c2cedc;--pos-focus:#285fa6;--pos-control:#75869c;color:var(--pos-ink);background:var(--pos-canvas)!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;box-shadow:none!important;padding:24px;overflow:visible}
+html body #root .ca-dashboard .ca-panel.pos-workspace.wf-portal-panel{--pos-canvas:#f6f9fe;--pos-surface:#fff;--pos-ink:#17263b;--pos-muted:#52647a;--pos-line:#c2cedc;--pos-focus:#285fa6;--pos-control:#75869c;color:var(--pos-ink);background:var(--pos-canvas)!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;box-shadow:none!important;padding:24px;overflow:visible}
 html[data-wf-theme=dark] body #root .ca-dashboard .ca-panel.pos-workspace.wf-portal-panel{--pos-canvas:#0d1522;--pos-surface:#172334;--pos-ink:#f2f6fc;--pos-muted:#b8c6d9;--pos-line:#41536c;--pos-focus:#91bfff;--pos-control:#8396b0}
 .pos-workspace *{box-sizing:border-box;min-width:0}
 .pos-workspace h2,.pos-workspace h3,.pos-workspace p{margin:0}
