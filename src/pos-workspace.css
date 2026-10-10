@@ -47,3 +47,4 @@ html body #root .ca-dashboard .ca-panel.pos-workspace.wf-portal-panel .pos-prima
 @media(forced-colors:active){.pos-product-count,html body #root .ca-dashboard .ca-panel.pos-workspace.wf-portal-panel .pos-primary{background:ButtonFace;color:ButtonText;border:1px solid ButtonText}}
 
 html body #root .ca-dashboard .ca-panel.pos-workspace.wf-portal-panel>.wf-panel-tools{position:static;background:var(--pos-surface);backdrop-filter:none;-webkit-backdrop-filter:none;margin:0 0 20px;padding:6px;border:1px solid var(--pos-line);border-radius:12px}
+@media(min-width:1151px){.pos-order{max-height:calc(100dvh - 110px);overflow:auto;overscroll-behavior:contain}.pos-order-lines{max-height:none;overflow:visible}}
