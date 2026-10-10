@@ -6,6 +6,7 @@ import InventoryHealthStatus from './InventoryHealthStatus'
 import { AthConnection } from './AthConnection'
 import { StripeConnection } from './StripeConnection'
 import { PortalPanel } from './PortalPanel'
+import './public-site-link.css'
 import { useEffect, useMemo, useState } from 'react'
 import { withAuthRetry } from './auth-retry'
 
@@ -73,9 +74,60 @@ export function MarketingPanel({site,lang}:{site:any;lang:Language}){
   return <PortalPanel className="ca-panel"><header><h2>{es?'Marketing':'Marketing'}</h2><p>{es?'Centro de crecimiento y retención del negocio.':'Business growth and retention center.'}</p></header><div className="ca-v3-cards"><article><small>REVIEWS</small><strong>{es?'Solicitudes automáticas de reseñas':'Automated review requests'}</strong><p>{es?'La automatización se habilitará en V3.1 usando órdenes y citas completadas.':'Automation will be enabled in V3.1 using completed orders and bookings.'}</p></article><article><small>SOCIAL</small><strong>{es?'Comparte tu website':'Share your website'}</strong><p>/sites/{site.slug}</p></article><article><small>CUSTOMERS</small><strong>{es?'Retención basada en CRM':'CRM-based retention'}</strong><p>{es?'Los perfiles de clientes ya se están preparando automáticamente con cada pago confirmado.':'Customer profiles are already being prepared automatically with each confirmed payment.'}</p></article></div></PortalPanel>
 }
 
-export function WebsitePanel({site,lang}:{site:any;lang:Language}){
+export function WebsitePanel({site,lang,onSave,busy,canEdit}:{site:any;lang:Language;onSave:(slug:string)=>Promise<{ok:boolean;message:string}>;busy:boolean;canEdit:boolean}){
   const es=lang==='es'
-  return <PortalPanel className="ca-panel"><header><h2>{es?'Website':'Website'}</h2><p>{es?'Administra la presencia pública de tu negocio y vuelve al Builder cuando necesites cambios de diseño.':'Manage your public business presence and return to the Builder for design changes.'}</p></header><div className="ca-v3-cards"><article><small>PUBLIC SITE</small><strong>/sites/{site.slug}</strong><a className="ca-primary-link" href={`/sites/${site.slug}`} target="_blank" rel="noreferrer">{es?'Ver website':'View website'}</a></article><article><small>BUILDER</small><strong>{site.design?.mode==='template_base'?(site.design?.templateName||site.design?.templateSlug||'Template'):'Custom'}</strong><a className="ca-primary-link" href="/builder">{es?'Abrir Builder':'Open Builder'}</a></article><article><small>REVISION</small><strong>Rev. {site.revision}</strong><p>{es?'Los cambios administrativos se publican sin crear un nuevo deploy por cliente.':'Administrative changes publish without a separate client deployment.'}</p></article></div></PortalPanel>
+  const [draft,setDraft]=useState(site.slug as string)
+  const [notice,setNotice]=useState('')
+  const [copied,setCopied]=useState(false)
+  useEffect(()=>{setDraft(site.slug);setNotice('');setCopied(false)},[site.siteId,site.slug])
+  const candidate=draft.trim().toLowerCase()
+  const valid=/^[a-z0-9](?:[a-z0-9-]{1,62}[a-z0-9])$/.test(candidate)&&!candidate.includes('--')
+  const dirty=candidate!==site.slug
+  const fullUrl=`https://webfactorypr.com/sites/${site.slug}`
+  const saveLink=async(event:import('react').FormEvent<HTMLFormElement>)=>{
+    event.preventDefault()
+    if(!canEdit||busy||!valid||!dirty)return
+    if(!window.confirm(es
+      ?'¿Cambiar el enlace público de tu negocio? La dirección anterior seguirá funcionando.'
+      :'Change your business public link? The previous address will keep working.'))return
+    const result=await onSave(candidate)
+    setNotice(result.message)
+  }
+  const copyLink=async()=>{
+    try{await navigator.clipboard.writeText(fullUrl);setCopied(true)}
+    catch{setNotice(es?'No se pudo copiar. Selecciona el enlace para copiarlo.':'Could not copy. Select the address to copy it.')}
+  }
+  return <PortalPanel className="ca-panel"><header><h2>Website</h2><p>{es?'Administra la presencia pública de tu negocio y cambia su enlace sin modificar el diseño.':'Manage your business website and update its public link without changing the design.'}</p></header>
+    <div className="ca-v3-cards">
+      <article className="ca-public-site-editor">
+        <small>{es?'ENLACE PÚBLICO':'PUBLIC SITE'}</small>
+        <strong className="ca-public-site-current">/sites/{site.slug}</strong>
+        <p>{es?'Personaliza la dirección que compartes con tus clientes.':'Customize the website address you share with customers.'}</p>
+        {canEdit&&<form onSubmit={saveLink} className="ca-public-site-form">
+          <label htmlFor="ca-public-site-slug">{es?'Editar dirección del website':'Edit website address'}</label>
+          <div className="ca-public-site-field">
+            <span>webfactorypr.com/sites/</span>
+            <input id="ca-public-site-slug" name="publicSlug" autoCapitalize="none" autoComplete="off" spellCheck={false} maxLength={64} value={draft} onChange={event=>{
+              const next=event.target.value.normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9-]/g,'-').replace(/-{2,}/g,'-').replace(/^-+/,'').slice(0,64)
+              setDraft(next);setNotice('');setCopied(false)
+            }} aria-invalid={dirty&&!valid} aria-describedby="ca-public-site-help" disabled={busy}/>
+          </div>
+          <p id="ca-public-site-help" className="ca-public-site-help">{es?'De 3 a 64 caracteres: letras, números y guiones. No puede terminar en guion.':'3–64 characters: letters, numbers and hyphens. Cannot end in a hyphen.'}</p>
+          {dirty&&valid&&<p className="ca-public-site-preview">{es?'Nuevo enlace:':'New address:'} <strong>webfactorypr.com/sites/{candidate}</strong></p>}
+          {dirty&&!valid&&<p className="ca-public-site-error" role="status">{es?'Escribe un enlace válido para guardar.':'Enter a valid address before saving.'}</p>}
+          <button className="ca-primary-link ca-public-site-save" type="submit" disabled={busy||!dirty||!valid}>{busy?(es?'Guardando…':'Saving…'):(es?'Guardar enlace':'Save link')}</button>
+        </form>}
+        <p className="ca-public-site-help">{es?'Los enlaces antiguos y códigos QR compartidos seguirán abriendo este negocio.':'Previously shared links and QR codes will still open this business.'}</p>
+        <div className="ca-public-site-actions">
+          <a className="ca-primary-link" href={`/sites/${site.slug}`} target="_blank" rel="noreferrer">{es?'Ver website':'View website'}</a>
+          <button className="ca-public-site-copy" type="button" onClick={copyLink}>{copied?(es?'Copiado ✓':'Copied ✓'):(es?'Copiar enlace':'Copy link')}</button>
+        </div>
+        {notice&&<p className="ca-public-site-notice" role="status">{notice}</p>}
+      </article>
+      <article><small>BUILDER</small><strong>{site.design?.mode==='template_base'?(site.design?.templateName||site.design?.templateSlug||'Template'):'Custom'}</strong><a className="ca-primary-link" href={`/builder?edit=${encodeURIComponent(site.siteId)}`}>{es?'Abrir Builder':'Open Builder'}</a></article>
+      <article><small>{es?'REVISIÓN':'REVISION'}</small><strong>Rev. {site.revision}</strong><p>{es?'Los cambios administrativos se publican sin crear un nuevo deploy por cliente.':'Administrative changes publish without a separate client deployment.'}</p></article>
+    </div>
+  </PortalPanel>
 }
 
 export function SettingsPanel({site,lang,onSave,busy}:{site:any;lang:Language;onSave:(section:string,value:any)=>void;busy:boolean}){

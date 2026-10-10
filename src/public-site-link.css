@@ -1,0 +1,31 @@
+/* Scoped public URL editor; use the existing portal theme and navigation. */
+.ca-v3-cards .ca-public-site-editor{grid-column:1/-1;min-width:0;gap:10px}
+.ca-public-site-current{overflow-wrap:anywhere;font-variant-ligatures:none}
+.ca-public-site-editor .ca-public-site-form{display:grid;gap:10px;margin:10px 0 4px}
+.ca-public-site-form>label{color:inherit;font-size:14px;font-weight:650}
+.ca-public-site-field{display:flex;align-items:center;min-width:0;max-width:720px;border:1px solid var(--ca-line);border-radius:12px;background:var(--ca-bg);overflow:hidden}
+.ca-public-site-field span{flex:0 0 auto;padding:13px 0 13px 14px;font-size:15px;line-height:1.4;color:var(--ca-muted)}
+.ca-public-site-field input{flex:1 1 160px;min-width:0;min-height:48px;padding:10px 12px 10px 0;border:0!important;background:transparent!important;font-size:16px;color:inherit;outline:0}
+.ca-public-site-field:focus-within{outline:3px solid color-mix(in srgb,var(--ca-blue) 30%,transparent);border-color:var(--ca-blue)}
+.ca-public-site-field:has([aria-invalid=true]){border-color:#cf4141}
+.ca-public-site-help{max-width:68ch;color:var(--ca-muted);font-size:13px;line-height:1.55}
+.ca-public-site-preview{font-size:13px;color:inherit;overflow-wrap:anywhere}
+.ca-public-site-preview strong{color:var(--ca-blue)}
+.ca-public-site-error{color:#b93a42;font-size:13px}
+.ca-v3-cards .ca-public-site-editor .ca-public-site-save{justify-self:start;min-height:48px}
+.ca-public-site-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.ca-public-site-actions .ca-primary-link,.ca-public-site-copy{min-height:44px;display:inline-flex;align-items:center;justify-content:center}
+.ca-public-site-copy{padding:11px 15px;border:1px solid var(--ca-line);border-radius:12px;background:transparent;color:inherit;font:inherit;font-size:13px;font-weight:650;cursor:pointer}
+.ca-public-site-copy:focus-visible,.ca-public-site-save:focus-visible{outline:3px solid var(--ca-blue);outline-offset:3px}
+.ca-public-site-save:disabled{opacity:.52;cursor:not-allowed}
+.ca-public-site-notice{font-size:13px;overflow-wrap:anywhere}
+@media(max-width:560px){
+  .ca-public-site-field{flex-wrap:wrap;padding:8px 10px}
+  .ca-public-site-field span{padding:4px 2px;font-size:13px;flex-basis:100%}
+  .ca-public-site-field input{padding:6px 2px;flex-basis:100%;min-height:44px}
+  .ca-public-site-actions>*{flex:1 1 130px}
+}
+@media(prefers-contrast:more){
+  .ca-public-site-field{border-color:currentColor}
+  .ca-public-site-copy{border-color:currentColor}
+}
