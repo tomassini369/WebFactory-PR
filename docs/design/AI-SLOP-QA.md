@@ -30,6 +30,25 @@ cloud CI runner after ensuring the runtime/browser is installed:
 `npx --yes impeccable@4.1.0 detect --viewport 390x844 https://webfactorypr.com`.
 A static source scan cannot prove that a page looks good in a browser.
 
+
+## First audit baseline (PR #100; Impeccable 4.1.0)
+
+The first `src/` scan produced **21 findings**: 19 warnings and
+2 advisories. Findings are signals to review, not automatic failures.
+
+- Addressed in this PR: unnecessary 3px side-accent border on Builder
+  guidance; touch-target polish for homepage header and demo cart (the
+  latter was noticed in direct CSS inspection rather than flagged by the
+  detector).
+- Explicitly retain while reviewing visual context: Inter as an existing
+  brand-compatible native typography choice; preserved original carousel
+  and receipt motion; current approved hero treatment.
+- Remaining findings about transition widths, gradient text and decorative
+  accents need targeted before/after visual and functional validation,
+  not blind global replacements.
+- The report is available as the `impeccable-design-audit` artifact from
+  the GitHub Actions run. Re-run on subsequent PR updates to compare.
+
 ## Human acceptance checklist
 
 - Homepage: preserve Hero video **behind** content, scroll-driven tour,
