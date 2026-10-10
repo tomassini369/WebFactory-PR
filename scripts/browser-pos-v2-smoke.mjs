@@ -47,6 +47,8 @@ try{
   site.design.secondary=['#285fa6','#e4be5b','#ef4444','#22c55e','#ffffff','#000000','#777777'][[320,375,390,430,768,1024,1440].indexOf(width)]||'#777777'
   await page.setViewportSize({width,height:900});await fresh();await page.getByRole('button',{name:lang.toUpperCase(),exact:true}).click();if(await page.locator('html').getAttribute('data-wf-theme')!==theme)await page.locator('.wf-theme-toggle').click()
   const pos=page.locator('.pos-workspace');assert.equal(await pos.locator('.pos-product').count(),3);assert.equal(await pos.locator('.pos-order').evaluate(el=>getComputedStyle(el).position),width>1150?'sticky':'static');assert.equal(await pos.locator('.pos-product img').count(),1);assert.equal(await pos.locator('.pos-identity img').count(),1)
+  const reopenNav=await page.locator('.sidebar-nav-item.active .sidebar-nav-label').count()===0
+  if(reopenNav){await page.locator('.ca-mobile-menu-toggle').click();await page.locator('.sidebar-nav-item.active .sidebar-nav-label').waitFor()}
   const contrast=await pos.evaluate(el=>{
    const rgb=color=>{const c=document.createElement('canvas'),ctx=c.getContext('2d');ctx.fillStyle=color;ctx.fillRect(0,0,1,1);return [...ctx.getImageData(0,0,1,1).data].slice(0,3)}
    const lum=color=>{const c=rgb(color).map(v=>{v/=255;return v<=.04045?v/12.92:((v+.055)/1.055)**2.4});return .2126*c[0]+.7152*c[1]+.0722*c[2]}
@@ -55,6 +57,7 @@ try{
    const root=getComputedStyle(el),order=getComputedStyle(el.querySelector('.pos-order')),muted=getComputedStyle(el.querySelector('.pos-heading p'))
    return {sidebarBrand:rgb(sidebar.backgroundColor),expectedSidebarBrand:rgb(dashboard.getPropertyValue('--ca-pos-accent')),sidebarContrast:ratio(label.color,sidebar.backgroundColor),primary:root.getPropertyValue('--pos-primary').trim(),body:ratio(root.color,root.backgroundColor),muted:ratio(muted.color,root.backgroundColor),order:ratio(order.color,order.backgroundColor),orderMuted:ratio(getComputedStyle(el.querySelector('.pos-order-empty')).color,order.backgroundColor),control:ratio(getComputedStyle(el.querySelector('.pos-search input')).borderTopColor,getComputedStyle(el.querySelector('.pos-search input')).backgroundColor),canvas:root.backgroundColor,colors:[root.color,order.backgroundColor,getComputedStyle(el.querySelector('.pos-order-empty')).color,getComputedStyle(el.querySelector('.pos-search input')).borderTopColor,getComputedStyle(el.querySelector('.pos-search input')).backgroundColor]}
   })
+  if(reopenNav)await page.locator('.ca-mobile-menu-toggle').click()
   assert.equal(await page.locator('.ca-dashboard').evaluate(el=>getComputedStyle(el).backgroundImage),'none','POS canvas must not retain the global portal wallpaper')
   tenantCanvases[theme].add(contrast.canvas)
   assert.equal(contrast.primary,site.design.primary,'Use this business primary rather than a portal default')
