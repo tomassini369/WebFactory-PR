@@ -26,7 +26,8 @@ try{
    else if(name==='client-pos-checkout'){cardCalls.push(req.postDataJSON());data={ok:true,transactionId:'txn_pos_'+req.postDataJSON().saleAttemptId,checkoutUrl:'https://checkout.stripe.com/isolated-qa'}}
    else throw Error('Unexpected write in isolated POS QA: '+name)
   }
-  if(name==='portal-session')data={ok:true,user}
+  if(name==='client-workforce')data={ok:true,enabled:false,paidBreaks:false,revision:0,serverNow:new Date().toISOString(),admin:role==='owner',employeeId:'',shifts:[],requests:[],employees:[],locations:[],bindings:[],events:[],confirmedOperationIds:[],totals:{todayMinutes:0,weekMinutes:0}}
+  else if(name==='portal-session')data={ok:true,user}
   else if(name==='client-admin')data=u.searchParams.has('siteId')?{ok:true,site:{...site,catalog:siteEmpty?[]:catalog},membership:{role,capabilities:caps[role]}}:{ok:true,sites:[{siteId:site.siteId,slug:site.slug,businessName:site.business.name,status:'published'}]}
   else if(name==='client-commerce-admin')data={ok:true,orders:[],bookings:[]}
   else if(name==='client-pos-status')data={ok:true,transaction:{transactionId:u.searchParams.get('transactionId'),paymentStatus:cardStatus,status:cardStatus==='paid'?'completed':'payment_pending',receiptId:cardStatus==='paid'?'receipt-card-qa':'',amountTotal:1115}}
