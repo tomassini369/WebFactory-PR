@@ -1,3 +1,4 @@
+import posCheckout from '../functions/client-pos-checkout.mjs';
 import commerceAdmin from '../functions/client-commerce-admin.mjs';
 import Stripe from 'stripe';
 import terminalSale from '../functions/client-terminal-payment-intent.mjs';
@@ -637,4 +638,13 @@ test('a repeated delayed-payment failure safely projects its already archived re
  const f=fixture(t,3);await prepareReservation(f);assert.equal((await webhook(asyncCheckoutRequest('evt_failed_before_archive'))).status,200);await ageInventoryJournal();assert.equal((await archiveShop()).archivedReservations,1);
  assert.equal((await webhook(asyncCheckoutRequest('evt_failed_after_archive'))).status,200);
  const site=await getClientSite('shop');assert.equal(Object.keys(site.stockReservations).length,0);assert.equal(site.catalog[0].inventory,3);assert.equal((await clientCommerceStore().get(commerceKey('shop','transactions','txn_shop'))).paymentStatus,'failed');
+});
+
+test('cashier cannot bypass POS adjustment permissions in direct or idempotent sale; no stock or marker writes',async t=>{
+ const f=fixture(t,5);f.site.members[0].role='cashier';await f.prepare();
+ for(const handler of [sale,idempotentSale,posCheckout,terminalSale])for(const field of ['discountCents','tipCents']){
+  const response=await handler(new Request('https://webfactorypr.com/.netlify/functions/client-pos-sale',{method:'POST',headers:{Origin:'https://webfactorypr.com','Content-Type':'application/json'},body:JSON.stringify({siteId:'shop',saleAttemptId:'permissions-12345',items:[{id:'last-item',quantity:1}],paymentMethod:'cash',[field]:100})}));
+  assert.equal(response.status,403);
+ }
+ assert.equal((await getClientSite('shop')).catalog[0].inventory,5);assert.equal([...f.rows.keys()].filter(key=>/pos-attempts|transactions|receipts/.test(key)).length,0);
 });
