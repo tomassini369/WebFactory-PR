@@ -50,6 +50,18 @@ jobs:
           QA_PORT: 5221
           QA_WIDTHS: 320,375,390,430
         run: node scripts/browser-pos-v2-smoke.mjs
+      - name: Check Workforce identity, clock controls and responsive review
+        env:
+          QA_BUILT: 1
+          QA_PORT: 5222
+        run: node scripts/browser-workforce-smoke.mjs
+      - name: Check Workforce on touch WebKit
+        env:
+          QA_BUILT: 1
+          QA_ENGINE: webkit
+          QA_PORT: 5223
+          QA_WIDTHS: 320,375,390,430
+        run: node scripts/browser-workforce-smoke.mjs
       - name: Check homepage responsive controls, tour and demos
         run: node scripts/browser-home-evolution-smoke.mjs
       - name: Check all template renderers and saved storefront data

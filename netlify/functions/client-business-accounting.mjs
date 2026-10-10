@@ -1,5 +1,7 @@
 import { assertSameOrigin, errorResponse, requireSiteAccess } from '../lib/client-auth.mjs';
 import { clientCommerceStore } from '../lib/client-store.mjs';
+import {importApprovedShift} from '../lib/workforce-accounting.mjs';
+import {workforceKey} from '../lib/workforce.mjs';
 import { accountingReport, appendEntry, emptyLedger, fail, reportCsv } from '../lib/business-accounting.mjs';
 
 export async function loadAccountingTransactions(store,siteId) {
@@ -38,7 +40,7 @@ export function createAccountingHandler({authorize=requireSiteAccess,getStore=cl
         const transactions=await loadAccountingTransactions(store,site.siteId);
         if(!transactions.some(e=>e.transactionId===payload.transactionId))throw fail('Transaction does not belong to this business.',404);
       }
-      const next=appendEntry(ledger,payload,site,user.email||user.id);
+      const next=payload.type==='attendance_import'?importApprovedShift(ledger,payload,await store.get(workforceKey(site.siteId),{type:'json'}),site,user.email||user.id):appendEntry(ledger,payload,site,user.email||user.id);
       if(next!==ledger){
         if(saved&&!saved.etag)throw fail('Concurrency information unavailable.',503);
         const result=await store.setJSON(key,next,saved?{onlyIfMatch:saved.etag}:{onlyIfNew:true});
