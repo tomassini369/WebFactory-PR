@@ -7,7 +7,7 @@ const built=process.env.QA_BUILT==='1'
 const instance=built?await preview({preview:{host:'127.0.0.1',port,strictPort:true}}):await createServer({server:{host:'127.0.0.1',port,strictPort:true}})
 if(!built)await instance.listen()
 const server=built?{close:()=>new Promise((resolve,reject)=>instance.httpServer.close(error=>error?reject(error):resolve()))}:instance
-const browser=await engine.launch(process.env.QA_ENGINE==='webkit'?(process.env.QA_WEBKIT_PATH?{executablePath:process.env.QA_WEBKIT_PATH}:undefined):(process.env.QA_CHROMIUM_PATH?{executablePath:process.env.QA_CHROMIUM_PATH,args:['--no-sandbox']}:undefined))
+const browser=await engine.launch(process.env.QA_ENGINE==='webkit'?(process.env.QA_WEBKIT_PATH?{executablePath:process.env.QA_WEBKIT_PATH}:undefined):(process.env.QA_CHROMIUM_PATH?{executablePath:process.env.QA_CHROMIUM_PATH,args:['--no-sandbox'],...(process.env.QA_ORIGIN&&process.env.HTTPS_PROXY?{proxy:{server:process.env.HTTPS_PROXY}}:{})}:undefined))
 const output='/tmp/webfactory-pos-v2';await mkdir(output,{recursive:true});const photo=await readFile(new URL('../assets/template-images/262978.jpg',import.meta.url))
 const user={id:'pos-qa-user',email:'pos@example.invalid',user_metadata:{full_name:'POS QA fixture'},app_metadata:{},mfa:{required:false}}
 let role='owner',scenario='success',cardStatus='pending',directCalls=[],cardCalls=[],siteEmpty=false
@@ -35,15 +35,36 @@ try{
   else if(!['client-pos-sale-idempotent','client-pos-checkout'].includes(name))data={ok:true,orders:[],bookings:[],receipts:[],customers:[],entries:[],report:{},inventory:[]}
   await route.fulfill({status,contentType:'application/json',body:JSON.stringify(data)})
  })
- const root=`http://127.0.0.1:${port}`
+ const root=process.env.QA_ORIGIN||`http://127.0.0.1:${port}`
  const open=async()=>{
   await page.goto(root+'/client-admin');await page.locator('.ca-dashboard').waitFor();
   await page.locator('.ca-mobile-menu-toggle').click();await page.locator('.sidebar-container').getByRole('button',{name:'POS',exact:true}).click();await page.locator('.pos-workspace').waitFor()
  }
+ const tenantCanvases={light:new Set(),dark:new Set()}
  const fresh=async()=>{await page.goto(root);await page.evaluate(()=>sessionStorage.clear());await open()}
  for(const width of (process.env.QA_WIDTHS||'320,375,390,430,768,1024,1440').split(',').map(Number))for(const theme of ['light','dark'])for(const lang of ['es','en']){
+  site.design.primary=['#0B1529','#126b43','#9b245c','#f0b429','#ffffff','#000000','#663399'][[320,375,390,430,768,1024,1440].indexOf(width)]||'#126b43'
+  site.design.secondary=['#285fa6','#e4be5b','#ef4444','#22c55e','#ffffff','#000000','#777777'][[320,375,390,430,768,1024,1440].indexOf(width)]||'#777777'
   await page.setViewportSize({width,height:900});await fresh();await page.getByRole('button',{name:lang.toUpperCase(),exact:true}).click();if(await page.locator('html').getAttribute('data-wf-theme')!==theme)await page.locator('.wf-theme-toggle').click()
   const pos=page.locator('.pos-workspace');assert.equal(await pos.locator('.pos-product').count(),3);assert.equal(await pos.locator('.pos-order').evaluate(el=>getComputedStyle(el).position),width>1150?'sticky':'static');assert.equal(await pos.locator('.pos-product img').count(),1);assert.equal(await pos.locator('.pos-identity img').count(),1)
+  const reopenNav=await page.locator('.sidebar-nav-item.active .sidebar-nav-label').count()===0
+  if(reopenNav){await page.locator('.ca-mobile-menu-toggle').click();await page.locator('.sidebar-nav-item.active .sidebar-nav-label').waitFor()}
+  const contrast=await pos.evaluate(el=>{
+   const rgb=color=>{const c=document.createElement('canvas'),ctx=c.getContext('2d');ctx.fillStyle=color;ctx.fillRect(0,0,1,1);return [...ctx.getImageData(0,0,1,1).data].slice(0,3)}
+   const lum=color=>{const c=rgb(color).map(v=>{v/=255;return v<=.04045?v/12.92:((v+.055)/1.055)**2.4});return .2126*c[0]+.7152*c[1]+.0722*c[2]}
+   const ratio=(a,b)=>{const x=lum(a),y=lum(b);return (Math.max(x,y)+.05)/(Math.min(x,y)+.05)}
+   const sidebar=getComputedStyle(document.querySelector('.sidebar-nav-item.active')),label=getComputedStyle(document.querySelector('.sidebar-nav-item.active .sidebar-nav-label')),dashboard=getComputedStyle(document.querySelector('.ca-dashboard'))
+   const root=getComputedStyle(el),order=getComputedStyle(el.querySelector('.pos-order')),muted=getComputedStyle(el.querySelector('.pos-heading p'))
+   return {sidebarBrand:rgb(sidebar.backgroundColor),expectedSidebarBrand:rgb(dashboard.getPropertyValue('--ca-pos-accent')),sidebarContrast:ratio(label.color,sidebar.backgroundColor),primary:root.getPropertyValue('--pos-primary').trim(),body:ratio(root.color,root.backgroundColor),muted:ratio(muted.color,root.backgroundColor),order:ratio(order.color,order.backgroundColor),orderMuted:ratio(getComputedStyle(el.querySelector('.pos-order-empty')).color,order.backgroundColor),control:ratio(getComputedStyle(el.querySelector('.pos-search input')).borderTopColor,getComputedStyle(el.querySelector('.pos-search input')).backgroundColor),canvas:root.backgroundColor,colors:[root.color,order.backgroundColor,getComputedStyle(el.querySelector('.pos-order-empty')).color,getComputedStyle(el.querySelector('.pos-search input')).borderTopColor,getComputedStyle(el.querySelector('.pos-search input')).backgroundColor]}
+  })
+  if(reopenNav)await page.locator('.ca-mobile-menu-toggle').click()
+  assert.equal(await page.locator('.ca-dashboard').evaluate(el=>getComputedStyle(el).backgroundImage),'none','POS canvas must not retain the global portal wallpaper')
+  tenantCanvases[theme].add(contrast.canvas)
+  assert.equal(contrast.primary,site.design.primary,'Use this business primary rather than a portal default')
+  assert.deepEqual(contrast.sidebarBrand,contrast.expectedSidebarBrand,'Active POS navigation follows business accent')
+  assert(contrast.sidebarContrast>=4.5,`Business navigation text contrast ${JSON.stringify(contrast)}`)
+  assert(contrast.control>=3,`Tenant input boundary contrast ${JSON.stringify(contrast)}`)
+  assert(contrast.body>=4.5&&contrast.muted>=4.5&&contrast.order>=4.5&&contrast.orderMuted>=4.5,`Tenant palette text contrast ${JSON.stringify(contrast)}`)
   await pos.getByRole('button',{name:lang==='es'?'Servicios':'Services',exact:true}).click();assert.equal(await pos.locator('.pos-product').count(),1)
   await pos.getByRole('button',{name:lang==='es'?'Todo':'All',exact:true}).click();await pos.getByRole('searchbox').fill('no-match');assert.equal(await pos.locator('.pos-product').count(),0);await pos.getByRole('button',{name:lang==='es'?'Limpiar filtros':'Clear filters',exact:true}).click()
   await pos.locator('.pos-product').first().click();await pos.locator('.pos-product').first().click();assert.equal(await pos.locator('.pos-quantity output').innerText(),'2');assert(await pos.locator('.pos-product').first().isDisabled());assert.match(await pos.locator('.pos-grand-total dd').innerText(),/22.30/)
@@ -55,6 +76,9 @@ try{
   if(width===390||width===1440)await page.screenshot({path:`${output}/pos-${width}-${theme}-${lang}-${process.env.QA_ENGINE||'chromium'}.png`})
   console.log('PASS POS responsive',width,theme,lang)
  }
+ assert.equal(tenantCanvases.light.size,(process.env.QA_WIDTHS||'320,375,390,430,768,1024,1440').split(',').length,'Different tenant colors produce different light backgrounds')
+ assert.equal(tenantCanvases.dark.size,tenantCanvases.light.size,'Different tenant colors produce different dark backgrounds')
+ site.design.primary='invalid-color';await fresh();assert.equal(await page.locator('.pos-workspace').evaluate(el=>getComputedStyle(el).getPropertyValue('--pos-primary').trim()),'#0b1529');assert.equal(await page.locator('.ca-dashboard').evaluate(el=>getComputedStyle(el).getPropertyValue('--ca-pos-primary').trim()),'#0b1529');site.design.primary='#0B1529'
  role='cashier';await fresh();assert.equal(await page.locator('.pos-adjustments').count(),0);assert.equal(await page.locator('.pos-shortcuts button').count(),2)
  role='employee';await page.goto(root+'/client-admin');await page.locator('.ca-dashboard').waitFor();await page.locator('.ca-mobile-menu-toggle').click();assert.equal(await page.locator('.sidebar-container').getByRole('button',{name:'POS',exact:true}).count(),0)
  role='owner';siteEmpty=true;await fresh();await page.locator('.pos-empty').waitFor();assert(await page.locator('.pos-primary').isDisabled());siteEmpty=false

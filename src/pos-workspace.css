@@ -1,6 +1,6 @@
 /* Solid selling surfaces keep the existing portal glass at the workspace edge. */
-html body #root .ca-dashboard .ca-panel.pos-workspace.wf-portal-panel{--pos-canvas:#f6f9fe;--pos-surface:#fff;--pos-ink:#17263b;--pos-muted:#52647a;--pos-line:#c2cedc;--pos-focus:#285fa6;--pos-control:#75869c;color:var(--pos-ink);background:var(--pos-canvas)!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;box-shadow:none!important;padding:24px;overflow:visible}
-html[data-wf-theme=dark] body #root .ca-dashboard .ca-panel.pos-workspace.wf-portal-panel{--pos-canvas:#0d1522;--pos-surface:#172334;--pos-ink:#f2f6fc;--pos-muted:#b8c6d9;--pos-line:#41536c;--pos-focus:#91bfff;--pos-control:#8396b0}
+html body #root .ca-dashboard .ca-panel.pos-workspace.wf-portal-panel{--pos-canvas:color-mix(in srgb,var(--pos-primary) 12%,white);--pos-surface:color-mix(in srgb,var(--pos-primary) 3%,white);--pos-ink:#17263b;--pos-muted:#52647a;--pos-line:color-mix(in srgb,var(--pos-primary) 25%,#c2cedc);--pos-focus:color-mix(in srgb,var(--pos-brand) 35%,#17263b);--pos-control:color-mix(in srgb,var(--pos-primary) 8%,#63758b);color:var(--pos-ink);background:var(--pos-canvas)!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;box-shadow:none!important;padding:24px;overflow:visible}
+html[data-wf-theme=dark] body #root .ca-dashboard .ca-panel.pos-workspace.wf-portal-panel{--pos-canvas:color-mix(in srgb,var(--pos-primary) 24%,#0b1018);--pos-surface:color-mix(in srgb,var(--pos-primary) 18%,#172334);--pos-ink:#f2f6fc;--pos-muted:#b8c6d9;--pos-line:#41536c;--pos-focus:#91bfff;--pos-control:#9aaec8}
 .pos-workspace *{box-sizing:border-box;min-width:0}
 .pos-workspace h2,.pos-workspace h3,.pos-workspace p{margin:0}
 .pos-workspace svg{width:20px;height:20px;flex-shrink:0}
@@ -48,3 +48,12 @@ html body #root .ca-dashboard .ca-panel.pos-workspace.wf-portal-panel .pos-prima
 
 html body #root .ca-dashboard .ca-panel.pos-workspace.wf-portal-panel>.wf-panel-tools{position:static;background:var(--pos-surface);backdrop-filter:none;-webkit-backdrop-filter:none;margin:0 0 20px;padding:6px;border:1px solid var(--pos-line);border-radius:12px}
 @media(min-width:1151px){.pos-order{max-height:calc(100dvh - 110px);overflow:auto;overscroll-behavior:contain}.pos-order-lines{max-height:none;overflow:visible}}
+
+/* The POS screen follows tenant branding; other portal modules keep their own canvas. */
+html body #root .ca-dashboard:has(.pos-workspace){--pg-surface:color-mix(in srgb,var(--ca-pos-primary) 3%,white);background:color-mix(in srgb,var(--ca-pos-primary) 16%,white)!important}
+html[data-wf-theme=dark] body #root .ca-dashboard:has(.pos-workspace){--pg-surface:color-mix(in srgb,var(--ca-pos-primary) 18%,#172334);background:color-mix(in srgb,var(--ca-pos-primary) 24%,#0b1018)!important}
+html body #root .ca-dashboard:has(.pos-workspace) .sidebar-container{background:color-mix(in srgb,var(--ca-pos-primary) 25%,#0b1018)!important}
+html body #root .ca-dashboard .ca-panel.pos-workspace.wf-portal-panel :is(input,select){background:var(--pos-surface)!important;color:var(--pos-ink)!important;border-color:var(--pos-control)!important}
+html body #root .ca-dashboard .ca-panel.pos-workspace.wf-portal-panel :is(.pos-order-empty,.pos-note,.pos-device-note p,.pos-empty p){color:var(--pos-muted)!important}
+html body #root .ca-dashboard:has(.pos-workspace) .sidebar-container .sidebar-nav-item.active{background:var(--ca-pos-accent)!important;color:var(--ca-pos-accent-text)!important}
+html body #root .ca-dashboard:has(.pos-workspace) .sidebar-container .sidebar-nav-item.active .sidebar-nav-label{color:inherit!important}

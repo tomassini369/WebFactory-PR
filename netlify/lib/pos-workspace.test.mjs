@@ -37,4 +37,12 @@ test('attempt status authorizes POS, scopes keys to tenant and never returns cus
  assert.equal((await handler(new Request('https://example.invalid/api',{method:'POST'}))).status,405);
 });
 
-test('tenant accents keep readable checkout text or fall back to calibrated brand blue',()=>{assert.deepEqual(posBrandPair('#ffffff'),{background:'#ffffff',foreground:'#0b1529'});assert.deepEqual(posBrandPair('#000000'),{background:'#000000',foreground:'#ffffff'});assert.deepEqual(posBrandPair('#777777'),{background:'#285fa6',foreground:'#ffffff'});assert.deepEqual(posBrandPair('var(--unsafe)'),{background:'#285fa6',foreground:'#ffffff'});});
+test('tenant accents preserve business colors with readable checkout text',()=>{assert.deepEqual(posBrandPair('#ffffff'),{background:'#ffffff',foreground:'#0b1529'});assert.deepEqual(posBrandPair('#000000'),{background:'#000000',foreground:'#ffffff'});assert.deepEqual(posBrandPair('#777777'),{background:'#777777',foreground:'#000000'});assert.deepEqual(posBrandPair('var(--unsafe)'),{background:'#285fa6',foreground:'#ffffff'});});
+
+test('all grayscale business accents preserve their background and meet readable text contrast',()=>{
+ const luminance=hex=>{const channels=[1,3,5].map(i=>parseInt(hex.slice(i,i+2),16)/255).map(v=>v<=.04045?v/12.92:((v+.055)/1.055)**2.4);return channels.reduce((s,v,i)=>s+v*[.2126,.7152,.0722][i],0)};
+ for(let channel=0;channel<=255;channel++){
+  const color='#'+channel.toString(16).padStart(2,'0').repeat(3),pair=posBrandPair(color),a=luminance(pair.background),b=luminance(pair.foreground);
+  assert.equal(pair.background,color);assert.ok((Math.max(a,b)+.05)/(Math.min(a,b)+.05)>=4.5,`${color}: readable foreground`);
+ }
+});
