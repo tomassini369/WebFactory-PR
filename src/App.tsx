@@ -14,6 +14,9 @@ const TemplatesPage = lazy(() => import('./TemplatesPage'))
 const WebFactoryBuilder = lazy(() => import('./WebFactoryBuilder'))
 const ChatgptControlPage = lazy(() => import('./ChatgptControlPage'))
 const ClientAdminPage = lazy(() => import('./ClientAdminPage'))
+const CustomerDisplay = lazy(() => import('./CustomerDisplay'))
+let displayPairing=''
+if(/^\/customer-display\/?$/.test(window.location.pathname)){displayPairing=new URLSearchParams(window.location.hash.slice(1)).get('pair')||'';if(window.location.hash)window.history.replaceState(window.history.state,'',window.location.pathname)}
 const ClientStorefront = lazy(() => import('./ClientStorefront'))
 const WebFactoryAdminPage = lazy(() => import('./WebFactoryAdminPage'))
 const PasswordRecoveryPage = lazy(() => import('./PasswordRecoveryPage'))
@@ -69,6 +72,7 @@ function App(){
   const termsRoute = /^\/terms\/?$/.test(pathname)
   const refundRoute = /^\/refund-policy\/?$/.test(pathname)
 
+  if (/^\/customer-display\/?$/.test(pathname)) return <RouteView><CustomerDisplay lang={lang} setLang={setLang} pairing={displayPairing}/></RouteView>
   if (ShadcnPreview && /^\/shadcn-preview\/?$/.test(pathname)) return <RouteView><ShadcnPreview/></RouteView>
   if (TemplateParityReview && /^\/template-parity-preview\/?$/.test(pathname)) return <RouteView><TemplateParityReview/></RouteView>
   if (PreviewReviewPage && /^\/preview-review\/?$/.test(pathname)) return <RouteView><PreviewReviewPage lang={lang} setLang={setLang} /></RouteView>

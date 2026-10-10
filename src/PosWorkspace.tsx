@@ -5,6 +5,8 @@ import { PortalPanel } from './PortalPanel'
 import CopyButton from './CopyButton'
 import { estimatePosTotals, posBrandPair, posItemName, posQuantityLimit, type PosItem, type PosLine } from './pos-domain'
 import './pos-workspace.css'
+import './customer-display.css'
+import PosCustomerDisplay from './PosCustomerDisplay'
 
 type Language='es'|'en'
 type Destination='orders'|'payments'|'catalog'|'bookings'
@@ -30,6 +32,7 @@ export default function PosWorkspace({site,lang,operator,onSaleComplete,onNaviga
  const [remote,setRemote]=useState<Remote|null>(null),[status,setStatus]=useState<Status|null>(null)
  const storageKey=`wf-pos-active:${site.siteId}:${operator.id}`
  const [attempt,setAttempt]=useState<Attempt|null>(()=>{try{const value=JSON.parse(sessionStorage.getItem(storageKey)||'null');return value&&/^[a-zA-Z0-9_-]{8,120}$/.test(value.id)&&['direct','card'].includes(value.kind)?value:null}catch{return null}})
+ const [displayAttempt,setDisplayAttempt]=useState('')
  const gate=useRef(false),snapshot=useRef<Record<string,unknown>|null>(null),cartRef=useRef<HTMLElement>(null)
  const canAdjust=['owner','manager','admin'].includes(operator.role)
  const locked=busy||Boolean(attempt)||Boolean(remote)
@@ -42,8 +45,8 @@ export default function PosWorkspace({site,lang,operator,onSaleComplete,onNaviga
  const businessName=es?site.business?.nameEs||site.business?.nameEn||site.business?.name:site.business?.nameEn||site.business?.name||site.business?.nameEs
  const asset=(key:string)=>`/.netlify/functions/client-asset?siteId=${encodeURIComponent(site.siteId)}&key=${encodeURIComponent(key)}`
  const saveAttempt=(value:Attempt|null)=>{try{if(value)sessionStorage.setItem(storageKey,JSON.stringify(value));else sessionStorage.removeItem(storageKey)}catch{if(value)throw new Error(t('No se pudo proteger el intento de venta. Habilita almacenamiento de sesión antes de cobrar.','The sale attempt could not be protected. Enable session storage before charging.'))}setAttempt(value)}
- const change=(id:string,quantity:number)=>{if(locked)return;const item=available.find(x=>x.id===id);if(!item)return;setError('');setReceiptId('');setCart(current=>quantity<=0?current.filter(x=>x.id!==id):current.map(x=>x.id===id?{...x,quantity:Math.min(posQuantityLimit(item),Math.max(1,Math.floor(quantity)))}:x))}
- const add=(item:PosItem)=>{if(locked||posQuantityLimit(item)===0)return;setError('');setReceiptId('');setCart(current=>{const found=current.find(x=>x.id===item.id);return found?current.map(x=>x.id===item.id?{...x,quantity:Math.min(posQuantityLimit(item),x.quantity+1)}:x):current.length<50?[...current,{id:item.id,quantity:1}]:current})}
+ const change=(id:string,quantity:number)=>{if(locked)return;const item=available.find(x=>x.id===id);if(!item)return;setError('');setReceiptId('');setDisplayAttempt('');setCart(current=>quantity<=0?current.filter(x=>x.id!==id):current.map(x=>x.id===id?{...x,quantity:Math.min(posQuantityLimit(item),Math.max(1,Math.floor(quantity)))}:x))}
+ const add=(item:PosItem)=>{if(locked||posQuantityLimit(item)===0)return;setError('');setReceiptId('');setDisplayAttempt('');setCart(current=>{const found=current.find(x=>x.id===item.id);return found?current.map(x=>x.id===item.id?{...x,quantity:Math.min(posQuantityLimit(item),x.quantity+1)}:x):current.length<50?[...current,{id:item.id,quantity:1}]:current})}
  const finish=(id:string)=>{saveAttempt(null);snapshot.current=null;setCart([]);setCustomer({name:'',email:'',phone:''});setDiscount('0');setTip('0');setReceiptId(id);onSaleComplete?.()}
  const submit=async(kind:'direct'|'card')=>{
   if(gate.current||remote)return
@@ -54,6 +57,7 @@ export default function PosWorkspace({site,lang,operator,onSaleComplete,onNaviga
   gate.current=true;setBusy(true);setError('')
   try{
    const current=attempt||{id:crypto.randomUUID(),kind}
+   setDisplayAttempt(current.id)
    if(!attempt){snapshot.current={siteId:site.siteId,items:cart,customer,discountCents:totals.discount,tipCents:totals.tip,...(kind==='direct'?{paymentMethod:method}:{}),saleAttemptId:current.id};saveAttempt(current)}
    const result=await request(kind==='card'?'/.netlify/functions/client-pos-checkout':'/.netlify/functions/client-pos-sale-idempotent',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(snapshot.current)})
    if(kind==='card'){saveAttempt({...current,transactionId:result.transactionId});setRemote({transactionId:result.transactionId,checkoutUrl:result.checkoutUrl});setStatus(null)}else finish(result.receiptId||'')
@@ -93,6 +97,7 @@ export default function PosWorkspace({site,lang,operator,onSaleComplete,onNaviga
    {totals.invalid&&<p className="ca-error" role="alert">{t('Revisa las existencias y cantidades. Usa importes positivos con hasta dos decimales.','Check stock and quantities. Use positive amounts with up to two decimal places.')}</p>}
    <div className="pos-checkout-actions"><button className="pos-primary" disabled={locked||!cart.length||totals.invalid} onClick={()=>submit('direct')}>{busy?t('Procesando…','Processing…'):t('Registrar pago recibido','Record received payment')}<ArrowRight aria-hidden="true"/></button>{site.paymentRules?.methods?.stripe&&site.paymentRules?.stripeConnectedAccountId?<button disabled={locked||!cart.length||totals.invalid} onClick={()=>submit('card')}><CreditCard aria-hidden="true"/>{t('Crear checkout Stripe','Create Stripe checkout')}</button>:<p className="pos-note">{t('Conecta Stripe en Pagos para crear un checkout de tarjeta.','Connect Stripe in Payments to create a card checkout.')}</p>}</div>
    {remote&&<div className="pos-remote"><strong>{status?.paymentStatus==='paid'?t('Pago confirmado','Payment confirmed'):t('Esperando verificación del servidor','Awaiting server verification')}</strong>{status&&<p>{status.paymentStatus==='paid'?t('Pagado','Paid'):t('Pendiente de verificación','Pending verification')} · {money(status.amountTotal)}</p>}{status?.paymentStatus!=='paid'&&<><a href={remote.checkoutUrl} target="_blank" rel="noopener noreferrer">{t('Abrir checkout','Open checkout')}</a><CopyButton value={remote.checkoutUrl} lang={lang}/><a href={`/.netlify/functions/client-pos-checkout-qr?siteId=${encodeURIComponent(site.siteId)}&transactionId=${encodeURIComponent(remote.transactionId)}`} target="_blank" rel="noopener noreferrer">{t('Mostrar QR','Show QR')}</a></>}{status?.paymentStatus==='paid'&&<button onClick={()=>{setRemote(null);setStatus(null);setReceiptId('')}}>{t('Nueva venta','New sale')}</button>}</div>}
+   <PosCustomerDisplay siteId={site.siteId} lang={lang} items={cart} discountCents={totals.discount} tipCents={totals.tip} attemptId={attempt?.id||displayAttempt} invalid={totals.invalid}/>
    <p className="pos-note">{t('IVU y total definitivo calculados en servidor. Solo el proveedor y el backend confirman pagos con tarjeta.','Final tax and total are calculated on the server. Card payments are confirmed only by the provider and backend.')}</p><details className="pos-device-note"><summary>Tap to Pay / Stripe Terminal</summary><p>{t('Safari no puede cobrar NFC. Tap to Pay requiere dispositivo, SDK y aplicación nativa compatibles; no está disponible en este POS web. ATH Móvil manual registra un pago que el cajero ya verificó, no consulta ATH Business.','Safari cannot collect NFC payments. Tap to Pay requires a supported device, SDK and native app; it is unavailable in this web POS. Manual ATH Móvil records a payment already verified by the cashier; it does not query ATH Business.')}</p></details>
   </aside></div>
  </PortalPanel>
