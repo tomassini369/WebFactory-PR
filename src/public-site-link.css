@@ -23,7 +23,7 @@
 .ca-website-panel{--public-link-focus:#285fa6}
 .ca-website-panel .ca-public-site-editor{background:#fff!important;color:var(--pg-text)}
 .ca-website-panel .ca-public-site-field{background:#f6f8fc;border-color:var(--pg-muted)}
-html body #root .ca-dashboard .ca-website-panel .ca-public-site-field input{color:var(--pg-text)!important;background:transparent!important;border:0!important;box-shadow:none!important;outline:0!important}
+html body #root .ca-dashboard .ca-panel.ca-website-panel.wf-portal-panel .ca-public-site-field input{color:var(--pg-text)!important;background:transparent!important;border:0!important;box-shadow:none!important;outline:0!important}
 .ca-website-panel .ca-public-site-copy{border-color:var(--pg-muted)}
 html body #root .ca-dashboard .ca-website-panel .ca-public-site-copy{min-height:44px!important}
 html body #root .ca-dashboard .ca-website-panel .ca-public-site-save{min-height:48px!important}
