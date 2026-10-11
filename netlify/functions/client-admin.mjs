@@ -251,6 +251,7 @@ export default async (req) => {
     const updated = await patchClientSite(site.siteId, { [section]: value },section==='catalog'?{expectedRevision:payload.revision}:{});
     return Response.json({ ok: true, site: updated, publicSite: publicClientSite(updated) }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
+    if (typeof error?.code === 'string' && /^SLUG_[A-Z_]+$/.test(error.code)) return Response.json({ ok: false, code: error.code, message: error.status >= 500 ? 'The change could not be confirmed. Reload before retrying.' : error.message }, { status: error.status, headers: { 'Cache-Control': 'no-store' } });
     return errorResponse(error);
   }
 };
