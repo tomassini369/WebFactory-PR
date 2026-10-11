@@ -10,7 +10,7 @@ Links expire after ten minutes. The device cookie is HttpOnly, Secure, SameSite=
 
 The same business siteId, catalog, photos, location, inventory, tax calculation, commerce store, transactions and checkout are used. `performCheckout` retains the existing storefront contract; only the trusted kiosk caller selects the `/kiosk` provider return on the same origin, preserving the paired cookie and keeping preview checkout returns off production. Stripe Connect reservations and idempotency, ATH Móvil production restrictions, server settlement, in-person orders and existing kitchen/receipt workflows remain authoritative. No NFC or Terminal simulation is introduced.
 
-Cashier POS, Customer Display, Workforce, Builder, portals and PR #101 remain separate. The new screen uses `pos-domain` for catalog labels, quantity limits, estimated totals and accessible business accent colors. Tenant primary colors tint the light/dark canvas and surfaces. No new database or UI dependency is introduced.
+Cashier POS, Customer Display, Workforce, Builder, portals and PR #101 remain separate. The new screen uses `pos-domain` for catalog labels, quantity limits, estimated totals and accessible business accent colors. Tenant primary colors tint the light/dark canvas and surfaces. No new database or UI dependency is introduced. On phones and tablets a cart jump control avoids scrolling through a long catalog to reach checkout; it hides when the existing order panel is in view. Up to 20 distinct cart lines match the server contract.
 
 ## Checkout safety
 
@@ -20,7 +20,7 @@ The screen polls server transaction state. Only a settled payment with completed
 
 A provider return is not proof of payment. Pending, expired, cancelled, disputed and uncertain attempts cannot silently start another purchase. A paid order with incomplete fulfillment cannot offer another payment link. Authorized staff must reconcile its original order using existing operational controls. Revoking a device does not cancel or refund an already-created order.
 
-Only cookie-bound public presentation fields are returned; no customer contact information, employees, wages, administrative configuration, provider account IDs or cashier tokens. Personal form state clears after inactivity or submission. Completed order details clear automatically after 45 seconds; explicit New order resets the server sale ID and rejects stale submissions.
+Only cookie-bound public presentation fields are returned; no customer contact information, employees, wages, administrative configuration, provider account IDs or cashier tokens. Personal form state clears after inactivity or submission. Completed order details clear automatically after 45 seconds; explicit New order resets the server sale ID and rejects stale submissions. Detecting a changed server sale ID also clears the local cart and customer form when the reset response was lost.
 
 ## Scope and operational limits
 
