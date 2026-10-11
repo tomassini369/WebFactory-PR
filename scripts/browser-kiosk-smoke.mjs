@@ -23,6 +23,7 @@ async function intercept(context,f){let cookie='',blocked=false,loseReset=false;
  let data={ok:true};if(name==='portal-session')data={ok:true,user:{id:'fixture-owner',email:'owner@example.invalid',user_metadata:{},app_metadata:{},mfa:{required:false}}}
  if(name==='client-admin')data=url.searchParams.has('siteId')?{ok:true,site:{...f.site,status:'published',revision:1,hours:{},settings:{locale:'en',timezone:'America/Puerto_Rico',currency:'USD'},googleCalendar:{},servicePlan:{code:'complimentary',billingModel:'complimentary'}},membership:{role:'owner',capabilities:['overview','settings']}}:{ok:true,sites:[{siteId:f.site.siteId,slug:f.site.slug,businessName:f.site.business.name,status:'published'}]}
  if(name==='client-workforce')data={ok:true,enabled:false,paidBreaks:false,admin:true,employees:[],locations:[],bindings:[],events:[],shifts:[],requests:[],totals:{todayMinutes:0,weekMinutes:0}}
+ if(name==='client-pos-settings')data={ok:true,operations:{cashierEnabled:true,displayEnabled:true,profile:'auto',revision:0},canManage:true}
  if(name==='client-commerce-admin')data={ok:true,orders:[],bookings:[]}
  return route.fulfill({contentType:'application/json',body:JSON.stringify(data)})
  });await context.route('**/fixture-checkout',route=>route.fulfill({contentType:'text/html',body:'<!doctype html><html><body><p>Isolated provider fixture — no charge</p><a href="/kiosk">Return to kiosk</a></body></html>'}));return {disconnect:value=>blocked=value,loseNextReset:()=>loseReset=true}}

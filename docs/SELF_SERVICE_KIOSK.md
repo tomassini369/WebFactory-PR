@@ -24,7 +24,7 @@ Only cookie-bound public presentation fields are returned; no customer contact i
 
 ## Scope and operational limits
 
-Products and non-appointment services are available; appointment services continue through the existing booking website. Categories follow the existing catalog types. Additional priced modifiers/extras are pending because the current catalog does not provide that schema. Unified business capability configuration is the next stage. Individual open attempts requiring manual reconciliation deliberately block this screen; device re-pairing is not permission to charge again. Expired device records are inaccessible and the active registry is bounded; automated archival is pending.
+Products and non-appointment services are available; appointment services continue through the existing booking website. Categories follow the existing catalog types. Business profile presentation and category order follow the shared [POS capability settings](POS_BUSINESS_CAPABILITIES.md), while checkout remains authoritative. Additional priced modifiers/extras are pending because the current catalog does not provide that schema. Individual open attempts requiring manual reconciliation deliberately block this screen; device re-pairing is not permission to charge again. Expired device records are inaccessible and the active registry is bounded; automated archival is pending.
 
 Production payment credentials and third-party hardware were not exercised during QA. ATH remains unavailable for live operations on previews. Use a dedicated kiosk browser profile: kiosk pairing grants no administrative privileges, but it does not log out an unrelated administrative session already present in that profile.
 

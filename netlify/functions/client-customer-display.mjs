@@ -1,4 +1,5 @@
 import crypto from 'node:crypto';
+import { requireCustomerDisplay } from '../lib/pos-operations.mjs';
 import {assertSameOrigin,requireSiteCapability,errorResponse,membershipHasCapability} from '../lib/client-auth.mjs';
 import {clientCommerceStore,getClientSite} from '../lib/client-store.mjs';
 import {displayFail,displayKey,validDisplayId,hashDisplayToken,matchesDisplayToken,displayActor,mutateDisplay,displayDraft,publicDisplayView} from '../lib/customer-display.mjs';
@@ -14,6 +15,7 @@ export function createCustomerDisplayHandler({authorize=requireSiteCapability,ge
   if(req.method==='GET'||input.action==='pair'){
    const id=input.action==='pair'?input.id:deviceId;if(!validDisplayId(id))throw displayFail('Screen not paired / Pantalla sin vincular.',401);
    let state=await store.get(displayKey(id),{type:'json'});if(!state||state.revoked||now>=state.expiresAt)throw displayFail('Pairing expired / Vinculación vencida.',401);
+   await requireCustomerDisplay(state.siteId,store);
    let responseCookie;
    if(input.action==='pair'){
     if(!(deviceId===id&&matchesDisplayToken(deviceToken,state.deviceHash))){
@@ -28,6 +30,7 @@ export function createCustomerDisplayHandler({authorize=requireSiteCapability,ge
    return Response.json({ok:true,...body},{headers:{...headers,...(responseCookie?{'Set-Cookie':responseCookie}:{})}});
   }
   const {site,user,membership}=await authorize(input.siteId,'pos');const actor=displayActor(user);
+  if(input.action!=='revoke')await requireCustomerDisplay(site.siteId,store);
   if(input.action==='create'){
    const id=randomBytes(16).toString('hex'),token=randomBytes(32).toString('hex');
    if(!site.members?.some(x=>String(x.email).toLowerCase()===String(user.email).toLowerCase()))throw displayFail('A business membership is required to pair this screen.',403);

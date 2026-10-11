@@ -55,6 +55,15 @@ jobs:
           QA_BUILT: 1
           QA_PORT: 5222
         run: node scripts/browser-workforce-smoke.mjs
+      - name: Check business profiles, POS module permissions and settings on Chromium
+        env:
+          QA_PORT: 5244
+        run: node scripts/browser-pos-capabilities-smoke.mjs
+      - name: Check business profiles, POS module permissions and settings on WebKit
+        env:
+          QA_ENGINE: webkit
+          QA_PORT: 5245
+        run: node scripts/browser-pos-capabilities-smoke.mjs
       - name: Check Workforce on touch WebKit
         env:
           QA_BUILT: 1
@@ -211,6 +220,28 @@ jobs:
           fi
           test "$kiosk_chromium_result" -eq 0
           test "$kiosk_webkit_result" -eq 0
+      - name: Check deployed POS profiles and module controls with isolated fixtures
+        env:
+          QA_ORIGIN: https://deploy-preview-${{ github.event.pull_request.number }}--webfactorypr.netlify.app
+          QA_WIDTHS: 390,1440
+        run: |
+          QA_PORT=5244 node scripts/browser-pos-capabilities-smoke.mjs > /tmp/pos-capabilities-preview-chromium.log 2>&1 &
+          capabilities_chromium_pid=$!
+          QA_ENGINE=webkit QA_PORT=5245 node scripts/browser-pos-capabilities-smoke.mjs > /tmp/pos-capabilities-preview-webkit.log 2>&1 &
+          capabilities_webkit_pid=$!
+          capabilities_chromium_result=0
+          wait "$capabilities_chromium_pid" || capabilities_chromium_result=$?
+          capabilities_webkit_result=0
+          wait "$capabilities_webkit_pid" || capabilities_webkit_result=$?
+          cat /tmp/pos-capabilities-preview-chromium.log /tmp/pos-capabilities-preview-webkit.log
+          if [ "$capabilities_chromium_result" -ne 0 ]; then
+            node scripts/report-kiosk-ci-error.mjs /tmp/pos-capabilities-preview-chromium.log capabilities-chromium
+          fi
+          if [ "$capabilities_webkit_result" -ne 0 ]; then
+            node scripts/report-kiosk-ci-error.mjs /tmp/pos-capabilities-preview-webkit.log capabilities-webkit
+          fi
+          test "$capabilities_chromium_result" -eq 0
+          test "$capabilities_webkit_result" -eq 0
       - name: Check ChatGPT routes and authentication boundaries
         env:
           PREVIEW_URL: https://deploy-preview-${{ github.event.pull_request.number }}--webfactorypr.netlify.app
