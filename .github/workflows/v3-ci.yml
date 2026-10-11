@@ -120,7 +120,7 @@ jobs:
     if: github.event_name == 'pull_request'
     needs: verify
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     permissions:
       contents: read
       statuses: read
@@ -174,6 +174,34 @@ jobs:
             .nativeIos.releaseBlocker == false
           '
 
+      - name: Prepare remote kiosk browser verification
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install verification dependencies and browsers
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium webkit
+      - name: Check deployed kiosk authentication and privacy boundaries
+        env:
+          PREVIEW_URL: https://deploy-preview-${{ github.event.pull_request.number }}--webfactorypr.netlify.app
+        run: node scripts/kiosk-http-smoke.mjs
+      - name: Check actual Deploy Preview kiosk on Chromium and WebKit with isolated fixtures
+        env:
+          QA_ORIGIN: https://deploy-preview-${{ github.event.pull_request.number }}--webfactorypr.netlify.app
+        run: |
+          npm run build
+          QA_PORT=5236 node scripts/browser-kiosk-smoke.mjs &
+          kiosk_chromium_pid=$!
+          QA_ENGINE=webkit QA_PORT=5237 node scripts/browser-kiosk-smoke.mjs &
+          kiosk_webkit_pid=$!
+          kiosk_chromium_result=0
+          wait "$kiosk_chromium_pid" || kiosk_chromium_result=$?
+          kiosk_webkit_result=0
+          wait "$kiosk_webkit_pid" || kiosk_webkit_result=$?
+          test "$kiosk_chromium_result" -eq 0
+          test "$kiosk_webkit_result" -eq 0
       - name: Check ChatGPT routes and authentication boundaries
         env:
           PREVIEW_URL: https://deploy-preview-${{ github.event.pull_request.number }}--webfactorypr.netlify.app
