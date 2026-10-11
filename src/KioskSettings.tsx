@@ -1,0 +1,21 @@
+import {useEffect, useState} from 'react'
+import {PortalPanel} from './PortalPanel'
+import CopyButton from './CopyButton'
+import {kioskRequest} from './kiosk-api'
+type Device = {id:string;label?:string;locationName:string;expiresAt:number}
+export default function KioskSettings({site,lang}:{site:{siteId:string;business:{locations?:Array<{id:string;name:string;active?:boolean}>}};lang:'es'|'en'}) {
+ const t=(a:string,b:string)=>lang==='es'?a:b, [enabled,setEnabled]=useState(false),[devices,setDevices]=useState<Device[]>([]),[loading,setLoading]=useState(true),[busy,setBusy]=useState(false),[error,setError]=useState(''),[locationId,setLocationId]=useState(''),[label,setLabel]=useState(''),[pair,setPair]=useState<{id:string;pairUrl:string}|null>(null)
+ const locations=(site.business.locations||[]).filter(x=>x.active!==false)
+ const refresh=async()=>{const data=await kioskRequest({action:'admin',siteId:site.siteId});setEnabled(data.enabled);setDevices(data.devices||[])}
+ useEffect(()=>{let active=true;setLoading(true);kioskRequest({action:'admin',siteId:site.siteId}).then(data=>{if(active){setEnabled(data.enabled);setDevices(data.devices||[]);setError('')}}).catch(e=>{if(active)setError(e.message)}).finally(()=>{if(active)setLoading(false)});return()=>{active=false}},[site.siteId])
+ const act=async(action:string,extra:Record<string,unknown>={})=>{if(busy)return;setBusy(true);setError('');try{const data=await kioskRequest({action,siteId:site.siteId,...extra});if(action==='create')setPair(data);if(action==='revoke'&&extra.id===pair?.id)setPair(null);if(action==='configure'&&!extra.enabled)setPair(null);await refresh()}catch(e){setError(e instanceof Error?e.message:'Error')}finally{setBusy(false)}}
+ return <PortalPanel className="ca-panel kiosk-settings"><header><h2>{t('POS · Kiosco de autoservicio','POS · Self-service kiosk')}</h2><p>{t('El cliente escoge del catálogo y paga con el checkout existente. Cada pantalla queda vinculada a una sucursal, sin permisos administrativos.','Customers choose from the catalog and use the existing checkout. Each screen is bound to a location, without administrative permissions.')}</p></header>
+ <p>{t('Usa un dispositivo o perfil de navegador dedicado, sin una sesión administrativa abierta. El enlace vence en diez minutos; la vinculación dura ocho horas.','Use a dedicated device or browser profile without an administrative session. The link expires in ten minutes; pairing lasts eight hours.')}</p>
+ <button className="ca-save" disabled={busy||loading} onClick={()=>void act('configure',{enabled:!enabled})}>{enabled?t('Deshabilitar kiosco','Disable kiosk'):t('Habilitar kiosco','Enable kiosk')}</button>
+ <p role="status">{loading?t('Consultando configuración…','Loading settings…'):enabled?t('Kiosco habilitado · vincula una pantalla','Kiosk enabled · pair a screen'):t('Kiosco deshabilitado','Kiosk disabled')}</p>
+ {enabled&&<><div className="ca-grid"><label>{t('Nombre de la pantalla','Screen name')}<input value={label} maxLength={80} onChange={e=>setLabel(e.target.value)}/></label>{locations.length>0&&<label>{t('Sucursal de la pantalla','Screen location')}<select value={locationId} onChange={e=>setLocationId(e.target.value)}><option value="">{t('Escoge una sucursal','Choose a location')}</option>{locations.map(x=><option key={x.id} value={x.id}>{x.name}</option>)}</select></label>}</div><button className="ca-save" disabled={busy||locations.length>0&&!locationId} onClick={()=>void act('create',{locationId,label})}>{t('Vincular pantalla del kiosco','Pair kiosk screen')}</button></>}
+ {pair&&<div className="ca-note"><p>{t('Abre este enlace únicamente en la pantalla del kiosco y confirma la vinculación.','Open this link only on the kiosk screen and confirm pairing.')}</p><CopyButton value={pair.pairUrl} lang={lang}/></div>}
+ {devices.length>0&&<div className="ca-transactions">{devices.map(device=><article key={device.id}><div><strong>{device.label||t('Pantalla del negocio','Business screen')}</strong><span>{device.locationName}</span><time>{t('Vence: ','Expires: ')}{new Date(device.expiresAt).toLocaleString(lang==='es'?'es-PR':'en-US')}</time></div><button disabled={busy} onClick={()=>void act('revoke',{id:device.id})}>{t('Desconectar','Disconnect')}</button></article>)}</div>}
+ {error&&<p role="alert" className="ca-error">{error}</p>}
+ </PortalPanel>
+}

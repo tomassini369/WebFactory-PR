@@ -1,3 +1,6 @@
+import { requirePosAdjustments } from '../lib/pos-permissions.mjs';
+import { requireCashierPos } from '../lib/pos-operations.mjs';
+import { clientCommerceStore } from '../lib/client-store.mjs';
 import { createReservedTerminalIntent } from '../lib/reserved-terminal-intent.mjs';
 import crypto from "node:crypto";
 import { assertSameOrigin, errorResponse, requireSiteCapability } from "../lib/client-auth.mjs";
@@ -5,12 +8,14 @@ import { cleanText, validEmail } from "../lib/platform-utils.mjs";
 import { calculateTax } from "../lib/webfactory-v3-domain.mjs";
 import { assertStripeWriteAllowed } from "../lib/stripe-runtime.mjs";
 
-export default async(req)=>{
+export function createTerminalPaymentIntentHandler({ authorize = requireSiteCapability, getStore = clientCommerceStore } = {}) { return async(req)=>{
   try{
     if(req.method!=="POST")return Response.json({ok:false,message:"Method not allowed."},{status:405});
     assertSameOrigin(req);
     const payload=await req.json();
-    const {site,user}=await requireSiteCapability(payload.siteId,"pos");
+    const {site,user,membership}=await authorize(payload.siteId,"pos");
+    requirePosAdjustments(membership,payload);
+    await requireCashierPos(site.siteId,getStore());
     const requested=Array.isArray(payload.items)?payload.items.slice(0,50):[];
     if(!requested.length)throw Object.assign(new Error("Add at least one item to the sale."),{status:400});
 
@@ -66,4 +71,5 @@ export default async(req)=>{
     const {intent}=await createReservedTerminalIntent(record,{requestUrl:req.url});
     return Response.json({ok:true,transactionId,paymentIntentId:intent.id,clientSecret:intent.client_secret||""},{headers:{"Cache-Control":"no-store"}});
   }catch(error){return errorResponse(error);}
-};
+}; }
+export default createTerminalPaymentIntentHandler();

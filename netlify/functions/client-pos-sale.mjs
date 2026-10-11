@@ -1,3 +1,5 @@
+import { requirePosAdjustments } from '../lib/pos-permissions.mjs';
+import { requireCashierPos } from '../lib/pos-operations.mjs';
 import { applyCustomerTransaction } from '../lib/customer-transactions.mjs';
 import { applyStockOperation,projectStockMovements } from '../lib/inventory-operations.mjs';
 import { withBookingLock } from "../lib/booking-lock.mjs";
@@ -9,12 +11,14 @@ import { calculateTax, createReceiptRecord } from "../lib/webfactory-v3-domain.m
 import { putV3Record } from "../lib/webfactory-v3-store.mjs";
 import { sendCustomerCommerceEmail, sendBusinessCommerceEmail } from "../lib/client-notifications.mjs";
 
-export default async (req) => {
+export function createPosSaleHandler({ authorize = requireSiteCapability, getStore = clientCommerceStore } = {}) { return async (req) => {
   try {
     if (req.method !== "POST") return Response.json({ ok: false, message: "Method not allowed." }, { status: 405 });
     assertSameOrigin(req);
     const payload = await req.json();
-    let { site, user } = await requireSiteCapability(payload.siteId, "pos");
+    let { site, user, membership } = await authorize(payload.siteId, "pos");
+    requirePosAdjustments(membership,payload);
+    await requireCashierPos(site.siteId, getStore());
     return await withBookingLock(clientCommerceStore(), `locks/commerce/${site.siteId}`, async () => {
     site = await getClientSite(site.siteId);
 
@@ -173,4 +177,5 @@ export default async (req) => {
   } catch (error) {
     return errorResponse(error);
   }
-};
+}; }
+export default createPosSaleHandler();

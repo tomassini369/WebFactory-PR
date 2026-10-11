@@ -1,3 +1,5 @@
+import { clientCheckoutReturn } from '../lib/client-checkout-return.mjs';
+import { createCheckoutAttemptHandler } from '../lib/checkout-attempt.mjs';
 import { issueBuyerReceiptAccess } from '../lib/buyer-receipt-access.mjs';
 import { availableInventory } from '../lib/inventory-availability.mjs';
 import { createInPersonOrder } from '../lib/in-person-orders.mjs';
@@ -68,7 +70,7 @@ function appendLine(params, index, item) {
   params.set(`line_items[${index}][quantity]`, String(item.quantity));
 }
 
-export default async (req) => {
+export async function performCheckout(req, { kiosk = false } = {}) {
   if (req.method !== "POST") return Response.json({ ok: false, message: "Method not allowed." }, { status: 405 });
   try {
     assertSameOrigin(req);
@@ -142,6 +144,7 @@ export default async (req) => {
     let record = {
       transactionId, siteId: site.siteId, kind, customer, items, locationId, locationName: selectedLocation?.name || "", holdId: hold?.holdId || "",
       serviceId: hold?.serviceId || "", employeeId: hold?.employeeId || "", start: hold?.start || "", end: hold?.end || "",
+      channel: kiosk ? "kiosk" : "storefront", pricesIncludeTax: Boolean(site.taxConfig?.pricesIncludeTax),
       subtotal, tax: taxCents, amountTotal: subtotal + (site.taxConfig?.pricesIncludeTax ? 0 : taxCents), currency: "usd",
       ...(kind === "booking" ? { language:lang, bookingCode:crypto.randomBytes(4).toString("hex").toUpperCase(), customerCalendarInviteRequested: true, confirmationEmailRequested: true, calendarToken: crypto.randomBytes(32).toString("base64url") } : {}),
       paymentStatus: inPerson ? "due" : "pending", status: inPerson ? "confirmed" : "payment_pending",
@@ -172,8 +175,9 @@ export default async (req) => {
     const receiptAccess = await issueBuyerReceiptAccess(site.siteId, transactionId);
     record.buyerReceiptHash = receiptAccess.hash;
     const receiptReturn = `receipt=${encodeURIComponent(receiptAccess.token)}`;
+    const returns = clientCheckoutReturn({ slug: site.slug, kiosk, requestUrl: req.url, receiptReturn, trackingToken });
     if(payload.paymentProvider === "ath_movil") {
-      const result=await createAthCheckout(site,record,{lang,requestUrl:req.url,returnUrl:`/sites/${encodeURIComponent(site.slug)}?${receiptReturn}${trackingToken?`&tracking=${encodeURIComponent(trackingToken)}`:""}`});
+      const result=await createAthCheckout(site,record,{lang,requestUrl:req.url,returnUrl:returns.ath});
       return Response.json(result,{headers:{"Cache-Control":"no-store"}});
     }
     if(payload.paymentProvider && payload.paymentProvider !== "stripe") throw Object.assign(new Error("Unsupported payment provider."),{status:400});
@@ -186,8 +190,8 @@ export default async (req) => {
 
     const params = new URLSearchParams();
     params.set("mode", "payment");
-    params.set("success_url", `${publicBaseUrl()}/sites/${encodeURIComponent(site.slug)}?checkout=success&${receiptReturn}&session_id={CHECKOUT_SESSION_ID}${trackingToken ? `&tracking=${encodeURIComponent(trackingToken)}` : ""}`);
-    params.set("cancel_url", `${publicBaseUrl()}/sites/${encodeURIComponent(site.slug)}?checkout=cancelled`);
+    params.set("success_url", returns.success);
+    params.set("cancel_url", returns.cancel);
     params.set("customer_email", customer.email);
     params.set("client_reference_id", transactionId);
     params.set("metadata[flow]", "webfactory_client_commerce");
@@ -224,6 +228,8 @@ export default async (req) => {
   } catch (error) {
     return errorResponse(error);
   }
-};
+}
+
+export default createCheckoutAttemptHandler({ performCheckout, getSite: async (payload) => payload.siteId ? getClientSite(payload.siteId) : getClientSiteBySlug(payload.slug), isAvailable: (site) => siteEntitlement(site).public, getStore: clientCommerceStore });
 
 export const config = { rateLimit: { windowLimit: 20, windowSize: 60, aggregateBy: ["ip"] } };

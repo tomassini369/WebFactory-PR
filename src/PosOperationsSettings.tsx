@@ -1,0 +1,32 @@
+import {useEffect,useRef,useState,type CSSProperties} from 'react'
+import {PortalPanel} from './PortalPanel'
+import {useUnsavedChanges} from './interaction-state'
+import {withAuthRetry} from './auth-retry'
+import {POS_PROFILES,posCapabilities,posOperations,type PosOperations,type PosProfile} from '../netlify/lib/pos-capabilities.mjs'
+import {posProfileCopy} from './pos-profile'
+import {posBrandPair} from './pos-domain'
+import './pos-operations.css'
+type Props={site:any;lang:'es'|'en';onChange:(operations:PosOperations)=>void}
+async function request(siteId:string,body?:PosOperations){
+ return withAuthRetry(async()=>{const response=await fetch('/.netlify/functions/client-pos-settings'+(body?'':'?siteId='+encodeURIComponent(siteId)),{credentials:'include',cache:'no-store',...(body?{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({siteId,...body})}:{})});const data=await response.json();if(!response.ok)throw Error(data.message||'Request failed.');if(!data.operations||typeof data.canManage!=='boolean')throw Error('Invalid POS settings / Ajustes POS inválidos.');return {...data,operations:posOperations({operations:data.operations})}})
+}
+export default function PosOperationsSettings({site,lang,onChange}:Props){
+ const t=(a:string,b:string)=>lang==='es'?a:b,[view,setView]=useState<PosOperations|null>(null),[draft,setDraft]=useState<PosOperations|null>(null),[canManage,setCanManage]=useState(false),[loading,setLoading]=useState(true),[busy,setBusy]=useState(false),[error,setError]=useState(''),[message,setMessage]=useState(''),gate=useRef(false),active=useRef(true),change=useRef(onChange)
+ change.current=onChange
+ useUnsavedChanges(draft,view?'loaded:'+view.revision:'loading',setDraft,lang,view)
+ const receive=(data:Awaited<ReturnType<typeof request>>)=>{if(!active.current)return;setView(data.operations);setDraft(data.operations);setCanManage(data.canManage);change.current(data.operations)}
+ const load=async()=>{setLoading(true);setError('');try{receive(await request(site.siteId))}catch(e){if(active.current)setError(e instanceof Error?e.message:'Error')}finally{if(active.current)setLoading(false)}}
+ useEffect(()=>{active.current=true;void load();return()=>{active.current=false}},[site.siteId])
+ const save=async()=>{if(!draft||!canManage||gate.current)return;gate.current=true;setBusy(true);setError('');setMessage('');try{receive(await request(site.siteId,draft));if(active.current)setMessage(t('Ajustes confirmados por el servidor.','Settings confirmed by the server.'))}catch(e){if(active.current)setError(e instanceof Error?e.message:'Error')}finally{gate.current=false;if(active.current)setBusy(false)}}
+ const dirty=!!view&&!!draft&&['cashierEnabled','displayEnabled','profile'].some(key=>view[key as keyof PosOperations]!==draft[key as keyof PosOperations])
+ const brand=posBrandPair(site.design?.secondary||'')
+ return <PortalPanel className="ca-panel pos-operations-settings" style={{'--ops-primary':/^#[a-f\d]{6}$/i.test(site.design?.primary||'')?site.design.primary:'#0b1529','--ops-brand':brand.background,'--ops-brand-ink':brand.foreground} as CSSProperties}><header><h2>{t('POS · Operación del negocio','POS · Business operations')}</h2><p>{t('Escoge la presentación del POS y las pantallas que necesita tu negocio. El catálogo, los permisos y las transacciones siguen siendo los mismos.','Choose your POS presentation and the screens your business needs. Catalog, permissions and transactions remain the same.')}</p></header>
+ {loading?<p role="status">{t('Consultando ajustes del POS…','Loading POS settings…')}</p>:draft&&<><label className="pos-profile-select">{t('Perfil del negocio','Business profile')}<select disabled={busy||!canManage} value={draft.profile} onChange={event=>setDraft({...draft,profile:event.target.value as PosProfile})}>{POS_PROFILES.map(profile=><option key={profile} value={profile}>{profile==='auto'?t('Automático · según tu categoría','Automatic · from your category'):posProfileCopy(posCapabilities(site,{...draft,profile}),lang).name}</option>)}</select></label><p className="pos-profile-detected">{t('Presentación: ','Presentation: ')}<strong>{posProfileCopy(posCapabilities(site,draft),lang).name}</strong></p>
+ <fieldset className="pos-module-options" disabled={busy||!canManage}><legend>{t('Pantallas de venta','Sales screens')}</legend><label><input type="checkbox" checked={draft.cashierEnabled} onChange={event=>setDraft({...draft,cashierEnabled:event.target.checked})}/><span><strong>{t('POS del cajero','Cashier POS')}</strong><small>{t('Prepara y registra nuevas ventas desde el portal.','Prepare and record new sales in the portal.')}</small></span></label><label><input type="checkbox" checked={draft.displayEnabled} onChange={event=>setDraft({...draft,displayEnabled:event.target.checked})}/><span><strong>{t('Pantalla del cliente','Customer display')}</strong><small>{t('Muestra la venta en una segunda pantalla vinculada.','Show the sale on a second paired screen.')}</small></span></label></fieldset>
+ <p>{t('Desactivar el POS bloquea nuevos cobros; conserva el historial y la revisión de pagos pendientes. Desactivar la pantalla del cliente suspende sus sesiones vinculadas.','Disabling POS blocks new charges; history and pending-payment review remain available. Disabling customer display suspends its paired sessions.')}</p>
+ <p>{t('Kiosco de autoservicio y Asistencia tienen sus controles de activación y vinculación debajo.','Self-service kiosk and Workforce have their own enablement and pairing controls below.')}</p>
+ {!canManage&&<p role="status">{t('Solo el propietario o un administrador del negocio puede cambiar estos ajustes.','Only the business owner or manager can change these settings.')}</p>}
+ <div className="pos-settings-actions"><button className="ca-save" disabled={busy||!canManage||!dirty} onClick={()=>void save()}>{busy?t('Guardando…','Saving…'):t('Guardar ajustes del POS','Save POS settings')}</button><button disabled={busy||loading} onClick={()=>{if(!dirty||confirm(t('¿Descartar los cambios y recargar los ajustes?','Discard changes and reload settings?'))){setMessage('');void load()}}}>{t('Recargar ajustes','Reload settings')}</button></div></>}
+ {error&&<div className="ca-error" role="alert"><p>{error}</p>{!view&&<button disabled={loading} onClick={()=>void load()}>{t('Reintentar','Retry')}</button>}</div>}{message&&<p className="ca-success" role="status">{message}</p>}
+ </PortalPanel>
+}

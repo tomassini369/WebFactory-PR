@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useId, useRef, useState, type ReactNode } from 'react'
+import { createContext, useContext, useEffect, useId, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import './PortalPanel.css'
 
 type PortalPanelContextValue = { expandedPanel: string | null; setExpandedPanel: (id: string | null) => void; lang: 'es' | 'en' }
@@ -25,7 +25,7 @@ export function PortalPanelProvider({ children, lang }: { children: ReactNode; l
   return <PortalPanelContext.Provider value={{ expandedPanel, setExpandedPanel, lang }}>{children}</PortalPanelContext.Provider>
 }
 
-export function PortalPanel({ className = '', children }: { className?: string; children: ReactNode }) {
+export function PortalPanel({ className = '', children, style }: { className?: string; children: ReactNode; style?: CSSProperties }) {
   const context = useContext(PortalPanelContext)
   if (!context) throw new Error('PortalPanel must be rendered inside PortalPanelProvider.')
   const id = useId()
@@ -65,7 +65,7 @@ export function PortalPanel({ className = '', children }: { className?: string; 
     }
   },[expanded])
 
-  return <section ref={panel} tabIndex={expanded?-1:undefined} role={expanded?'dialog':undefined} aria-modal={expanded||undefined} aria-label={expanded?(es?'Panel ampliado':'Expanded panel'):undefined} className={`${className} wf-portal-panel${collapsed ? ' wf-panel-collapsed' : ''}${scrollable ? ' wf-panel-scroll' : ''}${expanded ? ' wf-panel-expanded' : ''}`.trim()}>
+  return <section style={style} ref={panel} tabIndex={expanded?-1:undefined} role={expanded?'dialog':undefined} aria-modal={expanded||undefined} aria-label={expanded?(es?'Panel ampliado':'Expanded panel'):undefined} className={`${className} wf-portal-panel${collapsed ? ' wf-panel-collapsed' : ''}${scrollable ? ' wf-panel-scroll' : ''}${expanded ? ' wf-panel-expanded' : ''}`.trim()}>
     <div className="wf-panel-tools" role="toolbar" aria-label={es ? 'Controles del recuadro' : 'Panel controls'}>
       <button type="button" aria-expanded={!collapsed} title={collapsed ? (es ? 'Mostrar contenido' : 'Show content') : (es ? 'Ocultar contenido' : 'Hide content')} onClick={() => setCollapsed(value => !value)}>{collapsed ? (es ? 'Mostrar' : 'Show') : (es ? 'Ocultar' : 'Hide')}</button>
       <button type="button" aria-pressed={scrollable} title={es ? 'Activar o quitar scroll interno' : 'Toggle internal scrolling'} onClick={() => setScrollable(value => !value)}>{es ? 'Scroll' : 'Scroll'}</button>

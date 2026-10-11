@@ -1,3 +1,6 @@
+import { requirePosAdjustments } from '../lib/pos-permissions.mjs';
+import { requireCashierPos } from '../lib/pos-operations.mjs';
+import { clientCommerceStore } from '../lib/client-store.mjs';
 import { createReservedStripeCheckout } from '../lib/reserved-stripe-checkout.mjs';
 import { assertSameOrigin, errorResponse, requireSiteCapability } from "../lib/client-auth.mjs";
 import { cleanText, publicBaseUrl, validEmail } from "../lib/platform-utils.mjs";
@@ -21,12 +24,14 @@ function appendLine(params,index,item){
   params.set(`line_items[${index}][quantity]`,String(item.quantity));
 }
 
-export default async(req)=>{
+export function createPosCheckoutHandler({ authorize = requireSiteCapability, getStore = clientCommerceStore } = {}) { return async(req)=>{
   try{
     if(req.method!=="POST")return Response.json({ok:false,message:"Method not allowed."},{status:405});
     assertSameOrigin(req);
     const payload=await req.json();
-    const {site,user}=await requireSiteCapability(payload.siteId,"pos");
+    const {site,user,membership}=await authorize(payload.siteId,"pos");
+    requirePosAdjustments(membership,payload);
+    await requireCashierPos(site.siteId, getStore());
     const requested=Array.isArray(payload.items)?payload.items.slice(0,50):[];
     if(!requested.length)throw Object.assign(new Error("Add at least one item to the sale."),{status:400});
 
@@ -96,4 +101,5 @@ export default async(req)=>{
     const checkout=await createReservedStripeCheckout(site,record,params,{requestUrl:req.url});
     return Response.json({ok:true,transactionId,checkoutUrl:checkout.checkoutUrl},{headers:{'Cache-Control':'no-store'}});
   }catch(error){return errorResponse(error);}
-};
+}; }
+export default createPosCheckoutHandler();
