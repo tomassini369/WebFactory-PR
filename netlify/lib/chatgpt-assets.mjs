@@ -25,7 +25,9 @@ export async function prepareImageUpload(grant,user,args,origin){
  const siteId=selectedSite(grant,args.siteId);
  const live=await getGrant(clientOAuthStore(),grant.id);requireExecute(live);await authorizeGrant(live,user,siteId,'catalog');
  if(!Object.hasOwn(types,args.contentType)||!Number.isSafeInteger(args.size)||args.size<1||args.size>MAX_MCP_IMAGE_BYTES||!/^[a-f0-9]{64}$/.test(args.sha256)||!/^[-a-f0-9]{36}$/.test(args.requestId))throw oauthError('Invalid image upload metadata.');
- const id=crypto.createHash('sha256').update(grant.id+args.requestId).digest('hex').slice(0,32).replace(/(.{8})(.{4})(.{4})(.{4})(.{12})/,'$1-$2-$3-$4-$5');
+ const digest=crypto.createHash('sha256').update(grant.id+args.requestId).digest('hex');
+ const uuidHex=digest.slice(0,12)+'4'+digest.slice(13,16)+(8+(parseInt(digest[16],16)&3)).toString(16)+digest.slice(17,32);
+ const id=uuidHex.replace(/(.{8})(.{4})(.{4})(.{4})(.{12})/,'$1-$2-$3-$4-$5');
  const store=clientOAuthStore(),fingerprint=hash(JSON.stringify({siteId,contentType:args.contentType,size:args.size,sha256:args.sha256,fileName:args.fileName}));
  let p=await store.get(uploadKey(id),{type:'json'});
  if(p){if(p.fingerprint!==fingerprint)throw oauthError('Use a new requestId for another image.',409);if(p.expiresAt<=Date.now()||p.status!=='prepared')return {uploadId:id,status:p.status,expired:p.expiresAt<=Date.now(),next:'Inspect with wf_image_upload_status. Do not repeat an uncertain upload.'};}

@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
 import sharp from 'sharp';
+import {z} from 'zod';
 import {getStore} from '@netlify/blobs';
 import {clientSiteStore,clientOAuthStore,getClientSite} from './client-store.mjs';
 import {key} from './chatgpt-oauth.mjs';
@@ -28,6 +29,7 @@ async function fixture(t){
 }
 test('image transfer validates and optimizes bytes; finalize changes only one catalog image and is idempotent',async t=>{
  const f=await fixture(t),p=await f.prepare();assert.equal((await f.prepare()).uploadUrl,p.uploadUrl);
+ assert.equal(z.string().uuid().safeParse(p.uploadId).success,true);
  const results=await Promise.all([f.put(p),f.put(p)]);assert.deepEqual(results.map(r=>r.status).sort(),[200,409]);
  const status=await imageUploadStatus(f.grant,f.user,{uploadId:p.uploadId});assert.equal(status.status,'uploaded');assert(!JSON.stringify(status).includes('capability'));
  const args={uploadId:p.uploadId,requestId:crypto.randomUUID(),target:{kind:'catalog',itemId:'cut'}};
