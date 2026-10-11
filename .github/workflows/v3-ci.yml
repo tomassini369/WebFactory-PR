@@ -82,6 +82,13 @@ jobs:
         run: node scripts/browser-template-workspace-smoke.mjs
       - name: Check shared glass composition and motion
         run: node scripts/browser-template-glass-smoke.mjs
+      - name: Check kiosk pairing, privacy, checkout and mobile layouts on Chromium
+        run: node scripts/browser-kiosk-smoke.mjs
+      - name: Check kiosk pairing, privacy, checkout and mobile layouts on WebKit
+        env:
+          QA_ENGINE: webkit
+          QA_PORT: 5227
+        run: node scripts/browser-kiosk-smoke.mjs
       - name: Check spatial highlights on Chromium and WebKit
         run: node scripts/browser-spatial-carousel-smoke.mjs
       - name: Check functions for every template and language
@@ -144,7 +151,7 @@ jobs:
         env:
           PREVIEW_URL: https://deploy-preview-${{ github.event.pull_request.number }}--webfactorypr.netlify.app
         run: |
-          for path in / /templates /builder /client-admin; do
+          for path in / /templates /builder /client-admin /kiosk; do
             echo "Checking $PREVIEW_URL$path"
             curl -fLsS --retry 4 --retry-delay 2 --max-time 30 -o /dev/null "$PREVIEW_URL$path"
           done
