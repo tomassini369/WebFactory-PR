@@ -1,5 +1,5 @@
 import crypto from 'node:crypto';
-export const oauthError=(message,status=400)=>Object.assign(new Error(message),{status});
+export const oauthError=(message,status=400,oauthCode)=>Object.assign(new Error(message),{status,...(oauthCode?{oauthCode}:{})});
 export const hash=value=>crypto.createHash('sha256').update(String(value)).digest('hex');
 export const randomToken=()=>crypto.randomBytes(32).toString('base64url');
 export const scopes=['webfactory.read','webfactory.propose','webfactory.execute'];
@@ -37,18 +37,19 @@ export async function consent(store,requestId,user,{siteId='',platform=false,all
 export async function getGrant(store,id,now=Date.now()) {const grant=await store.get(key('grants',id),json);if(!grant||grant.revoked||grant.expiresAt<=now)throw oauthError('Connection revoked or expired.',401);return grant;}
 export async function revokeGrant(store,id){const k=key('grants',id),old=await store.getWithMetadata(k,json);if(old){const result=await store.setJSON(k,{...old.data,revoked:true},{onlyIfMatch:old.etag});if(!result.modified)throw oauthError('Connection changed. Retry revocation.',409);}}
 export async function exchangeToken(store,input,origin,now=Date.now()) {
- if(input.resource!==origin+'/mcp')throw oauthError('Invalid resource.');
+ if(input.resource!==origin+'/mcp')throw oauthError('Invalid resource.',400,'invalid_request');
  let source,sourceKey;
  if(input.grant_type==='authorization_code')sourceKey=key('codes',input.code);
  else if(input.grant_type==='refresh_token')sourceKey=key('refresh',input.refresh_token);
- else throw oauthError('Unsupported grant type.');
+ else throw oauthError('Unsupported grant type.',400,'unsupported_grant_type');
  const saved=await store.getWithMetadata(sourceKey,json);source=saved?.data;
- if(!source||source.expiresAt<=now||source.clientId!==input.client_id||source.resource!==input.resource)throw oauthError('Invalid grant.',400);
- if(source.used){if(input.grant_type==='refresh_token')await revokeGrant(store,source.grantId);throw oauthError('Grant already used.',400);}
- if(input.grant_type==='authorization_code'&&(!/^[A-Za-z0-9._~-]{43,128}$/.test(input.code_verifier||'')||crypto.createHash('sha256').update(input.code_verifier).digest('base64url')!==source.challenge||source.redirectUri!==input.redirect_uri))throw oauthError('Invalid PKCE verifier or redirect.');
- const grant=await getGrant(store,source.grantId,now);
- if(input.scope&&input.scope.split(' ').some(s=>!grant.scopes.includes(s)))throw oauthError('Scope escalation denied.');
- const claimed=await store.setJSON(sourceKey,{...source,used:true},{onlyIfMatch:saved.etag});if(!claimed.modified)throw oauthError('Grant already used.');
+ if(!source||source.expiresAt<=now||source.clientId!==input.client_id||source.resource!==input.resource)throw oauthError('Invalid grant.',400,'invalid_grant');
+ if(source.used){if(input.grant_type==='refresh_token')await revokeGrant(store,source.grantId);throw oauthError('Grant already used.',400,'invalid_grant');}
+ if(input.grant_type==='authorization_code'&&(!/^[A-Za-z0-9._~-]{43,128}$/.test(input.code_verifier||'')||crypto.createHash('sha256').update(input.code_verifier).digest('base64url')!==source.challenge||source.redirectUri!==input.redirect_uri))throw oauthError('Invalid PKCE verifier or redirect.',400,'invalid_grant');
+ let grant;
+ try{grant=await getGrant(store,source.grantId,now);}catch(error){if(error.status===401)throw oauthError('Invalid grant.',400,'invalid_grant');throw error;}
+ if(input.scope&&input.scope.split(' ').some(s=>!grant.scopes.includes(s)))throw oauthError('Scope escalation denied.',400,'invalid_scope');
+ const claimed=await store.setJSON(sourceKey,{...source,used:true},{onlyIfMatch:saved.etag});if(!claimed.modified)throw oauthError('Grant already used.',400,'invalid_grant');
  const access=randomToken(),refresh=randomToken();
  const common={grantId:grant.id,clientId:grant.clientId,resource:grant.resource};
  await setNew(store,key('access',access),{...common,expiresAt:Math.min(now+900000,grant.expiresAt)});
