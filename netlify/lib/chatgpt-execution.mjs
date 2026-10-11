@@ -1,16 +1,18 @@
 import crypto from 'node:crypto';
 import {isDeepStrictEqual} from 'node:util';
-import {clientOAuthStore,getClientSite,patchClientSite} from './client-store.mjs';
+import {clientOAuthStore,getClientSite,patchClientSite,renameClientSiteSlug} from './client-store.mjs';
+import {validatePublicSiteSlug} from './client-site-slug.mjs';
 import {getGrant,oauthError,hash} from './chatgpt-oauth.mjs';
 import {authorizeGrant,parseOperation,operationCapability,redesignSite,safeOutput} from './chatgpt-operations.mjs';
 import {normalizeClientSection} from '../functions/client-admin.mjs';
 
 // Only explicit, existing configuration operations have a direct MCP writer.
 // Money, integration disconnection and account deletion retain their portal flows.
-export const executableOperations=['update_business','update_hours','update_catalog','update_employees','update_paymentRules','update_design','update_features','update_settings','redesign'];
+export const executableOperations=['update_slug','update_business','update_hours','update_catalog','update_employees','update_paymentRules','update_design','update_features','update_settings','redesign'];
 const proposalKey=id=>{if(!/^[a-f0-9-]{36}$/.test(id||''))throw oauthError('Invalid proposal.');return 'chatgpt/proposals/'+hash(id)+'.json'};
 export function configurationPatch(site,operation,input,user,membership){
  if(!executableOperations.includes(operation))throw oauthError('This operation requires its existing WebFactory portal flow.',403);
+ if(operation==='update_slug')return {slug:validatePublicSiteSlug(input.value)};
  if(operation==='redesign'){
   if(!['active','trialing','trial','complimentary'].includes(site.servicePlan?.subscriptionStatus))throw oauthError('An active plan is required for redesign.',403);
   const next=redesignSite(site,input);return {business:next.business,design:next.design,features:next.features};
@@ -80,7 +82,8 @@ export async function executeConfirmedProposal(id,user,connection){
   if(!live.scopes.includes('webfactory.execute'))throw oauthError('Execute permission revoked.',403);
   await authorizeGrant(live,user,p.siteId,operationCapability(parseOperation(p.operation,p.input).op,p.input));
   const patch=configurationPatch(site,p.operation,p.input,user,membership);
-  await patchClientSite(p.siteId,patch,{expectedRevision:p.siteRevision});
+  if(p.operation==='update_slug')await renameClientSiteSlug(p.siteId,patch.slug,p.siteRevision);
+  else await patchClientSite(p.siteId,patch,{expectedRevision:p.siteRevision});
   const read=await getClientSite(p.siteId);
   after=safeOutput(Object.fromEntries(Object.keys(patch).map(k=>[k,read?.[k]??null])));
   verified=isDeepStrictEqual(after,p.proposedState);
