@@ -97,3 +97,50 @@
   support. That client registration/runtime cannot be rewritten from this repo.
 - iPhone/native ChatGPT and desktop UI were not remotely exercised. The
   transport tests verify protocol behavior, not every client application's UI.
+
+## Follow-up: administrator connection and App catalog ownership
+
+After the owner switched connections, wf_connection verified platform=true with
+Read and Execute. A bounded wf_graph_context retry successfully returned
+platform-code context, so Graphify is not universally broken. Private development
+tools remained absent from this Work thread's offered tool registry.
+
+Inspection of the actual installed official plugin shows it is an App-backed
+custom MCP plugin, not the repository's standalone plugin package. Its current
+source contains only an App binding and generated legacy presentation manifest,
+with no bundled manage-webfactory skill. The separately owned legacy plugin has
+different App identity and already-correct direct-execution instructions. Neither
+was deleted, replaced or duplicated. The earlier package-instruction corrections
+apply to the repository package, not automatically to the active official App.
+
+OpenAI's official connection guide documents Refresh in the custom App's details
+as the action that imports updated tool metadata. Plugin Creator's source editor
+cannot modify the App-owned MCP binding/catalog. Browser inspection of the
+existing official App verified OAuth authentication, the canonical /mcp endpoint
+and a Refresh tools control. The plugin's host action permission was Read-only;
+this is separate from OAuth Execute and was not silently changed.
+
+Server version 1.0.2 adds initialize instructions about rechecking identity/scope
+and refreshing the existing App metadata after a scope change. The existing
+wf_connection diagnostic adds a catalog fingerprint derived from validated
+identity, scope, permissions, version and registered names. It does not expose
+user IDs or tokens and is stable across token refresh with the same catalog.
+These diagnostics cannot directly force ChatGPT to re-import tools.
+
+The existing official App's Refresh tools control was invoked in ChatGPT. Its
+loading state completed and the control became available again, but there was
+no visible success confirmation or changed version ID. A fresh tool-registry
+search in this running thread still did not expose the private admin tools.
+wf_connection remained executable and verified platform=true. Therefore the
+refresh attempt is recorded, not reported as a successful catalog repair; a
+new conversation must verify the imported catalog before declaring success.
+
+A new real-handler/SDK regression switches tenant -> platform-admin -> tenant
+on the same endpoint. It verifies admin discovery, private-tool absence/denial
+for tenants, distinct catalog fingerprints and expired-token rejection without
+borrowing the other connection's catalog. Updated suite: 493 passed, zero failed;
+complete build and TypeScript passed again.
+
+Official references:
+- https://developers.openai.com/plugins/deploy/connect-chatgpt
+- https://developers.openai.com/api/docs/guides/custom-mcp-server
