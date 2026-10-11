@@ -12,3 +12,6 @@ html[data-wf-theme=dark] .wf-kiosk{--kiosk-canvas:color-mix(in srgb,var(--kiosk-
 .wf-kiosk .kiosk-mobile-cart{display:none}.kiosk-catalog>p>a{display:inline-flex;align-items:center;min-height:44px;padding:8px 0}.kiosk-cart{scroll-margin-top:16px}
 @media(max-width:1099px){.wf-kiosk{padding-bottom:calc(96px + env(safe-area-inset-bottom))}.wf-kiosk .kiosk-mobile-cart{display:flex;position:fixed;bottom:max(16px,env(safe-area-inset-bottom));left:max(16px,env(safe-area-inset-left));right:max(16px,env(safe-area-inset-right));z-index:20;max-width:560px;margin-inline:auto}}
 @media print{.wf-kiosk .kiosk-mobile-cart{display:none}}
+
+/* The preview collaboration drawer must not cover customer ordering controls. */
+body:has(.wf-kiosk) [data-netlify-deploy-id],body:has(.wf-kiosk) iframe[title="Netlify Drawer"]{display:none!important}
