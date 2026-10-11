@@ -1,4 +1,5 @@
 import { sanitizePolicies } from "../lib/publication-review.mjs";
+import { readPosOperations } from '../lib/pos-operations.mjs';
 import { assertSameOrigin, authorizedSites, errorResponse, requireSiteAccess, siteRoleCapabilities } from "../lib/client-auth.mjs";
 import { normalizeEmail, patchClientSite, publicClientSite } from "../lib/client-store.mjs";
 import { cleanText, validEmail } from "../lib/platform-utils.mjs";
@@ -230,7 +231,7 @@ export default async (req) => {
         })) }, { headers: { "Cache-Control": "no-store" } });
       }
       const { user, site, membership } = await requireSiteAccess(siteId);
-      return Response.json({ ok: true, user: { id: user.id, email: user.email, name: user.name }, membership: { ...membership, capabilities: siteRoleCapabilities(membership?.role || "staff") }, site }, { headers: { "Cache-Control": "no-store" } });
+      return Response.json({ ok: true, user: { id: user.id, email: user.email, name: user.name }, membership: { ...membership, capabilities: siteRoleCapabilities(membership?.role || "staff") }, site, posOperations: await readPosOperations(site.siteId) }, { headers: { "Cache-Control": "no-store" } });
     }
 
     if (req.method !== "PATCH") return Response.json({ ok: false, message: "Method not allowed." }, { status: 405 });

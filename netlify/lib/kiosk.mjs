@@ -2,6 +2,7 @@ import crypto from 'node:crypto';
 import { availableInventory } from './inventory-availability.mjs';
 import { cleanText, validEmail } from './platform-utils.mjs';
 import { commerceKey } from './client-store.mjs';
+import { posCapabilities, posOperations } from './pos-capabilities.mjs';
 export const kioskFail = (message, status = 400) => Object.assign(new Error(message), { status });
 export const kioskConfigKey = siteId => `${siteId}/pos-kiosk/config.json`;
 export const kioskDeviceKey = id => `pos-kiosk-devices/${id}.json`;
@@ -58,9 +59,10 @@ export async function kioskSaleView(store, state) {
     items: (record.items || []).map(x => ({ name: String(x.name || ''), quantity: x.quantity, unitAmount: x.unitAmount })) };
 }
 export async function kioskView(store, state, site) {
+  const capabilities = posCapabilities(site, posOperations(await store.get(kioskConfigKey(site.siteId), { type: 'json' })));
   return { business: { siteId: site.siteId, nameEn: site.business?.nameEn || site.business?.name || site.slug, nameEs: site.business?.nameEs || site.business?.nameEn || site.business?.name || site.slug,
     logoAssetKey: site.business?.logoAssetKey || '', primary: site.design?.primary || '', secondary: site.design?.secondary || '', locationName: state.locationName, bookingUrl: `/sites/${encodeURIComponent(site.slug)}` },
-    saleId: state.saleId, providers: kioskProviders(site), taxConfig: { enabled: site.taxConfig?.enabled !== false, stateRate: site.taxConfig?.stateRate ?? 10.5, municipalRate: site.taxConfig?.municipalRate ?? 1, pricesIncludeTax: Boolean(site.taxConfig?.pricesIncludeTax) },
+    presentation: { profile: capabilities.profile }, saleId: state.saleId, providers: kioskProviders(site), taxConfig: { enabled: site.taxConfig?.enabled !== false, stateRate: site.taxConfig?.stateRate ?? 10.5, municipalRate: site.taxConfig?.municipalRate ?? 1, pricesIncludeTax: Boolean(site.taxConfig?.pricesIncludeTax) },
     catalog: (site.catalog || []).filter(x => x.active !== false && !x.requiresAppointment && Number.isFinite(x.price) && x.price >= 0).map(x => ({ id: x.id, type: x.type, nameEn: x.nameEn || x.name || x.nameEs || x.id, nameEs: x.nameEs || x.nameEn || x.name || x.id,
       price: x.price, imageAssetKey: x.imageAssetKey || '', descriptionEn: x.descriptionEn || x.description || '', descriptionEs: x.descriptionEs || x.descriptionEn || x.description || '', taxable: x.taxable !== false, taxRateOverride: x.taxRateOverride ?? null,
       trackInventory: Boolean(x.trackInventory), inventory: x.type === 'product' && x.trackInventory && x.inventory != null ? availableInventory(site, x) : null, allowBackorder: Boolean(x.allowBackorder) })),
