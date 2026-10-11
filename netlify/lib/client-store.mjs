@@ -1,5 +1,6 @@
 import { availableInventory, reservedQuantity } from './inventory-availability.mjs';
 import crypto from "node:crypto";
+import { claimPublicSiteSlug, renamePublicSiteSlug } from "./client-site-slug.mjs";
 import { getDeployStore, getStore } from "@netlify/blobs";
 import { cleanText } from "./platform-utils.mjs";
 
@@ -89,9 +90,10 @@ export async function saveClientSite(site) {
       }
     }
   }else if(site.stockOperations||site.stockReservations||site.inventoryArchive)throw Object.assign(new Error('Inventory markers cannot be supplied when creating a business.'),{status:400});
+  // All site writers respect existing aliases, including provisioning and edits.
+  await claimPublicSiteSlug(store, site.siteId, slugify(site.slug));
   const saved=await store.setJSON(siteKey(site.siteId),site,previous?{onlyIfMatch:previous.etag}:{onlyIfNew:true});
   if(!saved.modified)throw Object.assign(new Error('Business changed. Reload before saving.'),{status:409});
-  await clientSiteStore().setJSON(`slugs/${slugify(site.slug)}.json`, { siteId: site.siteId });
   for (const member of site.members || []) {
     const email = normalizeEmail(member.email);
     if (!email) continue;
@@ -113,6 +115,13 @@ export async function patchClientSite(siteId, patch, {expectedRevision} = {}) {
     ...patch,
     revision: Number(current.revision || 0) + 1,
     updatedAt: new Date().toISOString(),
+  });
+}
+
+export async function renameClientSiteSlug(siteId, requestedSlug, expectedRevision) {
+  return renamePublicSiteSlug({
+    siteId, requestedSlug, expectedRevision,
+    loadSite: getClientSite, patchSite: patchClientSite, store: clientSiteStore(),
   });
 }
 

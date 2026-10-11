@@ -1,4 +1,5 @@
 import KioskSettings from './KioskSettings'
+import {publicSiteSlugMessage} from '../netlify/lib/client-site-slug.mjs'
 import PosOperationsSettings from './PosOperationsSettings'
 import {posCapabilities,posOperations,type PosOperations} from '../netlify/lib/pos-capabilities.mjs'
 import UploadedSidebar from './UploadedSidebar'
@@ -90,7 +91,7 @@ const portalHelp:Record<Language,Partial<Record<Tab,{title:string;description:st
 }
 
 
-const api=(url:string,options?:RequestInit)=>withAuthRetry(async()=>{const response=await fetch(url,{credentials:'include',cache:'no-store',...options});const result=await response.json();if(!response.ok||result.ok===false)throw new Error(result.message||'No se pudo completar la solicitud.');return result})
+const api=(url:string,options?:RequestInit)=>withAuthRetry(async()=>{const response=await fetch(url,{credentials:'include',cache:'no-store',...options});const result=await response.json();if(!response.ok||result.ok===false)throw Object.assign(new Error(result.message||'No se pudo completar la solicitud.'),{code:typeof result.code==='string'?result.code:'',status:response.status});return result})
 const money=(cents:number)=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(cents/100)
 const uid=(prefix:string)=>`${prefix}-${crypto.randomUUID()}`
 
@@ -114,6 +115,23 @@ export default function ClientAdminPage(){
   useEffect(()=>{document.documentElement.lang=lang},[lang])
   useEffect(()=>{document.title='Portal administrativo | WebFactory PR';let unsub=()=>{};(async()=>{try{const callback=await handleAuthCallback();if(callback?.type==='recovery'){setResetToken('recovery');return}if(callback?.type==='invite'&&callback.token){setInviteToken(callback.token);return}const current=callback?.user||await getUser();setUser(current);if(current)await loadSites()}catch(e){setError(e instanceof Error?e.message:'No se pudo abrir el portal.')}finally{setLoading(false)}})();unsub=onAuthChange((_event,current)=>{setUser(current);if(!current){setAccessReady(false);setSite(null);setSites([]);setMembership(null);setCommerce({orders:[],bookings:[]});setBilling(null);setCalendars([]);setTab('overview');setError('');setMessage('')}else if(_event==='login_remote'){void loadSites().catch(()=>setError('Unable to refresh business access.'))}});return()=>unsub()},[])
   const save=async(section:string,value:unknown)=>{if(!site||busy)return;setBusy(true);setError('');setMessage('');try{const result=await api('/.netlify/functions/client-admin',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({siteId:site.siteId,section,value,revision:site.revision})});setSite(result.site);setMessage(lang==='es'?'Cambios publicados en tiempo real.':'Changes published in real time.');feedback.success()}catch(e){setError(e instanceof Error?e.message:(lang==='es'?'No se pudo guardar.':'The changes could not be saved.'));feedback.error()}finally{setBusy(false)}}
+  const saveSlug=async(nextSlug:string):Promise<{ok:boolean;message:string}>=>{
+    if(!site||busy)return {ok:false,message:lang==='es'?'Espera a que termine el cambio anterior.':'Wait for the previous change to finish.'}
+    setBusy(true);setError('');setMessage('')
+    try{
+      const result=await api('/.netlify/functions/client-admin',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({siteId:site.siteId,section:'slug',value:nextSlug,revision:site.revision})})
+      setSite(result.site)
+      setSites(entries=>entries.map(entry=>entry.siteId===site.siteId?{...entry,slug:result.site.slug}:entry))
+      const success=lang==='es'?'Enlace actualizado. La dirección anterior seguirá funcionando.':'Link updated. Your previous address will continue to work.'
+      setMessage(success);feedback.success()
+      return {ok:true,message:success}
+    }catch(e){
+      const failure=e as {code?:string;status?:number}
+      const message=publicSiteSlugMessage(failure?.code||'',lang,failure?.status)
+      setError(message);feedback.error()
+      return {ok:false,message}
+    }finally{setBusy(false)}
+  }
   const loadCommerce=async()=>{if(!site)return;const result=await api(`/.netlify/functions/client-commerce-admin?siteId=${encodeURIComponent(site.siteId)}`);setCommerce({orders:result.orders,bookings:result.bookings})}
   const loadCalendar=async()=>{if(!site)return;const result=await api(`/.netlify/functions/google-calendar-status?siteId=${encodeURIComponent(site.siteId)}`);setCalendars(result.calendars||[]);setGoogleConfigured(result.configured);if(result.message)setError(result.message)}
   const loadBilling=async()=>{if(!site)return;const result=await api(`/.netlify/functions/subscription-readiness?siteId=${encodeURIComponent(site.siteId)}`);setBilling(result)}
@@ -148,11 +166,11 @@ export default function ClientAdminPage(){
       groups={navGroups.map(group=>({title:group.title,items:group.items.map(([id,label])=>({id,label}))}))}
       onNavigate={value=>{const id=value as Tab;if(id!==tab&&!confirmLeaveDrafts())return;setTab(id);try{sessionStorage.setItem('wf-section:'+site.siteId,id)}catch{}if(matchMedia('(max-width:820px)').matches)setMenuOpen(false);setMessage('');setError('')}}
       onLogout={signOut} logoutLabel={lang==='es'?'Salir':'Sign out'} links={[{id:'website-link',label:lang==='es'?'Ver mi página ↗':'View my website ↗',href:publicUrl,external:true}]}
-      controls={<><div className="portal-language"><button className={lang==='en'?'active':''} onClick={()=>setLang('en')}>EN</button><button className={lang==='es'?'active':''} onClick={()=>setLang('es')}>ES</button><ThemeToggle/></div><FeedbackPreferences lang={lang}/>{sites.length>1&&<label className="ca-site-switcher"><span>{lang==='es'?'Cambiar página':'Switch page'}</span><select value={site.siteId} onChange={e=>openSite(e.target.value).catch(err=>setError(err instanceof Error?err.message:String(err)))}>{sites.map(entry=><option value={entry.siteId} key={entry.siteId}>{entry.businessName||entry.slug}</option>)}</select></label>}</>}/>
+      controls={<><div className="portal-language"><button className={lang==='en'?'active':''} onClick={()=>setLang('en')}>EN</button><button className={lang==='es'?'active':''} onClick={()=>setLang('es')}>ES</button><ThemeToggle/></div><FeedbackPreferences lang={lang}/>{sites.length>1&&<label className="ca-site-switcher"><span>{lang==='es'?'Cambiar página':'Switch page'}</span><select disabled={busy} value={site.siteId} onChange={e=>openSite(e.target.value).catch(err=>setError(err instanceof Error?err.message:String(err)))}>{sites.map(entry=><option value={entry.siteId} key={entry.siteId}>{entry.businessName||entry.slug}</option>)}</select></label>}</>}/>
     <section className="ca-work">{emailPreview&&<PortalPanel className="ca-panel"><header><h2>{lang==='es'?'Vista previa de confirmación':'Confirmation preview'}</h2><p>{lang==='es'?'Esta vista no envía correos ni modifica la reservación.':'This preview does not send email or change the booking.'}</p></header><button onClick={()=>setEmailPreview('')}>{lang==='es'?'Cerrar vista previa':'Close preview'}</button><iframe title={lang==='es'?'Correo de confirmación':'Booking confirmation email'} srcDoc={emailPreview} sandbox="" referrerPolicy="no-referrer" style={{width:'100%',height:900,border:'none',marginTop:16,borderRadius:16}}/></PortalPanel>}<header><div><small>{lang==='es'?'MI NEGOCIO':'MY BUSINESS'}</small><h1>{displayBusinessName}</h1></div><div><span className={`ca-status ${site.status}`}>{site.status.replaceAll('_',' ')}</span></div></header>{message&&<div className="ca-success" role="status">{message}</div>}{error&&<div className="ca-error" role="alert">{error}</div>}{tab!=='overview'&&tab!=='pos'&&portalHelp[lang][tab]&&<aside className="ca-help-card" aria-live="polite"><span aria-hidden="true">💡</span><div><h2>{portalHelp[lang][tab]!.title}</h2><p>{portalHelp[lang][tab]!.description}</p><small>{portalHelp[lang][tab]!.tip}</small></div></aside>}
       {tab==='training'&&<PortalTraining lang={lang} onExit={()=>setTab('overview')}/>}
       {tab==='overview'&&<><WorkforcePanel key={site.siteId} site={site} lang={lang}/><BusinessControlCenter site={site} commerce={commerce} lang={lang} onNavigate={id=>{if(confirmLeaveDrafts())setTab(id as Tab)}} canNavigate={id=>navGroups.some(group=>group.items.some(([tab])=>tab===id))}/><Overview site={site} commerce={commerce} lang={lang} onSave={value=>save('business',value)} busy={busy}/></>}
-      {tab==='website'&&<><WebsitePanel site={site} lang={lang}/><HoursEditor site={site} setSite={setSite} lang={lang} onSave={()=>save('hours',site.hours)} busy={busy}/></>}
+      {tab==='website'&&<><WebsitePanel key={site.siteId} site={site} lang={lang} onSave={saveSlug} onReload={()=>openSite(site.siteId)} busy={busy} canEdit={['owner','manager','admin'].includes(membership?.role)}/><HoursEditor site={site} setSite={setSite} lang={lang} onSave={()=>save('hours',site.hours)} busy={busy}/></>}
       {tab==='redesign'&&<Panel title={lang==='es'?'Rediseña tu website':'Redesign your website'} text={lang==='es'?'Cambia el diseño, el template, la marca y la categoría de tu negocio desde Builder.':'Change your design, template, brand and business category in Builder.'}>{['active','trialing','trial','complimentary'].includes(site.servicePlan?.subscriptionStatus||'')?<a className="ca-primary-link" href={`/builder?edit=${encodeURIComponent(site.siteId)}`}>{lang==='es'?'Abrir Builder para rediseñar ↗':'Open Builder to redesign ↗'}</a>:<p>{lang==='es'?'Activa tu suscripción para rediseñar la página.':'Activate your subscription to redesign the website.'}</p>}</Panel>}
       {tab==='locations'&&<LocationEditor key={site.siteId} site={site} lang={lang} onSave={locations=>save('business',{...site.business,locations})} busy={busy}/>}
       {tab==='share'&&<BusinessQrPanel siteId={site.siteId} slug={site.slug} businessName={site.business?.name||site.business?.nameEn||site.slug} lang={lang} revision={site.revision} accent={site.design?.secondary||site.design?.primary||'#3C86F6'}/>}

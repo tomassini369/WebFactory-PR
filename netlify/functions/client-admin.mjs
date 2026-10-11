@@ -1,11 +1,11 @@
 import { sanitizePolicies } from "../lib/publication-review.mjs";
 import { readPosOperations } from '../lib/pos-operations.mjs';
 import { assertSameOrigin, authorizedSites, errorResponse, requireSiteAccess, siteRoleCapabilities } from "../lib/client-auth.mjs";
-import { normalizeEmail, patchClientSite, publicClientSite } from "../lib/client-store.mjs";
+import { normalizeEmail, patchClientSite, publicClientSite, renameClientSiteSlug } from "../lib/client-store.mjs";
 import { cleanText, validEmail } from "../lib/platform-utils.mjs";
 import { normalizeTaxConfig } from "../lib/webfactory-v3-domain.mjs";
 
-const allowedSections = new Set(["business", "design", "features", "catalog", "employees", "hours", "paymentRules", "settings", "taxConfig", "members", "reviewSettings"]);
+const allowedSections = new Set(["slug", "business", "design", "features", "catalog", "employees", "hours", "paymentRules", "settings", "taxConfig", "members", "reviewSettings"]);
 
 function color(value, fallback) {
   const result = cleanText(value, 20);
@@ -241,12 +241,17 @@ export default async (req) => {
     if (!allowedSections.has(section)) throw Object.assign(new Error("Invalid settings section."), { status: 400 });
     const { user, site, membership } = await requireSiteAccess(payload.siteId, ["owner", "manager"]);
     if (membership.role === "staff") throw Object.assign(new Error("Staff cannot change business settings."), { status: 403 });
+    if (section === "slug") {
+      const updated = await renameClientSiteSlug(site.siteId, payload.value, payload.revision);
+      return Response.json({ ok: true, site: updated, publicSite: publicClientSite(updated) }, { headers: { "Cache-Control": "no-store" } });
+    }
     const value = normalizeClientSection(site, section, payload.value, user, membership);
 
     if(section==='catalog'&&!Number.isInteger(payload.revision))throw Object.assign(new Error('Reload the portal before editing the catalog.'),{status:409});
     const updated = await patchClientSite(site.siteId, { [section]: value },section==='catalog'?{expectedRevision:payload.revision}:{});
     return Response.json({ ok: true, site: updated, publicSite: publicClientSite(updated) }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
+    if (typeof error?.code === 'string' && /^SLUG_[A-Z_]+$/.test(error.code)) return Response.json({ ok: false, code: error.code, message: error.status >= 500 ? 'The change could not be confirmed. Reload before retrying.' : error.message }, { status: error.status, headers: { 'Cache-Control': 'no-store' } });
     return errorResponse(error);
   }
 };

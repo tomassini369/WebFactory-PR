@@ -64,6 +64,13 @@ jobs:
           QA_ENGINE: webkit
           QA_PORT: 5245
         run: node scripts/browser-pos-capabilities-smoke.mjs
+      - name: Check editable public URLs, aliases and mobile accessibility on Chromium
+        run: node scripts/browser-public-site-link-smoke.mjs
+      - name: Check editable public URLs and safe retry on touch WebKit
+        env:
+          QA_ENGINE: webkit
+          QA_PORT: 5261
+        run: node scripts/browser-public-site-link-smoke.mjs
       - name: Check Workforce on touch WebKit
         env:
           QA_BUILT: 1
@@ -246,3 +253,29 @@ jobs:
         env:
           PREVIEW_URL: https://deploy-preview-${{ github.event.pull_request.number }}--webfactorypr.netlify.app
         run: node scripts/chatgpt-http-smoke.mjs
+      - name: Check deployed public URL authorization boundaries
+        env:
+          PREVIEW_URL: https://deploy-preview-${{ github.event.pull_request.number }}--webfactorypr.netlify.app
+        run: node scripts/public-site-link-http-smoke.mjs
+      - name: Check deployed public URL editor on Chromium and WebKit with isolated fixtures
+        env:
+          QA_ORIGIN: https://deploy-preview-${{ github.event.pull_request.number }}--webfactorypr.netlify.app
+          QA_WIDTHS: 390,1440
+        run: |
+          QA_PORT=5260 node scripts/browser-public-site-link-smoke.mjs > /tmp/public-link-preview-chromium.log 2>&1 &
+          link_chromium_pid=$!
+          QA_ENGINE=webkit QA_PORT=5261 node scripts/browser-public-site-link-smoke.mjs > /tmp/public-link-preview-webkit.log 2>&1 &
+          link_webkit_pid=$!
+          link_chromium_result=0
+          wait "$link_chromium_pid" || link_chromium_result=$?
+          link_webkit_result=0
+          wait "$link_webkit_pid" || link_webkit_result=$?
+          cat /tmp/public-link-preview-chromium.log /tmp/public-link-preview-webkit.log
+          if [ "$link_chromium_result" -ne 0 ]; then
+            node scripts/report-kiosk-ci-error.mjs /tmp/public-link-preview-chromium.log public-link-chromium
+          fi
+          if [ "$link_webkit_result" -ne 0 ]; then
+            node scripts/report-kiosk-ci-error.mjs /tmp/public-link-preview-webkit.log public-link-webkit
+          fi
+          test "$link_chromium_result" -eq 0
+          test "$link_webkit_result" -eq 0
