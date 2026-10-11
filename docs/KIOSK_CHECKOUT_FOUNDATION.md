@@ -1,6 +1,6 @@
 # Kiosk checkout foundation
 
-The existing public checkout accepts an optional `Idempotency-Key` header containing a cryptographically random 256-bit lowercase hexadecimal key. Existing callers remain compatible. This is a backend foundation; the kiosk interface and device pairing are not enabled yet.
+The existing public checkout accepts an optional `Idempotency-Key` header containing a cryptographically random 256-bit lowercase hexadecimal key. Existing callers remain compatible. This contract is now used by the optional paired kiosk described in [SELF_SERVICE_KIOSK.md](SELF_SERVICE_KIOSK.md). Existing businesses remain disabled until an administrator enables and pairs a screen.
 
 A future kiosk must persist one key and the exact request body before submission, and retain them through retries and reloads. Changing the cart requires a new attempt only after the previous outcome has been reconciled. Never automatically generate a new key after a timeout or uncertain response.
 
@@ -8,4 +8,4 @@ The existing commerce store records a hashed key scoped to the business. `onlyIf
 
 Stripe, ATH Móvil, inventory reservations, receipts, tax, booking and in-person order processing remain in the existing checkout handler. No browser action marks a payment confirmed. Different keys are independent: this mechanism does not deduplicate customers who deliberately start separate attempts. The kiosk must enforce its own single active attempt and secure device session in the next increment.
 
-Pending: device pairing and revocation, administrator enablement, branded kiosk UI, server-side outcome reconciliation, bounded archival policy, modifiers supported by the catalog, and mobile browser QA of the complete kiosk flow. Do not activate public kiosks using this foundation alone.
+Pairing, revocation, administrator enablement, branded kiosk UI and mobile browser QA are implemented in the subsequent kiosk increment. Pending: automated outcome reconciliation and archival, and a catalog schema for priced modifiers/extras. An uncertain attempt requires staff review; never automatically create a new attempt.

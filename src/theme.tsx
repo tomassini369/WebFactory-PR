@@ -67,7 +67,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     () => typeof window !== 'undefined' && (
       legalPlatformPath(pathname)
       || pathname === '/'
-      || /^\/(?:builder|templates|preview-review|chatgpt|customer-display)\/?$/.test(pathname)
+      || /^\/(?:builder|templates|preview-review|chatgpt|customer-display|kiosk)\/?$/.test(pathname)
       || /^\/(?:webfactory-admin|client-admin|password|password-recovery)\/?$/.test(pathname)
       || /^#(?:invite_token|recovery_token)=/.test(window.location.hash)
     ),
@@ -104,17 +104,18 @@ export function useWebFactoryTheme() {
   return context
 }
 
-export function ThemeToggle({ floating = false }: { floating?: boolean }) {
+export function ThemeToggle({ floating = false, lang = 'en' }: { floating?: boolean; lang?: 'es'|'en' }) {
   const { theme, toggleTheme } = useWebFactoryTheme()
   const next = theme === 'dark' ? 'light' : 'dark'
+  const label = lang === 'es' ? (next === 'light' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro') : `Switch to ${next} mode`
 
   return (
     <button
       type="button"
       className={`wf-theme-toggle${floating ? ' floating' : ''}`}
       onClick={toggleTheme}
-      aria-label={`Switch to ${next} mode`}
-      title={`Switch to ${next} mode`}
+      aria-label={label}
+      title={label}
       aria-pressed={theme === 'dark'}
       data-current-theme={theme}
       data-next-theme={next}
