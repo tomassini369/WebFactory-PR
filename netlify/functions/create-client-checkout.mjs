@@ -1,3 +1,4 @@
+import { createCheckoutAttemptHandler } from '../lib/checkout-attempt.mjs';
 import { issueBuyerReceiptAccess } from '../lib/buyer-receipt-access.mjs';
 import { availableInventory } from '../lib/inventory-availability.mjs';
 import { createInPersonOrder } from '../lib/in-person-orders.mjs';
@@ -68,7 +69,7 @@ function appendLine(params, index, item) {
   params.set(`line_items[${index}][quantity]`, String(item.quantity));
 }
 
-export default async (req) => {
+async function performCheckout(req) {
   if (req.method !== "POST") return Response.json({ ok: false, message: "Method not allowed." }, { status: 405 });
   try {
     assertSameOrigin(req);
@@ -224,6 +225,8 @@ export default async (req) => {
   } catch (error) {
     return errorResponse(error);
   }
-};
+}
+
+export default createCheckoutAttemptHandler({ performCheckout, getSite: async (payload) => payload.siteId ? getClientSite(payload.siteId) : getClientSiteBySlug(payload.slug), isAvailable: (site) => siteEntitlement(site).public, getStore: clientCommerceStore });
 
 export const config = { rateLimit: { windowLimit: 20, windowSize: 60, aggregateBy: ["ip"] } };
