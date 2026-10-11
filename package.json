@@ -29,6 +29,7 @@
     "radix-ui": "1.7.0",
     "react": "19.3.0",
     "react-dom": "19.3.0",
+    "sharp": "^0.34.5",
     "stripe": "^22.6.2",
     "tailwind-merge": "3.7.0",
     "tailwindcss": "4.3.3",
@@ -40,7 +41,6 @@
     "@types/react-dom": "^19.2.0",
     "@vitejs/plugin-react": "6.1.1",
     "playwright": "^1.62.1",
-    "sharp": "^0.34.0",
     "typescript": "^5.9.2",
     "vite": "8.3.0"
   }
