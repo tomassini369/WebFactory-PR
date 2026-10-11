@@ -118,7 +118,6 @@ jobs:
 
   deploy-preview-smoke:
     if: github.event_name == 'pull_request'
-    needs: verify
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
@@ -191,15 +190,25 @@ jobs:
         env:
           QA_ORIGIN: https://deploy-preview-${{ github.event.pull_request.number }}--webfactorypr.netlify.app
         run: |
-          npm run build
-          QA_PORT=5236 node scripts/browser-kiosk-smoke.mjs &
+          npm run build > /tmp/kiosk-preview-build.log 2>&1 || {
+            node scripts/report-kiosk-ci-error.mjs /tmp/kiosk-preview-build.log build
+            exit 1
+          }
+          QA_PORT=5236 node scripts/browser-kiosk-smoke.mjs > /tmp/kiosk-preview-chromium.log 2>&1 &
           kiosk_chromium_pid=$!
-          QA_ENGINE=webkit QA_PORT=5237 node scripts/browser-kiosk-smoke.mjs &
+          QA_ENGINE=webkit QA_PORT=5237 node scripts/browser-kiosk-smoke.mjs > /tmp/kiosk-preview-webkit.log 2>&1 &
           kiosk_webkit_pid=$!
           kiosk_chromium_result=0
           wait "$kiosk_chromium_pid" || kiosk_chromium_result=$?
           kiosk_webkit_result=0
           wait "$kiosk_webkit_pid" || kiosk_webkit_result=$?
+          cat /tmp/kiosk-preview-chromium.log /tmp/kiosk-preview-webkit.log
+          if [ "$kiosk_chromium_result" -ne 0 ]; then
+            node scripts/report-kiosk-ci-error.mjs /tmp/kiosk-preview-chromium.log chromium
+          fi
+          if [ "$kiosk_webkit_result" -ne 0 ]; then
+            node scripts/report-kiosk-ci-error.mjs /tmp/kiosk-preview-webkit.log webkit
+          fi
           test "$kiosk_chromium_result" -eq 0
           test "$kiosk_webkit_result" -eq 0
       - name: Check ChatGPT routes and authentication boundaries
