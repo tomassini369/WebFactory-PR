@@ -1,0 +1,23 @@
+.pos-operations-settings{min-width:0}
+html body #root .ca-dashboard .ca-panel.pos-operations-settings.wf-portal-panel{--ops-canvas:color-mix(in srgb,var(--ops-primary) 12%,white);--ops-surface:color-mix(in srgb,var(--ops-primary) 3%,white);--ops-ink:#17263b;--ops-muted:#52647a;--ops-control:#63758b;color:var(--ops-ink);background:var(--ops-canvas)!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;box-shadow:none!important}
+html[data-wf-theme=dark] body #root .ca-dashboard .ca-panel.pos-operations-settings.wf-portal-panel{--ops-canvas:color-mix(in srgb,var(--ops-primary) 24%,#0b1018);--ops-surface:color-mix(in srgb,var(--ops-primary) 18%,#172334);--ops-ink:#f2f6fc;--ops-muted:#b8c6d9;--ops-control:#9aaec8}
+html body #root .ca-dashboard .ca-panel.pos-operations-settings.wf-portal-panel :is(h2,p,small,legend,label){color:var(--ops-ink)}
+html body #root .ca-dashboard .ca-panel.pos-operations-settings.wf-portal-panel>.wf-panel-tools{position:static;background:var(--ops-surface);backdrop-filter:none;-webkit-backdrop-filter:none;margin:0 0 20px;padding:6px;border:1px solid var(--ops-control);border-radius:12px;flex-wrap:wrap}
+html body #root .ca-dashboard .ca-panel.pos-operations-settings.wf-portal-panel :is(select,button){background:var(--ops-surface);color:var(--ops-ink);border:1px solid var(--ops-control)!important}
+html body #root .ca-dashboard .ca-panel.pos-operations-settings.wf-portal-panel button.ca-save{background:var(--ops-brand);color:var(--ops-brand-ink)}
+.pos-operations-settings .pos-profile-select{display:grid;gap:8px;max-width:540px;font-weight:600}
+.pos-operations-settings .pos-profile-select select{width:100%;min-width:0;min-height:48px;font-size:16px}
+.pos-profile-detected{margin:12px 0 24px}
+.pos-module-options{padding:0;border:0;margin:20px 0;display:grid;gap:0}
+.pos-module-options legend{font-weight:700;margin-bottom:12px}
+.pos-module-options label{display:flex;align-items:center;gap:14px;min-height:72px;padding:16px 0;border-bottom:1px solid var(--ca-pos-control,#63758b);cursor:pointer}
+html body #root .ca-dashboard .ca-panel.pos-operations-settings .pos-module-options>label{display:flex!important}
+html body #root .ca-dashboard .pos-module-options input{width:22px;min-width:22px;height:22px;min-height:22px;margin:0;accent-color:var(--ca-pos-accent,#285fa6)}
+.pos-module-options span{display:grid;gap:5px;min-width:0}.pos-module-options strong{font-size:16px}.pos-module-options small{font-size:14px;font-weight:400}
+.pos-settings-actions{display:flex;flex-wrap:wrap;gap:12px;margin-top:24px}
+html body #root .ca-dashboard .pos-settings-actions button{min-height:48px;font-size:16px;white-space:normal}
+html body #root .ca-dashboard .pos-operations-settings :is(button,input,select):focus-visible{outline:3px solid #285fa6;outline-offset:4px}
+html[data-wf-theme=dark] body #root .ca-dashboard .pos-operations-settings :is(button,input,select):focus-visible{outline-color:#91bfff}
+@media(max-width:767px){.pos-settings-actions{display:grid}.pos-settings-actions button{width:100%}}
+@media(prefers-reduced-motion:reduce){.pos-operations-settings *{transition:none!important}}
+@media(forced-colors:active){html body #root .ca-dashboard .ca-panel.pos-operations-settings.wf-portal-panel{--ops-canvas:Canvas;--ops-surface:Canvas;--ops-ink:CanvasText;--ops-control:ButtonText;--ops-brand:ButtonFace;--ops-brand-ink:ButtonText}html body #root .ca-dashboard .ca-panel.pos-operations-settings.wf-portal-panel :is(button,select){forced-color-adjust:auto}}

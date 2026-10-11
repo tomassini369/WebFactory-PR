@@ -24,6 +24,7 @@ try{
   if(req.method()==='POST'){const input=req.postDataJSON();writes.push(input);try{now+=600000;state=transitionWorkforce(state,input,site,user,{role},now).state}catch(e){return route.fulfill({status:e.status||500,contentType:'application/json',body:JSON.stringify({message:e.message})})}if(lost){lost=false;return route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({message:'Isolated lost response'})})}}
   data={ok:true,...workforceView(state,site,user,{role},now)}
  }else if(name==='portal-session')data={ok:true,user}
+ else if(name==='client-pos-settings'&&req.method()==='GET')data={ok:true,operations:{cashierEnabled:true,displayEnabled:true,profile:'auto',revision:0},canManage:role==='owner'}
  else if(req.method()!=='GET')throw Error('Unexpected write in attendance fixture: '+name)
  else if(name==='client-admin')data=url.searchParams.has('siteId')?{ok:true,site,membership:{role,capabilities:caps[role]}}:{ok:true,sites:[{siteId:site.siteId,slug:site.slug,businessName:site.business.name,status:'published'}]}
  else data={ok:true,orders:[],bookings:[],receipts:[],customers:[],entries:[],report:{},inventory:[]}

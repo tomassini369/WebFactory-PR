@@ -16,6 +16,7 @@ html body #root .ca-dashboard .ca-panel.pos-workspace.wf-portal-panel :is(button
 .pos-heading p{color:var(--pos-muted);font-size:14px}
 .pos-operator{display:flex;gap:10px;padding:12px;background:var(--pos-surface);border:1px solid var(--pos-line);border-radius:12px;max-width:280px}.pos-operator div{display:grid;gap:3px}.pos-operator strong{font-size:14px;overflow-wrap:anywhere}.pos-operator span{font-size:11px;color:var(--pos-muted)}
 .pos-shortcuts{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 24px}.pos-shortcuts button{display:flex;align-items:center;gap:8px;font-size:13px!important}.pos-shortcuts button svg:last-child{width:16px}
+.pos-context-actions{display:flex;flex-wrap:wrap;gap:12px;margin-top:18px}.pos-context-actions button{display:flex;align-items:center;gap:10px;text-align:left;white-space:normal}
 .pos-sale-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(290px,350px);gap:24px;align-items:start}
 .pos-catalog-heading{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:14px}.pos-catalog-heading h3,.pos-order h3{font-size:20px}.pos-catalog-heading span{color:var(--pos-muted);font-size:13px}
 .pos-search{position:relative;display:block}.pos-search>svg{position:absolute;left:14px;top:15px;color:var(--pos-muted)}
