@@ -1,3 +1,4 @@
+import {applyBookingBalance} from './kiosk-bookings.mjs';
 import { withBookingLock } from './booking-lock.mjs';
 import { applyCustomerTransaction } from './customer-transactions.mjs';
 import { applyStockOperation,projectStockMovements } from './inventory-operations.mjs';
@@ -32,7 +33,8 @@ export async function settleAthPayment(session, payment, {recover=false}={}) {
     if (!site) throw new Error("Business unavailable during fulfillment.");
     const customer=await applyCustomerTransaction(site.siteId,record);
     record.customerId = customer.customerId;
-    if (record.kind === "order") {
+    if(record.source==='booking_balance'){await applyBookingBalance(store,record);record.inventoryAppliedAt=paidAt;}
+    if (record.kind === "order" && record.source!=="booking_balance") {
       const applied=await applyStockOperation(site.siteId,{kind:'sale',referenceId:record.transactionId,items:record.items,reason:'ath_sale',reservationRequired:record.inventoryReservationRequired===true});
       await projectStockMovements(site.siteId,applied.operation,store);
       record.inventoryAppliedAt=applied.operation.appliedAt;
