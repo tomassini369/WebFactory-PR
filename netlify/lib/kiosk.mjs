@@ -1,3 +1,4 @@
+import {kioskBookingModes} from './kiosk-bookings.mjs';
 import crypto from 'node:crypto';
 import { availableInventory } from './inventory-availability.mjs';
 import { cleanText, validEmail } from './platform-utils.mjs';
@@ -25,6 +26,10 @@ export function kioskProviders(site) {
   if (site.paymentRules?.methods?.ath && site.paymentRules?.ath?.credentialsConfigured && site.paymentRules?.ath?.credentialVersion) methods.push('ath_movil');
   return methods;
 }
+export function kioskBookingProviders(site,balance=false){
+  if(!balance&&site.paymentRules?.bookingPayment==='in_person')return ['in_person'];
+  return kioskProviders({...site,paymentRules:{...site.paymentRules,productPayment:'online'}});
+}
 export function kioskCheckoutPayload(site, state, input) {
   if (!Array.isArray(input.items) || !input.items.length || input.items.length > 20) throw kioskFail('Choose 1–20 items / Escoge 1–20 artículos.');
   const ids = new Set();
@@ -46,22 +51,28 @@ export async function kioskSaleView(store, state) {
   if (!active) return null;
   const transactionId = active.response?.transactionId;
   if (!transactionId) return { status: 'review', saleId: state.saleId, canResume: Boolean(active.payload), canReset: false };
-  const record = await store.get(commerceKey(state.siteId, 'transactions', transactionId), { type: 'json' });
-  if (!record || record.siteId !== state.siteId || record.transactionId !== transactionId || record.kind !== 'order' || record.channel !== 'kiosk' || record.locationId !== state.locationId) return { status: 'review', saleId: state.saleId, canReset: false };
-  const paid = ['paid', 'paid_in_person'].includes(record.paymentStatus) && ['confirmed', 'completed'].includes(record.status) && Boolean(record.receiptId && record.inventoryAppliedAt) && !record.inventoryNeedsReview && !record.athFulfillmentNeedsReview;
+  const kind=active.kind||'order';
+  const record = await store.get(commerceKey(state.siteId, 'transactions', transactionId), { type: 'json' }) || (kind==='booking'?await store.get(commerceKey(state.siteId,'bookings',transactionId),{type:'json'}):null);
+  if (!record || record.siteId !== state.siteId || record.transactionId !== transactionId || record.kind !== kind || record.channel !== 'kiosk' || record.locationId !== state.locationId) return { status: 'review', saleId: state.saleId, canReset: false };
+  const paid = ['paid', 'paid_in_person'].includes(record.paymentStatus) && ['confirmed', 'completed'].includes(record.status) && Boolean(record.receiptId && (kind==='booking'||record.inventoryAppliedAt)) && !record.inventoryNeedsReview && !record.athFulfillmentNeedsReview;
   const terminal = Boolean(record.inventoryNeedsReview || record.athFulfillmentNeedsReview) || ['paid', 'paid_in_person'].includes(record.paymentStatus) && !paid || ['failed', 'cancelled', 'expired', 'refunded', 'partially_refunded'].includes(record.paymentStatus) || ['failed', 'cancelled', 'expired', 'payment_failed'].includes(record.status);
-  const due = record.source === 'in_person_order' && record.paymentStatus === 'due' && record.status === 'confirmed' && !terminal;
+  const due = (record.source === 'in_person_order'||kind==='booking') && record.paymentStatus === 'due' && record.status === 'confirmed' && !terminal;
   // Expiration, cancellation and failure require inventory reconciliation before
   // the screen can start another order. Browser redirects are never proof.
-  return { status: terminal ? 'review' : paid ? 'paid' : due ? 'due' : 'pending', saleId: state.saleId, canReset: paid || due, canResume: !terminal && !paid && !due && Boolean(active.response?.checkoutUrl), checkoutUrl: !terminal && !paid && !due ? active.response?.checkoutUrl || '' : '',
+  return { kind, status: terminal ? 'review' : paid ? 'paid' : due ? 'due' : 'pending', saleId: state.saleId, canReset: paid || due, canResume: !terminal && !paid && !due && Boolean(active.response?.checkoutUrl), checkoutUrl: !terminal && !paid && !due ? active.response?.checkoutUrl || '' : '',
     transactionId, total: Number(record.amountTotal || 0), subtotal: Number(record.subtotal || 0), tax: Number(record.tax || 0), taxIncluded: Boolean(record.pricesIncludeTax ?? state.active.pricesIncludeTax), queueNumber: record.queueNumber || '',
     receipt: paid ? { id: record.receiptId, createdAt: record.paidAt || record.createdAt } : null,
     items: (record.items || []).map(x => ({ name: String(x.name || ''), quantity: x.quantity, unitAmount: x.unitAmount })) };
 }
 export async function kioskView(store, state, site) {
-  const capabilities = posCapabilities(site, posOperations(await store.get(kioskConfigKey(site.siteId), { type: 'json' })));
+  const configuration=await store.get(kioskConfigKey(site.siteId),{type:'json'});
+  const capabilities = posCapabilities(site, posOperations(configuration));
+  const modes=kioskBookingModes(configuration);if(site.features?.bookings===false)modes.newBookings=false;
   return { business: { siteId: site.siteId, nameEn: site.business?.nameEn || site.business?.name || site.slug, nameEs: site.business?.nameEs || site.business?.nameEn || site.business?.name || site.slug,
     logoAssetKey: site.business?.logoAssetKey || '', primary: site.design?.primary || '', secondary: site.design?.secondary || '', locationName: state.locationName, bookingUrl: `/sites/${encodeURIComponent(site.slug)}` },
+    bookingModes:modes, bookingProviders:kioskBookingProviders(site),balanceProviders:kioskBookingProviders(site,true),timezone:site.settings?.timezone||'America/Puerto_Rico',
+    appointmentServices:modes.newBookings?(site.catalog||[]).filter(x=>x.active!==false&&x.requiresAppointment&&x.type==='service').map(x=>({id:x.id,nameEn:x.nameEn||x.name,nameEs:x.nameEs||x.name,price:x.price})):[],
+    professionals:modes.newBookings?(site.employees||[]).filter(x=>x.active!==false&&(!state.locationId||x.locationIds?.includes(state.locationId))).map(x=>({id:x.id,name:x.name,serviceIds:x.serviceIds||[]})):[],
     presentation: { profile: capabilities.profile }, saleId: state.saleId, providers: kioskProviders(site), taxConfig: { enabled: site.taxConfig?.enabled !== false, stateRate: site.taxConfig?.stateRate ?? 10.5, municipalRate: site.taxConfig?.municipalRate ?? 1, pricesIncludeTax: Boolean(site.taxConfig?.pricesIncludeTax) },
     catalog: (site.catalog || []).filter(x => x.active !== false && !x.requiresAppointment && Number.isFinite(x.price) && x.price >= 0).map(x => ({ id: x.id, type: x.type, nameEn: x.nameEn || x.name || x.nameEs || x.id, nameEs: x.nameEs || x.nameEn || x.name || x.id,
       price: x.price, imageAssetKey: x.imageAssetKey || '', descriptionEn: x.descriptionEn || x.description || '', descriptionEs: x.descriptionEs || x.descriptionEn || x.description || '', taxable: x.taxable !== false, taxRateOverride: x.taxRateOverride ?? null,

@@ -13,6 +13,7 @@ export function bookingVersion(record) {
   return crypto.createHash("sha256").update(`${record.updatedAt || record.createdAt || ""}:${record.start}:${record.status}:${record.managementRevision || ""}`).digest("hex");
 }
 export function canManageBooking(site,record,action,now=Date.now()) {
+  if(record.balanceAttempt&&record.balancePaymentStatus!=='paid')return false;
   if (record.kind!=="booking" || record.status!=="confirmed" || !Number.isFinite(Date.parse(record.start)) || Date.parse(record.start)<=now) return false;
   if (action==="cancel") return site.settings?.allowCustomerCancellation!==false;
   if (action==="reschedule") return site.status === "active" && site.settings?.allowCustomerRescheduling!==false && !record.calendarUpdatePending && Date.parse(record.start)>now+3600000;

@@ -1,3 +1,4 @@
+import {bookingBalance} from '../lib/kiosk-bookings.mjs';
 import { listPosProcessing,recoverPosOrder } from '../lib/pos-recovery.mjs';
 import { manageInPersonOrder } from '../lib/in-person-orders.mjs';
 import { withBookingLock } from '../lib/booking-lock.mjs';
@@ -37,7 +38,8 @@ export default async (req) => {
       const mergedOrders=[...new Map([...orders,...pendingPos].map(record=>[record.transactionId,record])).values()];
       const limited = ["employee", "cashier", "staff"].includes(membership?.role) && (site.business?.locations || []).length > 0;
       const visible = (records) => limited ? records.filter((record) => (membership.locationIds || []).includes(record.locationId)) : records;
-      return Response.json({ ok: true, orders: visible(mergedOrders), bookings: visible(bookings) }, { headers: { "Cache-Control": "no-store" } });
+      const visibleBookings=await Promise.all(visible(bookings).map(async row=>row.bookingTotalCents!=null||row.balanceAttempt?{...row,bookingBalance:await bookingBalance(clientCommerceStore(),row)}:row));
+      return Response.json({ ok: true, orders: visible(mergedOrders), bookings: visibleBookings }, { headers: { "Cache-Control": "no-store" } });
     }
     if (req.method !== "POST") return Response.json({ ok: false, message: "Method not allowed." }, { status: 405 });
     assertSameOrigin(req);
@@ -58,6 +60,7 @@ export default async (req) => {
       throw Object.assign(new Error("This account is not assigned to the order location."), { status: 403 });
     }
 
+    if(kind==='bookings'&&record.balanceAttempt&&(payload.action==='mark_paid'||record.balancePaymentStatus!=='paid'&&['cancel','refund'].includes(payload.action)))throw Object.assign(new Error('Reconcile the linked balance checkout before changing this booking payment / Concilia el cobro de saldo vinculado antes de cambiar el pago de esta cita.'),{status:409});
     if(payload.action==='recover_pos')return Response.json(await recoverPosOrder(site.siteId,record.transactionId),{headers:{'Cache-Control':'no-store'}});
     if(kind==='orders'&&['mark_paid','cancel_in_person'].includes(payload.action))return Response.json({ok:true,record:await manageInPersonOrder(site.siteId,record.transactionId,payload.action,{lockHeld:true})},{headers:{'Cache-Control':'no-store'}});
     if(payload.action==='recover_ath'){
@@ -91,7 +94,8 @@ export default async (req) => {
       }
     } else if (payload.action === "complete") {
       if(record.kind==='order'&&(record.inventoryNeedsReview||record.status==='processing'||(record.inventoryProtocol===1&&!record.inventoryAppliedAt))) throw Object.assign(new Error("Reconcile inventory before completing this order."),{status:409});
-      if (!["paid","paid_in_person"].includes(record.paymentStatus)) throw Object.assign(new Error("Only paid transactions can be completed."), { status: 409 });
+      if(record.kind==='booking'&&record.balanceAttempt){const balance=await bookingBalance(clientCommerceStore(),record);if(!balance.known||balance.due!==0)throw Object.assign(new Error("Booking balance is not settled."),{status:409});}
+      if (!["paid","paid_in_person"].includes(record.paymentStatus)&&record.balancePaymentStatus!=="paid") throw Object.assign(new Error("Only paid transactions can be completed."), { status: 409 });
       record = { ...record, status: "completed", completedAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
 
       const settings = site.reviewSettings || {};
@@ -202,6 +206,7 @@ export default async (req) => {
     if(payload.action === "cancel" && record.calendarToken) record=await finishBookingChange(site,record);
     return Response.json({ ok: true, record }, { headers: { "Cache-Control": "no-store" } });
     };
-    return kind==='bookings'||['recover_pos','recover_ath'].includes(payload.action)?await run():await withBookingLock(clientCommerceStore(),`locks/commerce/${site.siteId}`,run);
+    const bookingRow=kind==='bookings'?await clientCommerceStore().get(commerceKey(site.siteId,kind,payload.transactionId),{type:'json'}):null;
+    return (kind==='bookings'&&!bookingRow?.balanceAttempt&&bookingRow?.bookingTotalCents==null)||['recover_pos','recover_ath'].includes(payload.action)?await run():await withBookingLock(clientCommerceStore(),`locks/commerce/${site.siteId}`,run);
   } catch (error) { return errorResponse(error); }
 };

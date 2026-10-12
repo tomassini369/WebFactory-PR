@@ -132,6 +132,28 @@ jobs:
       - name: Check email previews on mobile and desktop
         run: node scripts/browser-email-smoke.mjs
 
+  kiosk-bookings:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        engine: [chromium, webkit]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - name: Install selected browser
+        run: npx playwright install --with-deps ${{ matrix.engine }}
+      - name: Check appointment creation, arrival, balance and privacy
+        env:
+          QA_ENGINE: ${{ matrix.engine }}
+        run: node scripts/browser-kiosk-bookings-smoke.mjs
+
   deploy-preview-smoke:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
@@ -198,6 +220,12 @@ jobs:
         run: |
           npm ci
           npx playwright install --with-deps chromium webkit
+      - name: Check deployed appointment kiosk on Chromium
+        env:
+          QA_ORIGIN: https://deploy-preview-${{ github.event.pull_request.number }}--webfactorypr.netlify.app
+        run: |
+          npm run build
+          node scripts/browser-kiosk-bookings-smoke.mjs
       - name: Check deployed kiosk authentication and privacy boundaries
         env:
           PREVIEW_URL: https://deploy-preview-${{ github.event.pull_request.number }}--webfactorypr.netlify.app

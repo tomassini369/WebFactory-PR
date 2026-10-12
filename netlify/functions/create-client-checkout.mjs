@@ -1,9 +1,10 @@
+import { bookingBalance } from '../lib/kiosk-bookings.mjs';
 import { clientCheckoutReturn } from '../lib/client-checkout-return.mjs';
 import { createCheckoutAttemptHandler } from '../lib/checkout-attempt.mjs';
 import { issueBuyerReceiptAccess } from '../lib/buyer-receipt-access.mjs';
 import { availableInventory } from '../lib/inventory-availability.mjs';
 import { createInPersonOrder } from '../lib/in-person-orders.mjs';
-import { createReservedStripeCheckout } from '../lib/reserved-stripe-checkout.mjs';
+import { createReservedStripeCheckout, stripeClient, checkoutParameters } from '../lib/reserved-stripe-checkout.mjs';
 import { syncBookingCalendar } from "../lib/booking-calendar.mjs";
 import { sendBookingConfirmationEmails } from "../lib/client-notifications.mjs";
 import { bookingManageUrl } from "../lib/booking-email-template.mjs";
@@ -70,7 +71,7 @@ function appendLine(params, index, item) {
   params.set(`line_items[${index}][quantity]`, String(item.quantity));
 }
 
-export async function performCheckout(req, { kiosk = false } = {}) {
+export async function performCheckout(req, { kiosk = false, balanceBooking = null, balanceAttempt = "" } = {}) {
   if (req.method !== "POST") return Response.json({ ok: false, message: "Method not allowed." }, { status: 405 });
   try {
     assertSameOrigin(req);
@@ -97,12 +98,20 @@ export async function performCheckout(req, { kiosk = false } = {}) {
     let hold = null;
     let items;
     let kind;
-    if (payload.booking) {
+    let balanceTaxCents=0;
+    if (balanceBooking) {
+      if (!kiosk || balanceBooking.siteId !== site.siteId || balanceBooking.locationId !== locationId || balanceBooking.status !== "confirmed") throw Object.assign(new Error("Booking unavailable."),{status:409});
+      const balance=await bookingBalance(clientCommerceStore(),balanceBooking);
+      if(!balance.known||balance.due<=0)throw Object.assign(new Error("Balance requires review."),{status:409});
+      kind="order";
+      balanceTaxCents=balance.taxDue||0;
+      items=[{id:balanceBooking.serviceId,name:lang==="es"?"Saldo de cita":"Booking balance",quantity:1,unitAmount:balance.due-(balanceBooking.pricesIncludeTax?0:balanceTaxCents)}];
+    } else if (payload.booking) {
       kind = "booking";
       const service = (site.catalog || []).find((item) => item.id === payload.booking.serviceId && item.type === "service" && item.requiresAppointment && item.active !== false);
       const employee = (site.employees || []).find((member) => member.id === payload.booking.employeeId && member.active !== false && (member.serviceIds || []).includes(service?.id) && (!locations.length || (locationId && (member.locationIds || []).includes(locationId))));
       if (!service || !employee) throw Object.assign(new Error("The selected service or employee is unavailable."), { status: 409 });
-      hold = await createBookingHold(site, { ...payload.booking, locationId });
+      hold = await createBookingHold(site, { ...payload.booking, locationId },{strictGoogle:kiosk});
       const fullAmount = Math.round(Number(service.price) * 100);
       const unitAmount = site.paymentRules?.bookingPayment === "deposit"
         ? Math.round(fullAmount * Number(site.paymentRules?.bookingDepositPercent || 25) / 100)
@@ -114,12 +123,14 @@ export async function performCheckout(req, { kiosk = false } = {}) {
       items = canonicalCart(site, payload.items, lang);
     }
 
-    const inPerson = kind === "booking"
+    const inPerson = balanceBooking ? false : kind === "booking"
       ? site.paymentRules?.bookingPayment === "in_person"
       : site.paymentRules?.productPayment === "in_person";
     const subtotal = items.reduce((sum, item) => sum + item.unitAmount * item.quantity, 0);
     let taxCents = 0;
-    if (kind === "order") {
+    if (balanceBooking) {
+      taxCents=balanceTaxCents;
+    } else if (kind === "order") {
       for (const item of items) {
         const catalogItem = (site.catalog || []).find((entry) => entry.id === item.id);
         const line = calculateTax({
@@ -141,11 +152,20 @@ export async function performCheckout(req, { kiosk = false } = {}) {
       taxCents = Number(line.taxCents || 0);
     }
 
+    let bookingTotalCents,bookingTaxCents;
+    if(kind==="booking"){
+      const service=site.catalog.find(x=>x.id===hold.serviceId);
+      const full=Math.round(Number(service.price)*100);
+      const bookingInvoice=calculateTax({amountCents:full,taxable:service.taxable!==false,taxRateOverride:service.taxRateOverride??null,config:site.taxConfig||{}});
+      bookingTotalCents=bookingInvoice.totalCents;bookingTaxCents=bookingInvoice.taxCents;
+    }
     let record = {
       transactionId, siteId: site.siteId, kind, customer, items, locationId, locationName: selectedLocation?.name || "", holdId: hold?.holdId || "",
-      serviceId: hold?.serviceId || "", employeeId: hold?.employeeId || "", start: hold?.start || "", end: hold?.end || "",
-      channel: kiosk ? "kiosk" : "storefront", pricesIncludeTax: Boolean(site.taxConfig?.pricesIncludeTax),
-      subtotal, tax: taxCents, amountTotal: subtotal + (site.taxConfig?.pricesIncludeTax ? 0 : taxCents), currency: "usd",
+      serviceId: balanceBooking?.serviceId || hold?.serviceId || "", employeeId: balanceBooking?.employeeId || hold?.employeeId || "", start: hold?.start || "", end: hold?.end || "",
+      ...(kind==="booking"?{bookingTotalCents,bookingTaxCents}:{}),
+      ...(balanceBooking?{source:"booking_balance",bookingTransactionId:balanceBooking.transactionId,bookingBalanceAttempt:balanceAttempt}:{}),
+      channel: kiosk ? "kiosk" : "storefront", pricesIncludeTax: balanceBooking?Boolean(balanceBooking.pricesIncludeTax):Boolean(site.taxConfig?.pricesIncludeTax),
+      subtotal, tax: taxCents, amountTotal: subtotal + ((balanceBooking?balanceBooking.pricesIncludeTax:site.taxConfig?.pricesIncludeTax) ? 0 : taxCents), currency: "usd",
       ...(kind === "booking" ? { language:lang, bookingCode:crypto.randomBytes(4).toString("hex").toUpperCase(), customerCalendarInviteRequested: true, confirmationEmailRequested: true, calendarToken: crypto.randomBytes(32).toString("base64url") } : {}),
       paymentStatus: inPerson ? "due" : "pending", status: inPerson ? "confirmed" : "payment_pending",
       createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
@@ -169,6 +189,7 @@ export async function performCheckout(req, { kiosk = false } = {}) {
       record = await syncBookingCalendar(site, record);
       await clientCommerceStore().setJSON(commerceKey(site.siteId, kind === "booking" ? "bookings" : "orders", transactionId), record);
       record = await sendBookingConfirmationEmails(site,record, value => clientCommerceStore().setJSON(commerceKey(site.siteId,"bookings",transactionId),value));
+      await clientCommerceStore().setJSON(commerceKey(site.siteId,"transactions",transactionId),record);
       return Response.json({ ok: true, calendarUrl:bookingCalendarUrl(record), manageUrl:bookingManageUrl(record), paymentRequired: false, transactionId, status: record.status, calendarSyncStatus: record.calendarSyncStatus, ...(trackingToken ? { trackingUrl: `${publicBaseUrl()}/track/${trackingToken}` } : {}) });
     }
 
@@ -201,12 +222,23 @@ export async function performCheckout(req, { kiosk = false } = {}) {
     if (hold?.holdId) params.set("metadata[hold_id]", hold.holdId);
     params.set("integration_identifier", `webfactory_${randomLetters(8)}`);
     items.forEach((item, index) => appendLine(params, index, item));
-    if (taxCents > 0 && !site.taxConfig?.pricesIncludeTax) appendLine(params, items.length, { name: "Puerto Rico IVU", description: "", unitAmount: taxCents, quantity: 1 });
+    if (taxCents > 0 && !record.pricesIncludeTax) appendLine(params, items.length, { name: "Puerto Rico IVU", description: "", unitAmount: taxCents, quantity: 1 });
 
-    if(kind==='order'){
+    if(kind==='order'&&!balanceBooking){
       record.stripeAccountId=accountId;
       const checkout=await createReservedStripeCheckout(site,record,params,{requestUrl:req.url});
       return Response.json({ok:true,paymentRequired:true,checkoutUrl:checkout.checkoutUrl,transactionId},{headers:{'Cache-Control':'no-store'}});
+    }
+    if(balanceBooking){
+      record.stripeAccountId=accountId;
+      const saved=await clientCommerceStore().setJSON(commerceKey(site.siteId,"transactions",transactionId),record,{onlyIfNew:true});
+      if(!saved.modified)throw Object.assign(new Error("Balance checkout requires reconciliation."),{status:409});
+      const session=await stripeClient().checkout.sessions.create(checkoutParameters(params),{stripeAccount:accountId,idempotencyKey:`client-checkout-${transactionId}`});
+      if(!session.id||!session.url)throw Object.assign(new Error("Balance checkout requires reconciliation."),{status:503});
+      record={...record,stripeSessionId:session.id,checkoutUrl:session.url};
+      await clientCommerceStore().setJSON(commerceKey(site.siteId,"transactions",transactionId),record);
+      await clientCommerceStore().setJSON(commerceKey(site.siteId,"orders",transactionId),record);
+      return Response.json({ok:true,paymentRequired:true,checkoutUrl:session.url,transactionId},{headers:{"Cache-Control":"no-store"}});
     }
     const response = await fetch("https://api.stripe.com/v1/checkout/sessions", {
       method: "POST",
@@ -223,6 +255,7 @@ export async function performCheckout(req, { kiosk = false } = {}) {
     if (!response.ok) throw new Error(session?.error?.message || "Checkout could not be created.");
     record.stripeAccountId = accountId;
     record.stripeSessionId = session.id;
+    record.checkoutUrl = session.url;
     await clientCommerceStore().setJSON(commerceKey(site.siteId, "transactions", transactionId), record);
     return Response.json({ ok: true, paymentRequired: true, checkoutUrl: session.url, transactionId }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {

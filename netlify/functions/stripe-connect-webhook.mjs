@@ -1,3 +1,4 @@
+import {applyBookingBalance} from '../lib/kiosk-bookings.mjs';
 import { releaseInventory } from '../lib/inventory-reservations.mjs';
 import { findStockReservation } from '../lib/inventory-archive.mjs';
 import { applyCustomerTransaction } from '../lib/customer-transactions.mjs';
@@ -62,11 +63,12 @@ async function finalizeTransaction(event) {
     const paidAt = new Date(Number(event.created || Date.now() / 1000) * 1000).toISOString();
     const foodBusiness = /restaurant|food|catering|bakery|cafe|coffee|comida|alimento|panader|cafeter|restaurante/i.test(`${site.business?.category || ""} ${site.business?.name || ""}`);
     record = { ...record, inventoryProtocol:1, paymentStatus: "paid", status: "confirmed", stripePaymentIntentId: session.payment_intent || "", paidAt, updatedAt: paidAt,
-      ...(record.kind === "order" && foodBusiness ? { kitchenStatus: "received", queueNumber: `Q${Date.parse(paidAt)}` } : {}) };
+      ...(record.kind === "order" && record.source !== "booking_balance" && foodBusiness ? { kitchenStatus: "received", queueNumber: `Q${Date.parse(paidAt)}` } : {}) };
     await clientCommerceStore().setJSON(key, record);
   }
 
-  if(record.kind==='order'&&!record.inventoryAppliedAt){
+  if(record.source==='booking_balance'){await applyBookingBalance(clientCommerceStore(),record);record.inventoryAppliedAt ||= record.paidAt;}
+  if(record.kind==='order'&&record.source!=='booking_balance'&&!record.inventoryAppliedAt){
     try{
       const applied=await applyStockOperation(siteId,{kind:'sale',referenceId:transactionId,items:record.items,reason:'sale',reservationRequired:record.inventoryReservationRequired===true});
       await projectStockMovements(siteId,applied.operation,clientCommerceStore());
