@@ -63,7 +63,7 @@ async function finalizeTransaction(event) {
     const paidAt = new Date(Number(event.created || Date.now() / 1000) * 1000).toISOString();
     const foodBusiness = /restaurant|food|catering|bakery|cafe|coffee|comida|alimento|panader|cafeter|restaurante/i.test(`${site.business?.category || ""} ${site.business?.name || ""}`);
     record = { ...record, inventoryProtocol:1, paymentStatus: "paid", status: "confirmed", stripePaymentIntentId: session.payment_intent || "", paidAt, updatedAt: paidAt,
-      ...(record.kind === "order" && foodBusiness ? { kitchenStatus: "received", queueNumber: `Q${Date.parse(paidAt)}` } : {}) };
+      ...(record.kind === "order" && record.source !== "booking_balance" && foodBusiness ? { kitchenStatus: "received", queueNumber: `Q${Date.parse(paidAt)}` } : {}) };
     await clientCommerceStore().setJSON(key, record);
   }
 
