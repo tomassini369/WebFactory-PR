@@ -27,5 +27,5 @@ body:has(.wf-kiosk) [data-netlify-deploy-id],body:has(.wf-kiosk) iframe[title="N
 .kiosk-booking :focus-visible{outline:3px solid var(--kiosk-brand,#2867b2);outline-offset:3px}
 @media(max-width:430px){.kiosk-booking-actions{flex-direction:column}.kiosk-booking{margin:16px 0}}
 
-/* WebKit native option text can overflow a correctly sized select (bug 284644). */
-.kiosk-booking select{overflow-x:hidden}
+/* Keep the native picker while sizing its closed control independently of option text. */
+.kiosk-booking select{appearance:none;-webkit-appearance:none;padding-right:36px;background-image:linear-gradient(45deg,transparent 50%,var(--kiosk-ink) 50%),linear-gradient(135deg,var(--kiosk-ink) 50%,transparent 50%);background-position:calc(100% - 18px) 50%,calc(100% - 13px) 50%;background-size:5px 5px;background-repeat:no-repeat}
