@@ -31,3 +31,5 @@ No production employee records, attendance, stock or financial transactions are 
 ## Simplified optional module UI
 
 Attendance activation remains a deliberate business administrator action, never inferred solely from the business category or a Builder template. Template-driven storefront feature defaults continue to work independently. Existing attendance records and per-tenant Blobs storage are unchanged. A collapsed optional attendance area lives under Employees, while an enabled compact summary and authorized employee clock controls remain in Overview. Disabled attendance has no controls there. Authorized employee links, break settings, reviews and exports stay behind the Employees disclosure.
+
+Employees without Employees navigation permission retain access to their own attendance history and correction requests through an expandable personal section in Overview. This does not grant employee-management capabilities and does not duplicate the four clock buttons.
