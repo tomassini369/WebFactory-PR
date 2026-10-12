@@ -2,14 +2,43 @@ import crypto from 'node:crypto';
 import {commerceKey} from './client-store.mjs';
 import {mutateKiosk,kioskFail} from './kiosk.mjs';
 export const kioskBookingModes = config => ({newBookings:config?.bookingModes?.newBookings === true, existingBookings:config?.bookingModes?.existingBookings === true});
+export const kioskBookingCodeKey=(siteId,code)=>`${siteId}/kiosk-booking-codes/${String(code||'').toUpperCase()}.json`;
+export function bookingKioskPin(record) {
+  // The private 256-bit booking token is the PIN's key. Never persist the PIN
+  // or derive it from a public booking code alone. Deterministic for legacy bookings.
+  if(!record?.calendarToken || !/^[A-Za-z0-9_-]{43}$/.test(record.calendarToken) || !/^[A-F0-9]{8}$/.test(record.bookingCode||''))return '';
+  const digest=crypto.createHmac('sha256',record.calendarToken).update(`webfactory:kiosk-pin:v1:${record.siteId}:${record.transactionId}:${record.bookingCode}`).digest();
+  return String(digest.readUInt32BE(0)%1000000).padStart(6,'0');
+}
 export function privateBookingToken(value) {
   const raw=String(value||'').trim();
   if (/^[A-Za-z0-9_-]{43}$/.test(raw)) return raw;
   try { const u=new URL(raw); if(u.protocol==='https:') {const token=u.searchParams.get('token');if(/^[A-Za-z0-9_-]{43}$/.test(token||''))return token;} } catch {}
   throw kioskFail('Use the private link from your booking email / Usa el enlace privado del correo de tu cita.',404);
 }
-export async function lookupKioskBooking(store,site,state,value) {
-  const token=privateBookingToken(value),hash=crypto.createHash('sha256').update(token).digest('hex');
+export async function lookupKioskBooking(store,site,state,value,pin='') {
+  const raw=String(value||'').trim(),code=raw.toUpperCase();
+  if(/^[A-F0-9]{8}$/.test(code)) {
+    if(!/^\d{6}$/.test(String(pin||'')))throw kioskFail('Booking unavailable / Cita no disponible.',404);
+    const pointer=await store.get(kioskBookingCodeKey(site.siteId,code),{type:'json'});
+    let record=pointer?.siteId===site.siteId ? await store.get(commerceKey(site.siteId,'bookings',pointer.transactionId),{type:'json'}) : null;
+    if(!record && !pointer && typeof store.list==='function') {
+      // Compatibility for existing bookings created before the code index.
+      // Bound scans to avoid uncontrolled store enumeration on a public kiosk.
+      const listed=await store.list({prefix:`${site.siteId}/bookings/`});
+      for(const blob of (listed.blobs||[]).slice(0,250)){
+        const candidate=await store.get(blob.key,{type:'json'});
+        if(candidate?.siteId===site.siteId && candidate?.bookingCode===code){record=candidate;break;}
+      }
+    }
+    const expected=bookingKioskPin(record);
+    if(!record || record.bookingCode!==code || !expected || !crypto.timingSafeEqual(Buffer.from(expected),Buffer.from(String(pin))))
+      throw kioskFail('Booking unavailable / Cita no disponible.',404);
+    assertKioskBooking(record,site,state);
+    return record;
+  }
+  // Existing private link / token lookup remains supported.
+  const token=privateBookingToken(raw),hash=crypto.createHash('sha256').update(token).digest('hex');
   const pointer=await store.get(`calendar/${hash}.json`,{type:'json'});
   if(pointer?.siteId!==site.siteId)throw kioskFail('Booking unavailable / Cita no disponible.',404);
   const record=await store.get(commerceKey(site.siteId,'bookings',pointer.transactionId),{type:'json'});
