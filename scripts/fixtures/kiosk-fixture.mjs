@@ -1,4 +1,5 @@
-import {bookingBalance,applyBookingBalance} from '../../netlify/lib/kiosk-bookings.mjs';
+import crypto from 'node:crypto';
+import {kioskBookingCodeKey,bookingBalance,applyBookingBalance} from '../../netlify/lib/kiosk-bookings.mjs';
 import {createKioskHandler} from '../../netlify/functions/client-kiosk.mjs';
 import {createCheckoutAttemptHandler} from '../../netlify/lib/checkout-attempt.mjs';
 import {commerceKey} from '../../netlify/lib/client-store.mjs';
@@ -16,8 +17,11 @@ export function kioskFixture(origin='https://kiosk.example.invalid',dependencies
   const items=requested.map(line=>{const item=site.catalog.find(x=>x.id===line.id);return {id:item.id,name:body.lang==='es'?item.nameEs||item.name:item.nameEn||item.name,quantity:line.quantity,unitAmount:balanceRecord?balance.due:Math.round(item.price*100)}});
   const subtotal=items.reduce((s,x)=>s+x.quantity*x.unitAmount,0),tax=balanceRecord?0:items.reduce((s,x)=>s+calculateTax({amountCents:x.quantity*x.unitAmount,taxable:site.catalog.find(i=>i.id===x.id).taxable!==false,config:site.taxConfig}).taxCents,0);
   const inPerson=!balanceRecord&&(body.booking?site.paymentRules.bookingPayment:site.paymentRules.productPayment)==='in_person';
-  const record={siteId:site.siteId,transactionId,kind:body.booking?'booking':'order',channel:'kiosk',locationId:body.locationId,customer:body.customer,items,subtotal,tax,amountTotal:subtotal+(site.taxConfig.pricesIncludeTax?0:tax),pricesIncludeTax:site.taxConfig.pricesIncludeTax,paymentStatus:inPerson?'due':'pending',status:inPerson?'confirmed':'payment_pending',source:balanceRecord?'booking_balance':inPerson?'in_person_order':undefined,...(balanceRecord?{bookingTransactionId:balanceRecord.transactionId,bookingBalanceAttempt:balanceRecord.balanceAttempt.attempt}:{}),checkoutUrl:inPerson?'':`${origin}/fixture-checkout`,createdAt:new Date(now).toISOString()};
-  await store.setJSON(commerceKey(site.siteId,'transactions',transactionId),record);if(body.booking)await store.setJSON(commerceKey(site.siteId,'bookings',transactionId),{...record,serviceId:body.booking.serviceId,employeeId:body.booking.employeeId,start:body.booking.start});
+  const record={siteId:site.siteId,transactionId,kind:body.booking?'booking':'order',...(body.booking?{bookingCode:crypto.createHash('sha256').update(transactionId).digest('hex').slice(0,8).toUpperCase(),calendarToken:crypto.randomBytes(32).toString('base64url')}:{}),channel:'kiosk',locationId:body.locationId,customer:body.customer,items,subtotal,tax,amountTotal:subtotal+(site.taxConfig.pricesIncludeTax?0:tax),pricesIncludeTax:site.taxConfig.pricesIncludeTax,paymentStatus:inPerson?'due':'pending',status:inPerson?'confirmed':'payment_pending',source:balanceRecord?'booking_balance':inPerson?'in_person_order':undefined,...(balanceRecord?{bookingTransactionId:balanceRecord.transactionId,bookingBalanceAttempt:balanceRecord.balanceAttempt.attempt}:{}),checkoutUrl:inPerson?'':`${origin}/fixture-checkout`,createdAt:new Date(now).toISOString()};
+  await store.setJSON(commerceKey(site.siteId,'transactions',transactionId),record);if(body.booking){
+    await store.setJSON(commerceKey(site.siteId,'bookings',transactionId),{...record,serviceId:body.booking.serviceId,employeeId:body.booking.employeeId,start:body.booking.start});
+    await store.setJSON(kioskBookingCodeKey(site.siteId,record.bookingCode),{siteId:site.siteId,transactionId});
+  }
   if(uncertain)return Response.json({ok:false,message:'Uncertain fixture outcome'},{status:409});
   return Response.json({ok:true,transactionId,paymentRequired:!inPerson,...(!inPerson?{checkoutUrl:record.checkoutUrl}:{})});
  }});
