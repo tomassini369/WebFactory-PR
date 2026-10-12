@@ -13,7 +13,7 @@ const output='/tmp/webfactory-workforce';await mkdir(output,{recursive:true});
 const user={id:'attendance-qa-user',email:'attendance@example.invalid',user_metadata:{full_name:'Isolated attendance fixture'},app_metadata:{},mfa:{required:false}}
 const site={siteId:'workforce-qa',slug:'workforce-qa',status:'published',revision:1,business:{name:'Isolated Workforce QA fixture',category:'Retail',locations:[{id:'main',name:'Main QA'}]},design:{primary:'#0B1529',secondary:'#285fa6',style:'Modern'},catalog:[],employees:[{id:'employee-qa',name:'Employee QA',active:true,locationIds:['main']}],hours:{},members:[{email:user.email,role:'owner'}],settings:{locale:'en',timezone:'America/Puerto_Rico',currency:'USD'},taxConfig:{enabled:false},paymentRules:{methods:{}},googleCalendar:{},features:{},servicePlan:{code:'complimentary',billingModel:'complimentary'}}
 let role='owner',state,now,seq=0,lost=false,writes=[]
-const caps={owner:['overview','orders','payments','catalog','bookings','pos','settings','team'],employee:['overview','bookings']}
+const caps={owner:['overview','orders','payments','catalog','bookings','pos','settings','employees'],employee:['overview','bookings']}
 const reset=()=>{now=Date.parse('2026-10-10T16:00:00Z');state=emptyWorkforce(site.siteId);for(const [action,extra] of [['configure',{enabled:true,paidBreaks:false}],['bind',{email:user.email,employeeId:'employee-qa',locationId:'main'}]])state=transitionWorkforce(state,{action,operationId:`fixture-${++seq}`,...extra},site,user,{role:'owner'},now).state}
 reset()
 try{
