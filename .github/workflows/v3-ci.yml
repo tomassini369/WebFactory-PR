@@ -31,6 +31,18 @@ jobs:
         run: npx playwright install --with-deps --only-shell chromium
       - name: Install WebKit for mobile FAQ QA
         run: npx playwright install --with-deps webkit
+      - name: Check Workforce identity, clock controls and responsive review
+        env:
+          QA_BUILT: 1
+          QA_PORT: 5222
+        run: node scripts/browser-workforce-smoke.mjs
+      - name: Check Workforce on touch WebKit
+        env:
+          QA_BUILT: 1
+          QA_ENGINE: webkit
+          QA_PORT: 5223
+          QA_WIDTHS: 320,375,390,430
+        run: node scripts/browser-workforce-smoke.mjs
       - name: Check portal route transitions and template Home controls
         run: node scripts/browser-route-transitions-smoke.mjs
       - name: Check stable authentication cards, keyboard and mobile hero
@@ -50,11 +62,6 @@ jobs:
           QA_PORT: 5221
           QA_WIDTHS: 320,375,390,430
         run: node scripts/browser-pos-v2-smoke.mjs
-      - name: Check Workforce identity, clock controls and responsive review
-        env:
-          QA_BUILT: 1
-          QA_PORT: 5222
-        run: node scripts/browser-workforce-smoke.mjs
       - name: Check business profiles, POS module permissions and settings on Chromium
         env:
           QA_PORT: 5244
@@ -71,13 +78,6 @@ jobs:
           QA_ENGINE: webkit
           QA_PORT: 5261
         run: node scripts/browser-public-site-link-smoke.mjs
-      - name: Check Workforce on touch WebKit
-        env:
-          QA_BUILT: 1
-          QA_ENGINE: webkit
-          QA_PORT: 5223
-          QA_WIDTHS: 320,375,390,430
-        run: node scripts/browser-workforce-smoke.mjs
       - name: Check Customer Display pairing, privacy and two-device sale
         env:
           QA_BUILT: 1
