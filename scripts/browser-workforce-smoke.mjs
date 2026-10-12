@@ -40,7 +40,10 @@ try{
     await link.waitFor({state:'visible',timeout:8000});
     await link.click();
     const entry=page.locator('.wf-attendance-entry-toggle');
-    await entry.waitFor({state:'visible',timeout:10000});
+    await entry.waitFor({state:'visible',timeout:10000}).catch(async err=>{
+      const diagnostic={activeSidebar:await page.locator('.sidebar-nav-item[aria-current="page"]').allTextContents(),body:await page.locator('body').innerText().then(t=>t.slice(0,6500)),errors};
+      throw Error('Team navigation did not reveal attendance: '+JSON.stringify(diagnostic)+' | '+err.message);
+    });
     await entry.click();
     await page.locator('.wf-attendance-entry .wf-workforce-table').waitFor({state:'visible',timeout:10000});
     return page.locator('.wf-attendance-entry .wf-workforce').last();
