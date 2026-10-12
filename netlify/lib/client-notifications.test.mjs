@@ -9,7 +9,7 @@ const site={
  employees:[{id:"barber",name:"Alex"}],
 };
 const booking=()=>({
- kind:"booking",transactionId:"transaction-mail-test",bookingCode:"BOOK001",calendarToken:"t".repeat(43),
+ kind:"booking",transactionId:"transaction-mail-test",bookingCode:"A1B2C3D4",calendarToken:"t".repeat(43),
  status:"confirmed",paymentStatus:"due",confirmationEmailRequested:true,
  start:"2099-10-12T21:00:00Z",end:"2099-10-12T21:45:00Z",
  employeeId:"barber",amountTotal:2500,items:[{name:"Haircut / Fade"}],
@@ -28,6 +28,8 @@ test("confirmed booking is delivered as branded HTML without an automatic calend
  assert.match(sends[0].html,/You&#39;re booked in/);
  assert.equal(sends[0].attachments,undefined);
  assert.match(sends[0].html,/Añadir al calendario|Add to calendar/);
+ assert.match(sends[0].html,/Private kiosk PIN/);
+ assert.match(sends[0].html,/At the self-service kiosk/);
  assert.doesNotMatch(sends[0].html,/If you accepted the Google invitation/);
  assert.equal(out.customerEmailSent,true);
  assert.equal(out.customerEmailDeliveryStatus,"sent");
