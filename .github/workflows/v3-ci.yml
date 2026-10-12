@@ -105,6 +105,13 @@ jobs:
           QA_ENGINE: webkit
           QA_PORT: 5227
         run: node scripts/browser-kiosk-smoke.mjs
+      - name: Check kiosk appointment creation, arrival, balance and privacy on Chromium
+        run: node scripts/browser-kiosk-bookings-smoke.mjs
+      - name: Check kiosk appointment creation, arrival, balance and privacy on WebKit
+        env:
+          QA_ENGINE: webkit
+          QA_PORT: 5239
+        run: node scripts/browser-kiosk-bookings-smoke.mjs
       - name: Check spatial highlights on Chromium and WebKit
         run: node scripts/browser-spatial-carousel-smoke.mjs
       - name: Check functions for every template and language
@@ -198,6 +205,12 @@ jobs:
         run: |
           npm ci
           npx playwright install --with-deps chromium webkit
+      - name: Check deployed appointment kiosk on Chromium
+        env:
+          QA_ORIGIN: https://deploy-preview-${{ github.event.pull_request.number }}--webfactorypr.netlify.app
+        run: |
+          npm run build
+          node scripts/browser-kiosk-bookings-smoke.mjs
       - name: Check deployed kiosk authentication and privacy boundaries
         env:
           PREVIEW_URL: https://deploy-preview-${{ github.event.pull_request.number }}--webfactorypr.netlify.app
