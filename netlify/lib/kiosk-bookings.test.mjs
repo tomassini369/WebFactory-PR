@@ -14,6 +14,50 @@ async function fixture(){
  await f.store.setJSON(`calendar/${crypto.createHash('sha256').update(token).digest('hex')}.json`,{siteId:f.site.siteId,transactionId});
  return {...f,p,token,record,save,lookup:()=>f.handler(f.request({action:'lookup_booking',reference:token},p.cookie))};
 }
+import {bookingKioskPin,kioskBookingCodeKey} from './kiosk-bookings.mjs';
+test('booking code plus PIN unlocks only the matching confirmed booking and hides all secrets',async()=>{
+ const f=await fixture();const code='8C29F758',record={...f.record,bookingCode:code};
+ await f.save(record);
+ const pin=bookingKioskPin(record);
+ assert.match(pin,/^[0-9]{6}$/);
+ const req=(reference,p)=>f.handler(f.request({action:'lookup_booking',reference,...(p===undefined?{}:{pin:p})},f.p.cookie));
+ assert.equal((await req(code)).status,404,'booking code alone is not sufficient');
+ assert.equal((await req(code,'000000'===pin?'000001':'000000')).status,404,'wrong PIN rejected');
+ const success=await req(code,pin);
+ assert.equal(success.status,200);
+ const details=await success.json();
+ assert.equal(details.booking.balance.due,2000);
+ for(const privateValue of [f.token,pin,'private-buyer@example.invalid','Private Customer'])
+   assert.ok(!JSON.stringify(details).includes(privateValue),'customer and PIN must never leak');
+ assert.equal((await req(code,pin)).status,200,'legacy code without index remains accessible with PIN');
+ await f.store.setJSON(kioskBookingCodeKey(f.site.siteId,code),{siteId:f.site.siteId,transactionId:record.transactionId});
+ assert.equal((await req(code,pin)).status,200,'indexed code+PIN must work');
+ await f.save({...record,locationId:'wrong-branch'});
+ assert.equal((await req(code,pin)).status,404,'wrong branch must not reveal booking');
+ await f.save({...record,siteId:'wrong-tenant'});
+ assert.equal((await req(code,pin)).status,404,'wrong tenant must not reveal booking');
+});
+test('PIN is stable per booking and different for a different reference',()=>{
+ const r={siteId:'a',transactionId:'txn-1',bookingCode:'8C29F758',calendarToken:'x'.repeat(43)};
+ assert.equal(bookingKioskPin(r),bookingKioskPin({...r}));
+ assert.match(bookingKioskPin(r),/^\d{6}$/);
+ assert.notEqual(bookingKioskPin(r),bookingKioskPin({...r,bookingCode:'250D9E31'}));
+ assert.equal(bookingKioskPin({...r,calendarToken:''}),'');
+});
+test('completed kiosk booking briefly shows PIN on paired device but clears after reset',async()=>{
+ const f=await fixture();const rec={...f.record,bookingCode:'8C29F758',paymentStatus:'due',amountTotal:3000,bookingTotalCents:3000};
+ await f.save(rec);
+ const st=await f.store.get(kioskDeviceKey(f.p.id));
+ await f.store.setJSON(kioskDeviceKey(f.p.id),{...st,active:{kind:'booking',pricesIncludeTax:false,response:{transactionId:rec.transactionId}}});
+ const response=await f.handler(f.request(null,f.p.cookie)),view=await response.json();
+ assert.equal(view.sale.bookingReference.code,rec.bookingCode);
+ assert.equal(view.sale.bookingReference.pin,bookingKioskPin(rec));
+ const reset=await f.handler(f.request({action:'reset',saleId:st.saleId},f.p.cookie));
+ assert.equal(reset.status,200);
+ assert.equal((await reset.json()).sale,null);
+ assert.equal((await(await f.handler(f.request(null,f.p.cookie))).json()).sale,null);
+});
+
 test('booking modes default off and administrator configuration is bounded',async()=>{const f=kioskFixture(),p=await f.paired();assert.deepEqual(p.view.bookingModes,{newBookings:false,existingBookings:false});assert.equal((await f.handler(f.request({action:'lookup_booking',reference:'anything'},p.cookie))).status,403);assert.equal((await f.admin('configure',{enabled:true,bookingModes:{newBookings:'yes',existingBookings:true}})).status,400)});
 test('private lookup is tenant and branch bound and never returns customer identity or token',async()=>{const f=await fixture();const response=await f.lookup();assert.equal(response.status,200);const v=await response.json();assert.equal(v.booking.balance.due,2000);const json=JSON.stringify(v);for(const secret of [f.token,'private-buyer@example.invalid','Private Customer'])assert.ok(!json.includes(secret));assert.equal((await f.handler(f.request({action:'lookup_booking',reference:f.record.transactionId},f.p.cookie))).status,404);await f.save({...f.record,locationId:'other'});assert.equal((await f.lookup()).status,404);await f.save({...f.record,siteId:'other'});assert.equal((await f.lookup()).status,404)});
 test('lookup expiry and failed lookup do not retain another customer session',async()=>{const f=await fixture();await f.lookup();f.setNow(f.now()+60001);const v=await(await f.handler(f.request(null,f.p.cookie))).json();assert.equal(v.booking,null);assert.equal((await f.handler(f.request({action:'check_in'},f.p.cookie))).status,409);await f.lookup();await f.handler(f.request({action:'lookup_booking',reference:'invalid'},f.p.cookie));assert.equal((await(await f.handler(f.request(null,f.p.cookie))).json()).booking,null)});
