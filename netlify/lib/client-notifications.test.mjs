@@ -9,7 +9,7 @@ const site={
  employees:[{id:"barber",name:"Alex"}],
 };
 const booking=()=>({
- kind:"booking",transactionId:"transaction-mail-test",bookingCode:"BOOK001",
+ kind:"booking",transactionId:"transaction-mail-test",bookingCode:"BOOK001",calendarToken:"t".repeat(43),
  status:"confirmed",paymentStatus:"due",confirmationEmailRequested:true,
  start:"2099-10-12T21:00:00Z",end:"2099-10-12T21:45:00Z",
  employeeId:"barber",amountTotal:2500,items:[{name:"Haircut / Fade"}],
