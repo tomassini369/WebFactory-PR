@@ -1,3 +1,4 @@
+import {applyBookingBalance} from '../lib/kiosk-bookings.mjs';
 import { releaseInventory } from '../lib/inventory-reservations.mjs';
 import { findStockReservation } from '../lib/inventory-archive.mjs';
 import { applyCustomerTransaction } from '../lib/customer-transactions.mjs';
@@ -66,7 +67,8 @@ async function finalizeTransaction(event) {
     await clientCommerceStore().setJSON(key, record);
   }
 
-  if(record.kind==='order'&&!record.inventoryAppliedAt){
+  if(record.source==='booking_balance'){await applyBookingBalance(clientCommerceStore(),record);record.inventoryAppliedAt ||= record.paidAt;}
+  if(record.kind==='order'&&record.source!=='booking_balance'&&!record.inventoryAppliedAt){
     try{
       const applied=await applyStockOperation(siteId,{kind:'sale',referenceId:transactionId,items:record.items,reason:'sale',reservationRequired:record.inventoryReservationRequired===true});
       await projectStockMovements(siteId,applied.operation,clientCommerceStore());
