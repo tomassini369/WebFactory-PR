@@ -105,13 +105,6 @@ jobs:
           QA_ENGINE: webkit
           QA_PORT: 5227
         run: node scripts/browser-kiosk-smoke.mjs
-      - name: Check kiosk appointment creation, arrival, balance and privacy on Chromium
-        run: node scripts/browser-kiosk-bookings-smoke.mjs
-      - name: Check kiosk appointment creation, arrival, balance and privacy on WebKit
-        env:
-          QA_ENGINE: webkit
-          QA_PORT: 5239
-        run: node scripts/browser-kiosk-bookings-smoke.mjs
       - name: Check spatial highlights on Chromium and WebKit
         run: node scripts/browser-spatial-carousel-smoke.mjs
       - name: Check functions for every template and language
@@ -138,6 +131,28 @@ jobs:
         run: node scripts/browser-accessibility-smoke.mjs
       - name: Check email previews on mobile and desktop
         run: node scripts/browser-email-smoke.mjs
+
+  kiosk-bookings:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        engine: [chromium, webkit]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - name: Install selected browser
+        run: npx playwright install --with-deps ${{ matrix.engine }}
+      - name: Check appointment creation, arrival, balance and privacy
+        env:
+          QA_ENGINE: ${{ matrix.engine }}
+        run: node scripts/browser-kiosk-bookings-smoke.mjs
 
   deploy-preview-smoke:
     if: github.event_name == 'pull_request'
