@@ -213,6 +213,7 @@ export function normalizeClientSection(site, section, incoming, user, membership
       currency: "usd",
       allowCustomerCancellation: typeof payload.value?.allowCustomerCancellation === "boolean" ? payload.value.allowCustomerCancellation : (site.settings?.allowCustomerCancellation ?? true),
       allowCustomerRescheduling: typeof payload.value?.allowCustomerRescheduling === "boolean" ? payload.value.allowCustomerRescheduling : (site.settings?.allowCustomerRescheduling ?? true),
+      sendGoogleCalendarInvites: typeof payload.value?.sendGoogleCalendarInvites === "boolean" ? payload.value.sendGoogleCalendarInvites : (site.settings?.sendGoogleCalendarInvites === true),
     };
     if (section === "business" && value.email && !validEmail(value.email)) throw Object.assign(new Error("Business email is invalid."), { status: 400 });
 
