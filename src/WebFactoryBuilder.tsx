@@ -646,6 +646,7 @@ function FeaturesStep({state,setState,lang}:{state:BuilderState;setState:Dispatc
           />
         ))}
       </div>
+      <div className="wf-guidance"><b>{lang==='es'?'Herramientas internas opcionales':'Optional internal tools'}</b><span>{lang==='es'?'Tu Template recomienda funciones según el tipo de negocio. La asistencia del personal se activa después desde Empleados en el portal; no se habilita automáticamente ni afecta las citas.':'Your Template recommends features based on business type. Staff attendance can be enabled later from Employees in the portal; it stays off by default and never changes bookings.'}</span></div>
       <div className="wf-fixed-price"><span>WEBFACTORY COMMERCE PLATFORM</span><strong>{PRICE} / {lang==='es'?'mes':'month'}</strong><b>{lang==='es'?'o $350 / año · 7 días gratis · sin comisión':'or $350 / year · 7 days free · no sales commission'}</b></div>
     </div>
   )
