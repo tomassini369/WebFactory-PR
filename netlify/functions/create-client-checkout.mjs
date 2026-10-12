@@ -166,7 +166,7 @@ export async function performCheckout(req, { kiosk = false, balanceBooking = nul
       ...(balanceBooking?{source:"booking_balance",bookingTransactionId:balanceBooking.transactionId,bookingBalanceAttempt:balanceAttempt}:{}),
       channel: kiosk ? "kiosk" : "storefront", pricesIncludeTax: balanceBooking?Boolean(balanceBooking.pricesIncludeTax):Boolean(site.taxConfig?.pricesIncludeTax),
       subtotal, tax: taxCents, amountTotal: subtotal + ((balanceBooking?balanceBooking.pricesIncludeTax:site.taxConfig?.pricesIncludeTax) ? 0 : taxCents), currency: "usd",
-      ...(kind === "booking" ? { language:lang, bookingCode:crypto.randomBytes(4).toString("hex").toUpperCase(), customerCalendarInviteRequested: true, confirmationEmailRequested: true, calendarToken: crypto.randomBytes(32).toString("base64url") } : {}),
+      ...(kind === "booking" ? { language:lang, bookingCode:crypto.randomBytes(4).toString("hex").toUpperCase(), customerCalendarInviteRequested: site.settings?.sendGoogleCalendarInvites === true, confirmationEmailRequested: true, calendarToken: crypto.randomBytes(32).toString("base64url") } : {}),
       paymentStatus: inPerson ? "due" : "pending", status: inPerson ? "confirmed" : "payment_pending",
       createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
     };
