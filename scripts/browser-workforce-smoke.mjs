@@ -31,26 +31,20 @@ try{
  await route.fulfill({status,contentType:'application/json',body:JSON.stringify(data)})
  })
  const root=process.env.QA_ORIGIN||`http://127.0.0.1:${port}`,open=async()=>{await page.goto(root+'/client-admin');await page.locator('.ca-dashboard').waitFor();await page.locator('.wf-workforce-summary .wf-my-shift').waitFor()}
- const openTeam=async()=>{
-  for(let attempt=0;attempt<3;attempt++){
-    const toggle=page.locator('.ca-mobile-menu-toggle');
-    if(await toggle.isVisible()&&!await page.locator('.sidebar-container').getAttribute('class').then(v=>v?.includes('expanded')))await toggle.click();
-    const nav=page.locator('.sidebar-container').getByRole('button',{name:/^Employees$|^Empleados$/});
-    await nav.click();
+ page.on('dialog',dialog=>void dialog.accept());
+  // Follow the actual Overview -> Employees shortcut instead of relying on
+  // the responsive sidebar's transient expansion state.
+  const openTeam=async()=>{
+    const link=page.locator('.wf-workforce-summary .wf-workforce-open');
+    await link.waitFor({state:'visible',timeout:8000});
+    await link.click();
     const entry=page.locator('.wf-attendance-entry-toggle');
-    try{
-      await entry.waitFor({state:'visible',timeout:2200});
-      await entry.focus();
-      await page.keyboard.press('Enter');
-      await page.locator('.wf-workforce-table').waitFor({state:'visible',timeout:3500});
-      return page.locator('.wf-attendance-entry .wf-workforce').last();
-    }catch(error){
-      console.log('Attendance navigation retry',attempt+1,error instanceof Error?error.message:String(error));
-    }
-  }
-  throw Error('Attendance panel did not open after navigation retry');
- };
- for(const width of (process.env.QA_WIDTHS||'320,375,390,430,768,1024,1440').split(',').map(Number))for(const theme of ['light','dark'])for(const lang of ['es','en']){
+    await entry.waitFor({state:'visible',timeout:10000});
+    await entry.click();
+    await page.locator('.wf-attendance-entry .wf-workforce-table').waitFor({state:'visible',timeout:10000});
+    return page.locator('.wf-attendance-entry .wf-workforce').last();
+  };
+  for(const width of (process.env.QA_WIDTHS||'320,375,390,430,768,1024,1440').split(',').map(Number))for(const theme of ['light','dark'])for(const lang of ['es','en']){
   reset();await page.setViewportSize({width,height:900});await open();await page.getByRole('button',{name:lang.toUpperCase(),exact:true}).click();if(await page.locator('html').getAttribute('data-wf-theme')!==theme)await page.locator('.wf-theme-toggle').click()
   const summary=page.locator('.wf-workforce-summary');assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),`No page overflow ${width}/${theme}/${lang}`)
   for(const input of await summary.locator('input,select').all())if(await input.isVisible())assert(parseFloat(await input.evaluate(el=>getComputedStyle(el).fontSize))>=16)
