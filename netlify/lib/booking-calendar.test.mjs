@@ -41,7 +41,7 @@ test('calendar failure preserves confirmed reservation for retry',async t=>{
 test('in-person checkout writes confirmed booking, blocks availability, and syncs Google',async t=>{
  const f=fixture(t);await prepare(f);const day='2099-10-05';assert.equal(new Date(`${day}T12:00:00Z`).getUTCDay(),1);
  const res=await checkout(request({siteId:f.site.siteId,kind:'booking',booking:{serviceId:'haircut',employeeId:'alex',start:f.record.start},customer:{name:'Test',email:'test@example.invalid'}}));const body=await res.json();assert.equal(res.status,200,JSON.stringify(body));assert.equal(body.calendarSyncStatus,'synced');
- const stored=await clientCommerceStore().get(commerceKey(f.site.siteId,'bookings',body.transactionId),{type:'json'});assert.equal(stored.paymentStatus,'due');assert.ok(stored.googleEventId);
+ const stored=await clientCommerceStore().get(commerceKey(f.site.siteId,'bookings',body.transactionId),{type:'json'});assert.equal(stored.paymentStatus,'due');assert.ok(stored.googleEventId);assert.equal(stored.customerCalendarInviteRequested,false,'new booking should not send a separate Google invite by default');assert.equal(f.calls.some(call=>String(call.url).includes('sendUpdates=all')),false);
  const slots=await availabilityForDate(f.site,'haircut','alex',day);assert.ok(!slots.some(s=>s.start===f.record.start));
 });
 test('owner repairs existing due booking, repeat does not duplicate, and cancelled booking cannot be marked paid',async t=>{
