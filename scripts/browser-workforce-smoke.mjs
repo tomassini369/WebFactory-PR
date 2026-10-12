@@ -27,7 +27,6 @@ try{
  else if(name==='client-pos-settings'&&req.method()==='GET')data={ok:true,operations:{cashierEnabled:true,displayEnabled:true,profile:'auto',revision:0},canManage:role==='owner'}
  else if(req.method()!=='GET')throw Error('Unexpected write in attendance fixture: '+name)
  else if(name==='client-admin')data=url.searchParams.has('siteId')?{ok:true,site,membership:{role,capabilities:caps[role]}}:{ok:true,sites:[{siteId:site.siteId,slug:site.slug,businessName:site.business.name,status:'published'}]}
- else if(name==='client-business-accounting')data={ok:true,report:null,revision:0}
  else if(name==='client-business-accounting')data={ok:true,revision:0,report:{
   inventory:[],employees:[],work:[],expenses:[],entries:[],sales:[],
   summary:Object.fromEntries(['estimatedRevenueCents','salaryCents','operatingCents','materialsCents','purchaseCents','estimatedResultCents','paidCents','pendingCents','regularMinutes','overtimeMinutes','unassignedRevenueCents'].map(k=>[k,0]))
