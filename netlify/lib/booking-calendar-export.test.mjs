@@ -15,13 +15,13 @@ test('pending and cancelled appointments cannot be exported',()=>{for(const stat
 function mailFixture(){
  const sent=[];const deliver=async(_site,mail)=>{sent.push(mail);return {messageId:'test',accepted:[Array.isArray(mail.to)?mail.to[0]:mail.to]}};return {sent,deliver};
 }
-test('booking confirmation has safe HTML calendar button and ICS attachment and describes unpaid booking correctly',async t=>{
- const {sent,deliver}=mailFixture();await sendCustomerCommerceEmail(site,record,deliver);assert.equal(sent.length,1);assert.match(sent[0].html,/Añadir al calendario/);assert.match(sent[0].html,/Negocio &lt;test&gt;/);assert.equal(sent[0].attachments[0].filename,'appointment.ics');assert.match(sent[0].text,/Pago al llegar/);assert.ok(!sent[0].text.includes('verified securely by Stripe'));
+test('booking confirmation has safe HTML calendar button without forced ICS attachment and describes unpaid booking correctly',async t=>{
+ const {sent,deliver}=mailFixture();await sendCustomerCommerceEmail(site,record,deliver);assert.equal(sent.length,1);assert.match(sent[0].html,/Añadir al calendario/);assert.match(sent[0].html,/Negocio &lt;test&gt;/);assert.equal(sent[0].attachments,undefined);assert.match(sent[0].text,/Pago al llegar/);assert.ok(!sent[0].text.includes('verified securely by Stripe'));
 });
 test('failed confirmation does not cancel reservation and successful recipients are not replayed',async t=>{
  const {sent}=mailFixture();let fail=true;const deliver=async(_site,mail)=>{const to=Array.isArray(mail.to)?mail.to:[mail.to];if(to.includes('customer@example.invalid')&&fail)throw Error('offline');sent.push({...mail,to});return {messageId:'test',accepted:[to[0]]}};const writes=[];
  let r=await sendBookingConfirmationEmails(site,record,async v=>writes.push(v),{deliver});assert.equal(r.status,'confirmed');assert.equal(r.customerEmailSent,undefined);assert.equal(r.businessEmailSent,true);fail=false;
- r=await sendBookingConfirmationEmails(site,r,async v=>writes.push(v),{deliver});assert.equal(r.customerEmailSent,true);assert.equal(sent.length,2);assert.equal(writes.length,2);
+ r=await sendBookingConfirmationEmails(site,r,async v=>writes.push(v),{deliver});assert.equal(r.customerEmailSent,true);assert.equal(sent.length,2);assert.equal(writes.length,3);assert.equal(writes[0].customerEmailDeliveryStatus,'pending_retry');
 });
 test('calendar link requires unguessable token, refuses cancelled bookings and returns safe chooser and private ICS',async t=>{
  globalThis.Netlify={env:{get:()=>''}};globalThis.netlifyBlobsContext=Buffer.from(JSON.stringify({siteID:'test',token:'test',deployID:'test'})).toString('base64');t.after(()=>{delete globalThis.Netlify;delete globalThis.netlifyBlobsContext});
