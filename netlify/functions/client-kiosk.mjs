@@ -108,7 +108,7 @@ export function createKioskHandler({ authorize = requireSiteCapability, getStore
         if(state.active)throw kioskFail('Resolve the active checkout first.',409);
         if(input.action==='lookup_booking'){
           state=await mutateKiosk(store,kioskDeviceKey(id),current=>{if(current.active)throw kioskFail('Checkout active.',409);if(now-Number(current.lookupWindowAt||0)<60000&&Number(current.lookupCount||0)>=10)throw kioskFail('Wait before trying another booking.',429);return {...current,bookingLookup:null,lookupWindowAt:now-Number(current.lookupWindowAt||0)>=60000?now:current.lookupWindowAt,lookupCount:now-Number(current.lookupWindowAt||0)>=60000?1:Number(current.lookupCount||0)+1};});
-          const record=await lookupKioskBooking(store,site,state,input.reference);
+          const record=await lookupKioskBooking(store,site,state,input.reference,input.pin);
           state=await mutateKiosk(store,kioskDeviceKey(id),current=>{if(current.active)throw kioskFail('Checkout active.',409);return {...current,bookingLookup:{id:record.transactionId,expiresAt:now+60000}};});
         }else if(input.action==='clear_booking'){
           state=await mutateKiosk(store,kioskDeviceKey(id),current=>({...current,bookingLookup:null}));
