@@ -29,3 +29,11 @@ body:has(.wf-kiosk) [data-netlify-deploy-id],body:has(.wf-kiosk) iframe[title="N
 
 /* Contain native option painting inside the closed control; the platform picker stays native. */
 .kiosk-booking select{contain:paint;overflow:hidden}
+
+/* Private-code lookup: touch targets, mobile wrapping and clear separation from commerce receipt. */
+.kiosk-booking-lookup-methods{display:flex;flex-wrap:wrap;gap:10px}
+.kiosk-booking-lookup-methods>button{flex:1 1 150px;min-width:0}
+.kiosk-booking-reference{display:grid;gap:8px;border:1px solid var(--kiosk-line);border-radius:14px;padding:16px;background:var(--kiosk-surface);max-width:100%;overflow-wrap:anywhere}
+.kiosk-booking-reference strong{display:block;font-variant-numeric:tabular-nums;font-size:clamp(17px,4vw,22px);letter-spacing:.04em}
+.kiosk-booking-reference p{margin:4px 0;font-size:14px;line-height:1.6}
+@media(max-width:430px){.kiosk-booking-lookup-methods{flex-direction:column}.kiosk-booking-lookup-methods>button{flex:0 0 auto;width:100%}}

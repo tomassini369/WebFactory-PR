@@ -1,4 +1,4 @@
-import {kioskBookingModes} from './kiosk-bookings.mjs';
+import {kioskBookingModes,bookingKioskPin} from './kiosk-bookings.mjs';
 import crypto from 'node:crypto';
 import { availableInventory } from './inventory-availability.mjs';
 import { cleanText, validEmail } from './platform-utils.mjs';
@@ -60,7 +60,7 @@ export async function kioskSaleView(store, state) {
   // Expiration, cancellation and failure require inventory reconciliation before
   // the screen can start another order. Browser redirects are never proof.
   return { kind, status: terminal ? 'review' : paid ? 'paid' : due ? 'due' : 'pending', saleId: state.saleId, canReset: paid || due, canResume: !terminal && !paid && !due && Boolean(active.response?.checkoutUrl), checkoutUrl: !terminal && !paid && !due ? active.response?.checkoutUrl || '' : '',
-    transactionId, total: Number(record.amountTotal || 0), subtotal: Number(record.subtotal || 0), tax: Number(record.tax || 0), taxIncluded: Boolean(record.pricesIncludeTax ?? state.active.pricesIncludeTax), queueNumber: record.queueNumber || '',
+    transactionId, ...(kind==='booking'&&(paid||due)&&bookingKioskPin(record)?{bookingReference:{code:record.bookingCode,pin:bookingKioskPin(record)}}:{}), total: Number(record.amountTotal || 0), subtotal: Number(record.subtotal || 0), tax: Number(record.tax || 0), taxIncluded: Boolean(record.pricesIncludeTax ?? state.active.pricesIncludeTax), queueNumber: record.queueNumber || '',
     receipt: paid ? { id: record.receiptId, createdAt: record.paidAt || record.createdAt } : null,
     items: (record.items || []).map(x => ({ name: String(x.name || ''), quantity: x.quantity, unitAmount: x.unitAmount })) };
 }

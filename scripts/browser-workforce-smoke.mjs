@@ -27,30 +27,31 @@ try{
  else if(name==='client-pos-settings'&&req.method()==='GET')data={ok:true,operations:{cashierEnabled:true,displayEnabled:true,profile:'auto',revision:0},canManage:role==='owner'}
  else if(req.method()!=='GET')throw Error('Unexpected write in attendance fixture: '+name)
  else if(name==='client-admin')data=url.searchParams.has('siteId')?{ok:true,site,membership:{role,capabilities:caps[role]}}:{ok:true,sites:[{siteId:site.siteId,slug:site.slug,businessName:site.business.name,status:'published'}]}
+ else if(name==='client-business-accounting')data={ok:true,revision:0,report:{
+  inventory:[],employees:[],work:[],expenses:[],entries:[],sales:[],
+  summary:Object.fromEntries(['estimatedRevenueCents','salaryCents','operatingCents','materialsCents','purchaseCents','estimatedResultCents','paidCents','pendingCents','regularMinutes','overtimeMinutes','unassignedRevenueCents'].map(k=>[k,0]))
+ }};
  else data={ok:true,orders:[],bookings:[],receipts:[],customers:[],entries:[],report:{},inventory:[]}
  await route.fulfill({status,contentType:'application/json',body:JSON.stringify(data)})
  })
  const root=process.env.QA_ORIGIN||`http://127.0.0.1:${port}`,open=async()=>{await page.goto(root+'/client-admin');await page.locator('.ca-dashboard').waitFor();await page.locator('.wf-workforce-summary .wf-my-shift').waitFor()}
- const openTeam=async()=>{
-  for(let attempt=0;attempt<3;attempt++){
-    const toggle=page.locator('.ca-mobile-menu-toggle');
-    if(await toggle.isVisible()&&!await page.locator('.sidebar-container').getAttribute('class').then(v=>v?.includes('expanded')))await toggle.click();
-    const nav=page.locator('.sidebar-container').getByRole('button',{name:/^Employees$|^Empleados$/});
-    await nav.click();
+ page.on('dialog',dialog=>void dialog.accept());
+  // Follow the actual Overview -> Employees shortcut instead of relying on
+  // the responsive sidebar's transient expansion state.
+  const openTeam=async()=>{
+    const link=page.locator('.wf-workforce-summary .wf-workforce-open');
+    await link.waitFor({state:'visible',timeout:8000});
+    await link.click();
     const entry=page.locator('.wf-attendance-entry-toggle');
-    try{
-      await entry.waitFor({state:'visible',timeout:2200});
-      await entry.focus();
-      await page.keyboard.press('Enter');
-      await page.locator('.wf-workforce-table').waitFor({state:'visible',timeout:3500});
-      return page.locator('.wf-attendance-entry .wf-workforce').last();
-    }catch(error){
-      console.log('Attendance navigation retry',attempt+1,error instanceof Error?error.message:String(error));
-    }
-  }
-  throw Error('Attendance panel did not open after navigation retry');
- };
- for(const width of (process.env.QA_WIDTHS||'320,375,390,430,768,1024,1440').split(',').map(Number))for(const theme of ['light','dark'])for(const lang of ['es','en']){
+    await entry.waitFor({state:'visible',timeout:10000}).catch(async err=>{
+      const diagnostic={activeSidebar:await page.locator('.sidebar-nav-item[aria-current="page"]').allTextContents(),body:await page.locator('body').innerText().then(t=>t.slice(0,6500)),errors};
+      throw Error('Team navigation did not reveal attendance: '+JSON.stringify(diagnostic)+' | '+err.message);
+    });
+    await entry.click();
+    await page.locator('.wf-attendance-entry .wf-workforce-table').waitFor({state:'visible',timeout:10000});
+    return page.locator('.wf-attendance-entry .wf-workforce').last();
+  };
+  for(const width of (process.env.QA_WIDTHS||'320,375,390,430,768,1024,1440').split(',').map(Number))for(const theme of ['light','dark'])for(const lang of ['es','en']){
   reset();await page.setViewportSize({width,height:900});await open();await page.getByRole('button',{name:lang.toUpperCase(),exact:true}).click();if(await page.locator('html').getAttribute('data-wf-theme')!==theme)await page.locator('.wf-theme-toggle').click()
   const summary=page.locator('.wf-workforce-summary');assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),`No page overflow ${width}/${theme}/${lang}`)
   for(const input of await summary.locator('input,select').all())if(await input.isVisible())assert(parseFloat(await input.evaluate(el=>getComputedStyle(el).fontSize))>=16)

@@ -1,4 +1,5 @@
 import { renderReceiptBlock } from "./receipt-email-template.mjs";
+import { bookingKioskPin } from "./kiosk-bookings.mjs";
 import { escapeHtml, bookingCalendarUrl } from "./booking-calendar-export.mjs";
 import { publicBaseUrl } from "./platform-utils.mjs";
 import { emailBrand, emailButton, emailFields, emailParagraph, renderEmailLayout } from "./email-design.mjs";
@@ -32,6 +33,8 @@ export function renderBookingEmail(site, record, {audience="customer",change="co
   const title = change === "reminder" ? (es ? `Recordatorio de tu cita (${hours} h)` : `Appointment reminder (${hours} h)`) : change === "cancelled" ? (es ? "Tu cita fue cancelada" : "Your appointment is cancelled") : change === "rescheduled" ? (es ? "Tu cita fue reprogramada" : "Your appointment is rescheduled") : (es ? "Tu cita está confirmada" : "You're booked in");
   const heading = change === "reminder" ? title : audience === "business" ? `${es ? "Reservación" : "Booking"}: ${change === "cancelled" ? (es ? "cancelada" : "cancelled") : change === "rescheduled" ? (es ? "reprogramada" : "rescheduled") : (es ? "confirmada" : "confirmed")}` : title;
   const fields = [[es?"Servicio":"Service",d.service],[es?"Fecha":"Date",d.date],[es?"Horario":"Time",`${d.time} (${d.timeZone})`],[es?"Profesional":"With",d.employee],[es?"Localidad":"Location",record.locationName],[es?"Importe":"Amount",d.price],[es?"Pago":"Payment",d.payment],[es?"Reservación":"Booking ID",d.reference]];
+  const kioskPin=bookingKioskPin(record);
+  if(audience==="customer" && change==="confirmed" && kioskPin)fields.push([es?"PIN privado del kiosco":"Private kiosk PIN",kioskPin]);
   if (audience === "business") fields.unshift([es?"Cliente":"Customer",record.customer?.name],["Email",record.customer?.email],[es?"Teléfono":"Phone",record.customer?.phone]);
   const manage=bookingManageUrl(record), calendar=bookingCalendarUrl(record);
   const brand=emailBrand(site,es?"es":"en");
@@ -39,12 +42,13 @@ export function renderBookingEmail(site, record, {audience="customer",change="co
   const button=(url,label,primary=false)=>emailButton(brand,url,label,primary);
   const active=change !== "cancelled";
   const controls=audience === "customer" ? button(manage,es?"Administrar reserva":"Manage booking",true)+(active?button(calendar,es?"Añadir al calendario":"Add to calendar"):"") : button(`${publicBaseUrl()}/client-admin/`,es?"Abrir portal del negocio":"Open business portal",true);
+  const kioskHelp=kioskPin&&audience==="customer"&&change==="confirmed"?(es?"En el kiosco, presenta tu código de reserva y PIN privado para confirmar tu llegada o pagar el saldo. No compartas el PIN.":"At the self-service kiosk, enter your booking code and private PIN to check in or pay an outstanding balance. Keep your PIN private."):"";
   const explanation = change === "cancelled" ? (es?"La cancelación no realiza un reembolso automático. Contacta al negocio si corresponde un reembolso.":"Cancellation does not automatically issue a refund. Contact the business if a refund applies.") : (es?"Recibirás recordatorios por email 24 horas y 4 horas antes, cuando la anticipación de la reserva lo permita.":"Email reminders are scheduled 24 hours and 4 hours before your appointment when booked sufficiently in advance.");
   const caveat=es?"Si ya aceptaste la invitación de Google, no añadas otra copia. Las copias guardadas manualmente no se actualizan solas; revisa tu calendario después de un cambio.":"If you accepted the Google invitation, do not add another copy. Manually saved copies do not update automatically; check your calendar after a change.";
-  const text=[d.name,heading,...fields.filter(([,value])=>value).map(([label,value])=>`${label}: ${value}`),d.address,explanation,manage?`${es?'Administrar reserva':'Manage booking'}: ${manage}`:"",active&&calendar?`${es?'Añadir al calendario':'Add to calendar'}: ${calendar}`:"",d.maps?`${es?'Cómo llegar':'Get directions'}: ${d.maps}`:"",d.email,d.phone,active?caveat:""].filter(Boolean).join("\n");
+  const text=[d.name,heading,...fields.filter(([,value])=>value).map(([label,value])=>`${label}: ${value}`),d.address,explanation,kioskHelp,manage?`${es?'Administrar reserva':'Manage booking'}: ${manage}`:"",active&&calendar?`${es?'Añadir al calendario':'Add to calendar'}: ${calendar}`:"",d.maps?`${es?'Cómo llegar':'Get directions'}: ${d.maps}`:"",d.email,d.phone,active&&record.customerCalendarInviteRequested?caveat:""].filter(Boolean).join("\n");
   const contact=[d.address,d.email,d.phone].filter(Boolean).join("\n");
   const receiptBlock = receipt && audience === "customer" ? renderReceiptBlock(site,receipt,es?"es":"en") : null;
-  const bodyHtml=`<table role="presentation" width="100%" cellspacing="0" cellpadding="0">${emailFields(fields)}</table>${receiptBlock?.html || ""}${emailParagraph(explanation)}${controls}<hr style="border:0;border-top:1px solid #dce8f7;margin:24px 0">${contact?emailParagraph(contact):""}${button(d.maps,es?"Cómo llegar":"Get directions")}${button(d.website,es?"Reservar otra cita":"Book another appointment")}${active?emailParagraph(caveat):""}`;
+  const bodyHtml=`<table role="presentation" width="100%" cellspacing="0" cellpadding="0">${emailFields(fields)}</table>${receiptBlock?.html || ""}${emailParagraph(explanation)}${kioskHelp?emailParagraph(kioskHelp):""}${controls}<hr style="border:0;border-top:1px solid #dce8f7;margin:24px 0">${contact?emailParagraph(contact):""}${button(d.maps,es?"Cómo llegar":"Get directions")}${button(d.website,es?"Reservar otra cita":"Book another appointment")}${active&&record.customerCalendarInviteRequested?emailParagraph(caveat):""}`;
   const html=renderEmailLayout({brand,language:es?"es":"en",title:heading,bodyHtml,footer:es?"Mensaje relacionado con tu reservación. Tecnología de WebFactory PR.":"Message about your booking. Powered by WebFactory PR."});
   return {text:receiptBlock ? `${text}\n\n${receiptBlock.text}` : text,html,subject:`${d.name} — ${heading} · ${d.date}`};
 }

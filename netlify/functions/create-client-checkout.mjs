@@ -1,4 +1,4 @@
-import { bookingBalance } from '../lib/kiosk-bookings.mjs';
+import { bookingBalance, kioskBookingCodeKey } from '../lib/kiosk-bookings.mjs';
 import { clientCheckoutReturn } from '../lib/client-checkout-return.mjs';
 import { createCheckoutAttemptHandler } from '../lib/checkout-attempt.mjs';
 import { issueBuyerReceiptAccess } from '../lib/buyer-receipt-access.mjs';
@@ -166,11 +166,22 @@ export async function performCheckout(req, { kiosk = false, balanceBooking = nul
       ...(balanceBooking?{source:"booking_balance",bookingTransactionId:balanceBooking.transactionId,bookingBalanceAttempt:balanceAttempt}:{}),
       channel: kiosk ? "kiosk" : "storefront", pricesIncludeTax: balanceBooking?Boolean(balanceBooking.pricesIncludeTax):Boolean(site.taxConfig?.pricesIncludeTax),
       subtotal, tax: taxCents, amountTotal: subtotal + ((balanceBooking?balanceBooking.pricesIncludeTax:site.taxConfig?.pricesIncludeTax) ? 0 : taxCents), currency: "usd",
-      ...(kind === "booking" ? { language:lang, bookingCode:crypto.randomBytes(4).toString("hex").toUpperCase(), customerCalendarInviteRequested: true, confirmationEmailRequested: true, calendarToken: crypto.randomBytes(32).toString("base64url") } : {}),
+      ...(kind === "booking" ? { language:lang, bookingCode:crypto.randomBytes(4).toString("hex").toUpperCase(), customerCalendarInviteRequested: site.settings?.sendGoogleCalendarInvites === true, confirmationEmailRequested: true, calendarToken: crypto.randomBytes(32).toString("base64url") } : {}),
       paymentStatus: inPerson ? "due" : "pending", status: inPerson ? "confirmed" : "payment_pending",
       createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
     };
 
+    if(record.bookingCode){
+      // Index by the public reference, but require the separate 6-digit private
+      // PIN (or existing private link) to read any booking in a public kiosk.
+      let saved=false;
+      for(let tries=0;tries<7;tries++){
+        const created=await clientCommerceStore().setJSON(kioskBookingCodeKey(site.siteId,record.bookingCode),{siteId:site.siteId,transactionId},{onlyIfNew:true});
+        if(created.modified){saved=true;break;}
+        record.bookingCode=crypto.randomBytes(4).toString("hex").toUpperCase();
+      }
+      if(!saved)throw Object.assign(new Error("Unable to allocate booking reference. Please retry."),{status:503});
+    }
     if (record.calendarToken) {
       const hash = crypto.createHash("sha256").update(record.calendarToken).digest("hex");
       await clientCommerceStore().setJSON(`calendar/${hash}.json`, {siteId:site.siteId,transactionId});
