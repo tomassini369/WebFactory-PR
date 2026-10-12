@@ -25,7 +25,7 @@ test("confirmed booking is delivered as branded HTML without an automatic calend
  assert.equal(sends.length,1);
  assert.match(sends[0].html,/Sample Barber/);
  assert.match(sends[0].html,/Haircut \/ Fade/);
- assert.match(sends[0].html,/You're booked in/);
+ assert.match(sends[0].html,/You&#39;re booked in/);
  assert.equal(sends[0].attachments,undefined);
  assert.match(sends[0].html,/Añadir al calendario|Add to calendar/);
  assert.doesNotMatch(sends[0].html,/If you accepted the Google invitation/);
