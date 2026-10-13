@@ -126,3 +126,84 @@ test('Mobile design tools and ECC workflow remain platform-admin only with Execu
 
  await assert.rejects(serveMcp(new Request('https://webfactorypr.com/mcp',{method:'POST',headers:{'Content-Type':'application/json',Accept:'application/json, text/event-stream'},body:JSON.stringify({jsonrpc:'2.0',id:1,method:'tools/list',params:{}})}),readGrant,f.user),{status:403});
 });
+
+// Exercise the deployed handler boundary and real SDK, without production credentials.
+test('Authenticated HTTP initialize/list/call report the exact tenant catalog and safe graph failure',async t=>{
+ const f=fixture(t);await f.prepare();
+ const {createMcpHandler}=await import('../functions/chatgpt-mcp.mjs');
+ const token='a'.repeat(43),origin='https://webfactorypr.com';
+ await clientOAuthStore().setJSON(key('access',token),{grantId:f.grant.id,clientId:f.grant.clientId,resource:origin+'/mcp',expiresAt:Date.now()+900000});
+ await clientOAuthStore().setJSON(key('grants',f.grant.id),{...f.grant,resource:origin+'/mcp'});
+ const handler=createMcpHandler({getUser:async()=>f.user});
+ const rpc=async(method,params={},headers={})=>handler(new Request(origin+'/mcp',{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json',Accept:'application/json, text/event-stream',...headers},body:JSON.stringify({jsonrpc:'2.0',id:7,method,params})}));
+ const init=await rpc('initialize',{protocolVersion:'2025-06-18',capabilities:{},clientInfo:{name:'http-test',version:'1'}});
+ assert.equal(init.status,200);assert.equal(init.headers.get('cache-control'),'no-store');assert.equal(init.headers.get('mcp-session-id'),null);
+ const initializedInfo=await init.json();assert.equal(initializedInfo.result.serverInfo.version,'1.0.2');assert(initializedInfo.result.instructions.includes('changing accounts'));
+ const list=await (await rpc('tools/list')).json();
+ const result=await (await rpc('tools/call',{name:'wf_connection',arguments:{}})).json();
+ const connection=JSON.parse(result.result.content[0].text);
+ assert.equal(connection.diagnostics.accessScope,'tenant');
+ assert.equal(connection.diagnostics.privateDevelopmentTools,false);
+ assert.deepEqual(connection.diagnostics.catalog.tools,list.result.tools.map(tool=>tool.name));
+ assert.equal(connection.diagnostics.catalog.count,list.result.tools.length);
+ assert(!connection.diagnostics.catalog.tools.includes('wf_stitch_read'));
+ assert.equal(connection.diagnostics.graphContext.providerReadVerified,false);
+ const graph=await (await rpc('tools/call',{name:'wf_graph_context',arguments:{question:'Analyze architecture dependencies between MCP and OAuth'}})).json();
+ assert.equal(graph.result.isError,true);
+ assert.equal(JSON.parse(graph.result.content[0].text).code,'graph_context_not_enabled');
+ assert(!JSON.stringify(result).includes(token));
+ const badAccept=await rpc('tools/list',{}, {Accept:'application/json'});assert.equal(badAccept.status,406);
+ const malformed=await handler(new Request(origin+'/mcp',{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json',Accept:'application/json, text/event-stream'},body:'{'}));assert.equal(malformed.status,400);
+ const initialized=await handler(new Request(origin+'/mcp',{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json',Accept:'application/json, text/event-stream'},body:JSON.stringify({jsonrpc:'2.0',method:'notifications/initialized'})}));assert.equal(initialized.status,202);
+ const get=await handler(new Request(origin+'/mcp',{headers:{Authorization:'Bearer '+token}}));assert.equal(get.status,405);assert.equal(get.headers.get('allow'),'POST');
+ const oversized=await handler(new Request(origin+'/mcp',{method:'POST',headers:{Authorization:'Bearer '+token},body:'x'.repeat(100001)}));assert.equal(oversized.status,413);
+ await clientOAuthStore().setJSON(key('access',token),{grantId:f.grant.id,clientId:f.grant.clientId,resource:origin+'/mcp',expiresAt:Date.now()-1});
+ const expired=await rpc('tools/list');assert.equal(expired.status,401);assert(expired.headers.get('www-authenticate').includes('/.well-known/oauth-protected-resource/mcp'));
+ const missing=await handler(new Request(origin+'/mcp'));assert.equal(missing.status,401);
+});
+
+test('Platform connection diagnostic catalog matches authorized listing without exposing provider configuration',async t=>{
+ const f=fixture(t);await f.prepare();
+ const grant={...f.grant,platform:true,siteId:undefined,scopes:['webfactory.read','webfactory.execute']},user={...f.user,roles:['admin']};
+ const rpc=async(method,params={})=>(await serveMcp(new Request('https://webfactorypr.com/mcp',{method:'POST',headers:{'Content-Type':'application/json',Accept:'application/json, text/event-stream'},body:JSON.stringify({jsonrpc:'2.0',id:1,method,params})}),grant,user)).json();
+ const listing=await rpc('tools/list'),result=await rpc('tools/call',{name:'wf_connection',arguments:{}}),value=JSON.parse(result.result.content[0].text);
+ assert.equal(value.diagnostics.accessScope,'platform-admin');
+ assert.deepEqual(value.diagnostics.catalog.tools,listing.result.tools.map(tool=>tool.name));
+ assert(value.diagnostics.catalog.tools.includes('wf_stitch_read'));
+ assert.equal(value.diagnostics.graphContext.providerReadVerified,false);
+ for(const name of ['wf_stitch_design','wf_21st_generate'])assert.equal(listing.result.tools.find(tool=>tool.name===name).annotations.idempotentHint,false);
+});
+
+test('Same HTTP endpoint switches tenant/admin catalogs without sharing private tools or caching a grant',async t=>{
+ const f=fixture(t);await f.prepare();
+ const {createMcpHandler}=await import('../functions/chatgpt-mcp.mjs');
+ const origin='https://webfactorypr.com',user={...f.user,roles:['admin']};
+ const grants=[
+  {...f.grant,resource:origin+'/mcp',clientId:'fixture-client'},
+  {...f.grant,id:crypto.randomUUID(),platform:true,siteId:'',resource:origin+'/mcp',clientId:'fixture-client',scopes:['webfactory.read','webfactory.execute']}
+ ];
+ const tokens=['a'.repeat(43),'b'.repeat(43)];
+ for(let i=0;i<grants.length;i++){
+  await clientOAuthStore().setJSON(key('grants',grants[i].id),grants[i]);
+  await clientOAuthStore().setJSON(key('access',tokens[i]),{grantId:grants[i].id,clientId:grants[i].clientId,resource:origin+'/mcp',expiresAt:Date.now()+900000});
+ }
+ const handler=createMcpHandler({getUser:async()=>user});
+ const rpc=async(index,method,params={})=>(await handler(new Request(origin+'/mcp',{method:'POST',headers:{Authorization:'Bearer '+tokens[index],'Content-Type':'application/json',Accept:'application/json, text/event-stream'},body:JSON.stringify({jsonrpc:'2.0',id:1,method,params})}))).json();
+ const names=async index=>(await rpc(index,'tools/list')).result.tools.map(tool=>tool.name);
+ const connection=async index=>JSON.parse((await rpc(index,'tools/call',{name:'wf_connection',arguments:{}})).result.content[0].text);
+ const tenantBefore=await names(0),admin=await names(1),tenantAfter=await names(0);
+ assert.deepEqual(tenantBefore,tenantAfter);
+ for(const name of ['wf_dev_workflow','wf_design_status','wf_stitch_read','wf_21st_read','wf_shadcn_search']){
+  assert(!tenantAfter.includes(name));assert(admin.includes(name));
+ }
+ const before=await connection(0),platform=await connection(1),after=await connection(0);
+ assert.equal(before.diagnostics.catalog.fingerprint,after.diagnostics.catalog.fingerprint);
+ assert.notEqual(before.diagnostics.catalog.fingerprint,platform.diagnostics.catalog.fingerprint);
+ assert.equal(platform.diagnostics.catalog.refreshRequiredOnScopeChange,true);
+ const attempted=await rpc(0,'tools/call',{name:'wf_design_status',arguments:{}});
+ assert(attempted.error||attempted.result?.isError);
+ // An expired token cannot borrow the other connection's authenticated catalog.
+ await clientOAuthStore().setJSON(key('access',tokens[1]),{grantId:grants[1].id,clientId:grants[1].clientId,resource:origin+'/mcp',expiresAt:Date.now()-1});
+ const denied=await handler(new Request(origin+'/mcp',{method:'POST',headers:{Authorization:'Bearer '+tokens[1],'Content-Type':'application/json',Accept:'application/json, text/event-stream'},body:JSON.stringify({jsonrpc:'2.0',id:1,method:'tools/list',params:{}})}));
+ assert.equal(denied.status,401);assert.deepEqual(await names(0),tenantBefore);
+});

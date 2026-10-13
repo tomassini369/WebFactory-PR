@@ -65,3 +65,49 @@ Execution remains idempotent by request UUID. Cross-business access is denied se
 Platform-administrator connections can search/read the official public registry with `wf_shadcn_search` and `wf_shadcn_component`, prepare complete file/dependency changes with `wf_shadcn_prepare`, queue isolated installation with `wf_shadcn_add` (Execute only), and verify workflow/PR/preview receipts with `wf_shadcn_status`. Tenant connections expose none of these tools.
 
 Addition uses an isolated GitHub branch, dependency installation, checks, PR and Netlify preview; production publication is separate. ChatGPT GitHub connector credentials are not inherited by the MCP server. Missing server execution configuration returns `github_connection_required` and the connected GitHub coding workflow can apply the prepared files. Existing private platform source, arbitrary commands, credential access and production deployment remain unavailable through these tools. See [SHADCN_MCP.md](SHADCN_MCP.md) for activation requirements and supported component limits.
+
+## Discovery and connection troubleshooting
+
+Run `wf_connection` before diagnosing absent development tools. A valid business
+connection (`platform: false`) intentionally omits private development tools even
+if its identity also holds an administrator role. Platform access requires a new,
+explicit administrator consent; existing tenant grants must never be upgraded.
+The OAuth account and chosen scope, not the installed plugin's display name,
+determine the catalog.
+
+Server version 1.0.1 adds `diagnostics.catalog` to this existing read-only tool.
+It contains exactly the names registered for the current authorized request, not
+a global catalog. Compare it to the tools actually exposed in ChatGPT. A mismatch
+is evidence to investigate client discovery/cache; this response does not change
+ChatGPT's cached catalog. `graphContext.configuredForScope` reports configuration
+only and `providerReadVerified: false` prevents mistaking it for a provider probe.
+A disabled tenant graph now returns `graph_context_not_enabled` with a direct-tool
+fallback, rather than the previous generic portal error. No private paths or
+credentials are returned.
+
+The token endpoint returns standard OAuth error identifiers (`invalid_grant`,
+`invalid_scope`, `unsupported_grant_type`, `invalid_request`). Expired or revoked
+grants fail with `invalid_grant`; refresh reuse still revokes the connection.
+PKCE, exact resource/client binding and scope checks are unchanged. These fixes
+help clients classify failures; they do not prove what caused an earlier outage.
+
+For platform development, during a legitimate OAuth authorization sign in with
+the intended administrator identity, select **Administración de toda WebFactory**,
+and explicitly consent to Read and, if needed, Execute. Do not repeatedly
+reinstall as a troubleshooting step. Verify `wf_connection.platform === true`
+and the expected identity, then verify the private read tools. If ChatGPT offers
+no tools despite a verified matching authorized HTTP `tools/list`, report the
+endpoint, timestamp, server version, requested tool name, HTTP/JSON-RPC status
+and request IDs to the client support channel. Exclude bearer tokens, OAuth
+codes, client identifiers and private business records.
+
+The repository plugin manifest and bundled instructions are source artifacts.
+Updating this PR does not update an already installed ChatGPT package or its
+cache automatically; the package owner must publish/update that package through
+the existing plugin distribution workflow after reviewing these changes.
+
+`node scripts/chatgpt-http-smoke.mjs` with `WEBFACTORY_SMOKE_URL` checks public
+metadata, routing and unauthenticated MCP challenges only. The automated handler
+integration tests use isolated fixture identities and OAuth storage for valid
+initialize/list/call, SDK transport, expiry and rotation. Production or preview
+authenticated calls require real OAuth consent and are a separate verification.
