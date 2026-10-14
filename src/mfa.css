@@ -8,3 +8,16 @@ html[data-wf-theme=dark] .mfa-screen,html[data-wf-theme=dark] .mfa-panel{--porta
 .mfa-login-card .mfa-panel :is(button,input){min-height:44px}
 .mfa-login-card .mfa-panel [role=alert]{color:#ba243c}
 html[data-wf-theme=dark] .mfa-login-card .mfa-panel [role=alert]{color:#ffabb7}
+
+/* MFA controls need explicit theme pairs even before dashboard styles load. */
+.mfa-panel{--mfa-ink:#17263b;--mfa-surface:#fff;--mfa-muted:#52647a;--mfa-line:#72839a;--mfa-action:#285fa6}
+html[data-wf-theme=dark] .mfa-panel{--mfa-ink:#f2f6fc;--mfa-surface:#132033;--mfa-muted:#b8c6d9;--mfa-line:#7488a2}
+html body #root .mfa-panel :is(h2,h3,label,li,code){color:var(--mfa-ink)}
+html body #root .mfa-panel p{color:var(--mfa-muted)}
+html body #root .mfa-panel [role=alert]{color:#ba243c}
+html[data-wf-theme=dark] body #root .mfa-panel [role=alert]{color:#ffabb7}
+html body #root :is(.ca-login,.wfa-login,.ca-dashboard,.wfa-dashboard,.mfa-screen) .mfa-panel input:not([type=checkbox]){background:var(--mfa-surface)!important;color:var(--mfa-ink)!important;-webkit-text-fill-color:var(--mfa-ink)!important;caret-color:var(--mfa-ink);border-color:var(--mfa-line)!important}
+html body #root .mfa-panel input::placeholder{color:var(--mfa-muted);-webkit-text-fill-color:var(--mfa-muted);opacity:1}
+html body #root .mfa-panel .btn{background:var(--mfa-action)!important;color:#fff!important;-webkit-text-fill-color:#fff!important;border:1px solid var(--mfa-action)!important}
+html body #root .mfa-panel .btn.secondary{background:var(--mfa-surface)!important;color:var(--mfa-ink)!important;-webkit-text-fill-color:var(--mfa-ink)!important;border-color:var(--mfa-line)!important;box-shadow:none}
+@media(forced-colors:active){html body #root .mfa-panel :is(.btn,input:not([type=checkbox])){background:Canvas!important;color:CanvasText!important;-webkit-text-fill-color:CanvasText!important;border-color:ButtonText!important}}

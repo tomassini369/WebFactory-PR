@@ -19,6 +19,7 @@ Scope: the October 14 audit. Preview only; no production publication or data mig
 - Both portal login actions use the existing brand blue `#285FA6` with white text instead of the insufficient-contrast `#3C86F6` pairing. Experience controls retain their compact labels with 44px minimum hit targets.
 - Builder progress and login focus-line animations use transforms. Device preview width changes no longer animate layout. Training progress uses transform with a stronger source rule overriding the legacy width transition, including reduced motion.
 - A root React error boundary provides localized reload/home recovery for render or lazy-chunk failures without exposing error details.
+- Follow-up to the supplied iPhone screenshot: MFA input text, WebKit text fill, headings and secondary Authenticator controls have explicit theme color pairs. Security controls no longer depend on inheriting a readable foreground from the login/dashboard cascade. A compiled-app contrast regression covers both portal entry points, direct light-mode loading, ES/EN and seven widths without performing security writes.
 
 ## Performance limitation retained explicitly
 

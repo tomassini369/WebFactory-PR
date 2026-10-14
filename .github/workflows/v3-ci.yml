@@ -53,6 +53,12 @@ jobs:
         run: node scripts/browser-platform-audit-smoke.mjs
       - name: Check out-of-order availability and live booking keyboard recovery
         run: node scripts/browser-booking-race-smoke.mjs
+      - name: Check compiled MFA controls contrast and text fill in both themes
+        run: node scripts/browser-mfa-contrast-smoke.mjs
+      - name: Check compiled MFA contrast on WebKit
+        env:
+          QA_ENGINE: webkit
+        run: node scripts/browser-mfa-contrast-smoke.mjs
       - name: Check Home FAQ desktop/mobile, themes and languages
         run: node scripts/browser-home-faq-smoke.mjs
       - name: Check POS 2.0 responsive checkout and retry protection
