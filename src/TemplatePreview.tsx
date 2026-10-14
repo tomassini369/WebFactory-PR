@@ -3,6 +3,7 @@ import type { ReceiptRecord } from './ReceiptPaper'
 import PortalReturnHome from './PortalReturnHome'
 import { useFlyToCart } from './useFlyToCart'
 import AnimatedOverlay from './AnimatedOverlay'
+import {useStorefrontDialog} from './useStorefrontDialog'
 import {templateButtonInk} from './templateVisual'
 import CatalogCard from './TemplateCatalogCard'
 import TemplateLayout from './TemplateLayout'
@@ -45,6 +46,13 @@ function TemplateSite({ slug }: { slug: string }) {
   useEffect(()=>{if(!removed)return;const timer=window.setTimeout(()=>setRemoved(null),8000);return()=>window.clearTimeout(timer)},[removed])
   const [cartOpen, setCartOpen] = useState(false)
   const [catalogOpen, setCatalogOpen] = useState(false)
+  const activeDialog=cartOpen?'cart':bookingItem?'booking':selectedItem?'detail':catalogOpen?'catalog':''
+  useStorefrontDialog(activeDialog==='cart'?'.template-cart-drawer':activeDialog==='booking'?'.template-booking-modal':activeDialog==='detail'?'.template-detail-modal':activeDialog==='catalog'?'.template-catalog-modal':'',()=>{
+    if(cartOpen)setCartOpen(false)
+    else if(bookingItem)setBookingItem(null)
+    else if(selectedItem)setSelectedItem(null)
+    else setCatalogOpen(false)
+  },language==='es'?'Compras y reservaciones':'Shopping and bookings')
   const [selectedEmployee, setSelectedEmployee] = useState('')
   const [selectedDate, setSelectedDate] = useState('')
   const [calendarView, setCalendarView] = useState(true)

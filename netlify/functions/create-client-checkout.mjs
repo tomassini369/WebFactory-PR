@@ -111,7 +111,7 @@ export async function performCheckout(req, { kiosk = false, balanceBooking = nul
       const service = (site.catalog || []).find((item) => item.id === payload.booking.serviceId && item.type === "service" && item.requiresAppointment && item.active !== false);
       const employee = (site.employees || []).find((member) => member.id === payload.booking.employeeId && member.active !== false && (member.serviceIds || []).includes(service?.id) && (!locations.length || (locationId && (member.locationIds || []).includes(locationId))));
       if (!service || !employee) throw Object.assign(new Error("The selected service or employee is unavailable."), { status: 409 });
-      hold = await createBookingHold(site, { ...payload.booking, locationId },{strictGoogle:kiosk});
+      hold = await createBookingHold(site, { ...payload.booking, locationId },{strictGoogle:true});
       const fullAmount = Math.round(Number(service.price) * 100);
       const unitAmount = site.paymentRules?.bookingPayment === "deposit"
         ? Math.round(fullAmount * Number(site.paymentRules?.bookingDepositPercent || 25) / 100)
@@ -162,7 +162,7 @@ export async function performCheckout(req, { kiosk = false, balanceBooking = nul
     let record = {
       transactionId, siteId: site.siteId, kind, customer, items, locationId, locationName: selectedLocation?.name || "", holdId: hold?.holdId || "",
       serviceId: balanceBooking?.serviceId || hold?.serviceId || "", employeeId: balanceBooking?.employeeId || hold?.employeeId || "", start: hold?.start || "", end: hold?.end || "",
-      ...(kind==="booking"?{bookingTotalCents,bookingTaxCents}:{}),
+      ...(kind==="booking"?{bookingTotalCents,bookingTaxCents,bufferMinutes:hold.bufferMinutes,occupiedUntil:hold.occupiedUntil}:{}),
       ...(balanceBooking?{source:"booking_balance",bookingTransactionId:balanceBooking.transactionId,bookingBalanceAttempt:balanceAttempt}:{}),
       channel: kiosk ? "kiosk" : "storefront", pricesIncludeTax: balanceBooking?Boolean(balanceBooking.pricesIncludeTax):Boolean(site.taxConfig?.pricesIncludeTax),
       subtotal, tax: taxCents, amountTotal: subtotal + ((balanceBooking?balanceBooking.pricesIncludeTax:site.taxConfig?.pricesIncludeTax) ? 0 : taxCents), currency: "usd",

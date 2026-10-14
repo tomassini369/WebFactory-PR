@@ -25,14 +25,16 @@ html body #root :is(.ca-login,.wfa-login) .input-line {
     position: absolute;
     bottom: 0;
     left: 0;
-    width: 0%;
+    width: 100%;
+    transform: scaleX(0);
+    transform-origin: left;
     height: 1.5px;
     background: linear-gradient(90deg, var(--pg-accent), var(--pg-accent));
-    transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
     box-shadow: 0 0 10px color-mix(in srgb,var(--pg-accent) 60%,transparent) !important
 }
 html body #root :is(.ca-login,.wfa-login) label:focus-within>.input-line {
-    width: 100%
+    transform: scaleX(1)
 }
 html body #root :is(.ca-login,.wfa-login) .btn-shine {
     position: absolute;

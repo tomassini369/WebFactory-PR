@@ -1,6 +1,7 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import App from './App'
+import RouteErrorBoundary from './RouteErrorBoundary'
 import { ThemeProvider } from './theme'
 import './shadcn.css'
 import './styles.css'
@@ -48,7 +49,7 @@ if ('serviceWorker' in navigator && window.location.protocol !== 'file:') {
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <ThemeProvider>
-      <App />
+      <RouteErrorBoundary><App /></RouteErrorBoundary>
     </ThemeProvider>
   </StrictMode>,
 )

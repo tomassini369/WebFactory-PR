@@ -49,6 +49,10 @@ jobs:
         run: node scripts/browser-auth-stability-smoke.mjs
       - name: Check initial login visibility, locale handoff and failure states
         run: node scripts/browser-auth-usability-smoke.mjs
+      - name: Check platform audit regressions across layouts, locales and themes
+        run: node scripts/browser-platform-audit-smoke.mjs
+      - name: Check out-of-order availability and live booking keyboard recovery
+        run: node scripts/browser-booking-race-smoke.mjs
       - name: Check Home FAQ desktop/mobile, themes and languages
         run: node scripts/browser-home-faq-smoke.mjs
       - name: Check POS 2.0 responsive checkout and retry protection

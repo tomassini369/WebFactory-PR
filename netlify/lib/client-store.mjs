@@ -146,6 +146,7 @@ export function publicClientSite(site) {
     slug: site.slug,
     status: site.status,
     revision: site.revision,
+    settings: {locale:site.settings?.locale==="es"?"es":"en",timezone:site.settings?.timezone||"America/Puerto_Rico"},
     business: {
       policies: site.business?.policies || {},
       name: site.business?.name || "",

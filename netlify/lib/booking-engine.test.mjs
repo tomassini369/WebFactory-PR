@@ -6,6 +6,7 @@ test("month availability includes every open weekday in a leap-year February", (
   const closed = { enabled: false, open: "10:00", close: "11:00" };
   const site = { hours: Object.fromEntries(["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"].map((day) => [day, closed])) };
   const employee = { schedule: { Martes: { enabled: true, open: "10:00", close: "11:00" } } };
+  site.hours.Martes={enabled:true,open:"09:00",close:"17:00"};
 
   const available = monthAvailabilityFromBlocks({
     month: "2028-02",
