@@ -610,8 +610,8 @@ function DesignStep({state,setState,lang}:{state:BuilderState;setState:Dispatch<
         {selectedTemplate && <button type="button" onClick={restoreTemplateColors}>{lang==='es'?'Restaurar colores del Template':'Restore Template colors'}</button>}
       </div>
       <div className="wf-color-grid">
-        <label><span>{lang==='es'?'Color principal · editable':'Primary color · editable'}</span><div><input type="color" value={state.design.primary} onChange={(e)=>setDesign('primary',e.target.value)} /><input value={state.design.primary} onChange={(e)=>setDesign('primary',e.target.value)} /></div></label>
-        <label><span>{lang==='es'?'Color secundario · editable':'Secondary color · editable'}</span><div><input type="color" value={state.design.secondary} onChange={(e)=>setDesign('secondary',e.target.value)} /><input value={state.design.secondary} onChange={(e)=>setDesign('secondary',e.target.value)} /></div></label>
+        <label><span>{lang==='es'?'Color principal · editable':'Primary color · editable'}</span><div><input aria-label={lang==='es'?'Selector de color principal':'Primary color picker'} type="color" value={state.design.primary} onChange={(e)=>setDesign('primary',e.target.value)} /><input aria-label={lang==='es'?'Color principal hexadecimal':'Primary hex color'} value={state.design.primary} onChange={(e)=>setDesign('primary',e.target.value)} /></div></label>
+        <label><span>{lang==='es'?'Color secundario · editable':'Secondary color · editable'}</span><div><input aria-label={lang==='es'?'Selector de color secundario':'Secondary color picker'} type="color" value={state.design.secondary} onChange={(e)=>setDesign('secondary',e.target.value)} /><input aria-label={lang==='es'?'Color secundario hexadecimal':'Secondary hex color'} value={state.design.secondary} onChange={(e)=>setDesign('secondary',e.target.value)} /></div></label>
       </div>
       <div className="wf-palette-row">
         {[
@@ -621,7 +621,7 @@ function DesignStep({state,setState,lang}:{state:BuilderState;setState:Dispatch<
           ['#191970','#FF6B35'],
           ['#17352B','#B4D59C'],
         ].map(([primary,secondary])=>(
-          <button key={primary+secondary} onClick={()=>setState((current)=>({...current,design:{...current.design,primary,secondary}}))}>
+          <button type="button" key={primary+secondary} aria-label={`${lang==='es'?'Paleta':'Palette'} ${primary} / ${secondary}`} aria-pressed={state.design.primary.toLowerCase()===primary.toLowerCase()&&state.design.secondary.toLowerCase()===secondary.toLowerCase()} onClick={()=>setState((current)=>({...current,design:{...current.design,primary,secondary}}))}>
             <i style={{background:primary}}/><i style={{background:secondary}}/>
           </button>
         ))}

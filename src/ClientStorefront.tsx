@@ -7,9 +7,11 @@ import {templateButtonInk} from './templateVisual'
 import CatalogCard from './TemplateCatalogCard'
 import TemplateLayout from './TemplateLayout'
 import TemplateMap from './TemplateMap'
+import {formatBusinessHours} from './business-hours'
+import {useStorefrontDialog} from './useStorefrontDialog'
 import { templateUi } from './templateI18n'
 import type { TemplateConfig, TemplateItem } from './templateData'
-import { useEffect, useMemo, useState, type CSSProperties, type FormEvent } from 'react'
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type FormEvent } from 'react'
 import { templateBySlug, templateVisualStyle } from './templateData'
 import MonthCalendar from './MonthCalendar'
 import './template-preview.css'
@@ -18,7 +20,7 @@ import './client-storefront.css'
 type Item={id:string;type:'product'|'service';name:string;nameEn?:string;nameEs?:string;description:string;descriptionEn?:string;descriptionEs?:string;price:number;inventory:number|null;requiresAppointment:boolean;duration:number;imageUrl:string}
 type Employee={id:string;name:string;role:string;roleEn?:string;roleEs?:string;serviceIds:string[];locationIds?:string[]}
 type Location={id:string;name:string;address:string;phone:string;mapsUrl:string;hours:any}
-export type StorefrontSite={siteId:string;slug:string;business:any;design:any;features:Record<string,boolean>;catalog:Item[];employees:Employee[];hours:any;paymentRules:any;settings:any}
+export type StorefrontSite={siteId:string;slug:string;business:any;design:any;features:Record<string,boolean>;catalog:Item[];employees:Employee[];hours:any;paymentRules:any;settings:{locale?:'es'|'en';timezone?:string}}
 type CartLine={id:string;quantity:number}
 const money=(value:number)=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(value)
 const digits=(value:string)=>String(value||'').replace(/\D/g,'')
@@ -34,16 +36,6 @@ const socialUrl=(value:string,network:'instagram'|'facebook'|'x')=>{
   const handle=raw.replace(/^@/,'')
   return network==='instagram'?`https://instagram.com/${handle}`:network==='facebook'?`https://facebook.com/${handle}`:`https://x.com/${handle}`
 }
-const formatHours=(hours:any,lang:'es'|'en')=>{
-  const active=Object.entries(hours||{}).filter(([,value]:any)=>value?.enabled)
-  if(!active.length)return ''
-  const names:Record<string,{en:string;es:string}>={monday:{en:'Monday',es:'Lunes'},lunes:{en:'Monday',es:'Lunes'},tuesday:{en:'Tuesday',es:'Martes'},martes:{en:'Tuesday',es:'Martes'},wednesday:{en:'Wednesday',es:'Miércoles'},miercoles:{en:'Wednesday',es:'Miércoles'},'miércoles':{en:'Wednesday',es:'Miércoles'},thursday:{en:'Thursday',es:'Jueves'},jueves:{en:'Thursday',es:'Jueves'},friday:{en:'Friday',es:'Viernes'},viernes:{en:'Friday',es:'Viernes'},saturday:{en:'Saturday',es:'Sábado'},sabado:{en:'Saturday',es:'Sábado'},'sábado':{en:'Saturday',es:'Sábado'},sunday:{en:'Sunday',es:'Domingo'},domingo:{en:'Sunday',es:'Domingo'}}
-  const label=(day:string)=>names[day.toLowerCase()]?.[lang]||day
-  const first=active[0] as [string,any]
-  const last=active[active.length-1] as [string,any]
-  return `${label(first[0])}–${label(last[0])} · ${first[1].open}–${first[1].close}`
-}
-
 export default function ClientStorefront({slug,previewSite,previewLanguage='en'}:{slug:string;previewSite?:StorefrontSite;previewLanguage?:'es'|'en'}){
   const flyToCart = useFlyToCart()
   const [site,setSite]=useState<StorefrontSite|null>(previewSite||null)
@@ -58,6 +50,12 @@ export default function ClientStorefront({slug,previewSite,previewLanguage='en'}
   const [selectedLocationId,setSelectedLocationId]=useState('')
   const [booking,setBooking]=useState<{serviceId:string;employeeId:string;date:string;start:string;locationId:string}|null>(null)
   const [slots,setSlots]=useState<Array<{start:string;end:string}>>([])
+  const slotRequest=useRef<{id:number;key:string;controller:AbortController|null}>({id:0,key:'',controller:null})
+  useEffect(()=>()=>slotRequest.current.controller?.abort(),[])
+  useEffect(()=>{
+    const key=booking?JSON.stringify([booking.serviceId,booking.employeeId,booking.date,booking.locationId]):''
+    if(slotRequest.current.key!==key){slotRequest.current.controller?.abort();slotRequest.current.id++;slotRequest.current.key=key;setBusy(false)}
+  },[booking?.serviceId,booking?.employeeId,booking?.date,booking?.locationId])
   const [bookingMonth,setBookingMonth]=useState(()=>currentMonth())
   const [availableDates,setAvailableDates]=useState<Record<string,number>>({})
   const [calendarLoading,setCalendarLoading]=useState(false)
@@ -65,6 +63,13 @@ export default function ClientStorefront({slug,previewSite,previewLanguage='en'}
   const [customer,setCustomer]=useState({name:'',email:'',phone:'',reviewOptIn:false})
   const [busy,setBusy]=useState(false)
   const [checkoutOpen,setCheckoutOpen]=useState(false)
+  const activeDialog=checkoutOpen?'checkout':booking?'booking':selectedItem?'detail':catalog?'catalog':''
+  useStorefrontDialog(activeDialog==='checkout'?'.cs-checkout':activeDialog==='booking'?'.cs-modal>section':activeDialog==='detail'?'.template-detail-modal':activeDialog==='catalog'?'.template-catalog-modal':'',()=>{
+    if(checkoutOpen)setCheckoutOpen(false)
+    else if(booking)setBooking(null)
+    else if(selectedItem)setSelectedItem(null)
+    else setCatalog(false)
+  },lang==='es'?'Compras y reservaciones':'Shopping and bookings')
   const [paymentProvider,setPaymentProvider]=useState<'stripe'|'ath_movil'>('stripe')
   useEffect(()=>{setPaymentProvider(site?.paymentRules?.methods?.stripe&&site?.paymentRules?.stripeAvailable?'stripe':site?.paymentRules?.athReady?'ath_movil':'stripe')},[site?.siteId,site?.paymentRules?.athReady,site?.paymentRules?.stripeAvailable])
   const [contact,setContact]=useState({name:'',email:'',phone:'',message:'',website:''})
@@ -153,22 +158,27 @@ export default function ClientStorefront({slug,previewSite,previewLanguage='en'}
   const beginBooking=(item:Item,employeeId='')=>{
     if(site?.features.bookings===false)return
     setSelectedItem(null)
+    slotRequest.current.controller?.abort();slotRequest.current.id++;setBusy(false)
     const employee=site?.employees.find(entry=>entry.id===employeeId && entry.serviceIds.includes(item.id) && (!((site.business.locations||[]).length)||entry.locationIds?.includes(selectedLocationId)))
     setBooking({serviceId:item.id,employeeId:employee?.id||'',date:'',start:'',locationId:selectedLocationId});setSlots([]);setAvailableDates({});setBookingMonth(currentMonth(site?.settings?.timezone));setCalendarView(true);setCatalog(false)
   }
   const locations=(site?.business.locations||[]) as Location[]
   const employees=site?.employees.filter(x=>x.serviceIds.includes(booking?.serviceId||'')&&(!locations.length||(booking?.locationId&&x.locationIds?.includes(booking.locationId))))||[]
   const getSlots=async(next:{serviceId:string;employeeId:string;date:string;start:string;locationId:string})=>{
+    slotRequest.current.controller?.abort()
+    const id=++slotRequest.current.id,controller=new AbortController()
+    slotRequest.current.key=JSON.stringify([next.serviceId,next.employeeId,next.date,next.locationId])
+    slotRequest.current.controller=controller
     setBooking(next)
     setSlots([])
-    if(previewSite||!next.employeeId||!next.date||!site)return
+    if(previewSite||!next.employeeId||!next.date||!site){setBusy(false);return}
     setBusy(true)
     try{
-      const r=await fetch('/.netlify/functions/booking-availability',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({siteId:site.siteId,serviceId:next.serviceId,employeeId:next.employeeId,date:next.date,locationId:next.locationId})})
+      const r=await fetch('/.netlify/functions/booking-availability',{method:'POST',signal:controller.signal,headers:{'Content-Type':'application/json'},body:JSON.stringify({siteId:site.siteId,serviceId:next.serviceId,employeeId:next.employeeId,date:next.date,locationId:next.locationId})})
       const x=await r.json()
       if(!r.ok)throw new Error(x.message)
-      setSlots(x.slots)
-    }catch(e){setError(e instanceof Error?e.message:'No se pudo consultar disponibilidad.')}finally{setBusy(false)}
+      if(id===slotRequest.current.id)setSlots(x.slots)
+    }catch(e){if(id===slotRequest.current.id&&!controller.signal.aborted)setError(e instanceof Error?e.message:'No se pudo consultar disponibilidad.')}finally{if(id===slotRequest.current.id)setBusy(false)}
   }
   useEffect(()=>{
     if(previewSite||!booking?.employeeId||!site)return
@@ -238,7 +248,7 @@ export default function ClientStorefront({slug,previewSite,previewLanguage='en'}
   const xUrl=socialUrl(site.business.x,'x')
   const heroImage=site.business.heroUrl||template?.heroImage||visibleCatalog.find(item=>item.imageUrl)?.imageUrl||''
   const galleryImages:string[]=site.business.galleryUrls?.length?site.business.galleryUrls:(template?.gallery||[])
-  const hours=formatHours(site.hours,lang)
+  const hours=formatBusinessHours(site.hours,lang)
   const initials=(name:string)=>name.split(/\s+/).slice(0,2).map((part:string)=>part[0]||'').join('').toUpperCase()
   const styles={
     '--template-accent':site.design?.secondary||template?.accent||'#3C86F6',

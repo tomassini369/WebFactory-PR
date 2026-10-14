@@ -75,11 +75,11 @@ export async function changePrivateBooking(token,{action,start,version,acknowled
     try {
       if(action==="reschedule") {
         if(!Number.isFinite(Date.parse(start)) || Date.parse(start)<=Date.now()+3600000 || Date.parse(start)>Date.now()+365*86400000 || Date.parse(start)===Date.parse(record.start)) throw failure("Choose a new available time. / Elige un nuevo horario disponible.",400);
-        hold=await createBookingHold(site,{serviceId:record.serviceId,employeeId:record.employeeId,start,locationId:record.locationId || ""},{strictGoogle:true});
+        hold=await createBookingHold(site,{serviceId:record.serviceId,employeeId:record.employeeId,start,locationId:record.locationId || ""},{strictGoogle:true,excludeBookingId:record.transactionId});
       }
       const now=new Date().toISOString();
       const next={...record,managementRevision:crypto.randomUUID(),managementChange:action==="cancel"?"cancelled":"rescheduled",changeCustomerEmailSent:false,changeBusinessEmailSent:false,updatedAt:now,
-        ...(action==="cancel"?{status:"cancelled",cancelledAt:now,calendarCancellationPending:Boolean(record.googleEventId),calendarUpdatePending:false}:{start:hold.start,end:hold.end,rescheduledAt:now,previousStart:record.start,calendarUpdatePending:Boolean(record.googleEventId),calendarSyncPending:true,calendarSyncStatus:"pending"})};
+        ...(action==="cancel"?{status:"cancelled",cancelledAt:now,calendarCancellationPending:Boolean(record.googleEventId),calendarUpdatePending:false}:{start:hold.start,end:hold.end,holdId:hold.holdId,bufferMinutes:hold.bufferMinutes,occupiedUntil:hold.occupiedUntil,rescheduledAt:now,previousStart:record.start,calendarUpdatePending:Boolean(record.googleEventId),calendarSyncPending:true,calendarSyncStatus:"pending"})};
       const result=await store.setJSON(key,next,{onlyIfMatch:etag});
       if(!result.modified) throw failure("Booking changed. Reload the page. / La reservación cambió. Actualiza la página.");
       await mirrorTransaction(site,next);

@@ -9,7 +9,7 @@ export default function TemplateParityReview(){
  const [lang,setLang]=useState<'en'|'es'>('es')
  const [custom,setCustom]=useState(false)
  const [originalColors,setOriginalColors]=useState(false)
- const site:StorefrontSite={...snapshot,business:{...snapshot.business,heroUrl:snapshot.business.heroUrl||'/template-images/19664876.jpg',galleryUrls:snapshot.business.galleryUrls.length?snapshot.business.galleryUrls:['/template-images/7697280.jpg','/template-images/7447145.jpg','/template-images/9511913.jpg']},catalog:snapshot.catalog.map(item=>({...item,type:item.type==='product'?'product':'service',inventory:null})),design:{...snapshot.design,templateSlug:custom?'':snapshot.design.templateSlug,...(originalColors?{primary:'#111111',secondary:'#D1B07C'}:{})}}
+ const site:StorefrontSite={...snapshot,settings:{...snapshot.settings,locale:snapshot.settings.locale==='es'?'es':'en'},business:{...snapshot.business,heroUrl:snapshot.business.heroUrl||'/template-images/19664876.jpg',galleryUrls:snapshot.business.galleryUrls.length?snapshot.business.galleryUrls:['/template-images/7697280.jpg','/template-images/7447145.jpg','/template-images/9511913.jpg']},catalog:snapshot.catalog.map(item=>({...item,type:item.type==='product'?'product':'service',inventory:null})),design:{...snapshot.design,templateSlug:custom?'':snapshot.design.templateSlug,...(originalColors?{primary:'#111111',secondary:'#D1B07C'}:{})}}
  return <main style={{padding:'24px',background:'#eef2f7',color:'#0b1529',minHeight:'100vh'}}>
    <h1>Template → Builder → Website</h1>
    <p>Nova Fade Studio · Vista visual con los datos públicos del negocio. No procesa pagos, reservas ni mensajes.</p>

@@ -34,7 +34,7 @@ export default async req=>{
       if(date) {
         if(!/^\d{4}-\d{2}-\d{2}$/.test(date) || Date.parse(date)<Date.now()-2*86400000 || Date.parse(date)>Date.now()+366*86400000) throw Object.assign(new Error("Invalid date / Fecha inválida"),{status:400});
         let slots=[], unavailable=false;
-        try {slots=await availabilityForDate(site,record.serviceId,record.employeeId,date,record.locationId || "",{strictGoogle:true});} catch {unavailable=true;}
+        try {slots=await availabilityForDate(site,record.serviceId,record.employeeId,date,record.locationId || "",{strictGoogle:true,excludeBookingId:record.transactionId});} catch {unavailable=true;}
         content+=slots.length?`<form method="post">${hidden}<input type="hidden" name="action" value="reschedule"><label>${es?'Nuevo horario':'New time'}<select name="start" required><option value="">${es?'Selecciona un horario':'Choose a time'}</option>${slots.map(slot=>`<option value="${e(slot.start)}">${e(new Date(slot.start).toLocaleTimeString(es?'es-PR':'en-US',{timeZone:d.timeZone,hour:'numeric',minute:'2-digit'}))}</option>`).join("")}</select></label><label><input type="checkbox" name="acknowledged" value="yes" required>${es?'Confirmo cambiar mi cita al horario seleccionado.':'I confirm moving my appointment to the selected time.'}</label><button type="submit">${es?'Confirmar nuevo horario':'Confirm new time'}</button></form>`:`<p>${unavailable?(es?'No se pudo verificar el calendario. Inténtalo más tarde.':'Calendar availability could not be verified. Try again later.'):(es?'No hay horarios disponibles para esta fecha.':'No available times for this date.')}</p>`;
       }
     }

@@ -60,9 +60,12 @@ async function list(store, prefix = "") {
   return result.blobs || [];
 }
 
-async function records(store, prefix = "", limit = 300) {
-  const blobs = (await list(store, prefix)).slice(0, limit);
-  const values = await Promise.all(blobs.map((blob) => store.get(blob.key, { type: "json" }).catch(() => null)));
+export async function records(store, prefix = "", predicate = () => true) {
+  const blobs = (await list(store, prefix)).filter(blob=>predicate(blob.key));
+  const values=[];
+  for(let index=0;index<blobs.length;index+=20){
+    values.push(...await Promise.all(blobs.slice(index,index+20).map(blob=>store.get(blob.key,{type:"json"}))));
+  }
   return values.filter(Boolean);
 }
 
@@ -134,7 +137,7 @@ export function createAdminOverviewHandler(authorize=requirePlatformAdmin){retur
     const user = await authorize();
     const [sites, commerce, stripeEvents, clientEvents, clientAssets, netlifyUsage] = await Promise.all([
       records(clientSiteStore(), "sites/"),
-      records(clientCommerceStore()),
+      records(clientCommerceStore(),"",key=>/^[^/]+\/transactions\/[^/]+\.json$/.test(key)),
       records(platformStripeEventStore(), "events/"),
       records(clientEventStore()),
       list(clientAssetStore()),
