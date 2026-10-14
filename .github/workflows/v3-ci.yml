@@ -316,7 +316,15 @@ jobs:
           QA_ORIGIN: https://deploy-preview-${{ github.event.pull_request.number }}--webfactorypr.netlify.app
           QA_WIDTHS: 390,1440
         run: |
-          node scripts/browser-workspace-experience-smoke.mjs
-          node scripts/browser-admin-experience-smoke.mjs
-          QA_ENGINE=webkit node scripts/browser-workspace-experience-smoke.mjs
-          QA_ENGINE=webkit node scripts/browser-admin-experience-smoke.mjs
+          for engine in chromium webkit; do
+            for workspace in workspace admin; do
+              phase="$workspace-$engine"
+              log="/tmp/unified-preview-$phase.log"
+              if ! QA_ENGINE="$engine" node "scripts/browser-$workspace-experience-smoke.mjs" > "$log" 2>&1; then
+                cat "$log"
+                node scripts/report-kiosk-ci-error.mjs "$log" "$phase"
+                exit 1
+              fi
+              cat "$log"
+            done
+          done
