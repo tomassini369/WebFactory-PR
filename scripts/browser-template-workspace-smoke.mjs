@@ -1,3 +1,4 @@
+import {showBuilderPreview} from './qa-workspace-navigation.mjs'
 import assert from 'node:assert/strict'
 import {createServer} from 'vite'
 import {chromium} from 'playwright'
@@ -73,7 +74,7 @@ try{
    if(width!==320)for(const selector of selectors)demoStyles.push(await page.locator(selector).evaluate(readStyle))
    await page.evaluate(config=>localStorage.setItem('webfactory-v3-builder-draft',JSON.stringify({business:{name:config.shortName,category:config.category,description:config.description,headline:config.headline,kicker:config.kicker,hero:config.heroImage,gallery:config.gallery,address:'123 Main St, Arecibo',mapsUrl:'https://www.google.com/maps?q=Arecibo'},features:{products:true,services:true,cart:config.cartEnabled,bookings:config.bookingEnabled,maps:true},catalog:config.items.map(item=>({...item,type:item.type==='product'?'product':'service',requiresAppointment:Boolean(item.appointment),duration:item.duration||30}))})),config)
    assert.equal(await page.locator('.wf-template-notice a').last().getAttribute('href'),'/builder?template='+config.slug)
-   await page.goto(origin+'/builder?template='+config.slug);await page.frameLocator('iframe').locator('.template-hero').waitFor()
+   await page.goto(origin+'/builder?template='+config.slug);await page.locator('.wf-builder-app').waitFor();await showBuilderPreview(page);await page.frameLocator('iframe').locator('.template-hero').waitFor()
    const expected=width<768?'mobile':width<1024?'tablet':'desktop'
    assert.equal(await page.locator('.wf-device-switcher [aria-pressed="true"]').getAttribute('class'),'selected')
    assert.ok(await page.locator('.wf-template-preview-shell').evaluate((e,expected)=>e.classList.contains(expected),expected))
@@ -98,6 +99,14 @@ try{
     await frame.locator('.template-catalog-modal').waitFor({state:'visible'})
     assert.equal(await frame.locator('.template-catalog-modal').evaluate(el=>el.scrollTop),catalogPosition,'Builder cart returns to same catalog position')
     assert.ok((await frame.locator('.template-cart-button').textContent()).includes('1'),'Builder cart keeps the item')
+    const switcher=page.locator('.wf-builder-view-switch')
+    if(await switcher.isVisible()){
+     const original=await page.locator('iframe').elementHandle()
+     await switcher.getByRole('button',{name:/^(Edit|Editar)$/}).click()
+     await showBuilderPreview(page)
+     assert(await original.evaluate(el=>el.isConnected),'Builder preserves the same preview instance')
+     assert.ok((await frame.locator('.template-cart-button').textContent()).includes('1'),'View switching preserves the cart')
+    }
     await frame.locator('.catalog-close').click()
    }
    if(width!==320){for(let i=0;i<selectors.length;i++)assert.deepEqual(await frame.locator(selectors[i]).evaluate(readStyle),demoStyles[i],`${config.slug}/${width}: demo and Builder style parity for ${selectors[i]}`)}

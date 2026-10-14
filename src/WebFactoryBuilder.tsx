@@ -365,6 +365,7 @@ function Preview({state,device,lang}:{state:BuilderState;device:Device;lang:Lang
 function BusinessStep({state,setState,lang,lockedEmail}:{state:BuilderState;setState:Dispatch<SetStateAction<BuilderState>>;lang:Language;lockedEmail?:string}) {
   const [uploadingLogo,setUploadingLogo] = useState(false)
   const [uploadError,setUploadError] = useState('')
+  const [optionalOpen,setOptionalOpen] = useState(()=>Boolean(state.business.instagram||state.business.facebook||state.business.x||state.business.mapsUrl||state.business.logoAssetKey||state.business.heroAssetKey||state.business.galleryAssets?.length))
   const setBusiness = <K extends keyof BuilderState['business']>(key:K, value:BuilderState['business'][K]) =>
     setState((current)=>({...current,business:{...current.business,[key]:value}}))
 
@@ -453,6 +454,10 @@ function BusinessStep({state,setState,lang,lockedEmail}:{state:BuilderState;setS
         <Field label={lang==='es'?'Teléfono':'Phone'} value={state.business.phone} onChange={(v)=>setBusiness('phone',v)} />
         <Field label="WhatsApp" value={state.business.whatsapp} onChange={(v)=>setBusiness('whatsapp',v)} />
         <Field label={lang==='es'?'Email del cliente':'Customer email'} type="email" value={state.business.email} disabled={Boolean(lockedEmail)} onChange={(v)=>setBusiness('email',v)} />
+      </div>
+      <details className="wf-builder-disclosure" open={optionalOpen} onToggle={event=>setOptionalOpen(event.currentTarget.open)}>
+        <summary>{lang==='es'?'Ubicación, redes y fotos':'Location, social links and photos'}<span>{lang==='es'?'Opcional':'Optional'}</span></summary>
+      <div className="wf-field-grid">
         <Field label="Instagram" value={state.business.instagram} onChange={(v)=>setBusiness('instagram',v)} placeholder="https://instagram.com/..." />
         <Field label="Facebook" value={state.business.facebook} onChange={(v)=>setBusiness('facebook',v)} placeholder="https://facebook.com/..." />
         <Field label="X" value={state.business.x} onChange={(v)=>setBusiness('x',v)} placeholder="https://x.com/..." />
@@ -492,6 +497,7 @@ function BusinessStep({state,setState,lang,lockedEmail}:{state:BuilderState;setS
       </label>
       {(state.business.gallery||[]).length>0&&<div className="wf-builder-photo-grid">{(state.business.gallery||[]).map((image,index)=><img key={index} src={image} alt="" />)}</div>}
       {uploadError && <small className="wf-upload-error">{uploadError}</small>}
+      </details>
     </div>
   )
 }
@@ -1050,6 +1056,7 @@ export default function WebFactoryBuilder({lang}:{lang:Language}) {
   })
   const [step,setStep] = useState(()=>{try{return Math.min(7,Math.max(0,Number(sessionStorage.getItem('wf-builder-step'))||0))}catch{return 0}})
   useEffect(()=>{try{sessionStorage.setItem('wf-builder-step',String(step))}catch{}},[step])
+  const [mobileView,setMobileView] = useState<'edit'|'preview'>('edit')
   const [device,setDevice] = useState<Device>(() => window.matchMedia('(max-width: 767px)').matches ? 'mobile' : window.matchMedia('(max-width: 1023px)').matches ? 'tablet' : 'desktop')
   const [saved,setSaved] = useState(false)
   const [draftError,setDraftError] = useState(false)
@@ -1126,7 +1133,7 @@ export default function WebFactoryBuilder({lang}:{lang:Language}) {
   ][step]
 
   return (
-    <div className="wf-builder-app">
+    <div className="wf-builder-app wf-experience" data-mobile-view={mobileView}>
       <div className="wf-builder-topbar">
         <div>
           <span>WEBFACTORY BUILDER</span>
@@ -1140,6 +1147,10 @@ export default function WebFactoryBuilder({lang}:{lang:Language}) {
 
       <div className="wf-builder-progress" role="progressbar" aria-label={lang==='es'?'Progreso de configuración':'Setup progress'} aria-valuemin={0} aria-valuemax={100} aria-valuenow={completion}><i style={{transform:`scaleX(${completion/100})`}} /></div>
 
+      <div className="wf-builder-view-switch" role="group" aria-label={lang==='es'?'Vista de trabajo':'Workspace view'}>
+        <button type="button" aria-pressed={mobileView==='edit'} onClick={()=>setMobileView('edit')}>{lang==='es'?'Editar':'Edit'}</button>
+        <button type="button" aria-pressed={mobileView==='preview'} onClick={()=>setMobileView('preview')}>{lang==='es'?'Vista previa':'Preview'}</button>
+      </div>
       <div className="wf-builder-workspace">
         <aside className="wf-builder-nav" aria-label={lang==='es'?'Pasos de configuración':'Setup steps'}>
           {labels.map((label,index)=>(

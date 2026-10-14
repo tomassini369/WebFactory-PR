@@ -13,19 +13,22 @@ try {
  server=spawn(process.execPath,['node_modules/vite/bin/vite.js','--host','127.0.0.1','--port','5177','--strictPort'],{stdio:'ignore'});
  let ready=false;
  for(let attempt=0;attempt<80;attempt++){try{if((await fetch(origin)).ok){ready=true;break}}catch{}await new Promise(resolve=>setTimeout(resolve,100))}
- assert(ready,'Vite did not start');browser=await chromium.launch();
+ assert(ready,'Vite did not start');browser=await chromium.launch(process.env.QA_CHROMIUM_PATH?{executablePath:process.env.QA_CHROMIUM_PATH,args:['--no-sandbox']}:undefined);
  const page=await browser.newPage();const errors=[];page.on('pageerror',error=>errors.push(error.message));
  for(const viewport of [{width:390,height:844},{width:1280,height:800}]){
   await page.setViewportSize(viewport);await page.goto(`${origin}/${fixture}`);
+  const options=page.locator('.wf-portal-panel').first().locator(':scope>.wf-panel-tools>summary');await options.focus();await page.keyboard.press('Enter');
   const expand=page.getByRole('button',{name:'Expand',exact:true}).first();await expand.click();
   const dialog=page.getByRole('dialog');await dialog.waitFor();
   assert.equal(await page.locator('#outside').evaluate(element=>element.inert),true);
-  await page.keyboard.press('Tab');assert.equal(await page.evaluate(()=>document.activeElement.textContent),'Hide');
+  await page.keyboard.press('Tab');assert.equal(await options.evaluate(element=>element===document.activeElement),true);
   await page.keyboard.press('Shift+Tab');assert.equal(await page.evaluate(()=>document.activeElement.id),'inside');
-  await page.keyboard.press('Tab');assert.equal(await page.evaluate(()=>document.activeElement.textContent),'Hide');
+  await page.keyboard.press('Tab');assert.equal(await options.evaluate(element=>element===document.activeElement),true);
+  await page.keyboard.press('Enter');await page.keyboard.press('Tab');assert.equal(await page.evaluate(()=>document.activeElement.textContent),'Hide');
+  await page.keyboard.press('Escape');assert.equal(await dialog.count(),1,'Escape closes the options menu first');assert.equal(await options.evaluate(element=>element===document.activeElement),true);
   await page.keyboard.press('Escape');await dialog.waitFor({state:'detached'});
   assert.equal(await page.locator('#outside').evaluate(element=>element.inert),false);
-  assert.equal(await expand.evaluate(element=>element===document.activeElement),true);
+  assert.equal(await options.evaluate(element=>element===document.activeElement),true,'Closing full screen restores the visible options control');
   const reset=page.getByRole('button',{name:'Reset client Authenticator',exact:true});assert.equal(await reset.isDisabled(),true);
   await page.getByLabel('Business',{exact:true}).selectOption('test-business');
   await page.getByLabel('Support request reference',{exact:true}).fill('SUPPORT-TEST-2026');await page.getByLabel('Reason (no documents or sensitive data)',{exact:true}).fill('Lost test device');

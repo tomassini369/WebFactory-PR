@@ -1,3 +1,4 @@
+import {selectPortalSection} from './qa-workspace-navigation.mjs'
 import assert from 'node:assert/strict'
 import {mkdir} from 'node:fs/promises'
 import {createServer} from 'vite'
@@ -38,9 +39,7 @@ try{
   signedIn=true;await page.reload();await page.locator('.ca-dashboard').waitFor()
   const nav=page.locator('.wf-sidebar-frame nav')
   if(width===390)await page.locator('.ca-mobile-menu-toggle').click()
-  const payments=nav.getByRole('button',{name:'Payments',exact:true,includeHidden:true})
-  await payments.evaluate(button=>button.closest('details')?.setAttribute('open',''))
-  await payments.click()
+  await selectPortalSection(page,'Payments')
   const paper=page.locator('.wf-receipt-paper');await paper.waitFor()
   assert.match(await paper.innerText(),/\$25\.41/)
   assert.match(await paper.innerText(),/2 × \$11\.00/)

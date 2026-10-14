@@ -37,3 +37,36 @@ The operating dashboards use the supplied black/gold wave background, softly lay
 Receipt presentation uses a lightweight thermal-printer slot, emerging paper, crease texture, sawtooth edge and monospaced amounts. Display stored receipt items, discounts, taxes, tips, total, status and business timezone. Never synthesize receipt IDs, verified QR/barcodes or recalculate server totals. Existing tenant-scoped PDF and email resend remain functional. No audio, 3D dependency or printer polling.
 
 The cart thumbnail flies in a 700ms transform/opacity arc from the clicked product to the newly opened cart. Cart updates happen immediately; animation cannot defer checkout or quantity changes. Bound decorative actors, cancel them on unmount and skip flight for reduced motion or unavailable images. Shared demo and live storefront behavior also covers Builder previews.
+
+## Unified operating experience · October 14, 2026
+
+The owner approved simplifying the existing dashboards and POS with a modern
+blue/navy direction and one complete PR review. This revision supersedes the
+black/gold operating-dashboard background above. Authentication keeps its
+approved purple landscape and stable loading/login/MFA geometry.
+
+Operating roots use the scoped `wf-experience` layer: calm opaque light/navy
+surfaces, readable native type, restrained elevation and no backdrop blur on
+opaque navigation or nested operational panels. Existing roles determine every
+visible destination. Keep Overview, POS, Bookings, Team and Website editing
+as client primary destinations when authorized; group remaining destinations
+by Sales, Schedule, Team, Business and Settings. Admin retains its four existing
+primary destinations. Search must also find destinations inside disclosures.
+
+Show confirmed revenue and the existing metrics before attendance. Follow-up
+counts use only the currently loaded commerce history and label that scope;
+do not claim an exhaustive queue or create transactions. Keep chart filters,
+empty/error/test-mode states and accessible data details. Panel tools live in
+one labeled 44px options disclosure; Hide/Show, internal scrolling and Expand
+remain available. Escape first closes an open options menu, then leaves the
+expanded panel, preserving focus and the existing dialog trap.
+
+POS canvas, catalog, sidebar and active controls derive from the business's
+saved colors and existing contrast helpers in both themes. Invalid saved
+colors retain the established safe fallback. Desktop keeps the order beside
+the catalog. Narrow layouts reuse the existing sale-summary control as a
+safe-area-aware bottom bar that leads to the same order; no duplicate checkout
+or payment state is introduced. History and operational tools stay available
+in a labeled disclosure. Touch controls remain at least 44px, inputs 16px,
+and reduced motion disables operating transitions. Preserve the original
+checkout, stock, retry, receipt and server-confirmation handlers.

@@ -1,3 +1,4 @@
+import {selectPortalSection} from './qa-workspace-navigation.mjs'
 import assert from 'node:assert/strict'
 import {createServer} from 'vite'
 import {chromium} from 'playwright'
@@ -33,7 +34,7 @@ try {
   await page.goto('http://127.0.0.1:5240/client-admin');await page.locator('.ca-dashboard').waitFor()
   await page.locator('.portal-language').getByRole('button',{name:lang==='es'?'ES':'EN',exact:true}).click()
   const toggle=page.locator('.ca-mobile-menu-toggle'),nav=page.locator('.wf-sidebar-frame nav')
-  const select=async name=>{if(width<=820&&await toggle.getAttribute('aria-expanded')!=='true')await toggle.click();await nav.getByRole('button',{name,exact:true}).click()}
+  const select=name=>selectPortalSection(page,name)
   await select(lang==='es'?'Sucursales':'Locations')
   const work=page.locator('.ca-work')
   await work.getByRole('button',{name:lang==='es'?'+ Añadir sucursal':'+ Add location',exact:true}).click()

@@ -100,17 +100,17 @@ html[data-wf-theme="dark"] .wf-builder-app {--builder-plate:#0e1829;--builder-so
 
 /* The uploaded glass layer has important declarations; limit this override to
    the two revenue strips so each nested metric does not blur and cast a shadow. */
-html body #root :is(.ca-dashboard,.wfa-dashboard.wfa-premium) :is(.bcc-metrics article,.wfa-sales-metrics .wfa-stat) {
+html body #root :is(.ca-dashboard,.wfa-dashboard.wfa-premium):not(.wf-experience) :is(.bcc-metrics article,.wfa-sales-metrics .wfa-stat) {
   background:transparent!important;border:0!important;border-inline-end:1px solid var(--pg-line)!important;
   border-radius:0;box-shadow:none!important;backdrop-filter:none;-webkit-backdrop-filter:none;
 }
-html body #root :is(.ca-dashboard,.wfa-dashboard.wfa-premium) :is(.bcc-metrics article,.wfa-sales-metrics .wfa-stat):first-child {background:var(--pg-soft)!important;}
-html body #root :is(.ca-dashboard,.wfa-dashboard.wfa-premium) :is(.bcc-metrics article,.wfa-sales-metrics .wfa-stat):last-child {border-inline-end:0!important;}
-html body #root :is(.ca-dashboard,.wfa-dashboard.wfa-premium) :is(.bcc-card,.wfa-sales-chart) {border-radius:18px;backdrop-filter:none;-webkit-backdrop-filter:none;}
+html body #root :is(.ca-dashboard,.wfa-dashboard.wfa-premium):not(.wf-experience) :is(.bcc-metrics article,.wfa-sales-metrics .wfa-stat):first-child {background:var(--pg-soft)!important;}
+html body #root :is(.ca-dashboard,.wfa-dashboard.wfa-premium):not(.wf-experience) :is(.bcc-metrics article,.wfa-sales-metrics .wfa-stat):last-child {border-inline-end:0!important;}
+html body #root :is(.ca-dashboard,.wfa-dashboard.wfa-premium):not(.wf-experience) :is(.bcc-card,.wfa-sales-chart) {border-radius:18px;backdrop-filter:none;-webkit-backdrop-filter:none;}
 @media(max-width:767px) {
   html body .ca-dashboard .bcc .bcc-metrics {grid-template-columns:repeat(2,minmax(0,1fr));}
-  html body #root :is(.ca-dashboard,.wfa-dashboard.wfa-premium) :is(.bcc-metrics article,.wfa-sales-metrics .wfa-stat) {border-bottom:1px solid var(--pg-line)!important;}
-  html body #root :is(.ca-dashboard,.wfa-dashboard.wfa-premium) :is(.bcc-metrics article,.wfa-sales-metrics .wfa-stat):is(:first-child,:last-child) {grid-column:1/-1;border-inline-end:0!important;}
-  html body #root :is(.ca-dashboard,.wfa-dashboard.wfa-premium) :is(.bcc-metrics article,.wfa-sales-metrics .wfa-stat):nth-child(3) {border-inline-end:0!important;}
-  html body #root :is(.ca-dashboard,.wfa-dashboard.wfa-premium) :is(.bcc-metrics article,.wfa-sales-metrics .wfa-stat):last-child {border-bottom:0!important;}
+  html body #root :is(.ca-dashboard,.wfa-dashboard.wfa-premium):not(.wf-experience) :is(.bcc-metrics article,.wfa-sales-metrics .wfa-stat) {border-bottom:1px solid var(--pg-line)!important;}
+  html body #root :is(.ca-dashboard,.wfa-dashboard.wfa-premium):not(.wf-experience) :is(.bcc-metrics article,.wfa-sales-metrics .wfa-stat):is(:first-child,:last-child) {grid-column:1/-1;border-inline-end:0!important;}
+  html body #root :is(.ca-dashboard,.wfa-dashboard.wfa-premium):not(.wf-experience) :is(.bcc-metrics article,.wfa-sales-metrics .wfa-stat):nth-child(3) {border-inline-end:0!important;}
+  html body #root :is(.ca-dashboard,.wfa-dashboard.wfa-premium):not(.wf-experience) :is(.bcc-metrics article,.wfa-sales-metrics .wfa-stat):last-child {border-bottom:0!important;}
 }

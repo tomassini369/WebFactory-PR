@@ -2,8 +2,11 @@
 
 Installed on 2026-10-14 from main
 `a48463247bd83af78cde289f10548695a76bb61b` in
-`chore/codex-premium-design-skills`. This change installs guidance and adds
-registry aliases. It does not change application screens or install components.
+`chore/codex-premium-design-skills`. The installation commit
+`ba99fd54c64633c8363250789eec1cadc5747563` installs guidance and registry aliases;
+that commit does not change application screens or install components. The
+subsequently authorized unified UX implementation shares the same PR and preview;
+see [WORKSPACE-EXPERIENCE-QA.md](WORKSPACE-EXPERIENCE-QA.md) for its changes and checks.
 
 ## Resources and provenance
 
@@ -108,7 +111,7 @@ recommendations, not 20 confirmed visible defects. Font warnings do not
 override DESIGN.md's native-stack/no-download preference. Check computed
 styles before changing old CSS rules that may already be overridden.
 
-## Verification results
+## Installation-commit verification results
 
 - `npx skills list --agent codex`: all four new skills and the three existing
   Anti-Slop skills detected for Codex; no duplicate installation directories.
