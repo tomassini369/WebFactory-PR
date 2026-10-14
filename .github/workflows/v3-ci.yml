@@ -224,12 +224,33 @@ jobs:
         run: |
           npm ci
           npx playwright install --with-deps chromium webkit
+      - name: Build deployed-preview verification bundle
+        run: |
+          npm run build > /tmp/unified-preview-build.log 2>&1 || {
+            node scripts/report-kiosk-ci-error.mjs /tmp/unified-preview-build.log build
+            exit 1
+          }
+      - name: Check deployed unified workspaces with isolated fixtures
+        env:
+          QA_ORIGIN: https://deploy-preview-${{ github.event.pull_request.number }}--webfactorypr.netlify.app
+          QA_WIDTHS: 390,1440
+        run: |
+          for engine in chromium webkit; do
+            for workspace in workspace admin; do
+              phase="$workspace-$engine"
+              log="/tmp/unified-preview-$phase.log"
+              if ! QA_ENGINE="$engine" node "scripts/browser-$workspace-experience-smoke.mjs" > "$log" 2>&1; then
+                cat "$log"
+                node scripts/report-kiosk-ci-error.mjs "$log" "$phase"
+                exit 1
+              fi
+              cat "$log"
+            done
+          done
       - name: Check deployed appointment kiosk on Chromium
         env:
           QA_ORIGIN: https://deploy-preview-${{ github.event.pull_request.number }}--webfactorypr.netlify.app
-        run: |
-          npm run build
-          node scripts/browser-kiosk-bookings-smoke.mjs
+        run: node scripts/browser-kiosk-bookings-smoke.mjs
       - name: Check deployed kiosk authentication and privacy boundaries
         env:
           PREVIEW_URL: https://deploy-preview-${{ github.event.pull_request.number }}--webfactorypr.netlify.app
@@ -238,10 +259,6 @@ jobs:
         env:
           QA_ORIGIN: https://deploy-preview-${{ github.event.pull_request.number }}--webfactorypr.netlify.app
         run: |
-          npm run build > /tmp/kiosk-preview-build.log 2>&1 || {
-            node scripts/report-kiosk-ci-error.mjs /tmp/kiosk-preview-build.log build
-            exit 1
-          }
           QA_PORT=5236 node scripts/browser-kiosk-smoke.mjs > /tmp/kiosk-preview-chromium.log 2>&1 &
           kiosk_chromium_pid=$!
           QA_ENGINE=webkit QA_PORT=5237 node scripts/browser-kiosk-smoke.mjs > /tmp/kiosk-preview-webkit.log 2>&1 &
@@ -311,20 +328,3 @@ jobs:
           fi
           test "$link_chromium_result" -eq 0
           test "$link_webkit_result" -eq 0
-      - name: Check deployed unified workspaces with isolated fixtures
-        env:
-          QA_ORIGIN: https://deploy-preview-${{ github.event.pull_request.number }}--webfactorypr.netlify.app
-          QA_WIDTHS: 390,1440
-        run: |
-          for engine in chromium webkit; do
-            for workspace in workspace admin; do
-              phase="$workspace-$engine"
-              log="/tmp/unified-preview-$phase.log"
-              if ! QA_ENGINE="$engine" node "scripts/browser-$workspace-experience-smoke.mjs" > "$log" 2>&1; then
-                cat "$log"
-                node scripts/report-kiosk-ci-error.mjs "$log" "$phase"
-                exit 1
-              fi
-              cat "$log"
-            done
-          done
