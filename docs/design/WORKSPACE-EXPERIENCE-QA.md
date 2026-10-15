@@ -76,6 +76,13 @@ check against the deployed PR preview in Chromium and WebKit.
   intermittent Admin navigation failure passed its isolated reproduction; the
   full stable-build WebKit matrix is required before calling that matrix passed.
 
+- The actual Netlify preview injects a separate “Netlify Drawer” iframe. The
+  initial remote QA used a generic iframe locator and failed strict matching;
+  scope it to `.wf-template-preview-frame` and include an unrelated hidden iframe
+  in the isolated regression scenario. The application renderer is unchanged.
+  A local check with the published CSP headers also passed both mobile themes;
+  CSP was not weakened or identified as the cause.
+
 ## Validation
 
 Local results already executed:
@@ -106,6 +113,8 @@ Local results already executed:
 - Final secondary-action and compact-options checks: eight cases in each engine
   passed after the production minifier correction. Metric and secondary-action
   text contrast is measured at >=4.5:1; panel options measure 44px.
+- Netlify review-iframe regression: eight cases per engine passed with an
+  unrelated iframe present. Published-CSP reproduction: both mobile themes passed.
 - `git diff --check` passed for these project-owned changes. No lint script is
   defined in package.json; modified browser scripts are syntax-checked with
   `node --check`, and TypeScript validation runs in the build.
