@@ -17,8 +17,8 @@ const noOverflow=async page=>assert(await page.evaluate(()=>document.documentEle
 try{
  for(const width of widths)for(const theme of ['light','dark'])for(const lang of (process.env.QA_LANGS||'es,en').split(',')){
   let role='owner',writes=0
-  const context=await browser.newContext({viewport:{width,height:950},reducedMotion:'reduce',serviceWorkers:'block',...(isWebKit?{hasTouch:true}: {})}),page=await context.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message))
-  await page.addInitScript(theme=>{localStorage.setItem('webfactory-theme-v2',theme);sessionStorage.clear()},theme)
+  const context=await browser.newContext({viewport:{width,height:950},reducedMotion:'reduce',serviceWorkers:process.env.QA_OPAQUE_REVIEW==='1'?'allow':'block',...(isWebKit?{hasTouch:true}: {})}),page=await context.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message))
+  await page.addInitScript(theme=>{if(window!==window.top)return;localStorage.setItem('webfactory-theme-v2',theme);sessionStorage.clear()},theme)
   await page.route('**/.netlify/functions/**',async route=>{
    const req=route.request(),url=new URL(req.url()),name=url.pathname.split('/').at(-1)
    if(req.method()!=='GET'&&name!=='portal-session'){writes++;throw Error('Unexpected write in presentation QA: '+name)}
@@ -47,7 +47,7 @@ try{
   await page.goto(origin+'/builder');await page.locator('.wf-builder-app').waitFor();await page.locator('.header .langs button').filter({hasText:new RegExp('^'+lang.toUpperCase()+'$')}).click();assert.equal(await page.locator('html').getAttribute('lang'),lang);await page.locator('.wf-builder-nav button').first().click()
   const more=page.locator('.wf-builder-disclosure');if(!await more.evaluate(el=>el.open))await more.locator(':scope>summary').click();await more.getByLabel('Instagram',{exact:true}).fill('https://instagram.com/isolated-qa');await more.getByLabel('Instagram',{exact:true}).fill('');assert(await more.evaluate(el=>el.open),'Clearing the optional field must not close the section')
   await page.getByLabel('Business name · English',{exact:true}).fill('Preserved fixture draft')
-  await page.evaluate(()=>{const frame=document.createElement('iframe');frame.hidden=true;frame.title='Isolated review-tool frame';document.body.appendChild(frame)});
+  await page.evaluate(opaque=>{const frame=document.createElement('iframe');frame.hidden=true;frame.title='Isolated review-tool frame';if(opaque){frame.setAttribute('sandbox','allow-scripts');frame.srcdoc='<!doctype html><html><body></body></html>'}document.body.appendChild(frame)},process.env.QA_OPAQUE_REVIEW==='1');
   await showBuilderPreview(page);await page.frameLocator('.wf-template-preview-frame').locator('.template-site').waitFor();const frame=await page.locator('.wf-template-preview-frame').elementHandle()
   const views=page.locator('.wf-builder-view-switch');if(await views.isVisible()){await views.getByRole('button',{name:/^(Edit|Editar)$/}).click();assert.equal(await page.getByLabel('Business name · English',{exact:true}).inputValue(),'Preserved fixture draft');await showBuilderPreview(page);assert(await frame.evaluate(el=>el.isConnected),'Preview iframe stays mounted');assert.equal(await page.locator('.wf-template-preview-frame').count(),1)}
   await noOverflow(page)

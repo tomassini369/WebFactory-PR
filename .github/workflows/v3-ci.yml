@@ -58,14 +58,30 @@ jobs:
       - name: Check POS 2.0 responsive checkout and retry protection
         env:
           QA_BUILT: 1
-        run: node scripts/browser-pos-v2-smoke.mjs
+        run: |
+          phase="pos-${QA_ENGINE:-chromium}"
+          log="/tmp/$phase.log"
+          if ! node scripts/browser-pos-v2-smoke.mjs > "$log" 2>&1; then
+            cat "$log"
+            node scripts/report-kiosk-ci-error.mjs "$log" "$phase"
+            exit 1
+          fi
+          cat "$log"
       - name: Check POS 2.0 on touch WebKit
         env:
           QA_BUILT: 1
           QA_ENGINE: webkit
           QA_PORT: 5221
           QA_WIDTHS: 320,375,390,430
-        run: node scripts/browser-pos-v2-smoke.mjs
+        run: |
+          phase="pos-${QA_ENGINE:-chromium}"
+          log="/tmp/$phase.log"
+          if ! node scripts/browser-pos-v2-smoke.mjs > "$log" 2>&1; then
+            cat "$log"
+            node scripts/report-kiosk-ci-error.mjs "$log" "$phase"
+            exit 1
+          fi
+          cat "$log"
       - name: Check business profiles, POS module permissions and settings on Chromium
         env:
           QA_PORT: 5244

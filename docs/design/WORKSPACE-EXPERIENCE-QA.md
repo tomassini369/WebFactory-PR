@@ -82,6 +82,15 @@ check against the deployed PR preview in Chromium and WebKit.
   in the isolated regression scenario. The application renderer is unchanged.
   A local check with the published CSP headers also passed both mobile themes;
   CSP was not weakened or identified as the cause.
+- A second remote QA failure came from the unguarded theme initialization script
+  executing inside Netlify's restricted third-party iframe. Initialize only the
+  top window, preserving error assertions. An opaque-frame negative reproduction
+  also exposes Playwright's own service-worker-blocking initializer limitation;
+  the dedicated local opaque-frame case permits service workers to isolate the
+  storage guard. Default and remote QA still block service workers. Sixteen normal cases and
+  four dedicated opaque-frame cases passed in Chromium/WebKit after the guard.
+  An intermediate POS WebKit CI failure did not recur in the following run;
+  preserve diagnostics and do not claim an unproven runtime cause.
 
 ## Validation
 

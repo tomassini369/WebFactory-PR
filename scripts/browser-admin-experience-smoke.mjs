@@ -14,7 +14,7 @@ try{
  for(const width of (process.env.QA_WIDTHS||'320,375,390,430,768,1024,1440').split(',').map(Number))for(const theme of (process.env.QA_THEMES||'light,dark').split(','))for(const lang of (process.env.QA_LANGS||'es,en').split(',')){
   const context=await browser.newContext({viewport:{width,height:950},reducedMotion:'reduce',serviceWorkers:'block',...(isWebKit?{hasTouch:true}: {})}),page=await context.newPage();const errors=[];let writes=0
   page.on('pageerror',error=>errors.push(error.message))
-  await page.addInitScript(theme=>localStorage.setItem('webfactory-theme-v2',theme),theme)
+  await page.addInitScript(theme=>{if(window===window.top)localStorage.setItem('webfactory-theme-v2',theme)},theme)
   await page.route('**/.netlify/functions/**',async route=>{
    const request=route.request(),name=new URL(request.url()).pathname.split('/').at(-1)
    if(request.method()!=='GET'&&name!=='portal-session'){writes++;throw Error('Admin visual QA cannot modify data: '+name)}
