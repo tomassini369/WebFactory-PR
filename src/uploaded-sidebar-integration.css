@@ -38,3 +38,6 @@ html body #root .wf-sidebar-frame .sidebar-nav-item:active {transform:none;}
 @media(prefers-reduced-transparency:reduce) {.wf-sidebar-frame .sidebar-container {background:#0b1529;backdrop-filter:none;-webkit-backdrop-filter:none;}}
 @supports not (backdrop-filter:blur(1px)) {.wf-sidebar-frame .sidebar-container {background:#0b1529;}}
 @media(forced-colors:active) {.wf-sidebar-frame .sidebar-container {background:Canvas;color:CanvasText;} .wf-sidebar-frame .sidebar-nav-item.active {outline:2px solid Highlight!important;}}
+
+/* Global FAQ span rules must not rotate or enlarge navigation labels. */
+html body #root .wf-experience .sidebar-group-toggle>span{font:inherit;transform:none;transition:none}

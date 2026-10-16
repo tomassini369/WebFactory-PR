@@ -1,7 +1,8 @@
+import {selectPortalSection,openPanelTools} from './qa-workspace-navigation.mjs'
 import assert from 'node:assert/strict'
-import {createServer} from 'vite'
+import {preview} from 'vite'
 import {chromium} from 'playwright'
-const server=await createServer({server:{host:'127.0.0.1',port:5196,strictPort:true}});await server.listen()
+const server=await preview({preview:{host:'127.0.0.1',port:5196,strictPort:true}})
 const browser=await chromium.launch(process.env.QA_CHROMIUM_PATH?{executablePath:process.env.QA_CHROMIUM_PATH,args:['--single-process','--no-sandbox']}:undefined)
 const page=await browser.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message))
 const user={id:'isolated-layout-fixture',email:'layout@example.invalid',user_metadata:{},app_metadata:{},mfa:{required:false}}
@@ -32,7 +33,7 @@ try{
  // Homepage click and actual return button use real route navigation; no auth mutation.
  await page.goto('http://127.0.0.1:5196/')
  await page.locator('.wf-h-login').click()
- await page.waitForURL('**/client-admin')
+ await page.waitForURL('**/client-admin');await page.locator('.ca-login input[type=email]').waitFor()
  await page.locator('button.portal-return-home').click()
  await page.waitForURL('http://127.0.0.1:5196/')
  assert.equal(await page.locator('html').evaluate(el=>el.classList.contains('wf-portal-leaving')),false)
@@ -43,7 +44,7 @@ try{
   await page.setViewportSize({width,height:width===844?390:844});await page.goto('http://127.0.0.1:5196/'+path)
   const root=page.locator(path==='client-admin'?'.ca-dashboard':'.wfa-dashboard');await root.waitFor()
   if(await page.locator('html').getAttribute('data-wf-theme')!==theme)await page.locator('.wf-theme-toggle').click()
-  assert.equal(await root.evaluate(e=>getComputedStyle(e).getPropertyValue('--pg-accent').trim()),theme==='dark'?'#91bfff':'#2867b2','Original accents must use platform blue')
+  assert.equal(await root.evaluate(e=>getComputedStyle(e).getPropertyValue('--pg-accent').trim()),theme==='dark'?'#91bfff':'#285fa6','Original accents must use platform blue')
   assert.equal(await root.locator('.sidebar-traffic-lights .dot').count(),3)
   for(const lang of ['ES','EN']){await page.locator('.portal-language button').getByText(lang,{exact:true}).click();assert.equal(await page.locator('html').getAttribute('lang'),lang.toLowerCase())}
   if(path==='webfactory-admin'){
@@ -69,8 +70,8 @@ try{
   await page.waitForFunction(()=>Math.abs(document.querySelector('.sidebar-container').getBoundingClientRect().width-240)<.5)
   assert.equal(await sidebar.getByText('Dorian',{exact:true}).count(),0)
   assert.equal(await sidebar.locator('.sidebar-bell-badge,.sidebar-item-badge').count(),0)
-  assert((await sidebar.evaluate(el=>getComputedStyle(el).backdropFilter)).includes('blur(24px)'))
-  assert.equal(await sidebar.locator('[aria-current=page]').evaluate(el=>el.getBoundingClientRect().height),width<=820?44:38)
+  assert.equal(await sidebar.evaluate(el=>getComputedStyle(el).backdropFilter),'none','Opaque navigation does not need a costly blur')
+  assert((await sidebar.locator('[aria-current=page]').evaluate(el=>el.getBoundingClientRect().height))>=44,'Navigation targets remain at least 44px on every screen')
   assert(await sidebar.evaluate(el=>el.getBoundingClientRect().bottom<=innerHeight+1),'Short screens must keep navigation scrollable')
   if(process.env.QA_SCREENSHOT_DIR){await page.locator(path==='client-admin'?'.ca-work':'.wfa-work').evaluate(el=>el.scrollTop=0);await page.waitForTimeout(350);await page.screenshot({path:`${process.env.QA_SCREENSHOT_DIR}/${path}-sidebar-${width}-${theme}.png`})}
   const search=sidebar.getByRole('textbox',{name:'Search sections'})
@@ -80,11 +81,11 @@ try{
   await search.fill('')
   const nav=page.locator('.wf-sidebar-frame nav')
 
-  await nav.getByRole('button',{name:path==='client-admin'?'Products and services':'Clients',exact:true}).click()
+  await selectPortalSection(page,path==='client-admin'?'Products and services':'Clients')
   if(width<=820)assert.equal(await toggle.getAttribute('aria-expanded'),'false')
   const panel=page.locator('.wf-portal-panel').first();await panel.waitFor()
   assert.notEqual(await panel.evaluate(el=>getComputedStyle(el).borderRadius),'0px')
-  await panel.locator('.wf-panel-tools button').last().click();assert.equal(await page.getByRole('dialog',{name:'Expanded panel'}).count(),1)
+  await openPanelTools(panel);await panel.locator('.wf-panel-tools button').last().click();assert.equal(await page.getByRole('dialog',{name:'Expanded panel'}).count(),1)
   await page.keyboard.press('Escape');assert.equal(await page.getByRole('dialog',{name:'Expanded panel'}).count(),0)
   if(process.env.QA_SCREENSHOT_DIR)await page.screenshot({path:`${process.env.QA_SCREENSHOT_DIR}/${path}-${width}-${theme}.png`})
   if(path==='client-admin'&&width===1280&&theme==='light'){
@@ -98,7 +99,7 @@ try{
    await page.keyboard.press('Escape')
    await page.waitForFunction(()=>Math.abs(document.querySelector('.sidebar-container').getBoundingClientRect().width-74)<.5)
    const first=nav.getByRole('button',{name:'Overview',exact:true});await first.hover()
-   await page.waitForFunction(()=>{const el=document.querySelector('.sidebar-nav-list .sidebar-dock-icon-wrapper');return el&&parseFloat(getComputedStyle(el).transform.split('(')[1])>1.24})
+   await page.waitForFunction(()=>{const el=document.querySelector('.sidebar-nav-list .sidebar-dock-icon-wrapper');return el&&parseFloat(getComputedStyle(el).transform.split('(')[1])>1.04})
    assert.equal(await page.getByRole('tooltip').innerText(),'Overview')
   }
   if(width<=820||!(await toggle.getAttribute('aria-expanded')==='true'))await toggle.click()
@@ -117,11 +118,12 @@ try{
  await page.route('**/.netlify/functions/client-admin',async route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({ok:true,sites:[{siteId:'restricted-one',slug:'one',businessName:'First business'},{siteId:'restricted-two',slug:'two',businessName:'Second business'}]})}))
  await page.setViewportSize({width:1280,height:844});await page.goto('http://127.0.0.1:5196/client-admin');await page.locator('.ca-dashboard').waitFor()
  const restricted=page.locator('.wf-sidebar-frame nav')
- assert.equal(await restricted.getByRole('button',{name:'Payments',exact:true}).count(),0,'Restricted members must not gain menu permissions')
- assert.equal(await restricted.getByRole('button',{name:'Edit website',exact:true}).count(),0)
- assert.equal(await restricted.getByRole('button',{name:'Products and services',exact:true}).count(),1)
+ assert.equal(await restricted.getByRole('button',{name:'Payments',exact:true,includeHidden:true}).count(),0,'Restricted members must not gain menu permissions')
+ assert.equal(await restricted.getByRole('button',{name:'Edit website',exact:true,includeHidden:true}).count(),0)
+ assert.equal(await restricted.getByRole('button',{name:'Products and services',exact:true,includeHidden:true}).count(),1)
+ await selectPortalSection(page,'Products and services');assert.equal(await restricted.getByRole('button',{name:'Products and services',exact:true}).getAttribute('aria-current'),'page');
  await Promise.all([page.waitForResponse(response=>response.url().includes('client-admin?siteId=restricted-two')),page.locator('.ca-site-switcher select').selectOption('restricted-two')])
  assert.equal(await page.locator('.ca-site-switcher select').inputValue(),'restricted-two')
  assert.deepEqual(errors,[])
  console.log('PASS: homepage/portal return, both workspaces, themes, languages, mobile menus and panel focus')
-}finally{await browser.close();await server.close()}
+}finally{await browser.close();await new Promise(resolve=>server.httpServer.close(resolve))}

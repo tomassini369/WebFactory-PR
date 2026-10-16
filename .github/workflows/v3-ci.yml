@@ -12,7 +12,7 @@ on:
 jobs:
   verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 55
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -31,6 +31,27 @@ jobs:
         run: npx playwright install --with-deps --only-shell chromium
       - name: Install WebKit for mobile FAQ QA
         run: npx playwright install --with-deps webkit
+      - name: Check login and MFA text contrast on Chromium and WebKit
+        run: |
+          for engine in chromium webkit; do
+            phase="auth-contrast-$engine"
+            log="/tmp/$phase.log"
+            if ! QA_ENGINE="$engine" QA_PORT=5306 node scripts/browser-auth-contrast-smoke.mjs > "$log" 2>&1; then
+              cat "$log"
+              node scripts/report-kiosk-ci-error.mjs "$log" "$phase"
+              exit 1
+            fi
+            cat "$log"
+          done
+      - name: Save login contrast browser evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: auth-contrast-browser-evidence
+          path: |
+            /tmp/webfactory-auth-contrast/
+            /tmp/auth-contrast-*.log
+          if-no-files-found: ignore
       - name: Check Workforce identity, clock controls and responsive review
         env:
           QA_BUILT: 1
@@ -43,6 +64,31 @@ jobs:
           QA_PORT: 5223
           QA_WIDTHS: 320,375,390,430
         run: node scripts/browser-workforce-smoke.mjs
+      - name: Check interactive platform training, roles and safe practice
+        run: |
+          for engine in chromium webkit; do
+            phase="training-$engine"
+            log="/tmp/$phase.log"
+            if ! QA_ENGINE="$engine" QA_PORT=5290 node scripts/browser-training-smoke.mjs > "$log" 2>&1; then
+              cat "$log"
+              node scripts/report-kiosk-ci-error.mjs "$log" "$phase"
+              exit 1
+            fi
+            cat "$log"
+          done
+      - name: Save training browser evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: training-browser-evidence
+          path: |
+            /tmp/webfactory-training-qa/
+            /tmp/training-*.log
+          if-no-files-found: ignore
+      - name: Check unified workspace hierarchy, disclosures and Builder state
+        run: |
+          node scripts/browser-workspace-experience-smoke.mjs
+          node scripts/browser-admin-experience-smoke.mjs
       - name: Check portal route transitions and template Home controls
         run: node scripts/browser-route-transitions-smoke.mjs
       - name: Check stable authentication cards, keyboard and mobile hero
@@ -54,14 +100,30 @@ jobs:
       - name: Check POS 2.0 responsive checkout and retry protection
         env:
           QA_BUILT: 1
-        run: node scripts/browser-pos-v2-smoke.mjs
+        run: |
+          phase="pos-${QA_ENGINE:-chromium}"
+          log="/tmp/$phase.log"
+          if ! node scripts/browser-pos-v2-smoke.mjs > "$log" 2>&1; then
+            cat "$log"
+            node scripts/report-kiosk-ci-error.mjs "$log" "$phase"
+            exit 1
+          fi
+          cat "$log"
       - name: Check POS 2.0 on touch WebKit
         env:
           QA_BUILT: 1
           QA_ENGINE: webkit
           QA_PORT: 5221
           QA_WIDTHS: 320,375,390,430
-        run: node scripts/browser-pos-v2-smoke.mjs
+        run: |
+          phase="pos-${QA_ENGINE:-chromium}"
+          log="/tmp/$phase.log"
+          if ! node scripts/browser-pos-v2-smoke.mjs > "$log" 2>&1; then
+            cat "$log"
+            node scripts/report-kiosk-ci-error.mjs "$log" "$phase"
+            exit 1
+          fi
+          cat "$log"
       - name: Check business profiles, POS module permissions and settings on Chromium
         env:
           QA_PORT: 5244
@@ -157,7 +219,7 @@ jobs:
   deploy-preview-smoke:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     permissions:
       contents: read
       statuses: read
@@ -220,12 +282,82 @@ jobs:
         run: |
           npm ci
           npx playwright install --with-deps chromium webkit
+      - name: Build deployed-preview verification bundle
+        run: |
+          npm run build > /tmp/unified-preview-build.log 2>&1 || {
+            node scripts/report-kiosk-ci-error.mjs /tmp/unified-preview-build.log build
+            exit 1
+          }
+      - name: Check deployed login and MFA text contrast with isolated sessions
+        env:
+          QA_ORIGIN: https://deploy-preview-${{ github.event.pull_request.number }}--webfactorypr.netlify.app
+          QA_WIDTHS: 390,1440
+        run: |
+          for engine in chromium webkit; do
+            phase="auth-contrast-$engine"
+            log="/tmp/$phase.log"
+            if ! QA_ENGINE="$engine" QA_PORT=5306 node scripts/browser-auth-contrast-smoke.mjs > "$log" 2>&1; then
+              cat "$log"
+              node scripts/report-kiosk-ci-error.mjs "$log" "$phase"
+              exit 1
+            fi
+            cat "$log"
+          done
+      - name: Save login contrast browser evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: auth-contrast-preview-evidence
+          path: |
+            /tmp/webfactory-auth-contrast/
+            /tmp/auth-contrast-*.log
+          if-no-files-found: ignore
+      - name: Check deployed unified workspaces with isolated fixtures
+        env:
+          QA_ORIGIN: https://deploy-preview-${{ github.event.pull_request.number }}--webfactorypr.netlify.app
+          QA_WIDTHS: 390,1440
+        run: |
+          for engine in chromium webkit; do
+            for workspace in workspace admin; do
+              phase="$workspace-$engine"
+              log="/tmp/unified-preview-$phase.log"
+              if ! QA_ENGINE="$engine" node "scripts/browser-$workspace-experience-smoke.mjs" > "$log" 2>&1; then
+                cat "$log"
+                node scripts/report-kiosk-ci-error.mjs "$log" "$phase"
+                exit 1
+              fi
+              cat "$log"
+            done
+          done
+      - name: Check deployed training with isolated practice on Chromium and WebKit
+        env:
+          QA_ORIGIN: https://deploy-preview-${{ github.event.pull_request.number }}--webfactorypr.netlify.app
+          QA_WIDTHS: 390,1440
+          QA_TRAINING_DETAILS: 0
+        run: |
+          for engine in chromium webkit; do
+            phase="training-$engine"
+            log="/tmp/$phase.log"
+            if ! QA_ENGINE="$engine" QA_PORT=5290 node scripts/browser-training-smoke.mjs > "$log" 2>&1; then
+              cat "$log"
+              node scripts/report-kiosk-ci-error.mjs "$log" "$phase"
+              exit 1
+            fi
+            cat "$log"
+          done
+      - name: Save deployed training browser evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: training-preview-evidence
+          path: |
+            /tmp/webfactory-training-qa/
+            /tmp/training-*.log
+          if-no-files-found: ignore
       - name: Check deployed appointment kiosk on Chromium
         env:
           QA_ORIGIN: https://deploy-preview-${{ github.event.pull_request.number }}--webfactorypr.netlify.app
-        run: |
-          npm run build
-          node scripts/browser-kiosk-bookings-smoke.mjs
+        run: node scripts/browser-kiosk-bookings-smoke.mjs
       - name: Check deployed kiosk authentication and privacy boundaries
         env:
           PREVIEW_URL: https://deploy-preview-${{ github.event.pull_request.number }}--webfactorypr.netlify.app
@@ -234,10 +366,6 @@ jobs:
         env:
           QA_ORIGIN: https://deploy-preview-${{ github.event.pull_request.number }}--webfactorypr.netlify.app
         run: |
-          npm run build > /tmp/kiosk-preview-build.log 2>&1 || {
-            node scripts/report-kiosk-ci-error.mjs /tmp/kiosk-preview-build.log build
-            exit 1
-          }
           QA_PORT=5236 node scripts/browser-kiosk-smoke.mjs > /tmp/kiosk-preview-chromium.log 2>&1 &
           kiosk_chromium_pid=$!
           QA_ENGINE=webkit QA_PORT=5237 node scripts/browser-kiosk-smoke.mjs > /tmp/kiosk-preview-webkit.log 2>&1 &

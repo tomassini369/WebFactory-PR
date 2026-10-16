@@ -1,7 +1,9 @@
+import {useWorkspaceFetch} from './training/workspace-services'
 import { useEffect, useState, type FormEvent } from 'react'
 import { withAuthRetry } from './auth-retry'
 
 export function AthConnection({site,setSite,lang,canConnect}:{site:any;setSite:(site:any)=>void;lang:'es'|'en';canConnect:boolean}){
+ const fetch=useWorkspaceFetch()
   const es=lang==='es'
   const ath=site.paymentRules?.ath||{}
   const enabled=Boolean(site.paymentRules?.methods?.ath)

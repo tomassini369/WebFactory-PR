@@ -1,3 +1,4 @@
+import {useWorkspaceFetch} from './training/workspace-services'
 import {useEffect,useRef,useState,type CSSProperties} from 'react'
 import {PortalPanel} from './PortalPanel'
 import {useUnsavedChanges} from './interaction-state'
@@ -7,17 +8,18 @@ import {posProfileCopy} from './pos-profile'
 import {posBrandPair} from './pos-domain'
 import './pos-operations.css'
 type Props={site:any;lang:'es'|'en';onChange:(operations:PosOperations)=>void}
-async function request(siteId:string,body?:PosOperations){
+async function request(fetch:ReturnType<typeof useWorkspaceFetch>,siteId:string,body?:PosOperations){
  return withAuthRetry(async()=>{const response=await fetch('/.netlify/functions/client-pos-settings'+(body?'':'?siteId='+encodeURIComponent(siteId)),{credentials:'include',cache:'no-store',...(body?{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({siteId,...body})}:{})});const data=await response.json();if(!response.ok)throw Error(data.message||'Request failed.');if(!data.operations||typeof data.canManage!=='boolean')throw Error('Invalid POS settings / Ajustes POS inválidos.');return {...data,operations:posOperations({operations:data.operations})}})
 }
 export default function PosOperationsSettings({site,lang,onChange}:Props){
+ const fetch=useWorkspaceFetch()
  const t=(a:string,b:string)=>lang==='es'?a:b,[view,setView]=useState<PosOperations|null>(null),[draft,setDraft]=useState<PosOperations|null>(null),[canManage,setCanManage]=useState(false),[loading,setLoading]=useState(true),[busy,setBusy]=useState(false),[error,setError]=useState(''),[message,setMessage]=useState(''),gate=useRef(false),active=useRef(true),change=useRef(onChange)
  change.current=onChange
  useUnsavedChanges(draft,view?'loaded:'+view.revision:'loading',setDraft,lang,view)
  const receive=(data:Awaited<ReturnType<typeof request>>)=>{if(!active.current)return;setView(data.operations);setDraft(data.operations);setCanManage(data.canManage);change.current(data.operations)}
- const load=async()=>{setLoading(true);setError('');try{receive(await request(site.siteId))}catch(e){if(active.current)setError(e instanceof Error?e.message:'Error')}finally{if(active.current)setLoading(false)}}
+ const load=async()=>{setLoading(true);setError('');try{receive(await request(fetch,site.siteId))}catch(e){if(active.current)setError(e instanceof Error?e.message:'Error')}finally{if(active.current)setLoading(false)}}
  useEffect(()=>{active.current=true;void load();return()=>{active.current=false}},[site.siteId])
- const save=async()=>{if(!draft||!canManage||gate.current)return;gate.current=true;setBusy(true);setError('');setMessage('');try{receive(await request(site.siteId,draft));if(active.current)setMessage(t('Ajustes confirmados por el servidor.','Settings confirmed by the server.'))}catch(e){if(active.current)setError(e instanceof Error?e.message:'Error')}finally{gate.current=false;if(active.current)setBusy(false)}}
+ const save=async()=>{if(!draft||!canManage||gate.current)return;gate.current=true;setBusy(true);setError('');setMessage('');try{receive(await request(fetch,site.siteId,draft));if(active.current)setMessage(t('Ajustes confirmados por el servidor.','Settings confirmed by the server.'))}catch(e){if(active.current)setError(e instanceof Error?e.message:'Error')}finally{gate.current=false;if(active.current)setBusy(false)}}
  const dirty=!!view&&!!draft&&['cashierEnabled','displayEnabled','profile'].some(key=>view[key as keyof PosOperations]!==draft[key as keyof PosOperations])
  const brand=posBrandPair(site.design?.secondary||'')
  return <PortalPanel className="ca-panel pos-operations-settings" style={{'--ops-primary':/^#[a-f\d]{6}$/i.test(site.design?.primary||'')?site.design.primary:'#0b1529','--ops-brand':brand.background,'--ops-brand-ink':brand.foreground} as CSSProperties}><header><h2>{t('POS · Operación del negocio','POS · Business operations')}</h2><p>{t('Escoge la presentación del POS y las pantallas que necesita tu negocio. El catálogo, los permisos y las transacciones siguen siendo los mismos.','Choose your POS presentation and the screens your business needs. Catalog, permissions and transactions remain the same.')}</p></header>

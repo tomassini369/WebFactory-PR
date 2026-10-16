@@ -45,3 +45,19 @@ Show at most three existing catalog highlights in a glass card carousel: white s
 Press feedback uses a brief inset accent highlight and scale .98. Active choices preserve their existing selection state. Overlay panels use 200ms opacity/translate transitions, retain content briefly on exit with inert stale controls, and preserve the mounted catalog and its scroll position. Menus use a 160ms fade/translate. Reduced motion disables animation and removes exit delay. No perpetual motion, new font downloads or neon glow. Brand colors and existing functions take priority over generic style constraints.
 
 Demos have no contact form. Only newly initialized Builder drafts default features.form to false. Existing drafts and customer configurations keep their explicit choices; the dashboard's existing form toggle and contact transport remain unchanged. Dashboard catalog, pricing, employee, hours and business edits continue to feed the same renderer. No new dashboard editing mode is introduced.
+
+## Unified Builder workspace · October 14, 2026
+
+Below 1024px use labeled Edit / Preview choices so the editor and preview do
+not form one unnecessarily long phone page. Keep both panes and the same
+preview iframe mounted; switching views must preserve the draft, renderer,
+selected device, cart contents and catalog position. Desktop retains the
+simultaneous editor and preview. Existing device-size controls remain separate
+from the workspace view choice.
+
+Core business fields remain visible. Location, social links and photographs
+are grouped in one native disclosure using the existing field and upload
+handlers. Clearing the last optional value must not close the disclosure while
+editing. Empty hero/gallery URLs do not render empty-src images or trigger
+page-self-fetches; configured photographs and template identity remain intact.
+No new renderer, visual component package or business-field schema is added.

@@ -1,20 +1,23 @@
+import {usePractice} from './training/practice-context'
+import {useWorkspaceFetch,useWorkspacePaused} from './training/workspace-services'
 import {useCallback,useEffect,useRef,useState} from 'react'
 import {PortalPanel} from './PortalPanel'
 import './workforce.css'
 type Shift={id:string;employeeId:string;locationId:string;start:string;end:string|null;breaks:{start:string;end:string|null}[];workedMinutes:number;breakMinutes:number;approvedAt?:string;correction?:{start:string;end:string}}
 type View={events:{id:string;action:string;at:string;employeeId:string}[];totals:{todayMinutes:number;weekMinutes:number};enabled:boolean;paidBreaks:boolean;revision:number;serverNow:string;confirmedOperationIds:string[];admin:boolean;employeeId:string;shifts:Shift[];requests:{id:string;shiftId:string;employeeId:string;reason:string;start:string;end:string;status:string}[];employees:{id:string;name:string}[];locations:{id:string;name:string;active?:boolean}[];bindings:{email:string;employeeId:string;locationId:string}[]}
 export function WorkforcePanel({site,lang,mode='dashboard',onOpenAttendance,onChanged}:{site:any;lang:'es'|'en';mode?:'dashboard'|'settings'|'summary'|'history';onOpenAttendance?:()=>void;onChanged?:()=>void}){
+ const fetch=useWorkspaceFetch(),practice=usePractice(),paused=useWorkspacePaused()
  const es=lang==='es',[view,setView]=useState<View|null>(null),[error,setError]=useState(''),[busy,setBusy]=useState(false),[message,setMessage]=useState(''),[filter,setFilter]=useState(''),[branch,setBranch]=useState(''),[email,setEmail]=useState(''),[employee,setEmployee]=useState(''),[location,setLocation]=useState(''),[from,setFrom]=useState(''),[to,setTo]=useState('');
  const [closing,setClosing]=useState<{shiftId:string;reason:string}|null>(null);
  const [correction,setCorrection]=useState<{shiftId:string;start:string;end:string;reason:string}|null>(null);
  const [showHistory,setShowHistory]=useState(false);
  const pending=useRef<{body:any}|null>(null),gate=useRef(false),mounted=useRef(true),loadSequence=useRef(0);
  const load=useCallback(async()=>{const sequence=++loadSequence.current;const r=await fetch(`/.netlify/functions/client-workforce?siteId=${encodeURIComponent(site.siteId)}`,{credentials:'include',cache:'no-store'});const data=await r.json();if(!r.ok)throw Error(data.message|| (lang==='es'?'No se pudo cargar la asistencia.':'Attendance could not be loaded.'));if(!['shifts','employees','requests','bindings','locations','events'].every(key=>Array.isArray(data[key])))throw Error(lang==='es'?'Respuesta de asistencia inválida. Reintenta.':'Invalid attendance response. Retry.');if(mounted.current&&sequence===loadSequence.current){if(pending.current&&data.confirmedOperationIds?.includes(pending.current.body.operationId)){pending.current=null;setError('');setMessage(lang==='es'?'Registro verificado en el servidor.':'Record verified on the server.')}setView(data)}},[site.siteId,lang]);
- useEffect(()=>{mounted.current=true;load().catch(e=>setError(e.message));const timer=setInterval(()=>{if(!gate.current)load().catch(e=>setError(e.message))},30000);return()=>{mounted.current=false;clearInterval(timer)}},[load]);
+ useEffect(()=>{if(paused)return;mounted.current=true;load().catch(e=>setError(e.message));const timer=setInterval(()=>{if(!gate.current)load().catch(e=>setError(e.message))},30000);return()=>{mounted.current=false;clearInterval(timer)}},[load,paused]);
  const mutate=async(action:string,extra:any={})=>{
   if(gate.current)return;gate.current=true;loadSequence.current++;setBusy(true);setError('');setMessage('');
   const body=pending.current?.body||{siteId:site.siteId,operationId:crypto.randomUUID(),action,...extra};pending.current={body};
-  try{const r=await fetch('/.netlify/functions/client-workforce',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});const data=await r.json();if(!r.ok){if([400,401,403,409].includes(r.status))pending.current=null;throw Error(data.message)}pending.current=null;setView(data);onChanged?.();setMessage(es?'Registro confirmado por el servidor.':'Record confirmed by the server.');return true}
+  try{const r=await fetch('/.netlify/functions/client-workforce',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});const data=await r.json();if(!r.ok){if([400,401,403,409].includes(r.status))pending.current=null;throw Error(data.message)}pending.current=null;setView(data);onChanged?.();setMessage(practice?(es?'Registro de práctica guardado. No se registró asistencia real.':'Practice record saved. No real attendance was recorded.'):(es?'Registro confirmado por el servidor.':'Record confirmed by the server.'));return true}
   catch(e){setError(e instanceof Error?e.message:String(e));load().catch(()=>{})}finally{gate.current=false;setBusy(false)}
  }
  const date=(v:string)=>new Date(v).toLocaleString(es?'es-PR':'en-US',{timeZone:site.settings?.timezone||'America/Puerto_Rico',dateStyle:'short',timeStyle:'short'}),hours=(n:number)=>`${Math.floor(n/60)}h ${n%60}m`;

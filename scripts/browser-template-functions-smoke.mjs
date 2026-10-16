@@ -1,3 +1,4 @@
+import {showBuilderPreview} from './qa-workspace-navigation.mjs'
 import assert from 'node:assert/strict'
 import {createServer} from 'vite'
 import {chromium} from 'playwright'
@@ -87,6 +88,7 @@ try{
    }
    assert.equal(await page.locator('.template-demo-contact').count(),0)
    await page.goto('http://127.0.0.1:5191/builder?template='+config.slug)
+   await page.locator('.wf-builder-app').waitFor();await showBuilderPreview(page)
    await page.locator('iframe').waitFor()
    await page.waitForFunction(slug=>JSON.parse(localStorage.getItem('webfactory-v3-builder-draft')||'{}').design?.templateSlug===slug,config.slug)
    const state=await page.evaluate(()=>JSON.parse(localStorage.getItem('webfactory-v3-builder-draft')))

@@ -1,6 +1,6 @@
 import { useLayoutEffect, useRef, useState, type ReactNode, type MouseEvent, type FocusEvent } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
-import { LayoutDashboard, BookOpen, FilePenLine, Palette, QrCode, CookingPot, ShoppingBag, CalendarDays, ContactRound, Package, UsersRound, MapPin, ScanLine, CreditCard, Megaphone, BarChart3, Plug, ShieldCheck, Settings, ReceiptText, Building2, ClipboardList, Server, Bot, ExternalLink, LogOut, type LucideIcon } from 'lucide-react';
+import { LayoutDashboard, BookOpen, FilePenLine, Palette, QrCode, CookingPot, ShoppingBag, CalendarDays, ContactRound, Package, UsersRound, MapPin, ScanLine, CreditCard, Megaphone, BarChart3, Plug, ShieldCheck, Settings, ReceiptText, Building2, ClipboardList, Server, Bot, ExternalLink, LogOut, ChevronDown, type LucideIcon } from 'lucide-react';
 import './uploaded-sidebar.css';
 import './uploaded-sidebar-integration.css';
 // Source-derived adapter: original SVGs, glass layers, dimensions and springs.
@@ -10,7 +10,7 @@ type Props = {
   groups:Group[]; activeItem:string; name:string; email:string; lang:'es'|'en';
   isExpanded:boolean; onExpandedChange:(expanded:boolean)=>void;
   onNavigate:(id:string)=>void; onLogout:()=>void; logoutLabel:string;
-  links:Item[]; controls:ReactNode; navigationId:string; mobileToggleClass:string;
+  links:Item[]; controls:ReactNode; navigationId:string; mobileToggleClass:string; primaryItemIds?:string[];
 };
 const originalIcons = [
   (<svg viewBox="0 0 24 24" width="20" height="20" className="sidebar-svg-icon" fill="currentColor">
@@ -88,7 +88,7 @@ const semanticIcons: Record<string, LucideIcon> = {
   'website-link': ExternalLink,
   logout: LogOut,
 };
-export default function UploadedSidebar({groups,activeItem,name,email,lang,isExpanded,onExpandedChange,onNavigate,onLogout,logoutLabel,links,controls,navigationId,mobileToggleClass}:Props) {
+export default function UploadedSidebar({groups,activeItem,name,email,lang,isExpanded,onExpandedChange,onNavigate,onLogout,logoutLabel,links,controls,navigationId,mobileToggleClass,primaryItemIds=[]}:Props) {
   const [hoveredIndex,setHoveredIndex]=useState<number|null>(null);
   const [query,setQuery]=useState('');
   const [tooltip,setTooltip]=useState<{label:string;top:number}|null>(null);
@@ -99,7 +99,7 @@ export default function UploadedSidebar({groups,activeItem,name,email,lang,isExp
   useLayoutEffect(()=>{
     const element=toolbar.current;if(!element)return;
     const update=()=>element.parentElement?.style.setProperty('--wf-sidebar-top',(element.getBoundingClientRect().bottom+8)+'px');
-    const observer=new ResizeObserver(update);observer.observe(element);update();
+    const observer=new ResizeObserver(update);observer.observe(element);if(element.parentElement)observer.observe(element.parentElement);update();
     return ()=>observer.disconnect();
   },[]);
   useLayoutEffect(()=>{
@@ -108,9 +108,7 @@ export default function UploadedSidebar({groups,activeItem,name,email,lang,isExp
   },[isExpanded]);
   const toggleSidebar=()=>{setQuery('');onExpandedChange(!isExpanded)};
   const getDockScale=(index:number)=>{
-    if(hoveredIndex===null||reducedMotion)return 1;
-    const dist=Math.abs(hoveredIndex-index);
-    if(dist===0)return 1.25;if(dist===1)return 1.12;if(dist===2)return 1.04;return 1;
+    return hoveredIndex===index&&!reducedMotion?1.06:1;
   };
   const items=[...groups.flatMap(g=>g.items),...links,{id:'logout',label:logoutLabel,icon:9}];
   const term=query.trim().toLocaleLowerCase(lang);
@@ -134,8 +132,7 @@ export default function UploadedSidebar({groups,activeItem,name,email,lang,isExp
   <div ref={frame} className={'wf-sidebar-frame '+(isExpanded?'is-expanded':'is-collapsed')} onKeyDown={e=>{if(e.key==='Escape'){onExpandedChange(false);toolbar.current?.querySelector('button')?.focus()}}}>
     <motion.aside 
       className={`sidebar-container ${isExpanded ? 'expanded' : 'collapsed'}`} 
-      animate={{ width: isExpanded ? 240 : 74 }}
-      transition={reducedMotion ? {duration:0} : { type: 'spring', stiffness: 380, damping: 32, mass: 0.8 }}
+      style={{ width: isExpanded ? 240 : 74 }}
       aria-label={es ? "Navegación" : "Navigation"}
       onMouseLeave={() => setHoveredIndex(null)}
     >
@@ -175,32 +172,10 @@ export default function UploadedSidebar({groups,activeItem,name,email,lang,isExp
           )}
         </AnimatePresence>
 
-        {/* Floating Expand/Collapse Button on Right Edge */}
-        <button 
-          type="button" 
-          className={`sidebar-expand-btn ${isExpanded ? 'is-expanded' : ''}`}
-          onClick={toggleSidebar}
-          aria-expanded={isExpanded}
-          aria-controls={navigationId}
-          aria-label={isExpanded ? (es ? "Contraer menú" : "Collapse sidebar") : (es ? "Expandir menú" : "Expand sidebar")}
-        >
-          <svg viewBox="0 0 24 24" width="9" height="9" fill="none" stroke="#0B1529" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-            {isExpanded ? (
-              <polyline points="15 18 9 12 15 6" />
-            ) : (
-              <polyline points="9 18 15 12 9 6" />
-            )}
-          </svg>
-          {isExpanded && <span className="sidebar-collapse-pill">{es ? "Contraer" : "Collapse"}</span>}
-        </button>
       </div>
 
       {/* Divider */}
-      <motion.div 
-        className="sidebar-divider"
-        animate={{ width: isExpanded ? 200 : 46 }}
-        transition={{ type: 'spring', stiffness: 380, damping: 32 }}
-      />
+      <div className="sidebar-divider" style={{width:isExpanded?200:46}}/>
 
       {/* User Profile Card */}
       <div className="sidebar-profile-section">
@@ -235,11 +210,7 @@ export default function UploadedSidebar({groups,activeItem,name,email,lang,isExp
       </div>
 
       {/* Divider */}
-      <motion.div 
-        className="sidebar-divider"
-        animate={{ width: isExpanded ? 200 : 46 }}
-        transition={{ type: 'spring', stiffness: 380, damping: 32 }}
-      />
+      <div className="sidebar-divider" style={{width:isExpanded?200:46}}/>
 
 
       <div className="wf-sidebar-scroll" id={navigationId} onScroll={()=>setTooltip(null)}>
@@ -253,9 +224,9 @@ export default function UploadedSidebar({groups,activeItem,name,email,lang,isExp
             {isExpanded && (
               <motion.div 
                 className="sidebar-search-box"
-                initial={{ opacity: 0, width: 0 }}
-                animate={{ opacity: 1, width: '100%' }}
-                exit={{ opacity: 0, width: 0 }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
                 transition={{ duration: 0.2 }}
               >
                 <input 
@@ -270,12 +241,13 @@ export default function UploadedSidebar({groups,activeItem,name,email,lang,isExp
 
 
         </div>
-        {visibleGroups.map(group=><div className="sidebar-section" key={group.title}>
-          <span className="sidebar-section-title">{isExpanded?group.title:''}</span>
+        {!term&&<nav className="sidebar-nav-list sidebar-primary-navigation" aria-label={es?'Accesos principales':'Main destinations'}>{primaryItemIds.map(id=>items.find(item=>item.id===id)).filter((item):item is Item=>Boolean(item)).map(renderItem)}</nav>}
+        {visibleGroups.map(group=>({...group,items:group.items.filter(item=>term||!primaryItemIds.includes(item.id))})).filter(group=>group.items.length).map(group=><details className="sidebar-section sidebar-secondary-navigation" key={group.title} open={Boolean(term)||group.items.some(item=>item.id===activeItem)}>
+          <summary className="sidebar-group-toggle"><span>{group.title}</span><ChevronDown size={16} aria-hidden="true" /></summary>
           <nav className="sidebar-nav-list" aria-label={group.title}>{group.items.map(renderItem)}</nav>
-        </div>)}
+        </details>)}
         {visibleGroups.length===0&&isExpanded&&<p className="wf-sidebar-empty" role="status">{es?'Sin resultados':'No results'}</p>}
-        <motion.div className="sidebar-divider" animate={{width:isExpanded?200:46}} transition={{type:'spring',stiffness:380,damping:32}}/>
+        <div className="sidebar-divider" style={{width:isExpanded?200:46}}/>
         <div className="sidebar-section"><nav className="sidebar-nav-list" aria-label={es?'Enlaces y sesión':'Links and session'}>
           {links.map(renderItem)}{renderItem({id:'logout',label:logoutLabel,icon:9})}
         </nav></div>

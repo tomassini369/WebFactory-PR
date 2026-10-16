@@ -1,3 +1,4 @@
+import {useWorkspaceFetch} from './training/workspace-services'
 import { useState, type Dispatch, type SetStateAction } from 'react'
 import { templateConfigs } from './templateData'
 
@@ -17,6 +18,7 @@ const categories=[...new Set([...templateConfigs.map((template)=>template.catego
 const createId=(prefix:string)=>`${prefix}-${Date.now()}-${Math.random().toString(36).slice(2,7)}`
 
 export default function BuilderAiAssistant({state,setState,lang}:{state:any;setState:Dispatch<SetStateAction<any>>;lang:Language}){
+  const fetch=useWorkspaceFetch()
   const [open,setOpen]=useState(false)
   const [prompt,setPrompt]=useState('')
   const [busy,setBusy]=useState(false)

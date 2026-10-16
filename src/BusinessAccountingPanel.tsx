@@ -1,3 +1,4 @@
+import {useWorkspaceFetch} from './training/workspace-services'
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { withAuthRetry } from './auth-retry'
 import { PortalPanel } from './PortalPanel'
@@ -15,6 +16,7 @@ const blank=()=>({date:today(),employeeId:'',hourly:'',regular:'',overtime:'0',o
 const cents=(v:string)=>Math.round(Number(v)*100)
 
 export function BusinessAccountingPanel({siteId,employees,catalog,lang,initialMode='work'}:{siteId:string;employees:Employee[];catalog:Array<{id:string;name?:string;nameEn?:string}>;lang:'es'|'en';initialMode?:string}){
+ const fetch=useWorkspaceFetch()
  const es=lang==='es',t=(a:string,b:string)=>es?a:b
  const [from,setFrom]=useState(()=>today().slice(0,7)+'-01'),[to,setTo]=useState(today),[employeeFilter,setEmployeeFilter]=useState('')
  const [report,setReport]=useState<Report|null>(null),[revision,setRevision]=useState(0),[busy,setBusy]=useState(false),[loading,setLoading]=useState(false),[error,setError]=useState(''),[message,setMessage]=useState('')

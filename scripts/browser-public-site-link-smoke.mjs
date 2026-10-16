@@ -1,3 +1,4 @@
+import {selectPortalSection} from './qa-workspace-navigation.mjs'
 import assert from 'node:assert/strict';
 import {mkdir,readFile} from 'node:fs/promises';
 import {preview} from 'vite';
@@ -50,7 +51,7 @@ async function setup(){
   await route.fulfill({contentType:'application/json',body:JSON.stringify(data)});
  });
  const open=async()=>{await page.goto(root+'/client-admin',{waitUntil:process.env.QA_ORIGIN?'domcontentloaded':'load'});await page.locator('.ca-dashboard').waitFor()};
- const nav=async name=>{const button=page.locator('.sidebar-container').getByRole('button',{name,exact:true});if(!await button.isVisible())await page.locator('.ca-mobile-menu-toggle').click();await button.click()};
+ const nav=name=>selectPortalSection(page,name);
  return {f,other,context,page,open,nav,calls:()=>calls,mode:value=>mode=value,release:()=>release?.(),role:value=>{role=value;f.site.members[0].role=value}};
 }
 function contrast(element){

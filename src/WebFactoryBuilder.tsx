@@ -1,3 +1,5 @@
+import {usePractice} from './training/practice-context'
+import {useWorkspaceFetch} from './training/workspace-services'
 import {templateCapabilities,usesTemplateCapabilities} from './templateCapabilities'
 import './business-policies.css'
 import type {StorefrontSite} from './ClientStorefront'
@@ -293,7 +295,8 @@ const getDraftId = () => {
   return next
 }
 
-const uploadOrderAsset = async (file:File,itemId:string) => {
+const uploadOrderAsset = async (file:File,itemId:string,practice=false) => {
+  if(practice)throw new Error('File uploads are disabled in Training. / Los archivos no se suben durante Training.')
   const form = new FormData()
   form.append('draftId',getDraftId())
   form.append('itemId',itemId)
@@ -363,8 +366,11 @@ function Preview({state,device,lang}:{state:BuilderState;device:Device;lang:Lang
 }
 
 function BusinessStep({state,setState,lang,lockedEmail}:{state:BuilderState;setState:Dispatch<SetStateAction<BuilderState>>;lang:Language;lockedEmail?:string}) {
+  const practice=usePractice()
+  const uploadAsset=(file:File,id:string)=>uploadOrderAsset(file,id,Boolean(practice))
   const [uploadingLogo,setUploadingLogo] = useState(false)
   const [uploadError,setUploadError] = useState('')
+  const [optionalOpen,setOptionalOpen] = useState(()=>Boolean(state.business.instagram||state.business.facebook||state.business.x||state.business.mapsUrl||state.business.logoAssetKey||state.business.heroAssetKey||state.business.galleryAssets?.length))
   const setBusiness = <K extends keyof BuilderState['business']>(key:K, value:BuilderState['business'][K]) =>
     setState((current)=>({...current,business:{...current.business,[key]:value}}))
 
@@ -375,7 +381,7 @@ function BusinessStep({state,setState,lang,lockedEmail}:{state:BuilderState;setS
     try {
       const [preview,asset] = await Promise.all([
         readFile(file),
-        uploadOrderAsset(file,'business-logo'),
+        uploadAsset(file,'business-logo'),
       ])
       setState((current)=>({
         ...current,
@@ -399,7 +405,7 @@ function BusinessStep({state,setState,lang,lockedEmail}:{state:BuilderState;setS
     setUploadingLogo(true)
     setUploadError('')
     try {
-      const [preview,asset] = await Promise.all([readFile(file),uploadOrderAsset(file,'business-hero')])
+      const [preview,asset] = await Promise.all([readFile(file),uploadAsset(file,'business-hero')])
       setState((current)=>({...current,business:{...current.business,hero:preview,heroAssetKey:asset.assetKey,heroAssetName:asset.fileName,heroAssetType:asset.contentType}}))
     } catch (error) {
       setUploadError(error instanceof Error ? error.message : (lang==='es'?'No se pudo guardar la imagen principal.':'The hero image could not be saved.'))
@@ -414,7 +420,7 @@ function BusinessStep({state,setState,lang,lockedEmail}:{state:BuilderState;setS
     setUploadingLogo(true)
     setUploadError('')
     try {
-      const [preview,asset] = await Promise.all([readFile(file),uploadOrderAsset(file,'business-gallery-'+String(currentCount+1))])
+      const [preview,asset] = await Promise.all([readFile(file),uploadAsset(file,'business-gallery-'+String(currentCount+1))])
       setState((current)=>({...current,business:{
         ...current.business,
         gallery:[...(current.business.gallery||[]),preview],
@@ -432,7 +438,7 @@ function BusinessStep({state,setState,lang,lockedEmail}:{state:BuilderState;setS
       <div className="wf-step-intro"><small>{lang==='es'?'PASO 1 · INFORMACIÓN':'STEP 1 · BUSINESS INFO'}</small><h3>{lang==='es'?'Cuéntanos sobre tu negocio.':'Tell us about your business.'}</h3><p>{lang==='es'?'Completa únicamente tus datos reales. Todo lo que escribas aquí se reflejará en tu website y portal administrativo.':'Enter only your real business information. Everything entered here will be reflected on your website and administrative portal.'}</p></div>
       <div className="wf-guidance"><b>{lang==='es'?'Guía':'Guidance'}</b><span>{lang==='es'?'Empieza por nombre y enlace. Luego añade las formas de contacto que quieras publicar. Puedes dejar en blanco cualquier red social que no utilices.':'Start with the name and preferred link. Then add only the contact methods you want to publish. Leave any unused social network blank.'}</span></div>
       <div className="wf-bilingual-grid">
-        <Field label="Business name · English" value={state.business.nameEn ?? state.business.name} onChange={(v)=>setState((current)=>({...current,business:{...current.business,name:v,nameEn:v}}))} />
+        <span data-training="builder-business"><Field label="Business name · English" value={state.business.nameEn ?? state.business.name} onChange={(v)=>setState((current)=>({...current,business:{...current.business,name:v,nameEn:v}}))} /></span>
         <Field label="Nombre del negocio · Español" value={state.business.nameEs ?? ''} onChange={(v)=>setBusiness('nameEs',v)} />
       </div>
       <Field label={lang==='es'?'Enlace preferido':'Preferred link'} value={state.business.slug} onChange={(v)=>setBusiness('slug',v.toLowerCase().replace(/[^a-z0-9-]/g,''))} placeholder="business-name" />
@@ -453,6 +459,10 @@ function BusinessStep({state,setState,lang,lockedEmail}:{state:BuilderState;setS
         <Field label={lang==='es'?'Teléfono':'Phone'} value={state.business.phone} onChange={(v)=>setBusiness('phone',v)} />
         <Field label="WhatsApp" value={state.business.whatsapp} onChange={(v)=>setBusiness('whatsapp',v)} />
         <Field label={lang==='es'?'Email del cliente':'Customer email'} type="email" value={state.business.email} disabled={Boolean(lockedEmail)} onChange={(v)=>setBusiness('email',v)} />
+      </div>
+      <details className="wf-builder-disclosure" open={optionalOpen} onToggle={event=>setOptionalOpen(event.currentTarget.open)}>
+        <summary>{lang==='es'?'Ubicación, redes y fotos':'Location, social links and photos'}<span>{lang==='es'?'Opcional':'Optional'}</span></summary>
+      <div className="wf-field-grid">
         <Field label="Instagram" value={state.business.instagram} onChange={(v)=>setBusiness('instagram',v)} placeholder="https://instagram.com/..." />
         <Field label="Facebook" value={state.business.facebook} onChange={(v)=>setBusiness('facebook',v)} placeholder="https://facebook.com/..." />
         <Field label="X" value={state.business.x} onChange={(v)=>setBusiness('x',v)} placeholder="https://x.com/..." />
@@ -492,6 +502,7 @@ function BusinessStep({state,setState,lang,lockedEmail}:{state:BuilderState;setS
       </label>
       {(state.business.gallery||[]).length>0&&<div className="wf-builder-photo-grid">{(state.business.gallery||[]).map((image,index)=><img key={index} src={image} alt="" />)}</div>}
       {uploadError && <small className="wf-upload-error">{uploadError}</small>}
+      </details>
     </div>
   )
 }
@@ -653,6 +664,8 @@ function FeaturesStep({state,setState,lang}:{state:BuilderState;setState:Dispatc
 }
 
 function CatalogStep({state,setState,lang}:{state:BuilderState;setState:Dispatch<SetStateAction<BuilderState>>;lang:Language}) {
+  const practice=usePractice()
+  const uploadAsset=(file:File,id:string)=>uploadOrderAsset(file,id,Boolean(practice))
   const itemName = (item:CatalogItem) => lang==='es' ? (item.nameEs || item.nameEn || item.name) : (item.nameEn || item.name || item.nameEs || '')
   const [editingId,setEditingId] = useState<string | null>(null)
   const editingItem = state.catalog.find((item)=>item.id===editingId) ?? null
@@ -699,7 +712,7 @@ function CatalogStep({state,setState,lang}:{state:BuilderState;setState:Dispatch
     try {
       const [preview,asset] = await Promise.all([
         readFile(file),
-        uploadOrderAsset(file,id),
+        uploadAsset(file,id),
       ])
       update(id,{
         image:preview,
@@ -904,6 +917,7 @@ function PaymentsStep({state,setState,lang}:{state:BuilderState;setState:Dispatc
 }
 
 function FinalStep({state,setStep,lang,complimentaryInviteToken,trialInviteToken,onPoliciesChange}:{state:BuilderState;setStep:(step:number)=>void;lang:Language;complimentaryInviteToken:string;trialInviteToken:string;onPoliciesChange:(value:{privacy:string;terms:string;refund:string})=>void}) {
+  const practice=usePractice(),fetch=useWorkspaceFetch()
   const policies=state.business.policies||{privacy:'',terms:'',refund:''}
   const setPolicies=onPoliciesChange
   const [review,setReview]=useState({termsAccepted:false,contentReviewed:false,policiesReviewed:false})
@@ -922,10 +936,10 @@ function FinalStep({state,setStep,lang,complimentaryInviteToken,trialInviteToken
   const customerReady = Boolean(state.business.name.trim() && state.business.contactName.trim() && emailValid)
   const paymentReady = Object.values(state.payments.methods).some(Boolean)
   const selectedTemplate = templateConfigs.find((template)=>template.slug===state.design.templateSlug)
-  const canCheckout = Boolean(customerReady && paymentReady && state.business.slug.trim() && !missingUpload && !checkingOut && reviewReady && bookingSetupReady)
+  const canCheckout = Boolean(!practice && customerReady && paymentReady && state.business.slug.trim() && !missingUpload && !checkingOut && reviewReady && bookingSetupReady)
 
   const startCheckout = async () => {
-    if (!canCheckout) return
+    if (practice || !canCheckout) return
     setCheckingOut(true)
     setCheckoutError('')
     try {
@@ -1019,7 +1033,12 @@ function FinalStep({state,setStep,lang,complimentaryInviteToken,trialInviteToken
 }
 
 export default function WebFactoryBuilder({lang}:{lang:Language}) {
+  const practice=usePractice(),fetch=useWorkspaceFetch()
   const [state,setState] = useState<BuilderState>(() => {
+    if(practice){
+      const saved=practice.ui.builder
+      return saved ? {...structuredClone(initialState),...saved} : {...structuredClone(initialState),business:{...structuredClone(initialState.business),name:'Practice business',nameEn:'Practice business',nameEs:'Negocio de práctica',slug:'practice-business',contactName:'Practice / Práctica',email:'practice@example.invalid',logo:'',hero:'',gallery:[],logoAssetKey:'',heroAssetKey:'',galleryAssets:[]},design:{...initialState.design,primary:practice.site.design.primary,secondary:practice.site.design.secondary},catalog:practice.site.catalog,team:practice.site.employees}
+    }
     try {
       const saved = localStorage.getItem(STORAGE_KEY)
       if (!saved) return initialState
@@ -1048,9 +1067,12 @@ export default function WebFactoryBuilder({lang}:{lang:Language}) {
       return initialState
     }
   })
-  const [step,setStep] = useState(()=>{try{return Math.min(7,Math.max(0,Number(sessionStorage.getItem('wf-builder-step'))||0))}catch{return 0}})
-  useEffect(()=>{try{sessionStorage.setItem('wf-builder-step',String(step))}catch{}},[step])
-  const [device,setDevice] = useState<Device>(() => window.matchMedia('(max-width: 767px)').matches ? 'mobile' : window.matchMedia('(max-width: 1023px)').matches ? 'tablet' : 'desktop')
+  const [step,setStep] = useState<number>(()=>{if(practice)return practice.ui.builderStep||0;try{return Math.min(7,Math.max(0,Number(sessionStorage.getItem('wf-builder-step'))||0))}catch{return 0}})
+  useEffect(()=>{if(practice){practice.setUi('builderStep',step);return}try{sessionStorage.setItem('wf-builder-step',String(step))}catch{}},[practice,step])
+  const [mobileView,setMobileView] = useState<'edit'|'preview'>('edit')
+  const [device,setDevice] = useState<Device>(() => ['desktop','tablet','mobile'].includes(practice?.ui['builder-device']?.device)?practice!.ui['builder-device'].device:window.matchMedia('(max-width: 767px)').matches ? 'mobile' : window.matchMedia('(max-width: 1023px)').matches ? 'tablet' : 'desktop')
+  const [deviceSelection,setDeviceSelection]=useState(0)
+  useEffect(()=>{if(deviceSelection>0)practice?.setUi('builder-device',{device})},[practice,device,deviceSelection])
   const [saved,setSaved] = useState(false)
   const [draftError,setDraftError] = useState(false)
   useEffect(()=>{if(!draftError)return;const warn=(event:BeforeUnloadEvent)=>{event.preventDefault();event.returnValue=''};window.addEventListener('beforeunload',warn);return()=>window.removeEventListener('beforeunload',warn)},[draftError])
@@ -1059,6 +1081,7 @@ export default function WebFactoryBuilder({lang}:{lang:Language}) {
   const [trialInviteToken,setTrialInviteToken] = useState('')
 
   useEffect(()=>{
+    if(practice)return
     const params = new URLSearchParams(window.location.search)
     const templateSlug = params.get('template') || ''
     const template = templateConfigs.find((entry)=>entry.slug===templateSlug)
@@ -1085,6 +1108,7 @@ export default function WebFactoryBuilder({lang}:{lang:Language}) {
   },[])
 
   useEffect(()=>{
+    if(practice){practice.setUi('builder',state);setSaved(true);return}
     try {
       const persistentState = {
         ...state,
@@ -1108,6 +1132,7 @@ export default function WebFactoryBuilder({lang}:{lang:Language}) {
 
   const reset = () => {
     if (!window.confirm(lang==='es'?'¿Reiniciar la configuración del Builder?':'Reset Builder configuration?')) return
+    if(practice){setState({...structuredClone(initialState),business:{...initialState.business,name:'Practice business',nameEn:'Practice business',nameEs:'Negocio de práctica',email:'practice@example.invalid'}});setStep(0);return}
     setState(initialState)
     localStorage.removeItem(STORAGE_KEY)
     localStorage.removeItem(DRAFT_ID_KEY)
@@ -1126,7 +1151,7 @@ export default function WebFactoryBuilder({lang}:{lang:Language}) {
   ][step]
 
   return (
-    <div className="wf-builder-app">
+    <div className="wf-builder-app wf-experience" data-mobile-view={mobileView}>
       <div className="wf-builder-topbar">
         <div>
           <span>WEBFACTORY BUILDER</span>
@@ -1140,6 +1165,10 @@ export default function WebFactoryBuilder({lang}:{lang:Language}) {
 
       <div className="wf-builder-progress" role="progressbar" aria-label={lang==='es'?'Progreso de configuración':'Setup progress'} aria-valuemin={0} aria-valuemax={100} aria-valuenow={completion}><i style={{transform:`scaleX(${completion/100})`}} /></div>
 
+      <div className="wf-builder-view-switch" role="group" aria-label={lang==='es'?'Vista de trabajo':'Workspace view'}>
+        <button type="button" aria-pressed={mobileView==='edit'} onClick={()=>setMobileView('edit')}>{lang==='es'?'Editar':'Edit'}</button>
+        <button type="button" aria-pressed={mobileView==='preview'} onClick={()=>setMobileView('preview')}>{lang==='es'?'Vista previa':'Preview'}</button>
+      </div>
       <div className="wf-builder-workspace">
         <aside className="wf-builder-nav" aria-label={lang==='es'?'Pasos de configuración':'Setup steps'}>
           {labels.map((label,index)=>(
@@ -1167,7 +1196,7 @@ export default function WebFactoryBuilder({lang}:{lang:Language}) {
           <header>
             <div className="wf-device-switcher" role="group" aria-label={lang==='es'?'Dispositivo del preview':'Preview device'}>
               {(['desktop','tablet','mobile'] as Device[]).map((value)=>(
-                <button key={value} className={device===value?'selected':''} aria-pressed={device===value} onClick={()=>setDevice(value)}>
+                <button key={value} className={device===value?'selected':''} aria-pressed={device===value} onClick={()=>{setDevice(value);if(practice)setDeviceSelection(current=>current+1)}}>
                   {value==='desktop'?'▱':value==='tablet'?'▯':'▯'} <span>{lang==='es'?({desktop:'escritorio',tablet:'tableta',mobile:'móvil'} as Record<Device,string>)[value]:value}</span>
                 </button>
               ))}

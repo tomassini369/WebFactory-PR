@@ -1,12 +1,16 @@
+import {usePractice} from './training/practice-context'
+import {useEffect} from 'react'
 import { useMemo, useState } from 'react'
 import { PortalPanel } from './PortalPanel'
 
 type Booking = {transactionId:string;kind:string;status:string;start?:string;customer:{name?:string};employeeId?:string}
 export function BookingCalendar({records,lang,timeZone='America/Puerto_Rico',employees=[]}:{records:Booking[];lang:'es'|'en';timeZone?:string;employees?:Array<{id:string;name:string}>}) {
+  const practice=usePractice()
   const es=lang==='es', locale=es?'es-PR':'en-US'
   const dayKey=(date:Date)=>new Intl.DateTimeFormat('en-CA',{timeZone,year:'numeric',month:'2-digit',day:'2-digit'}).format(date)
   const today=dayKey(new Date())
-  const [month,setMonth]=useState(today.slice(0,7)), [selected,setSelected]=useState(today), [employee,setEmployee]=useState('all')
+  const [month,setMonth]=useState(today.slice(0,7)), [selected,setSelected]=useState(today), [employee,setEmployee]=useState<string>(practice?.ui.bookingFilter||'all')
+  useEffect(()=>{practice?.setUi('bookingFilter',employee)},[practice,employee])
   const rows=useMemo(()=>records.filter(r=>r.kind==='booking'&&['confirmed','completed'].includes(r.status)&&r.start&&Number.isFinite(Date.parse(r.start))&&(employee==='all'||r.employeeId===employee)).sort((a,b)=>Date.parse(a.start!)-Date.parse(b.start!)),[records,employee])
   const days=new Map<string,Booking[]>()
   for(const row of rows){const key=dayKey(new Date(row.start!));days.set(key,[...(days.get(key)||[]),row])}

@@ -43,7 +43,7 @@ export default function TemplateLayout({config,ui,language,setLanguage,startBook
 
       <main id="template-top" className={mainClass}>
         <section className="template-hero">
-          <img src={config.heroImage} alt="" />
+          {(config.heroImage)&&<img src={config.heroImage} alt="" />}
           <div className="template-hero-overlay" />
           <div className="template-hero-content">
             <p>{config.kicker}</p>
@@ -109,8 +109,8 @@ export default function TemplateLayout({config,ui,language,setLanguage,startBook
             </div>
           </div>
           <div className="template-story-images">
-            <img src={config.gallery[0] || config.heroImage} alt="" loading="lazy" />
-            <img src={config.gallery[1] || config.heroImage} alt="" loading="lazy" />
+            {(config.gallery[0] || config.heroImage)&&<img src={config.gallery[0] || config.heroImage} alt="" loading="lazy" />}
+            {(config.gallery[1] || config.heroImage)&&<img src={config.gallery[1] || config.heroImage} alt="" loading="lazy" />}
           </div>
         </section>
 
