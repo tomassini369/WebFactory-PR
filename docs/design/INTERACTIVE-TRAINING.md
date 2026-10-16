@@ -84,7 +84,11 @@ Driver's modal CSS. Version 1.9 installs a Tab trap even when keyboard navigatio
 is disabled; the adapter removes only that instance's keyboard listener,
 preserves original ARIA attributes and retains normal portal keyboard behavior.
 If the version-specific hook changes, it destroys the instance and keeps the
-scoped CSS indication. Verify keyboard behavior before upgrading the dependency.
+scoped CSS indication. Partially visible targets use that ring directly because
+Driver otherwise scrolls them during highlighting. Only the explicit Show the
+control action scrolls the workspace, so a delayed target discovery cannot move
+a control under an active pointer. Verify keyboard and pointer behavior before
+upgrading the dependency.
 
 The guide follows the native type and blue/navy design system. Practice POS
 surfaces retain the business colors and existing contrast helpers. New controls

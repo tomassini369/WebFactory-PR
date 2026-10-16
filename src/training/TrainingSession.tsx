@@ -24,7 +24,7 @@ function Session({scope,course,lang:initialLang,onExit,onCourseChange,onRestart}
  const [progress]=useState(()=>loadProgress(scope)),attempt=progress.attempts?.[course.id]
  const [runtime]=useState(()=>{const runtime=createPracticeRuntime({...scope,snapshot:attempt?.snapshot});runtime.ui.portalTab ||= course.tab;return runtime})
  const [index,setIndex]=useState(attempt?.step||0),indexRef=useRef(index),[paused,setPaused]=useState(false),[surface,setSurface]=useState(runtime.surface),[lang,setLang]=useState(initialLang),[saved,setSaved]=useState(true),[notice,setNotice]=useState(''),[targetMissing,setTargetMissing]=useState(false)
- const root=useRef<HTMLDivElement>(null),coach=useRef<HTMLElement>(null),spotlight=useRef<Spotlight|null>(null),scrollOnTarget=useRef(false),progressRef=useRef<TrainingProgress>(progress),persistenceTimer=useRef<ReturnType<typeof setTimeout>|null>(null),finished=index>=course.steps.length
+ const root=useRef<HTMLDivElement>(null),coach=useRef<HTMLElement>(null),spotlight=useRef<Spotlight|null>(null),progressRef=useRef<TrainingProgress>(progress),persistenceTimer=useRef<ReturnType<typeof setTimeout>|null>(null),finished=index>=course.steps.length
  const es=lang==='es',step=course.steps[index]
  const currentProps=useRef({es,onExit});currentProps.current={es,onExit}
  indexRef.current=index
@@ -41,12 +41,12 @@ function Session({scope,course,lang:initialLang,onExit,onCourseChange,onRestart}
  useEffect(()=>{setLang(initialLang)},[initialLang])
  useLayoutEffect(()=>{
   const unsubscribe=runtime.subscribe((event:PracticeEvent)=>{
-   if(event.name==='surface.changed'){setSurface(event.detail);scrollOnTarget.current=true}
+   if(event.name==='surface.changed'){setSurface(event.detail)}
    if(event.name==='exit.requested'){persist();currentProps.current.onExit();return}
    if(event.name==='navigation.blocked')setNotice(currentProps.current.es?'Ese enlace sale de la práctica y está bloqueado. Tu negocio real no cambió.':'That link leaves practice and is blocked. Your real business is unchanged.')
    const current=course.steps[indexRef.current]
    if(current&&acceptsStep(current,event,runtime)){
-    indexRef.current++;setIndex(indexRef.current);setNotice(currentProps.current.es?'Acción completada.':'Action completed.');scrollOnTarget.current=true
+    indexRef.current++;setIndex(indexRef.current);setNotice(currentProps.current.es?'Acción completada.':'Action completed.')
    }
    if(persistenceTimer.current)clearTimeout(persistenceTimer.current)
    persistenceTimer.current=setTimeout(persist,150)
@@ -69,7 +69,6 @@ function Session({scope,course,lang:initialLang,onExit,onCourseChange,onRestart}
    if(!visible||element===lastElement)return
    lastElement=element;spotlight.current?.destroy()
    spotlight.current=highlightControl(element)
-   if(scrollOnTarget.current){element.scrollIntoView({block:'center',behavior:'instant'});scrollOnTarget.current=false}
   }
   const schedule=()=>{if(timer)clearTimeout(timer);timer=setTimeout(highlight,80)}
   observer=new MutationObserver(schedule);observer.observe(root.current,{childList:true,subtree:true})
@@ -78,7 +77,7 @@ function Session({scope,course,lang:initialLang,onExit,onCourseChange,onRestart}
   return()=>{disposed=true;root.current?.removeEventListener('click',schedule);window.removeEventListener('resize',schedule);observer?.disconnect();if(timer)clearTimeout(timer);spotlight.current?.destroy();spotlight.current=null}
  },[index,paused,surface,finished,step?.target])
  const returnToStep=()=>{
-  setNotice('');scrollOnTarget.current=true
+  setNotice('')
   if(step?.target==='.sidebar-container'){const toggle=root.current?.querySelector<HTMLButtonElement>('.wf-practice-portal .ca-mobile-menu-toggle');if(toggle&&toggle.getAttribute('aria-expanded')!=='true')toggle.click();return}
   if(step?.surface){runtime.setSurface(step.surface);return}
   if(surface!=='portal')runtime.setSurface('portal')
