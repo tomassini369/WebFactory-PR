@@ -39,7 +39,7 @@ const freshContext=async({width=390,lang='en',theme='dark',role='owner',cashier=
  await openLibrary()
  const start=async id=>{await page.locator(`[data-training-course="${id}"] button`).click();await page.locator(`[data-training-active="${id}"]`).waitFor();await page.locator('.wf-practice-portal').waitFor()}
  const step=async id=>page.locator(`[data-training-step="${id}"]`).waitFor()
- const read=async()=>{const coach=page.locator('.wf-training-coach'),button=coach.getByRole('button',{name:lang==='es'?'Ya lo revisé':'I reviewed this',exact:true});if(await button.isDisabled())await coach.getByRole('button',{name:/Go to step|Show the control|Ir al paso|Señalar el control/}).click();await button.click()}
+ const read=async()=>{const coach=page.locator('.wf-training-coach'),button=coach.getByRole('button',{name:lang==='es'?'Ya lo revisé':'I reviewed this',exact:true});await coach.getByRole('button',{name:/Go to step|Show the control|Ir al paso|Señalar el control/}).click();await button.click()}
  const exit=async()=>{await page.locator('.wf-training-session-bar').getByRole('button',{name:lang==='es'?'Salir de Training':'Exit Training',exact:true}).click();await page.locator('.wf-training-course-list').first().waitFor()}
  const verify=()=>{assert.deepEqual(writes,[],'Practice cannot send real write requests');assert.deepEqual(errors,[],'No uncaught browser errors')}
  return {context,page,errors,writes,requests,start,step,read,exit,verify,openLibrary,lang}

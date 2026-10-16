@@ -23,7 +23,7 @@ function Session({scope,course,lang:initialLang,onExit,onCourseChange,onRestart}
  const discarded=useRef(false)
  const [progress]=useState(()=>loadProgress(scope)),attempt=progress.attempts?.[course.id]
  const [runtime]=useState(()=>{const runtime=createPracticeRuntime({...scope,snapshot:attempt?.snapshot});runtime.ui.portalTab ||= course.tab;return runtime})
- const [index,setIndex]=useState(attempt?.step||0),indexRef=useRef(index),[paused,setPaused]=useState(false),[surface,setSurface]=useState(runtime.surface),[lang,setLang]=useState(initialLang),[saved,setSaved]=useState(true),[notice,setNotice]=useState(''),[targetMissing,setTargetMissing]=useState(false)
+ const [index,setIndex]=useState(attempt?.step||0),indexRef=useRef(index),[paused,setPaused]=useState(false),[surface,setSurface]=useState(runtime.surface),[lang,setLang]=useState(initialLang),[saved,setSaved]=useState(true),[notice,setNotice]=useState(''),[targetMissing,setTargetMissing]=useState(true)
  const root=useRef<HTMLDivElement>(null),coach=useRef<HTMLElement>(null),spotlight=useRef<Spotlight|null>(null),progressRef=useRef<TrainingProgress>(progress),persistenceTimer=useRef<ReturnType<typeof setTimeout>|null>(null),finished=index>=course.steps.length
  const es=lang==='es',step=course.steps[index]
  const currentProps=useRef({es,onExit});currentProps.current={es,onExit}
@@ -46,7 +46,7 @@ function Session({scope,course,lang:initialLang,onExit,onCourseChange,onRestart}
    if(event.name==='navigation.blocked')setNotice(currentProps.current.es?'Ese enlace sale de la práctica y está bloqueado. Tu negocio real no cambió.':'That link leaves practice and is blocked. Your real business is unchanged.')
    const current=course.steps[indexRef.current]
    if(current&&acceptsStep(current,event,runtime)){
-    indexRef.current++;setIndex(indexRef.current);setNotice(currentProps.current.es?'Acción completada.':'Action completed.')
+    setTargetMissing(true);indexRef.current++;setIndex(indexRef.current);setNotice(currentProps.current.es?'Acción completada.':'Action completed.')
    }
    if(persistenceTimer.current)clearTimeout(persistenceTimer.current)
    persistenceTimer.current=setTimeout(persist,150)
@@ -57,7 +57,7 @@ function Session({scope,course,lang:initialLang,onExit,onCourseChange,onRestart}
   return()=>{unsubscribe();window.removeEventListener('pagehide',pagehide);if(persistenceTimer.current)clearTimeout(persistenceTimer.current);persist()}
  },[runtime,course,persist])
  useEffect(()=>{persist()},[index,persist])
- useEffect(()=>{
+ useLayoutEffect(()=>{
   spotlight.current?.destroy();spotlight.current=null
   if(paused||finished||!root.current||!step)return
   let disposed=false,lastElement:Element|null=null,observer:MutationObserver|null=null,timer:ReturnType<typeof setTimeout>|null=null
@@ -89,7 +89,7 @@ function Session({scope,course,lang:initialLang,onExit,onCourseChange,onRestart}
  const restart=()=>{if(confirm(es?'¿Reiniciar esta actividad? Solo se borrará su práctica actual.':'Restart this activity? Only this practice attempt will be cleared.')){discarded.current=true;onRestart()}}
  const toolbar=useMemo(()=>es?{pause:'Pausar guía',resume:'Continuar guía',exit:'Salir de Training'}:{pause:'Pause guide',resume:'Resume guide',exit:'Exit Training'},[es])
  const nextCourse=availableCourses(scope).find(candidate=>candidate.id!==course.id&&!progressRef.current.completed.includes(candidate.id))
- const acknowledge=()=>{if(step?.target==='.sidebar-container')runtime.emit('coach.navigate',{tab:course.tab});runtime.emit('guide.acknowledged',{stepId:step.id})}
+ const acknowledge=()=>{const target=step&&root.current?.querySelector(step.target);if(!target||!target.getClientRects().length){setTargetMissing(true);return}if(step?.target==='.sidebar-container')runtime.emit('coach.navigate',{tab:course.tab});runtime.emit('guide.acknowledged',{stepId:step.id})}
  return <WorkspaceServicesProvider fetch={runtime.fetch}><PracticeContext.Provider value={runtime}>
   <div className="wf-training-session" ref={root} data-training-active={course.id} data-training-step={step?.id||'finished'} onSubmitCapture={event=>event.preventDefault()} onClickCapture={event=>{
    const anchor=(event.target as Element).closest?.('a[href]');if(!anchor)return

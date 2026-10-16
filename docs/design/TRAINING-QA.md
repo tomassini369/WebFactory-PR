@@ -21,6 +21,8 @@ workspace PR #116. Production publishing is excluded.
 | Impeccable, new training sources | Passed: 0 findings |
 | Impeccable 4.1.0, full `src/` | 20 existing advisories, exit 2 (findings, not execution failure) |
 | Repeated native Builder pointer reproduction, Chromium | 12 consecutive passes after the scroll repair |
+| Guide target-readiness reproduction, Chromium | 32 completed activities (8 guides repeated 4 times) after the CI correction |
+| Detailed Training after target-readiness correction | 33 checks passed in each engine |
 | `git diff --check` | Passed |
 
 There is no lint script in this project. A separate lint run is not claimed.
@@ -117,6 +119,13 @@ changed. Unit tests under netlify/lib exercise the browser's local adapter.
 8. Practice upload/malformed requests now return explicit errors. The sample
    public-address editor reuses the real 64-character slug validator. Kiosk
    presentation derives from existing business capabilities.
+
+9. The full remote verifier exposed a transition where a read acknowledgment
+   could briefly retain the previous step's availability before becoming
+   disabled for the hidden navigation target. Target readiness now updates in
+   the layout effect before paint and resets on every step. Acknowledgment
+   rechecks the current target. Browser read steps explicitly reveal their
+   target before confirming, instead of making a stale one-time enabled check.
 
 ## Design and Anti-Slop delivery review
 
