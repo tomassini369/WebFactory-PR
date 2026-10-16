@@ -69,3 +69,20 @@ Bits has a Commons Clause restriction on redistribution of the components
 themselves; distinguish hosted application use from selling template/source
 bundles. Free Magic UI's MIT license does not license Magic UI Pro assets.
 See `docs/design/PREMIUM-SKILLS.md` for provenance, checks and limitations.
+
+## Interactive training
+
+The existing portal, POS, Builder, kiosk and display are reused under a scoped
+practice context. Read `docs/design/INTERACTIVE-TRAINING.md` before changing it.
+Never introduce a network fallback in `src/training/practice-runtime.mjs`, copy
+real tenant records into a practice checkpoint, or make a practice action call
+live payment, attendance, invitation, OAuth, MFA or subscription services.
+Keep the live workspace/cart mounted and inert while training runs, and retain
+the pending-payment entry guard. Scope saved progress by user, business and role.
+
+Guided action steps advance on validated component/result events; reference
+steps must label themselves. Keep the nonmodal keyboard adapter when upgrading
+Driver.js. Run the training unit suites, build and
+`scripts/browser-training-smoke.mjs` on Chromium and WebKit, including the
+existing widths, ES/EN and Light/Dark. Preserve the normal live transport and
+run the existing POS, workforce, kiosk and Builder regression checks.

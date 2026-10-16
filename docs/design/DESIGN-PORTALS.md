@@ -70,3 +70,15 @@ or payment state is introduced. History and operational tools stay available
 in a labeled disclosure. Touch controls remain at least 44px, inputs 16px,
 and reduced motion disables operating transitions. Preserve the original
 checkout, stock, retry, receipt and server-confirmation handlers.
+
+## Interactive training · October 16, 2026
+
+Training reuses the current operational screens with isolated sample state.
+Use a bounded, persistent guide above the workspace, native collapsible
+instructions, explicit Pause/Exit and a restrained nonmodal target indication.
+Keep a complete role-aware learning path and optional activity selection.
+Preserve real POS drafts while practice is open; never show real transactions,
+credentials or payroll in an exercise. Practice and reference guides must be
+distinguishable. Use the existing native typography and blue/navy help chrome;
+the practice POS retains the business colors. No mandatory first-run tour,
+decorative scenes, long modal sequence, keyboard trap or continuous animation.

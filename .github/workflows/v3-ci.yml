@@ -43,6 +43,27 @@ jobs:
           QA_PORT: 5223
           QA_WIDTHS: 320,375,390,430
         run: node scripts/browser-workforce-smoke.mjs
+      - name: Check interactive platform training, roles and safe practice
+        run: |
+          for engine in chromium webkit; do
+            phase="training-$engine"
+            log="/tmp/$phase.log"
+            if ! QA_ENGINE="$engine" QA_PORT=5290 node scripts/browser-training-smoke.mjs > "$log" 2>&1; then
+              cat "$log"
+              node scripts/report-kiosk-ci-error.mjs "$log" "$phase"
+              exit 1
+            fi
+            cat "$log"
+          done
+      - name: Save training browser evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: training-browser-evidence
+          path: |
+            /tmp/webfactory-training-qa/
+            /tmp/training-*.log
+          if-no-files-found: ignore
       - name: Check unified workspace hierarchy, disclosures and Builder state
         run: |
           node scripts/browser-workspace-experience-smoke.mjs
@@ -263,6 +284,31 @@ jobs:
               cat "$log"
             done
           done
+      - name: Check deployed training with isolated practice on Chromium and WebKit
+        env:
+          QA_ORIGIN: https://deploy-preview-${{ github.event.pull_request.number }}--webfactorypr.netlify.app
+          QA_WIDTHS: 390,1440
+          QA_TRAINING_DETAILS: 0
+        run: |
+          for engine in chromium webkit; do
+            phase="training-$engine"
+            log="/tmp/$phase.log"
+            if ! QA_ENGINE="$engine" QA_PORT=5290 node scripts/browser-training-smoke.mjs > "$log" 2>&1; then
+              cat "$log"
+              node scripts/report-kiosk-ci-error.mjs "$log" "$phase"
+              exit 1
+            fi
+            cat "$log"
+          done
+      - name: Save deployed training browser evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: training-preview-evidence
+          path: |
+            /tmp/webfactory-training-qa/
+            /tmp/training-*.log
+          if-no-files-found: ignore
       - name: Check deployed appointment kiosk on Chromium
         env:
           QA_ORIGIN: https://deploy-preview-${{ github.event.pull_request.number }}--webfactorypr.netlify.app
