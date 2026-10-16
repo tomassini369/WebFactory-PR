@@ -1,8 +1,10 @@
+import {useWorkspaceFetch} from './training/workspace-services'
 import { useEffect,useRef,useState } from 'react'
 import { withAuthRetry } from './auth-retry'
 
 type Health={checkedAt:string;heldCount:number;reviewCount:number;hiddenReviewCount:number;reservations:Array<{referenceId:string;provider:string;ageHours:number|null;units:number;issues:string[]}>;journal:{operationCount:number;reservationCount:number;bytes:number;nearCapacity:boolean;atCapacity:boolean;archivedOperations:number;archivedReservations:number};pos:{pointerCount:number;cleanupEligibleCount:number;reviewCount:number;hiddenCount:number;rows:Array<{transactionId:string;status:string;cleanupEligible:boolean}>}}
 export default function InventoryHealthStatus({siteId,lang}:{siteId:string;lang:'es'|'en'}){
+ const fetch=useWorkspaceFetch()
   const es=lang==='es',[health,setHealth]=useState<Health|null>(null),[busy,setBusy]=useState(false),[error,setError]=useState(''),[message,setMessage]=useState('')
   const revision=useRef(0)
   const request=async(action?:string,transactionId?:string)=>withAuthRetry(async()=>{

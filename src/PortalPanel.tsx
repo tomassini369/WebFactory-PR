@@ -26,7 +26,7 @@ export function PortalPanelProvider({ children, lang }: { children: ReactNode; l
   return <PortalPanelContext.Provider value={{ expandedPanel, setExpandedPanel, lang }}>{children}</PortalPanelContext.Provider>
 }
 
-export function PortalPanel({ className = '', children, style }: { className?: string; children: ReactNode; style?: CSSProperties }) {
+export function PortalPanel({ className = '', children, style, 'data-training': trainingTarget }: { className?: string; children: ReactNode; style?: CSSProperties; 'data-training'?: string }) {
   const context = useContext(PortalPanelContext)
   if (!context) throw new Error('PortalPanel must be rendered inside PortalPanelProvider.')
   const id = useId()
@@ -73,7 +73,7 @@ export function PortalPanel({ className = '', children, style }: { className?: s
     }
   },[expanded])
 
-  return <section style={style} ref={panel} tabIndex={expanded?-1:undefined} role={expanded?'dialog':undefined} aria-modal={expanded||undefined} aria-label={expanded?(es?'Panel ampliado':'Expanded panel'):undefined} className={`${className} wf-portal-panel${collapsed ? ' wf-panel-collapsed' : ''}${scrollable ? ' wf-panel-scroll' : ''}${expanded ? ' wf-panel-expanded' : ''}`.trim()}>
+  return <section data-training={trainingTarget} style={style} ref={panel} tabIndex={expanded?-1:undefined} role={expanded?'dialog':undefined} aria-modal={expanded||undefined} aria-label={expanded?(es?'Panel ampliado':'Expanded panel'):undefined} className={`${className} wf-portal-panel${collapsed ? ' wf-panel-collapsed' : ''}${scrollable ? ' wf-panel-scroll' : ''}${expanded ? ' wf-panel-expanded' : ''}`.trim()}>
     <details className="wf-panel-tools" ref={tools} onKeyDown={event => { if (event.key === 'Escape' && tools.current?.open) { event.preventDefault(); event.stopPropagation(); closeTools() } }}>
       <summary aria-label={es ? 'Opciones del panel' : 'Panel options'} title={es ? 'Opciones del panel' : 'Panel options'}><MoreHorizontal size={20} aria-hidden="true" /></summary>
       <div className="wf-panel-menu" role="toolbar" aria-label={es ? 'Controles del recuadro' : 'Panel controls'}>

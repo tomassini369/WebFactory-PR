@@ -1,14 +1,10 @@
+import {useWorkspaceApi} from './training/workspace-services'
 import { useEffect, useState } from 'react'
 import { withAuthRetry } from './auth-retry'
 
-const api = (url:string, options?:RequestInit) => withAuthRetry(async () => {
-  const response = await fetch(url, { credentials:'include', cache:'no-store', ...options })
-  const result = await response.json()
-  if (!response.ok || result.ok === false) throw new Error(result.message || 'Stripe could not be opened.')
-  return result
-})
 
 export function StripeConnection({site,setSite,lang,canConnect=true}:{site:any;setSite:(site:any)=>void;lang:'es'|'en';canConnect?:boolean}) {
+  const api=useWorkspaceApi()
   const es = lang === 'es'
   const accountId = site.paymentRules?.stripeConnectedAccountId || ''
   const [status,setStatus] = useState<any>(null)

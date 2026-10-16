@@ -1,3 +1,5 @@
+import {usePractice} from './training/practice-context'
+import {useWorkspaceApi, useWorkspaceFetch} from './training/workspace-services'
 import ReceiptPaper, { type ReceiptColors, type ReceiptRecord } from './ReceiptPaper'
 import CopyButton from './CopyButton'
 import { useUnsavedChanges } from './interaction-state'
@@ -19,7 +21,6 @@ type Receipt=ReceiptRecord
 type TaxConfig={enabled:boolean;stateRate:number;municipalRate:number;pricesIncludeTax:boolean;defaultTaxable:boolean}
 type Payout={id:string;amount:number;currency:string;status:string;arrivalDate:string;createdAt:string;method:string;type:string}
 
-const api=(url:string,options?:RequestInit)=>withAuthRetry(async()=>{const response=await fetch(url,{credentials:'include',cache:'no-store',...options});const result=await response.json();if(!response.ok||result.ok===false)throw new Error(result.message||'Request failed.');return result})
 const money=(cents:number)=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format((Number(cents)||0)/100)
 
 export function TransactionPanel({records,kind,lang,onAction,busy,timeZone='America/Puerto_Rico',googleConnected=false,employees=[]}:{records:Transaction[];kind:'order'|'booking';lang:Language;onAction:(r:Transaction,a:string)=>void;busy:boolean;timeZone?:string;googleConnected?:boolean;employees?:Array<{id:string;calendarId?:string}>}){
@@ -30,26 +31,32 @@ export function TransactionPanel({records,kind,lang,onAction,busy,timeZone='Amer
 export function KitchenPanel({records,lang,onStatus,busy,locations=[],timeZone='America/Puerto_Rico'}:{records:Transaction[];lang:Language;onStatus:(r:Transaction,status:string)=>void;busy:boolean;locations?:Array<{id:string;name:string}>;timeZone?:string}){
   const es=lang==='es';const labels:Record<string,string>=es?{received:'Recibida',preparing:'Preparando',ready:'Lista',completed:'Entregada'}:{received:'Received',preparing:'Preparing',ready:'Ready',completed:'Completed'}
   const [locationId,setLocationId]=useState('all');const localDay=(date:string)=>new Intl.DateTimeFormat('en-CA',{timeZone,year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(date));const today=localDay(new Date().toISOString());const rows=records.filter(x=>x.kind==='order'&&x.queueNumber&&x.paymentStatus!=='due'&&localDay(x.paidAt||x.createdAt)===today&&(locationId==='all'||x.locationId===locationId)).sort((a,b)=>Date.parse(a.paidAt||a.createdAt)-Date.parse(b.paidAt||b.createdAt))
-  return <PortalPanel className="ca-panel"><header><h2>{es?'Pantalla de cocina':'Kitchen display'}</h2><p>{es?'Órdenes pagadas, organizadas por hora de confirmación y localidad.':'Paid orders, sorted by payment confirmation time and location.'}</p></header>{locations.length>0&&<label>{es?'Localidad':'Location'}<select value={locationId} onChange={e=>setLocationId(e.target.value)}><option value="all">{es?'Todas':'All locations'}</option>{locations.map(location=><option value={location.id} key={location.id}>{location.name}</option>)}</select></label>}<div className="ca-list">{rows.length===0?<p>{es?'Aún no hay órdenes pagadas.':'No paid orders yet.'}</p>:rows.map((r,i)=><article key={r.transactionId}><header><strong>{r.queueNumber} · {r.locationName|| (es?'Local principal':'Main location')}</strong><span>{es?'Turno':'Turn'} {i+1}</span></header><p>{r.items.map(x=>`${x.name} × ${x.quantity}`).join(' · ')}</p><small>{labels[r.kitchenStatus||'received']||r.kitchenStatus}</small><nav>{(['received','preparing','ready','completed'] as const).map(status=><button key={status} disabled={busy||r.kitchenStatus===status} onClick={()=>onStatus(r,status)}>{labels[status]}</button>)}</nav></article>)}</div></PortalPanel>
+  return <PortalPanel className="ca-panel" data-training="kitchen"><header><h2>{es?'Pantalla de cocina':'Kitchen display'}</h2><p>{es?'Órdenes pagadas, organizadas por hora de confirmación y localidad.':'Paid orders, sorted by payment confirmation time and location.'}</p></header>{locations.length>0&&<label>{es?'Localidad':'Location'}<select value={locationId} onChange={e=>setLocationId(e.target.value)}><option value="all">{es?'Todas':'All locations'}</option>{locations.map(location=><option value={location.id} key={location.id}>{location.name}</option>)}</select></label>}<div className="ca-list">{rows.length===0?<p>{es?'Aún no hay órdenes pagadas.':'No paid orders yet.'}</p>:rows.map((r,i)=><article key={r.transactionId}><header><strong>{r.queueNumber} · {r.locationName|| (es?'Local principal':'Main location')}</strong><span>{es?'Turno':'Turn'} {i+1}</span></header><p>{r.items.map(x=>`${x.name} × ${x.quantity}`).join(' · ')}</p><small>{labels[r.kitchenStatus||'received']||r.kitchenStatus}</small><nav>{(['received','preparing','ready','completed'] as const).map(status=><button key={status} disabled={busy||r.kitchenStatus===status} onClick={()=>onStatus(r,status)}>{labels[status]}</button>)}</nav></article>)}</div></PortalPanel>
 }
 
 export function CustomersPanel({siteId,lang}:{siteId:string;lang:Language}){
+  const api=useWorkspaceApi()
+
   const es=lang==='es';const [rows,setRows]=useState<Customer[]>([]);const [loading,setLoading]=useState(true);const [error,setError]=useState('')
   const load=async()=>{setLoading(true);setError('');try{const result=await api(`/.netlify/functions/client-v3-admin?siteId=${encodeURIComponent(siteId)}&collection=customers`);setRows(result.records||[])}catch(e){setError(e instanceof Error?e.message:'Error')}finally{setLoading(false)}}
   useEffect(()=>{load()},[siteId])
-  return <PortalPanel className="ca-panel"><header><h2>{es?'Clientes':'Customers'}</h2><p>{es?'Los clientes se crean automáticamente desde ventas y reservaciones confirmadas.':'Customer profiles are created automatically from confirmed sales and bookings.'}</p></header>{error&&<div className="ca-error">{error}</div>}{loading?<p>{es?'Cargando clientes…':'Loading customers…'}</p>:<div className="ca-v3-table">{rows.length===0?<p>{es?'Aún no hay clientes registrados.':'No customers have been recorded yet.'}</p>:rows.map(customer=><article key={customer.customerId}><div><strong>{customer.name||customer.email||customer.phone||customer.customerId}</strong><span>{customer.email}{customer.phone&&` · ${customer.phone}`}</span></div><div><b>{money(customer.totalSpent)}</b><span>{es?'Valor total':'Lifetime value'}</span></div><div><b>{customer.orderCount}</b><span>{es?'Órdenes':'Orders'}</span></div><div><b>{customer.bookingCount}</b><span>{es?'Citas':'Bookings'}</span></div></article>)}</div>}</PortalPanel>
+  return <PortalPanel className="ca-panel" data-training="customers"><header><h2>{es?'Clientes':'Customers'}</h2><p>{es?'Los clientes se crean automáticamente desde ventas y reservaciones confirmadas.':'Customer profiles are created automatically from confirmed sales and bookings.'}</p></header>{error&&<div className="ca-error">{error}</div>}{loading?<p>{es?'Cargando clientes…':'Loading customers…'}</p>:<div className="ca-v3-table">{rows.length===0?<p>{es?'Aún no hay clientes registrados.':'No customers have been recorded yet.'}</p>:rows.map(customer=><article key={customer.customerId}><div><strong>{customer.name||customer.email||customer.phone||customer.customerId}</strong><span>{customer.email}{customer.phone&&` · ${customer.phone}`}</span></div><div><b>{money(customer.totalSpent)}</b><span>{es?'Valor total':'Lifetime value'}</span></div><div><b>{customer.orderCount}</b><span>{es?'Órdenes':'Orders'}</span></div><div><b>{customer.bookingCount}</b><span>{es?'Citas':'Bookings'}</span></div></article>)}</div>}</PortalPanel>
 }
 
 export function PaymentLinksPanel({siteId,siteSlug,lang}:{siteId:string;siteSlug:string;lang:Language}){
+  const api=useWorkspaceApi(),practice=usePractice()
+
   const es=lang==='es';const [rows,setRows]=useState<PaymentLink[]>([]);const [title,setTitle]=useState('');const [amount,setAmount]=useState('');const [busy,setBusy]=useState(false);const [error,setError]=useState('')
   const load=async()=>{try{const result=await api(`/.netlify/functions/client-v3-admin?siteId=${encodeURIComponent(siteId)}&collection=payment-links`);setRows(result.records||[])}catch(e){setError(e instanceof Error?e.message:'Error')}}
   useEffect(()=>{load()},[siteId])
   const create=async()=>{const cents=Math.round(Number(amount)*100);if(!title.trim()||!Number.isFinite(cents)||cents<=0)return setError(es?'Escribe un título y una cantidad válida.':'Enter a title and valid amount.');setBusy(true);setError('');try{await api('/.netlify/functions/client-v3-admin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({siteId,action:'create_payment_link',value:{title,amount:cents,currency:'usd'}})});setTitle('');setAmount('');await load()}catch(e){setError(e instanceof Error?e.message:'Error')}finally{setBusy(false)}}
   const toggle=async(row:PaymentLink)=>{setBusy(true);try{await api('/.netlify/functions/client-v3-admin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({siteId,action:'set_payment_link_active',paymentLinkId:row.paymentLinkId,active:!row.active})});await load()}catch(e){setError(e instanceof Error?e.message:'Error')}finally{setBusy(false)}}
-  return <PortalPanel className="ca-panel"><header><h2>{es?'Links de pago':'Payment links'}</h2><p>{es?'Crea un enlace directo de cobro para compartir por WhatsApp, redes, SMS o QR.':'Create direct payment links to share through WhatsApp, social, SMS or QR.'}</p></header>{error&&<div className="ca-error">{error}</div>}<div className="ca-grid"><label>{es?'Título':'Title'}<input value={title} onChange={e=>setTitle(e.target.value)} placeholder={es?'Ej. Depósito de cita':'e.g. Appointment deposit'}/></label><label>{es?'Cantidad USD':'Amount USD'}<input type="number" min="0.01" step="0.01" value={amount} onChange={e=>setAmount(e.target.value)}/></label></div><button className="ca-save" disabled={busy} onClick={create}>{busy?(es?'Creando…':'Creating…'):(es?'Crear link de pago':'Create payment link')}</button><div className="ca-v3-links">{rows.map(row=>{const path=`/pay/${siteSlug}/${row.token}`;return <article key={row.paymentLinkId}><div><strong>{row.title}</strong><span>{money(row.amount)} · {row.active?(es?'Activo':'Active'):(es?'Inactivo':'Inactive')}</span><code>{path}</code></div><nav><CopyButton value={location.origin+path} lang={lang}/><a className="ca-primary-link secondary" href={`/.netlify/functions/client-payment-link-qr?siteId=${encodeURIComponent(siteId)}&paymentLinkId=${encodeURIComponent(row.paymentLinkId)}`} target="_blank">QR</a><button disabled={busy} onClick={()=>toggle(row)}>{row.active?(es?'Desactivar':'Disable'):(es?'Activar':'Enable')}</button></nav></article>})}</div></PortalPanel>
+  return <PortalPanel className="ca-panel" data-training="payment-links"><header><h2>{es?'Links de pago':'Payment links'}</h2><p>{es?'Crea un enlace directo de cobro para compartir por WhatsApp, redes, SMS o QR.':'Create direct payment links to share through WhatsApp, social, SMS or QR.'}</p></header>{error&&<div className="ca-error">{error}</div>}<div className="ca-grid"><label>{es?'Título':'Title'}<input value={title} onChange={e=>setTitle(e.target.value)} placeholder={es?'Ej. Depósito de cita':'e.g. Appointment deposit'}/></label><label>{es?'Cantidad USD':'Amount USD'}<input type="number" min="0.01" step="0.01" value={amount} onChange={e=>setAmount(e.target.value)}/></label></div><button className="ca-save" disabled={busy} onClick={create}>{busy?(es?'Creando…':'Creating…'):(es?'Crear link de pago':'Create payment link')}</button><div className="ca-v3-links">{rows.map(row=>{const path=`/pay/${siteSlug}/${row.token}`;return <article key={row.paymentLinkId}><div><strong>{row.title}</strong><span>{money(row.amount)} · {row.active?(es?'Activo':'Active'):(es?'Inactivo':'Inactive')}</span><code>{path}</code></div><nav><CopyButton value={practice?'https://example.invalid/practice-payment':location.origin+path} lang={lang}/><a className="ca-primary-link secondary" href={`/.netlify/functions/client-payment-link-qr?siteId=${encodeURIComponent(siteId)}&paymentLinkId=${encodeURIComponent(row.paymentLinkId)}`} target="_blank">QR</a><button disabled={busy} onClick={()=>toggle(row)}>{row.active?(es?'Desactivar':'Disable'):(es?'Activar':'Enable')}</button></nav></article>})}</div></PortalPanel>
 }
 
 export function ReceiptsPanel({siteId,lang,colors,timeZone='America/Puerto_Rico'}:{siteId:string;lang:Language;timeZone?:string;colors?:ReceiptColors}){
+  const api=useWorkspaceApi()
+
   const es=lang==='es';const [rows,setRows]=useState<Receipt[]>([]);const [busy,setBusy]=useState('');const [error,setError]=useState('');const [loading,setLoading]=useState(true);const [selectedId,setSelectedId]=useState('')
   useEffect(()=>{let active=true;setRows([]);setSelectedId('');setLoading(true);setError('');api(`/.netlify/functions/client-v3-admin?siteId=${encodeURIComponent(siteId)}&collection=receipts`).then(r=>{if(active)setRows(r.records||[])}).catch(e=>{if(active)setError(e instanceof Error?e.message:'Error')}).finally(()=>{if(active)setLoading(false)});return()=>{active=false}},[siteId])
   const resend=async(receiptId:string)=>{setBusy(receiptId);setError('');try{await api('/.netlify/functions/client-v3-admin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({siteId,action:'resend_receipt',receiptId})})}catch(e){setError(e instanceof Error?e.message:'Error')}finally{setBusy('')}}
@@ -58,6 +65,7 @@ export function ReceiptsPanel({siteId,lang,colors,timeZone='America/Puerto_Rico'
 }
 
 export function AnalyticsPanel({commerce,lang,siteId,stripeConnected}:{commerce:{orders:Transaction[];bookings:Transaction[]};lang:Language;siteId:string;stripeConnected:boolean}){
+  const fetch=useWorkspaceFetch()
   const es=lang==='es';const all=[...commerce.orders,...commerce.bookings];const paid=all.filter(x=>['paid','paid_in_person'].includes(x.paymentStatus));const revenue=paid.reduce((s,x)=>s+Number(x.amountTotal||0),0);const average=paid.length?Math.round(revenue/paid.length):0
   const [exporting,setExporting]=useState('');const [exportError,setExportError]=useState('')
   const downloadAccountingReport=async(provider:'stripe'|'ath')=>{setExporting(provider);setExportError('');try{const response=await withAuthRetry(()=>fetch(`/.netlify/functions/client-accounting-export?siteId=${encodeURIComponent(siteId)}&provider=${provider}`,{credentials:'include',cache:'no-store'}));if(!response.ok){const result=await response.json().catch(()=>({}));throw new Error(result.message||(es?'No se pudo descargar el informe.':'The report could not be downloaded.'))}const blob=await response.blob();const objectUrl=URL.createObjectURL(blob);const anchor=document.createElement('a');anchor.href=objectUrl;anchor.download=`${provider==='stripe'?'stripe-balance':'ath-movil-business'}-${new Date().toISOString().slice(0,10)}.csv`;document.body.append(anchor);anchor.click();anchor.remove();window.setTimeout(()=>URL.revokeObjectURL(objectUrl),1000)}catch(error){setExportError(error instanceof Error?error.message:(es?'No se pudo descargar el informe.':'The report could not be downloaded.'))}finally{setExporting('')}}
@@ -77,18 +85,20 @@ export function MarketingPanel({site,lang}:{site:any;lang:Language}){
 
 export function WebsitePanel({site,lang,onSave,onReload,busy,canEdit}:{site:any;lang:Language;onSave:(slug:string)=>Promise<{ok:boolean;message:string}>;onReload:()=>Promise<void>;busy:boolean;canEdit:boolean}){
   const es=lang==='es'
-  const [draft,setDraft]=useState(site.slug as string)
+  const practice=usePractice()
+  const [draft,setDraft]=useState<string>(practice?.ui.websiteDraft||site.slug)
+  useEffect(()=>{practice?.setUi('websiteDraft',draft)},[practice,draft])
   const [notice,setNotice]=useState('')
   const [noticeError,setNoticeError]=useState(false)
   const [reloading,setReloading]=useState(false)
   const [copied,setCopied]=useState(false)
   const gate=useRef(false),input=useRef<HTMLInputElement>(null)
   useUnsavedChanges(draft,site.siteId+':'+site.slug,setDraft,lang,site.slug)
-  useEffect(()=>{setDraft(site.slug);setCopied(false)},[site.siteId,site.slug])
+  useEffect(()=>{if(!practice)setDraft(site.slug);setCopied(false)},[site.siteId,site.slug])
   const candidate=draft.trim().toLowerCase()
   let valid=false;try{validatePublicSiteSlug(candidate);valid=true}catch{}
   const dirty=candidate!==site.slug
-  const fullUrl=`https://webfactorypr.com/sites/${site.slug}`
+  const fullUrl=practice?`https://example.invalid/practice/${site.slug}`:`https://webfactorypr.com/sites/${site.slug}`
   const saveLink=async(event:import('react').FormEvent<HTMLFormElement>)=>{
     event.preventDefault()
     if(!canEdit||busy||reloading||gate.current||!valid||!dirty)return
@@ -114,16 +124,16 @@ export function WebsitePanel({site,lang,onSave,onReload,busy,canEdit}:{site:any;
         {canEdit&&<form onSubmit={saveLink} className="ca-public-site-form">
           <label htmlFor="ca-public-site-slug">{es?'Editar dirección del website':'Edit website address'}</label>
           <div className="ca-public-site-field">
-            <span>webfactorypr.com/sites/</span>
-            <input ref={input} id="ca-public-site-slug" name="publicSlug" autoCapitalize="none" autoComplete="off" spellCheck={false} maxLength={64} value={draft} onChange={event=>{
+            <span>{practice?'example.invalid/practice/':'webfactorypr.com/sites/'}</span>
+            <input data-training="website-link" ref={input} id="ca-public-site-slug" name="publicSlug" autoCapitalize="none" autoComplete="off" spellCheck={false} maxLength={64} value={draft} onChange={event=>{
               const next=event.target.value.normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9-]/g,'-').replace(/-{2,}/g,'-').replace(/^-+/,'').slice(0,64)
               setDraft(next);setNotice('');setCopied(false)
             }} aria-invalid={dirty&&!valid} aria-describedby="ca-public-site-help" disabled={busy||reloading}/>
           </div>
           <p id="ca-public-site-help" className="ca-public-site-help">{es?'De 3 a 64 caracteres: letras, números y guiones simples. Sin palabras reservadas.':'3–64 characters: letters, numbers and single hyphens. No reserved names.'}</p>
-          {dirty&&valid&&<p className="ca-public-site-preview">{es?'Nuevo enlace:':'New address:'} <strong>webfactorypr.com/sites/{candidate}</strong></p>}
+          {dirty&&valid&&<p className="ca-public-site-preview">{es?'Nuevo enlace:':'New address:'} <strong>{practice?'example.invalid/practice/':'webfactorypr.com/sites/'}{candidate}</strong></p>}
           {dirty&&!valid&&<p className="ca-public-site-error" role="status">{es?'Escribe un enlace válido para guardar.':'Enter a valid address before saving.'}</p>}
-          <div className="ca-public-site-actions"><button className="ca-primary-link ca-public-site-save" type="submit" disabled={busy||reloading||!dirty||!valid}>{busy?(es?'Guardando…':'Saving…'):(es?'Guardar enlace':'Save link')}</button>{dirty&&<button className="ca-public-site-copy" type="button" disabled={busy||reloading} onClick={()=>{setDraft(site.slug);setNotice('');input.current?.focus()}}>{es?'Cancelar edición':'Cancel editing'}</button>}</div>
+          <div className="ca-public-site-actions"><button data-training="website-save" className="ca-primary-link ca-public-site-save" type="submit" disabled={busy||reloading||!dirty||!valid}>{busy?(es?'Guardando…':'Saving…'):(es?'Guardar enlace':'Save link')}</button>{dirty&&<button className="ca-public-site-copy" type="button" disabled={busy||reloading} onClick={()=>{setDraft(site.slug);setNotice('');input.current?.focus()}}>{es?'Cancelar edición':'Cancel editing'}</button>}</div>
         </form>}
         {!canEdit&&<p className="ca-public-site-help">{es?'Solo el propietario o un administrador puede editar el enlace.':'Only an owner or manager can edit the address.'}</p>}
         <p className="ca-public-site-help">{es?'Los enlaces antiguos y códigos QR compartidos seguirán abriendo este negocio.':'Previously shared links and QR codes will still open this business.'}</p>
@@ -154,12 +164,16 @@ export function SettingsPanel({site,lang,onSave,busy}:{site:any;lang:Language;on
 
 
 export function PayoutsPanel({siteId,lang}:{siteId:string;lang:Language}){
+  const api=useWorkspaceApi()
+
   const es=lang==='es';const [rows,setRows]=useState<Payout[]>([]);const [connected,setConnected]=useState<boolean|null>(null);const [error,setError]=useState('')
   useEffect(()=>{api(`/.netlify/functions/client-stripe-payouts?siteId=${encodeURIComponent(siteId)}`).then(r=>{setConnected(Boolean(r.connected));setRows(r.payouts||[])}).catch(e=>setError(e instanceof Error?e.message:'Error'))},[siteId])
   return <PortalPanel className="ca-panel"><header><h2>{es?'Depósitos de Stripe':'Stripe payouts'}</h2><p>{es?'Consulta los depósitos enviados por Stripe a la cuenta bancaria conectada del negocio.':'View payouts Stripe sends to the connected business bank account.'}</p></header>{error&&<div className="ca-error">{error}</div>}{connected===false?<div className="ca-warning">{es?'Conecta Stripe para ver depósitos y fechas estimadas.':'Connect Stripe to view payouts and estimated arrival dates.'}</div>:rows.length===0?<p>{es?'No hay depósitos recientes para mostrar.':'No recent payouts to display.'}</p>:<div className="ca-transactions">{rows.map(row=><article key={row.id}><div><small>PAYOUT</small><strong>{row.id}</strong><span>{row.method||'standard'} · {row.type||'bank_account'}</span></div><div><b>{money(row.amount)}</b><span>{row.status}</span>{row.arrivalDate&&<time>{es?'Llega aprox. ':'Expected '} {new Date(row.arrivalDate).toLocaleDateString(es?'es-PR':'en-US')}</time>}</div></article>)}</div>}</PortalPanel>
 }
 
 export function InventoryStatusPanel({site,lang}:{site:any;lang:Language}){
+  const api=useWorkspaceApi()
+
   const es=lang==='es'
   const reservations=Object.values(site.stockReservations||{}).filter((entry:any)=>entry.state==='held') as Array<{referenceId:string;createdAt:string;provider?:string;lines:Array<{id:string;quantity:number}>}>
   const [checking,setChecking]=useState('')
@@ -175,12 +189,16 @@ export function InventoryStatusPanel({site,lang}:{site:any;lang:Language}){
 
 
 export function InventoryMovementsPanel({siteId,lang}:{siteId:string;lang:Language}){
+  const api=useWorkspaceApi()
+
   const es=lang==='es';const [rows,setRows]=useState<any[]>([])
   useEffect(()=>{api(`/.netlify/functions/client-v3-admin?siteId=${encodeURIComponent(siteId)}&collection=inventory-movements&limit=100`).then(r=>setRows(r.records||[])).catch(()=>setRows([]))},[siteId])
   return <PortalPanel className="ca-panel"><header><h2>{es?'Movimientos de inventario':'Inventory movements'}</h2><p>{es?'Historial reciente de ventas, reembolsos y ajustes que cambiaron existencias.':'Recent sales, refunds and adjustments that changed stock.'}</p></header><div className="ca-transactions">{rows.length===0?<p>{es?'No hay movimientos todavía.':'No inventory movements yet.'}</p>:rows.map(row=><article key={row.movementId}><div><small>{String(row.reason||'adjustment').toUpperCase()}</small><strong>{row.itemId}</strong><span>{row.referenceId||row.movementId}</span></div><div><b>{Number(row.quantityDelta)>0?'+':''}{row.quantityDelta}</b><time>{new Date(row.createdAt).toLocaleString(es?'es-PR':'en-US')}</time></div></article>)}</div></PortalPanel>
 }
 
 export function MemberRolesPanel({site,setSite,lang,onSave,busy,membership}:{site:any;setSite:(site:any)=>void;lang:Language;onSave:(section:string,value:any)=>void;busy:boolean;membership:any}){
+  const api=useWorkspaceApi()
+
   const es=lang==='es';const [members,setMembers]=useState<any[]>(site.members||[]);const [email,setEmail]=useState('');const [role,setRole]=useState('employee');const [accessBusy,setAccessBusy]=useState('');const [error,setError]=useState('');const [message,setMessage]=useState('')
   useEffect(()=>setMembers(site.members||[]),[site.siteId,site.revision])
   const ownerOnly=(membership?.role||'owner')==='owner'||membership?.role==='admin'
@@ -202,6 +220,8 @@ export function ReviewAutomationPanel({site,lang,onSave,busy}:{site:any;lang:Lan
 export { default as PosPanel } from './PosWorkspace'
 
 export function InventoryAdjustmentPanel({site,setSite,lang}:{site:any;setSite:(site:any)=>void;lang:Language}){
+  const api=useWorkspaceApi()
+
   const es=lang==='es'
   const reservations=Object.values(site.stockReservations||{}).filter((entry:any)=>entry.state==='held') as Array<{referenceId:string;createdAt:string;provider?:string;lines:Array<{id:string;quantity:number}>}>
   const [checking,setChecking]=useState('')
@@ -234,11 +254,13 @@ export function InventoryAdjustmentPanel({site,setSite,lang}:{site:any;setSite:(
     }catch(e){setError(e instanceof Error?e.message:'Inventory adjustment failed.')}finally{setBusy(false)}
   }
 
-  return <PortalPanel className="ca-panel"><header><h2>{es?'Ajuste de inventario':'Inventory adjustment'}</h2><p>{es?'Suma o resta existencias manualmente. Cada cambio queda guardado en el historial.':'Add or subtract stock manually. Every change is saved in the movement history.'}</p></header>{message&&<div className="ca-success">{message}</div>}{error&&<div className="ca-error">{error}</div>}{tracked.length===0?<p>{es?'Activa Track inventory en un producto para usar esta herramienta.':'Enable Track inventory on a product to use this tool.'}</p>:<div className="ca-grid"><label>{es?'Producto':'Product'}<select value={itemId} onChange={e=>setItemId(e.target.value)}>{tracked.map((item:any)=><option key={item.id} value={item.id}>{item.nameEn||item.name||item.nameEs} · {Number(item.inventory??0)}</option>)}</select></label><label>{es?'Cambio de unidades':'Quantity change'}<input type="number" step="1" value={quantity} onChange={e=>setQuantity(e.target.value)} placeholder="+5 / -2"/></label><label>{es?'Motivo':'Reason'}<select value={reason} onChange={e=>setReason(e.target.value)}><option value="manual_adjustment">{es?'Ajuste manual':'Manual adjustment'}</option><option value="restock">{es?'Reposición':'Restock'}</option><option value="damage">{es?'Daño/pérdida':'Damage/loss'}</option><option value="correction">{es?'Corrección':'Correction'}</option></select></label></div>} {tracked.length>0&&<button className="ca-save" disabled={busy} onClick={adjust}>{busy?(es?'Guardando…':'Saving…'):(es?'Aplicar ajuste':'Apply adjustment')}</button>}</PortalPanel>
+  return <PortalPanel className="ca-panel" data-training="inventory-adjustment"><header><h2>{es?'Ajuste de inventario':'Inventory adjustment'}</h2><p>{es?'Suma o resta existencias manualmente. Cada cambio queda guardado en el historial.':'Add or subtract stock manually. Every change is saved in the movement history.'}</p></header>{message&&<div className="ca-success">{message}</div>}{error&&<div className="ca-error">{error}</div>}{tracked.length===0?<p>{es?'Activa Track inventory en un producto para usar esta herramienta.':'Enable Track inventory on a product to use this tool.'}</p>:<div className="ca-grid"><label>{es?'Producto':'Product'}<select value={itemId} onChange={e=>setItemId(e.target.value)}>{tracked.map((item:any)=><option key={item.id} value={item.id}>{item.nameEn||item.name||item.nameEs} · {Number(item.inventory??0)}</option>)}</select></label><label>{es?'Cambio de unidades':'Quantity change'}<input type="number" step="1" value={quantity} onChange={e=>setQuantity(e.target.value)} placeholder="+5 / -2"/></label><label>{es?'Motivo':'Reason'}<select value={reason} onChange={e=>setReason(e.target.value)}><option value="manual_adjustment">{es?'Ajuste manual':'Manual adjustment'}</option><option value="restock">{es?'Reposición':'Restock'}</option><option value="damage">{es?'Daño/pérdida':'Damage/loss'}</option><option value="correction">{es?'Corrección':'Correction'}</option></select></label></div>} {tracked.length>0&&<button className="ca-save" disabled={busy} onClick={adjust}>{busy?(es?'Guardando…':'Saving…'):(es?'Aplicar ajuste':'Apply adjustment')}</button>}</PortalPanel>
 }
 
 
 export function IntegrationManagementPanel({site,setSite,lang,membership}:{site:any;setSite:(site:any)=>void;lang:Language;membership:any}){
+  const api=useWorkspaceApi()
+
   const es=lang==='es'
   const [busy,setBusy]=useState('')
   const [message,setMessage]=useState('')
@@ -268,6 +290,8 @@ export function IntegrationManagementPanel({site,setSite,lang,membership}:{site:
 }
 
 export function AccountLifecyclePanel({site,lang,membership,onPageDeleted,onAccountDeleted}:{site:any;lang:Language;membership:any;onPageDeleted:()=>Promise<void>|void;onAccountDeleted:()=>Promise<void>|void}){
+  const api=useWorkspaceApi()
+
   const es=lang==='es'
   const owner=(membership?.role||'owner')==='owner'||membership?.role==='admin'
   const [busy,setBusy]=useState('')

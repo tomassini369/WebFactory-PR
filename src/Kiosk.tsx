@@ -4,7 +4,7 @@ import {ThemeToggle} from './theme'
 import {posCapabilities,posOperations,type PosProfile} from '../netlify/lib/pos-capabilities.mjs'
 import {posProfileCopy} from './pos-profile'
 import {estimatePosTotals,posBrandPair,posItemName,posQuantityLimit,type PosItem,type PosLine,type PosTax} from './pos-domain'
-import {kioskRequest} from './kiosk-api'
+import {useKioskRequest} from './kiosk-api'
 import './kiosk.css'
 type Language='es'|'en'
 type Sale={bookingReference?:{code:string;pin:string};kind?:'order'|'booking';status:'review'|'pending'|'paid'|'due';saleId:string;canResume?:boolean;canReset:boolean;checkoutUrl?:string;transactionId?:string;total?:number;subtotal?:number;tax?:number;taxIncluded?:boolean;queueNumber?:string;receipt?:{id:string;createdAt:string}|null;items?:Array<{name:string;quantity:number;unitAmount:number}>}
@@ -12,6 +12,7 @@ type View=BookingView & {business:{siteId:string;nameEn:string;nameEs:string;log
 const money=(n:number)=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(n/100)
 const emptyCustomer={name:'',email:'',phone:''}
 export default function Kiosk({lang,setLang,pairing}:{lang:Language;setLang:(lang:Language)=>void;pairing:string}) {
+ const kioskRequest=useKioskRequest()
  const t=(a:string,b:string)=>lang==='es'?a:b, token=useRef(pairing), [ready,setReady]=useState(!pairing),[view,setView]=useState<View|null>(null),[cart,setCart]=useState<PosLine[]>([]),[search,setSearch]=useState(''),[category,setCategory]=useState('all'),[customer,setCustomer]=useState(emptyCustomer),[provider,setProvider]=useState(''),[busy,setBusy]=useState(false),[error,setError]=useState(''),[offline,setOffline]=useState(false),[submitted,setSubmitted]=useState(false),[bookingMode,setBookingMode]=useState<'new'|'existing'|null>(null),lastActivity=useRef(Date.now()),loading=useRef(false),busyRef=useRef(false),currentSale=useRef(''),orderPanel=useRef<HTMLElement|null>(null),[orderVisible,setOrderVisible]=useState(false)
  busyRef.current=busy
  const chooseLanguage=(next:Language)=>{try{localStorage.setItem('wf-kiosk-language',next)}catch{}setLang(next)}

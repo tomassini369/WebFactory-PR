@@ -1,9 +1,10 @@
 import {useEffect,useState,type FormEvent} from 'react'
-import {kioskRequest} from './kiosk-api'
+import {useKioskRequest} from './kiosk-api'
 export type KioskBookingData={service:string;start:string;end:string;checkedIn:boolean;canCheckIn:boolean;canPay:boolean;balance:{known:boolean;total:number|null;paid:number|null;due:number|null}}
 export type BookingView={saleId:string;timezone:string;bookingModes:{newBookings:boolean;existingBookings:boolean};bookingProviders:string[];balanceProviders:string[];appointmentServices:Array<{id:string;nameEn:string;nameEs:string;price:number}>;professionals:Array<{id:string;name:string;serviceIds:string[]}>;booking:KioskBookingData|null}
 const money=(c:number)=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(c/100)
 export default function KioskBookingPanel({view,lang,mode,receive,onBack}:{view:BookingView;lang:'es'|'en';mode:'new'|'existing';receive:(data:any)=>void;onBack:()=>void}){
+ const kioskRequest=useKioskRequest()
  const t=(a:string,b:string)=>lang==='es'?a:b
  const [service,setService]=useState(''),[employee,setEmployee]=useState(''),[date,setDate]=useState(''),[start,setStart]=useState(''),[slots,setSlots]=useState<Array<{start:string;end:string;employeeId?:string}>>([]),[customer,setCustomer]=useState({name:'',email:'',phone:''}),[reference,setReference]=useState(''),[pin,setPin]=useState(''),[lookupMethod,setLookupMethod]=useState<'code'|'link'>('code'),[provider,setProvider]=useState(''),[busy,setBusy]=useState(false),[error,setError]=useState('')
  const methods=mode==='new'?view.bookingProviders:view.balanceProviders

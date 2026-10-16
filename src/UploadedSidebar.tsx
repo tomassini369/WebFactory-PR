@@ -99,7 +99,7 @@ export default function UploadedSidebar({groups,activeItem,name,email,lang,isExp
   useLayoutEffect(()=>{
     const element=toolbar.current;if(!element)return;
     const update=()=>element.parentElement?.style.setProperty('--wf-sidebar-top',(element.getBoundingClientRect().bottom+8)+'px');
-    const observer=new ResizeObserver(update);observer.observe(element);update();
+    const observer=new ResizeObserver(update);observer.observe(element);if(element.parentElement)observer.observe(element.parentElement);update();
     return ()=>observer.disconnect();
   },[]);
   useLayoutEffect(()=>{
