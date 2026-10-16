@@ -31,6 +31,27 @@ jobs:
         run: npx playwright install --with-deps --only-shell chromium
       - name: Install WebKit for mobile FAQ QA
         run: npx playwright install --with-deps webkit
+      - name: Check login and MFA text contrast on Chromium and WebKit
+        run: |
+          for engine in chromium webkit; do
+            phase="auth-contrast-$engine"
+            log="/tmp/$phase.log"
+            if ! QA_ENGINE="$engine" QA_PORT=5306 node scripts/browser-auth-contrast-smoke.mjs > "$log" 2>&1; then
+              cat "$log"
+              node scripts/report-kiosk-ci-error.mjs "$log" "$phase"
+              exit 1
+            fi
+            cat "$log"
+          done
+      - name: Save login contrast browser evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: auth-contrast-browser-evidence
+          path: |
+            /tmp/webfactory-auth-contrast/
+            /tmp/auth-contrast-*.log
+          if-no-files-found: ignore
       - name: Check Workforce identity, clock controls and responsive review
         env:
           QA_BUILT: 1
@@ -267,6 +288,30 @@ jobs:
             node scripts/report-kiosk-ci-error.mjs /tmp/unified-preview-build.log build
             exit 1
           }
+      - name: Check deployed login and MFA text contrast with isolated sessions
+        env:
+          QA_ORIGIN: https://deploy-preview-${{ github.event.pull_request.number }}--webfactorypr.netlify.app
+          QA_WIDTHS: 390,1440
+        run: |
+          for engine in chromium webkit; do
+            phase="auth-contrast-$engine"
+            log="/tmp/$phase.log"
+            if ! QA_ENGINE="$engine" QA_PORT=5306 node scripts/browser-auth-contrast-smoke.mjs > "$log" 2>&1; then
+              cat "$log"
+              node scripts/report-kiosk-ci-error.mjs "$log" "$phase"
+              exit 1
+            fi
+            cat "$log"
+          done
+      - name: Save login contrast browser evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: auth-contrast-preview-evidence
+          path: |
+            /tmp/webfactory-auth-contrast/
+            /tmp/auth-contrast-*.log
+          if-no-files-found: ignore
       - name: Check deployed unified workspaces with isolated fixtures
         env:
           QA_ORIGIN: https://deploy-preview-${{ github.event.pull_request.number }}--webfactorypr.netlify.app

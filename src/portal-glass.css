@@ -109,7 +109,7 @@ html[data-wf-theme=dark] body #root :is(.ca-page:has(>.ca-login),.wfa-login-page
 html body #root :is(.ca-page:has(>.ca-login),.wfa-login-page:has(>.wfa-login))>:is(.ca-login,.wfa-login){background:var(--pg-surface)!important;border-color:var(--pg-line)!important;backdrop-filter:blur(28px) saturate(150%);-webkit-backdrop-filter:blur(28px) saturate(150%);box-shadow:inset 0 1px 0 #ffffff45,0 28px 75px #08081030!important;border-radius:28px}
 html body #root :is(.ca-login,.wfa-login) :is(input:not([type=checkbox]),.portal-password-field){border-radius:999px!important;background:var(--pg-solid)!important;border-color:var(--pg-line)!important;color:var(--pg-text)!important}
 html body #root :is(.ca-login,.wfa-login) .portal-password-field input{border:0!important;background:transparent!important}
-html body #root :is(.ca-login,.wfa-login) form>button{background:#3c86f6!important;color:#fff!important;border:1px solid #3c86f6!important;border-radius:999px!important;box-shadow:0 8px 22px #3c86f630}
+html body #root :is(.ca-login,.wfa-login) form>button{background:#285fa6!important;color:#fff!important;border:1px solid #285fa6!important;border-radius:999px!important;box-shadow:0 8px 22px #3c86f630}
 html body #root :is(.ca-login,.wfa-login) :is(input,button,a):focus-visible{outline:3px solid var(--pg-accent);outline-offset:3px}
 .wf-portal-scene-copy{display:none}
 @media(min-width:1000px){
@@ -208,3 +208,17 @@ html body .portal-loading-page{min-height:100dvh;display:grid;place-items:center
 @media(prefers-reduced-motion:reduce){.portal-loading-card p{animation:none;opacity:1}}
 
 @media(max-width:767px){html:has(.templates-page) .header{grid-template-columns:minmax(0,1fr) auto;gap:8px;padding-inline:10px}html:has(.templates-page) .header .logo img{width:100%;max-width:110px}html:has(.templates-page) .header .logo{min-width:0}html:has(.templates-page) .header-actions{gap:4px}html:has(.templates-page) .header .langs{gap:0;padding:2px}html:has(.templates-page) .header .langs .wf-theme-toggle{margin-left:0}}
+
+/* Switch shell ink and canvas together; do not fade the background under new text. */
+html body #root :is(.ca-page:has(>.ca-login),.wfa-login-page:has(>.wfa-login)){transition:none!important}
+/* Authentication text follows the card theme, including restored/autofilled fields. */
+html body #root :is(.ca-login,.wfa-login){color:var(--pg-text)}
+html body #root :is(.ca-login,.wfa-login) :is(h1,h2,h3,label,.portal-remember span){color:var(--pg-text)}
+html body #root :is(.ca-login,.wfa-login)>p,html body #root .mfa-login-card .mfa-panel>p:not([role=alert]){color:var(--pg-muted)}
+html body #root :is(.ca-login,.wfa-login) input:not([type=checkbox]){-webkit-text-fill-color:var(--pg-text);caret-color:var(--pg-text)}
+html body #root :is(.ca-login,.wfa-login) input::placeholder{color:var(--pg-muted);-webkit-text-fill-color:var(--pg-muted);opacity:1}
+html body #root :is(.ca-login,.wfa-login) :is(.ca-link,.wfa-text-button){background:transparent!important;color:var(--pg-accent)}
+html body #root :is(.ca-login,.wfa-login) :is(.mfa-panel .btn:not(.secondary),.recovery-actions .ca-primary-link),html body #root .ca-login>button:not(.ca-link){background:#285fa6;color:#fff;border-color:#285fa6}
+html body #root :is(.ca-login,.wfa-login) .mfa-panel .btn.secondary{background:var(--pg-solid)!important;color:var(--pg-accent)!important;border:1px solid var(--pg-line)!important;box-shadow:none}
+html body #root :is(.ca-login,.wfa-login) :is(form>button,.mfa-panel .btn):disabled{opacity:1;background:var(--pg-soft)!important;color:var(--pg-muted)!important;border-color:var(--pg-line)!important;box-shadow:none;filter:none;cursor:not-allowed}
+@media(forced-colors:active){html body #root :is(.ca-login,.wfa-login) :is(form>button,.mfa-panel .btn){background:ButtonFace!important;color:ButtonText!important;border-color:ButtonText!important}html body #root :is(.ca-login,.wfa-login) :is(form>button,.mfa-panel .btn):disabled{color:GrayText!important}html body #root :is(.ca-login,.wfa-login) input{-webkit-text-fill-color:CanvasText;caret-color:CanvasText}html body #root :is(.ca-login,.wfa-login) input::placeholder{-webkit-text-fill-color:GrayText;color:GrayText}}
