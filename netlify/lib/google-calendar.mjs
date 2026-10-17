@@ -67,7 +67,10 @@ async function refreshStoredGoogleToken(storageKey, missingMessage, renewMessage
     }),
   });
   const refreshed = await response.json();
-  if (!response.ok) throw Object.assign(new Error(renewMessage), { status: 409 });
+  if (!response.ok) {
+    if (response.status === 429 || response.status >= 500) throw Object.assign(new Error("Google authorization service is temporarily unavailable."), { status:503 });
+    throw Object.assign(new Error(renewMessage), { status:409 });
+  }
   token = { ...token, ...refreshed, expires_at: Date.now() + Number(refreshed.expires_in || 3600) * 1000 };
   await clientOAuthStore().setJSON(storageKey, { encrypted: encryptToken(token), updatedAt: new Date().toISOString() });
   return token;

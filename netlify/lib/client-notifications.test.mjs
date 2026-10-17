@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { bookingKioskPin } from "./kiosk-bookings.mjs";
 import { sendBookingConfirmationEmails } from "./client-notifications.mjs";
 
 const site={
@@ -9,7 +10,7 @@ const site={
  employees:[{id:"barber",name:"Alex"}],
 };
 const booking=()=>({
- kind:"booking",transactionId:"transaction-mail-test",bookingCode:"A1B2C3D4",calendarToken:"t".repeat(43),
+ siteId:site.siteId,kind:"booking",transactionId:"transaction-mail-test",bookingCode:"A1B2C3D4",calendarToken:"t".repeat(43),
  status:"confirmed",paymentStatus:"due",confirmationEmailRequested:true,
  start:"2099-10-12T21:00:00Z",end:"2099-10-12T21:45:00Z",
  employeeId:"barber",amountTotal:2500,items:[{name:"Haircut / Fade"}],
@@ -29,6 +30,8 @@ test("confirmed booking is delivered as branded HTML without an automatic calend
  assert.equal(sends[0].attachments,undefined);
  assert.match(sends[0].html,/Añadir al calendario|Add to calendar/);
  assert.match(sends[0].html,/Private kiosk PIN/);
+ assert.ok(sends[0].html.includes("A1B2C3D4") && sends[0].text.includes("A1B2C3D4"));
+ const pin=bookingKioskPin(booking());assert.match(pin,/^\d{6}$/);assert.ok(sends[0].html.includes(pin) && sends[0].text.includes(pin));
  assert.match(sends[0].html,/At the self-service kiosk/);
  assert.doesNotMatch(sends[0].html,/If you accepted the Google invitation/);
  assert.equal(out.customerEmailSent,true);
@@ -70,3 +73,32 @@ test("transient mail errors show retry status while preserving the booking",asyn
  assert.equal(output.customerEmailDeliveryStatus,"pending_retry");
  assert.equal(output.customerEmailDeliveryStatusReason,"delivery_failed");
 });
+
+for (const failure of [{code:"business_email_authorization_required",status:409},{status:401},{status:403}]) {
+ test(`business email authorization failure ${failure.status} requires action without exposing credentials`,async()=>{
+  const result=await sendBookingConfirmationEmails(site,booking(),async()=>{}, {
+   deliver:async()=>{throw Object.assign(new Error("sensitive provider detail"),failure)},
+  });
+  assert.equal(result.status,"confirmed");
+  assert.notEqual(result.customerEmailSent,true);
+  assert.equal(result.customerEmailDeliveryStatus,"action_required");
+  assert.equal(result.customerEmailDeliveryStatusReason,"authorization_required");
+  assert.doesNotMatch(JSON.stringify(result),/sensitive provider detail/);
+ });
+}
+
+for (const [code,reason,status] of [
+ ["business_email_api_disabled","gmail_api_disabled","action_required"],
+ ["business_email_policy_blocked","workspace_policy","action_required"],
+ ["business_email_rate_limited","rate_limited","pending_retry"],
+]) {
+ test(`connected Gmail failure ${reason} is not mislabeled as disconnected authorization`,async()=>{
+  const saved=[];
+  const result=await sendBookingConfirmationEmails(site,booking(),async row=>saved.push(row),{
+   deliver:async()=>{throw Object.assign(new Error("private provider response"),{status:403,code})},
+  });
+  assert.equal(result.status,"confirmed");assert.notEqual(result.customerEmailSent,true);
+  assert.equal(result.customerEmailDeliveryStatus,status);assert.equal(result.customerEmailDeliveryStatusReason,reason);
+  assert.doesNotMatch(JSON.stringify(saved),/private provider response/);
+ });
+}

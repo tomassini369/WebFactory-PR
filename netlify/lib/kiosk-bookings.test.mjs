@@ -79,3 +79,26 @@ test('new appointments use the bound branch and employee and freeze one checkout
 test('any-professional availability uses only active eligible staff at the device branch',async()=>{
  const seen=[];const f=kioskFixture('https://kiosk.example.invalid',{availability:async(site,service,id,date,location,options)=>{seen.push({id,location,strict:options.strictGoogle});return [{start:'2099-01-01T13:00:00Z',end:'2099-01-01T13:30:00Z'}]}});f.site.employees=[{id:'one',active:true,serviceIds:['appointment'],locationIds:['branch']},{id:'other',active:true,serviceIds:['appointment'],locationIds:['elsewhere']},{id:'inactive',active:false,serviceIds:['appointment'],locationIds:['branch']}];const p=await f.paired();await f.admin('configure',{enabled:true,bookingModes:{newBookings:true,existingBookings:false}});const date=new Date(f.now()+86400000).toISOString().slice(0,10);const response=await f.handler(f.request({action:'availability',date,serviceId:'appointment',employeeId:'any',locationId:'elsewhere'},p.cookie));assert.equal(response.status,200);assert.deepEqual(seen,[{id:'one',location:'branch',strict:true}]);assert.equal((await response.json()).slots[0].employeeId,'one');
 });
+
+test('paired booking email status is canonical, tenant bound and independent of a Calendar invitation',async()=>{
+ const f=await fixture(),state=await f.store.get(kioskDeviceKey(f.p.id));
+ state.active={kind:'booking',response:{transactionId:f.record.transactionId}};
+ const record={...f.record,paymentStatus:'due',customerCalendarInviteStatus:'sent'};
+ await f.save(record);
+ for(const [patch,expected] of [[{},'pending'],[{customerEmailDeliveryStatus:'action_required',customerEmailDeliveryStatusReason:'authorization_required'},'action_required'],[{customerEmailSent:true,customerEmailDeliveryStatus:'sent'},'sent']]){
+  await f.store.setJSON(commerceKey(f.site.siteId,'bookings',record.transactionId),{...record,...patch});
+  const view=await kioskSaleView(f.store,state);
+  assert.equal(view.status,'due');assert.equal(view.confirmationEmailStatus,expected);
+  assert.doesNotMatch(JSON.stringify(view),/private-buyer|authorization_required|calendarToken|customerCalendarInviteStatus/);
+ }
+ // The transaction mirror may lag a failed/pending canonical confirmation.
+ await f.store.setJSON(commerceKey(f.site.siteId,'transactions',record.transactionId),{...record,customerEmailSent:true});
+ await f.store.setJSON(commerceKey(f.site.siteId,'bookings',record.transactionId),record);
+ assert.equal((await kioskSaleView(f.store,state)).confirmationEmailStatus,'pending');
+ for(const invalid of [{siteId:'foreign'},{locationId:'foreign'},{transactionId:'foreign'},{channel:'storefront'},{kind:'order'}]){
+  await f.store.setJSON(commerceKey(f.site.siteId,'bookings',record.transactionId),{...record,...invalid});
+  assert.equal((await kioskSaleView(f.store,state)).confirmationEmailStatus,'sent','foreign canonical row must not override the bound transaction');
+ }
+ await f.save({...record,paymentStatus:'pending',status:'payment_pending'});
+ assert.equal((await kioskSaleView(f.store,state)).confirmationEmailStatus,undefined);
+});
