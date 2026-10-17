@@ -52,15 +52,20 @@ export async function kioskSaleView(store, state) {
   const transactionId = active.response?.transactionId;
   if (!transactionId) return { status: 'review', saleId: state.saleId, canResume: Boolean(active.payload), canReset: false };
   const kind=active.kind||'order';
-  const record = await store.get(commerceKey(state.siteId, 'transactions', transactionId), { type: 'json' }) || (kind==='booking'?await store.get(commerceKey(state.siteId,'bookings',transactionId),{type:'json'}):null);
+  const booking = kind==='booking' ? await store.get(commerceKey(state.siteId,'bookings',transactionId),{type:'json'}) : null;
+  const record = await store.get(commerceKey(state.siteId, 'transactions', transactionId), { type: 'json' }) || booking;
   if (!record || record.siteId !== state.siteId || record.transactionId !== transactionId || record.kind !== kind || record.channel !== 'kiosk' || record.locationId !== state.locationId) return { status: 'review', saleId: state.saleId, canReset: false };
   const paid = ['paid', 'paid_in_person'].includes(record.paymentStatus) && ['confirmed', 'completed'].includes(record.status) && Boolean(record.receiptId && (kind==='booking'||record.inventoryAppliedAt)) && !record.inventoryNeedsReview && !record.athFulfillmentNeedsReview;
   const terminal = Boolean(record.inventoryNeedsReview || record.athFulfillmentNeedsReview) || ['paid', 'paid_in_person'].includes(record.paymentStatus) && !paid || ['failed', 'cancelled', 'expired', 'refunded', 'partially_refunded'].includes(record.paymentStatus) || ['failed', 'cancelled', 'expired', 'payment_failed'].includes(record.status);
   const due = (record.source === 'in_person_order'||kind==='booking') && record.paymentStatus === 'due' && record.status === 'confirmed' && !terminal;
+  // Delivery retries update the canonical booking before its transaction mirror.
+  // Only expose the status for the same sale, tenant and paired location.
+  const confirmation = booking && booking.siteId===state.siteId && booking.transactionId===transactionId && booking.kind==='booking' && booking.channel==='kiosk' && booking.locationId===state.locationId ? booking : record;
+  const confirmationEmailStatus = confirmation.customerEmailSent === true ? 'sent' : confirmation.customerEmailDeliveryStatus === 'action_required' ? 'action_required' : 'pending';
   // Expiration, cancellation and failure require inventory reconciliation before
   // the screen can start another order. Browser redirects are never proof.
   return { kind, status: terminal ? 'review' : paid ? 'paid' : due ? 'due' : 'pending', saleId: state.saleId, canReset: paid || due, canResume: !terminal && !paid && !due && Boolean(active.response?.checkoutUrl), checkoutUrl: !terminal && !paid && !due ? active.response?.checkoutUrl || '' : '',
-    transactionId, ...(kind==='booking'&&(paid||due)&&bookingKioskPin(record)?{bookingReference:{code:record.bookingCode,pin:bookingKioskPin(record)}}:{}), total: Number(record.amountTotal || 0), subtotal: Number(record.subtotal || 0), tax: Number(record.tax || 0), taxIncluded: Boolean(record.pricesIncludeTax ?? state.active.pricesIncludeTax), queueNumber: record.queueNumber || '',
+    transactionId, ...(kind==='booking'&&(paid||due)?{confirmationEmailStatus}:{}), ...(kind==='booking'&&(paid||due)&&bookingKioskPin(record)?{bookingReference:{code:record.bookingCode,pin:bookingKioskPin(record)}}:{}), total: Number(record.amountTotal || 0), subtotal: Number(record.subtotal || 0), tax: Number(record.tax || 0), taxIncluded: Boolean(record.pricesIncludeTax ?? state.active.pricesIncludeTax), queueNumber: record.queueNumber || '',
     receipt: paid ? { id: record.receiptId, createdAt: record.paidAt || record.createdAt } : null,
     items: (record.items || []).map(x => ({ name: String(x.name || ''), quantity: x.quantity, unitAmount: x.unitAmount })) };
 }

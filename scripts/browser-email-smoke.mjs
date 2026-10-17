@@ -14,6 +14,8 @@ try{
   await page.route('http**/*',route=>route.abort());
   await page.goto(pathToFileURL(resolve(directory,'index.html')).href);
   await page.frameLocator('#email').getByRole('heading',{name:'Tu cita está confirmada'}).waitFor();
+  await page.frameLocator('#email').getByText('PIN privado del kiosco',{exact:true}).waitFor();
+  await page.frameLocator('#email').getByText('D3A00001',{exact:true}).waitFor();
   await page.getByLabel('Ejemplo').selectOption('platform-es-trial');
   await page.frameLocator('#email').getByRole('heading',{name:'Tu invitación a probar WebFactory por 7 días'}).waitFor();
   await page.getByRole('button',{name:'Ver móvil'}).click();

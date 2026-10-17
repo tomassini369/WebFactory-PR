@@ -13,6 +13,8 @@ export default async (req) => {
     const token = await exchangeGoogleCode(url.searchParams.get("code") || "");
     token.expires_at = Date.now() + Number(token.expires_in || 3600) * 1000;
     if (state.kind === "business-email") {
+      const scopes = new Set(String(token.scope || "").split(/\s+/));
+      if (!["https://www.googleapis.com/auth/gmail.send","https://www.googleapis.com/auth/gmail.compose","https://www.googleapis.com/auth/gmail.modify","https://mail.google.com/"].some(scope => scopes.has(scope))) throw Object.assign(new Error("Gmail sending permission was not granted."), { code:"business_email_scope_required" });
       const connectedEmail = await googleUserEmail(token);
       await clientOAuthStore().setJSON(`business-email/tokens/${state.siteId}.json`, { encrypted: encryptToken(token), updatedAt: new Date().toISOString() });
       try {
@@ -33,6 +35,7 @@ export default async (req) => {
     await clientOAuthStore().delete(stateKey).catch(() => {});
     const key = state?.kind === "business-email" ? "businessEmail" : "google";
     const site = state?.siteId ? `&siteId=${encodeURIComponent(state.siteId)}` : "";
-    return Response.redirect(`${publicBaseUrl()}/client-admin?${key}=error${site}`, 302);
+    const result = key === "businessEmail" && error?.code === "business_email_scope_required" ? "permission_required" : "error";
+    return Response.redirect(`${publicBaseUrl()}/client-admin?${key}=${result}${site}`, 302);
   }
 };

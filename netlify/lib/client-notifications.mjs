@@ -34,9 +34,12 @@ export async function sendCommerceConfirmationEmails(site, record, persist, {del
       // Do not turn a confirmed booking into a failed booking. Persist a safe, visible
       // delivery state for the owner; never store raw provider tokens or exception text.
       const reason = error?.code === "business_email_not_connected" ? "connection_required"
-        : error?.status === 401 || error?.status === 403 ? "authorization_required" : "delivery_failed";
+        : error?.code === "business_email_api_disabled" ? "gmail_api_disabled"
+        : error?.code === "business_email_policy_blocked" ? "workspace_policy"
+        : error?.code === "business_email_rate_limited" ? "rate_limited"
+        : error?.code === "business_email_authorization_required" || error?.status === 401 || error?.status === 403 ? "authorization_required" : "delivery_failed";
       if (record.kind === "booking") {
-        record = {...record,[statusKey]:reason === "delivery_failed" ? "pending_retry" : "action_required",[statusKey+"Reason"]:reason,[statusKey+"AttemptedAt"]:new Date().toISOString()};
+        record = {...record,[statusKey]:["delivery_failed","rate_limited"].includes(reason) ? "pending_retry" : "action_required",[statusKey+"Reason"]:reason,[statusKey+"AttemptedAt"]:new Date().toISOString()};
         try { await persist(record); } catch { /* The scheduled retry can restore delivery status. */ }
       }
     }

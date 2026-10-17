@@ -73,7 +73,13 @@ export async function sendBusinessEmail(site, {
     attachments,
     headers,
   });
-  const token = await refreshGoogleBusinessEmailToken(site.siteId);
+  let token;
+  try {
+    token = await refreshGoogleBusinessEmailToken(site.siteId);
+  } catch (error) {
+    if (error?.status === 409) throw Object.assign(new Error("Business email authorization must be renewed."), { status:409, code:"business_email_authorization_required" });
+    throw error;
+  }
   const bounded = Number.isFinite(timeoutMs) ? Math.max(1000, Math.min(10000, timeoutMs)) : 10000;
   const response = await fetch("https://gmail.googleapis.com/gmail/v1/users/me/messages/send", {
     method: "POST",
@@ -86,10 +92,22 @@ export async function sendBusinessEmail(site, {
   });
   const result = await response.json().catch(() => ({}));
   if (!response.ok) {
-    const message = response.status === 401 || response.status === 403
-      ? "Business email authorization must be renewed."
-      : "Business email delivery failed.";
-    throw Object.assign(new Error(message), { status: response.status, code: "business_email_delivery_failed" });
+    // Keep only bounded provider reason codes. Never persist raw errors, tokens,
+    // Google project identifiers or account details in a booking diagnostic.
+    const reasons = new Set([
+      ...(Array.isArray(result?.error?.errors) ? result.error.errors.map(row => row?.reason) : []),
+      ...(Array.isArray(result?.error?.details) ? result.error.details.map(row => row?.reason) : []),
+    ].filter(value => typeof value === "string").map(value => value.toLowerCase()));
+    const disabled = reasons.has("accessnotconfigured") || reasons.has("service_disabled");
+    const limited = response.status === 429 || ["ratelimitexceeded","userratelimitexceeded","dailylimitexceeded","quotaexceeded","rate_limit_exceeded"].some(reason => reasons.has(reason));
+    const policy = reasons.has("domainpolicy") || reasons.has("org_restriction_violation");
+    const authorization = response.status === 401 || response.status === 403;
+    const code = disabled ? "business_email_api_disabled" : limited ? "business_email_rate_limited" : policy ? "business_email_policy_blocked" : authorization ? "business_email_authorization_required" : "business_email_delivery_failed";
+    const message = disabled ? "Gmail API must be enabled for the Google integration." : limited ? "Gmail sending limit reached. Delivery will be retried." : policy ? "Google Workspace policy blocked business email delivery." : authorization ? "Business email authorization must be renewed." : "Business email delivery failed.";
+    throw Object.assign(new Error(message), { status: response.status, code });
+  }
+  if (typeof result?.id !== "string" || !result.id.trim()) {
+    throw Object.assign(new Error("Business email delivery was not confirmed by Gmail."), { status:502, code:"business_email_delivery_failed" });
   }
   return {
     provider: "google-gmail",
