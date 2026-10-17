@@ -273,6 +273,11 @@ jobs:
             .nativeIos.releaseBlocker == false
           '
 
+      - name: Check published booking email previews include code and private PIN
+        env:
+          PREVIEW_URL: https://deploy-preview-${{ github.event.pull_request.number }}--webfactorypr.netlify.app
+        run: node scripts/email-preview-http-smoke.mjs
+
       - name: Prepare remote kiosk browser verification
         uses: actions/setup-node@v4
         with:
