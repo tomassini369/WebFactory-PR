@@ -26,8 +26,7 @@ function validSignature(rawBody, header, secret) {
   });
 }
 
-async function finalizeTransaction(event) {
-  const session = event.data?.object || {};
+export async function finalizeStripeCheckout({session = {}, account, created}) {
   const siteId = session.metadata?.site_id;
   const transactionId = session.metadata?.transaction_id;
   if (!siteId || !transactionId) throw new Error("Client commerce metadata is missing.");
@@ -35,7 +34,7 @@ async function finalizeTransaction(event) {
   let record = await clientCommerceStore().get(key, { type: "json" });
   const site = await getClientSite(siteId);
   if (!record || !site) throw new Error("Client transaction or site was not found.");
-  if (record.stripeAccountId !== event.account) throw new Error("Connected account does not match the transaction.");
+  if (record.stripeAccountId !== account) throw new Error("Connected account does not match the transaction.");
   if(record.stripeSessionId&&session.id&&record.stripeSessionId!==session.id)throw new Error('Checkout session does not match the transaction.');
   if(record.inventoryReservationRequired&&!record.stripeSessionId&&session.id){record={...record,stripeSessionId:session.id};await clientCommerceStore().setJSON(key,record);}
   if(['refunded','partially_refunded','expired','cancelled'].includes(record.paymentStatus))return {record,pending:false};
@@ -60,7 +59,7 @@ async function finalizeTransaction(event) {
     }
   }
   if (record.paymentStatus !== "paid") {
-    const paidAt = new Date(Number(event.created || Date.now() / 1000) * 1000).toISOString();
+    const paidAt = new Date(Number(created || Date.now() / 1000) * 1000).toISOString();
     const foodBusiness = /restaurant|food|catering|bakery|cafe|coffee|comida|alimento|panader|cafeter|restaurante/i.test(`${site.business?.category || ""} ${site.business?.name || ""}`);
     record = { ...record, inventoryProtocol:1, paymentStatus: "paid", status: "confirmed", stripePaymentIntentId: session.payment_intent || "", paidAt, updatedAt: paidAt,
       ...(record.kind === "order" && record.source !== "booking_balance" && foodBusiness ? { kitchenStatus: "received", queueNumber: `Q${Date.parse(paidAt)}` } : {}) };
@@ -115,6 +114,8 @@ async function finalizeTransaction(event) {
   });
   return { record, pending: false };
 }
+
+const finalizeTransaction = event => finalizeStripeCheckout({session:event.data?.object,account:event.account,created:event.created});
 
 export default async (req) => {
   if (req.method !== "POST") return new Response("Method not allowed", { status: 405 });

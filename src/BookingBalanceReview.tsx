@@ -1,0 +1,14 @@
+import './booking-balance-review.css'
+type BalanceRecord={balanceAttempt?:{attempt:string};balanceReconciliation?:{state:string;reason?:string};balancePaymentStatus?:string;status:string}
+export function BookingBalanceReview({record,es,canManage,busy,onAction}:{record:BalanceRecord;es:boolean;canManage:boolean;busy:boolean;onAction:(action:string)=>void}){
+ if(!record.balanceAttempt||record.balancePaymentStatus==='paid'||['cancelled','completed'].includes(record.status))return null
+ const state=record.balanceReconciliation?.state,reason=record.balanceReconciliation?.reason
+ const text=state==='not_started'?(es?'El intento no creó un checkout de pago. Puedes cerrarlo y después cancelar la cita o registrar el pago presencial.':'This attempt did not create a payment checkout. Close it before cancelling the booking or recording an in-person payment.')
+ :state==='unpaid'?(es?'Stripe confirmó que este checkout no está pagado. Puedes cerrarlo para continuar con la cita.':'Stripe confirmed this checkout is unpaid. Close it to continue managing the booking.')
+ :state==='processing'?(es?'El servidor sigue creando o verificando el checkout. Revisa nuevamente; la antigüedad del intento no confirma que haya fallado.':'The server is still creating or verifying this checkout. Review it again; the age of an attempt does not prove failure.')
+ :state==='provider_pending'?(es?'El proveedor puede estar procesando el pago. Revisa nuevamente antes de cancelar o cobrar por otro medio.':'The provider may be processing payment. Review it again before cancelling or collecting another payment.')
+ :reason==='ath_business'?(es?'Revisa este intento en ATH Business. Una pantalla vencida no confirma que el pago se haya cancelado.':'Review this attempt in ATH Business. An expired screen does not confirm payment cancellation.')
+ :state==='review_required'?(es?'No hay evidencia suficiente para cerrar este cobro. Revisa la transacción vinculada con el proveedor y vuelve a verificar.':'There is not enough evidence to close this checkout. Review the linked transaction with the provider and check again.')
+ :(es?'Hay un cobro de saldo vinculado. Revisa su estado antes de cancelar la cita o registrar otro pago.':'A balance checkout is linked to this booking. Review its status before cancelling or recording another payment.')
+ return <div className="ca-balance-review"><p role="status">{text}</p>{canManage?<div><button disabled={busy} onClick={()=>onAction('review_booking_balance')}>{es?'Revisar cobro de saldo':'Review balance checkout'}</button>{['not_started','unpaid'].includes(state||'')&&<button disabled={busy} onClick={()=>onAction('close_booking_balance')}>{es?'Cerrar checkout sin cobrar':'Close unpaid checkout'}</button>}</div>:<p>{es?'Un administrador con permisos de citas y pagos debe revisar este cobro.':'An administrator with booking and payment permissions must review this checkout.'}</p>}</div>
+}
