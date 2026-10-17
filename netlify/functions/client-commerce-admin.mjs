@@ -1,4 +1,6 @@
 import {bookingBalance} from '../lib/kiosk-bookings.mjs';
+import {reconcileBookingBalance} from '../lib/booking-balance-reconciliation.mjs';
+import {displayActor} from '../lib/customer-display.mjs';
 import { listPosProcessing,recoverPosOrder } from '../lib/pos-recovery.mjs';
 import { manageInPersonOrder } from '../lib/in-person-orders.mjs';
 import { withBookingLock } from '../lib/booking-lock.mjs';
@@ -7,7 +9,7 @@ import { applyStockOperation,projectStockMovements } from '../lib/inventory-oper
 import {renderBookingEmail} from "../lib/booking-email-template.mjs";
 import {finishBookingChange} from "../lib/booking-management.mjs";
 import { syncBookingCalendar, bookingCanSync } from "../lib/booking-calendar.mjs";
-import { assertSameOrigin, errorResponse, requireSiteAccess, requireSiteCapability } from "../lib/client-auth.mjs";
+import { assertSameOrigin, errorResponse, requireSiteAccess, requireSiteCapability, membershipHasCapability } from "../lib/client-auth.mjs";
 import { clientCommerceStore, commerceKey } from "../lib/client-store.mjs";
 import { deleteGoogleEvent } from "../lib/google-calendar.mjs";
 import { createInventoryMovement } from "../lib/webfactory-v3-domain.mjs";
@@ -45,7 +47,9 @@ export default async (req) => {
     assertSameOrigin(req);
     const payload = await req.json();
     const requestedCapability = payload.action === "recover_pos" ? "pos" : payload.action === "refund" ? "refunds" : payload.action === "kitchen_status" ? "kitchen" : (payload.kind === "booking" ? "bookings" : "orders");
-    const { site, membership } = await requireSiteCapability(payload.siteId, requestedCapability);
+    const { site, membership, user } = await requireSiteCapability(payload.siteId, requestedCapability);
+    const balanceAction=['review_booking_balance','close_booking_balance'].includes(payload.action);
+    if(balanceAction&&(payload.kind!=='booking'||!membershipHasCapability(membership,'payments')))throw Object.assign(new Error('Booking and payment permissions required / Se requieren permisos de citas y pagos.'),{status:403});
     const kind = payload.kind === "booking" ? "bookings" : "orders";
     const run=async()=>{
     const key = commerceKey(site.siteId, kind, payload.transactionId);
@@ -60,7 +64,8 @@ export default async (req) => {
       throw Object.assign(new Error("This account is not assigned to the order location."), { status: 403 });
     }
 
-    if(kind==='bookings'&&record.balanceAttempt&&(payload.action==='mark_paid'||record.balancePaymentStatus!=='paid'&&['cancel','refund'].includes(payload.action)))throw Object.assign(new Error('Reconcile the linked balance checkout before changing this booking payment / Concilia el cobro de saldo vinculado antes de cambiar el pago de esta cita.'),{status:409});
+    if(balanceAction)return Response.json(await reconcileBookingBalance(site,record.transactionId,{expectedAttempt:payload.expectedBalanceAttempt,close:payload.action==='close_booking_balance',actor:displayActor(user),requestUrl:req.url,lockHeld:true}),{headers:{'Cache-Control':'no-store'}});
+    if(kind==='bookings'&&record.balanceAttempt&&(payload.action==='mark_paid'||record.balancePaymentStatus!=='paid'&&['cancel','refund'].includes(payload.action)))throw Object.assign(new Error('Use Review balance checkout on this booking before changing its payment / Usa Revisar cobro de saldo en esta cita antes de cambiar su pago.'),{status:409});
     if(payload.action==='recover_pos')return Response.json(await recoverPosOrder(site.siteId,record.transactionId),{headers:{'Cache-Control':'no-store'}});
     if(kind==='orders'&&['mark_paid','cancel_in_person'].includes(payload.action))return Response.json({ok:true,record:await manageInPersonOrder(site.siteId,record.transactionId,payload.action,{lockHeld:true})},{headers:{'Cache-Control':'no-store'}});
     if(payload.action==='recover_ath'){
@@ -207,6 +212,6 @@ export default async (req) => {
     return Response.json({ ok: true, record }, { headers: { "Cache-Control": "no-store" } });
     };
     const bookingRow=kind==='bookings'?await clientCommerceStore().get(commerceKey(site.siteId,kind,payload.transactionId),{type:'json'}):null;
-    return (kind==='bookings'&&!bookingRow?.balanceAttempt&&bookingRow?.bookingTotalCents==null)||['recover_pos','recover_ath'].includes(payload.action)?await run():await withBookingLock(clientCommerceStore(),`locks/commerce/${site.siteId}`,run);
+    return !balanceAction&&((kind==='bookings'&&!bookingRow?.balanceAttempt&&bookingRow?.bookingTotalCents==null)||['recover_pos','recover_ath'].includes(payload.action))?await run():await withBookingLock(clientCommerceStore(),`locks/commerce/${site.siteId}`,run);
   } catch (error) { return errorResponse(error); }
 };

@@ -49,6 +49,11 @@ export function kioskCheckoutPayload(site, state, input) {
 export async function kioskSaleView(store, state) {
   const active = state.active;
   if (!active) return null;
+  if(active.reconciledClosed===true)return {status:'review',saleId:state.saleId,canResume:false,canReset:true};
+  if(!active.response?.transactionId&&/^[a-f0-9]{64}$/.test(active.attempt||'')){
+    const claim=await store.get(`${state.siteId}/checkout-attempts/${kioskHash(active.attempt)}.json`,{type:'json'});
+    if(claim?.siteId===state.siteId&&claim.status==='closed')return {status:'review',saleId:state.saleId,canResume:false,canReset:true};
+  }
   const transactionId = active.response?.transactionId;
   if (!transactionId) return { status: 'review', saleId: state.saleId, canResume: Boolean(active.payload), canReset: false };
   const kind=active.kind||'order';
