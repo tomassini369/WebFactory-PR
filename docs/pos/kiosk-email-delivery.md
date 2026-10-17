@@ -38,6 +38,9 @@ No customer email or appointment was sent/created during verification.
   tenant/location/sale checks. The transaction mirror remains the source of the
   existing sale/payment behavior. No provider diagnostics or customer address
   are exposed to the public device. Code/PIN display and auto-clearing remain.
+- Offline email-gallery fixtures now use a valid demo code/token shape so the
+  existing PIN renderer appears in the review gallery. These values are never
+  written to tenant storage and all recipients remain example.invalid.
 - Owners can renew Gmail through the existing authorized OAuth endpoint without
   first disconnecting. Booking notices distinguish API/policy/quota failures.
   The portal explains that Calendar and email authorization are separate.
@@ -85,6 +88,10 @@ delivery remain outside the isolated checks below.
   restrictions and preservation of Builder draft/preview state.
 - Impeccable 4.1.0: 20 existing advisories, exactly identical to the previous
   baseline. Exit 2 indicates findings, not an execution failure. No CSS changed.
+- Six offline customer-email render checks passed at 320/390/1440 px in ES/EN,
+  with matching Booking ID/PIN in HTML and plain text and no overflow. The local
+  browser blocks file://; the check used an isolated loopback static server with
+  all nonlocal network requests blocked. The gallery smoke now checks both fields.
 - git diff --check passed. No npm lint script exists; no lint success is claimed.
 
 The browser harness initially needed its existing locale selection reapplied
