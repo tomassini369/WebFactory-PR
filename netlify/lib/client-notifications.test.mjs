@@ -42,6 +42,17 @@ test("confirmed booking is delivered as branded HTML without an automatic calend
  });
 });
 
+test("Google-invited customer receives a managed appointment without a duplicate manual calendar button",async()=>{
+ const delivered=[];
+ const record={...booking(),customerCalendarInviteRequested:true,customerCalendarInviteStatus:"sent"};
+ await sendBookingConfirmationEmails(site,record,async()=>{}, {deliver:async(_site,payload)=>{delivered.push(payload);return {accepted:[payload.to]};}});
+ assert.equal(delivered.length,1);
+ assert.match(delivered[0].html,/Google Calendar invitation/);
+ assert.doesNotMatch(delivered[0].html,/Add to calendar|Añadir al calendario/);
+ assert.doesNotMatch(delivered[0].text,/Add to calendar:|Añadir al calendario:/);
+ assert.match(delivered[0].html,/Manage booking/);
+});
+
 test("unconfigured Gmail leaves booking confirmed and makes the error visible without exposing provider details",async()=>{
  const stored=[],failed=new Error("sensitive provider text");
  failed.code="business_email_not_connected";

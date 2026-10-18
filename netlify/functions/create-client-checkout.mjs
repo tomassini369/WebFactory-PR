@@ -201,7 +201,7 @@ export async function performCheckout(req, { kiosk = false, balanceBooking = nul
       await clientCommerceStore().setJSON(commerceKey(site.siteId, kind === "booking" ? "bookings" : "orders", transactionId), record);
       record = await sendBookingConfirmationEmails(site,record, value => clientCommerceStore().setJSON(commerceKey(site.siteId,"bookings",transactionId),value));
       await clientCommerceStore().setJSON(commerceKey(site.siteId,"transactions",transactionId),record);
-      return Response.json({ ok: true, calendarUrl:bookingCalendarUrl(record), manageUrl:bookingManageUrl(record), paymentRequired: false, transactionId, status: record.status, calendarSyncStatus: record.calendarSyncStatus, ...(trackingToken ? { trackingUrl: `${publicBaseUrl()}/track/${trackingToken}` } : {}) });
+      return Response.json({ ok: true, calendarUrl:record.customerCalendarInviteRequested ? "" : bookingCalendarUrl(record), calendarInvitationStatus:record.customerCalendarInviteRequested ? (record.customerCalendarInviteStatus === "sent" ? "sent" : "pending") : "none", manageUrl:bookingManageUrl(record), paymentRequired: false, transactionId, status: record.status, calendarSyncStatus: record.calendarSyncStatus, ...(trackingToken ? { trackingUrl: `${publicBaseUrl()}/track/${trackingToken}` } : {}) });
     }
 
     const receiptAccess = await issueBuyerReceiptAccess(site.siteId, transactionId);

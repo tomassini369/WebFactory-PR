@@ -66,3 +66,16 @@ test('Google reschedule patches the original event with guest updates and repeat
 test('Google availability errors block rescheduling instead of advertising unchecked slots',async t=>{
  const f=fixture(t);f.site.googleCalendar.connected=true;f.site.employees[0].calendarId='primary';await f.prepare();await assert.rejects(availabilityForDate(f.site,'haircut','alex',f.date,'one',{strictGoogle:true}),e=>e.status===503);await clientOAuthStore().setJSON(`tokens/${f.site.siteId}.json`,{encrypted:encryptToken({access_token:'test',expires_at:Date.now()+3600000})});t.mock.method(globalThis,'fetch',async()=>Response.json({calendars:{primary:{errors:[{reason:'notFound'}]}}}));await assert.rejects(availabilityForDate(f.site,'haircut','alex',f.date,'one',{strictGoogle:true}),e=>e.status===503);
 });
+
+test('Google-invited customer rescheduling does not attach a second standalone calendar copy',async t=>{
+ const f=fixture(t);
+ f.record.customerCalendarInviteRequested=true;
+ f.record.customerCalendarInviteStatus='sent';
+ await f.prepare();
+ const newStart=`${f.date}T15:00:00.000Z`;
+ const changed=await changePrivateBooking(f.token,{action:'reschedule',start:newStart,acknowledged:'yes',version:bookingVersion(f.record)});
+ assert.equal(changed.status,'confirmed');
+ assert.equal(f.mails.length,2);
+ assert.equal(f.mails[0].attachments,undefined);
+ assert.doesNotMatch(f.mails[0].html,/Add to calendar|Añadir al calendario/);
+});
