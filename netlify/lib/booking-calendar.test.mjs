@@ -45,6 +45,25 @@ test('in-person checkout writes confirmed booking, blocks availability, and sync
  assert.equal(stored.customerEmailDeliveryStatus,'action_required');assert.equal(stored.customerEmailDeliveryStatusReason,'connection_required');assert.notEqual(stored.customerEmailSent,true,'calendar sync cannot imply business email delivery');
  const slots=await availabilityForDate(f.site,'haircut','alex',day);assert.ok(!slots.some(s=>s.start===f.record.start));
 });
+test('new opt-in booking returns invite status rather than creating a duplicate manual calendar entry',async t=>{
+ const f=fixture(t);f.site.settings.sendGoogleCalendarInvites=true;await prepare(f);
+ t.mock.method(globalThis,'fetch',async(url,options)=>{
+  f.calls.push({url,options});
+  if(String(url).endsWith('/freeBusy'))return Response.json({calendars:{primary:{busy:[]}}});
+  const event=JSON.parse(options.body);
+  return Response.json({...event,id:event.id});
+ });
+ const res=await checkout(request({siteId:f.site.siteId,kind:'booking',booking:{serviceId:'haircut',employeeId:'alex',start:f.record.start},customer:{name:'Test',email:'guest@example.invalid'}}));
+ const data=await res.json();assert.equal(res.status,200,JSON.stringify(data));
+ assert.equal(data.calendarInvitationStatus,'sent');
+ assert.equal(data.calendarUrl,'');
+ assert.ok(data.manageUrl);
+ const stored=await clientCommerceStore().get(commerceKey(f.site.siteId,'bookings',data.transactionId),{type:'json'});
+ assert.equal(stored.customerCalendarInviteRequested,true);
+ assert.equal(stored.customerCalendarInviteStatus,'sent');
+ assert.ok(f.calls.some(call=>String(call.url).includes('sendUpdates=all')));
+});
+
 test('owner repairs existing due booking, repeat does not duplicate, and cancelled booking cannot be marked paid',async t=>{
  const f=fixture(t);await prepare(f);const key=commerceKey(f.site.siteId,'bookings',f.record.transactionId);await clientCommerceStore().setJSON(key,f.record);
  const payload={siteId:f.site.siteId,kind:'booking',transactionId:f.record.transactionId,action:'sync_calendar'};
