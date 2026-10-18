@@ -12,6 +12,12 @@ function cleanAddress(value) {
   return address;
 }
 
+// RFC 2606 example domains are placeholders, not deliverable business contacts.
+const reservedExampleDomains = new Set(["example.com", "example.net", "example.org"]);
+function isExampleRecipient(address) {
+  return reservedExampleDomains.has(String(address).split("@").pop()?.toLowerCase());
+}
+
 export function businessEmailConnected(site) {
   const email = String(site?.businessEmail?.connectedEmail || "").trim().toLowerCase();
   return Boolean(site?.businessEmail?.connected && site?.businessEmail?.provider === "google" && /^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(email));
@@ -55,6 +61,11 @@ export async function sendBusinessEmail(site, {
   }
   const from = cleanAddress(site.businessEmail.connectedEmail);
   const recipients = (Array.isArray(to) ? to : [to]).map(cleanAddress);
+  if (recipients.some(isExampleRecipient)) {
+    throw Object.assign(new Error("Replace the example email recipient with a real address before sending notifications."), {
+      status: 400, code: "business_email_invalid_recipient",
+    });
+  }
   const safeReplyTo = replyTo ? cleanAddress(replyTo) : undefined;
   const safeSubject = cleanHeader(subject, 240);
   if (!safeSubject) throw Object.assign(new Error("Email subject is required."), { status: 400 });
