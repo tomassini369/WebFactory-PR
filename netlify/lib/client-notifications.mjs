@@ -33,7 +33,8 @@ export async function sendCommerceConfirmationEmails(site, record, persist, {del
     } catch (error) {
       // Do not turn a confirmed booking into a failed booking. Persist a safe, visible
       // delivery state for the owner; never store raw provider tokens or exception text.
-      const reason = error?.code === "business_email_not_connected" ? "connection_required"
+      const reason = error?.code === "business_email_invalid_recipient" ? "invalid_recipient"
+        : error?.code === "business_email_not_connected" ? "connection_required"
         : error?.code === "business_email_api_disabled" ? "gmail_api_disabled"
         : error?.code === "business_email_policy_blocked" ? "workspace_policy"
         : error?.code === "business_email_rate_limited" ? "rate_limited"
