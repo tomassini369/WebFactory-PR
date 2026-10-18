@@ -12,10 +12,9 @@ function cleanAddress(value) {
   return address;
 }
 
-// RFC 2606 example domains are placeholders, not deliverable business contacts.
-const reservedExampleDomains = new Set(["example.com", "example.net", "example.org"]);
+// The default demo contact must never be treated as a real Gmail recipient.
 function isExampleRecipient(address) {
-  return reservedExampleDomains.has(String(address).split("@").pop()?.toLowerCase());
+  return String(address).trim().toLowerCase() === "demo@example.com";
 }
 
 export function businessEmailConnected(site) {
