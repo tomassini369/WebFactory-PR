@@ -102,3 +102,21 @@ for (const [code,reason,status] of [
   assert.doesNotMatch(JSON.stringify(saved),/private provider response/);
  });
 }
+
+test("placeholder business recipient is flagged for correction without retrying the booking or losing customer notice",async()=>{
+ const fixture={...site,business:{...site.business,email:"demo@example.com"}};
+ const recipients=[];
+ const record=await sendBookingConfirmationEmails(fixture,booking(),async()=>{}, {
+  deliver:async(_site,payload)=>{
+   recipients.push(payload.to);
+   if(payload.to==="demo@example.com")throw Object.assign(new Error("example recipient"),{code:"business_email_invalid_recipient",status:400});
+   return {accepted:[payload.to]};
+  },
+ });
+ assert.deepEqual(recipients,["customer@example.invalid","demo@example.com"]);
+ assert.equal(record.customerEmailSent,true);
+ assert.notEqual(record.businessEmailSent,true);
+ assert.equal(record.businessEmailDeliveryStatus,"action_required");
+ assert.equal(record.businessEmailDeliveryStatusReason,"invalid_recipient");
+ assert.equal(record.status,"confirmed");
+});
