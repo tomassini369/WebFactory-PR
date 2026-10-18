@@ -56,7 +56,7 @@ export async function finishBookingChange(site,record) {
     const current=await store.get(key,{type:"json"});
     if(current?.managementRevision!==record.managementRevision || current.status!==record.status || current.start!==record.start) return current || record;
     try {
-      const ics=audience==="customer" && record.status==="confirmed" ? bookingIcs(site,record) : null;
+      const ics=audience==="customer" && record.status==="confirmed" && record.customerCalendarInviteRequested !== true ? bookingIcs(site,record) : null;
       await sendBusinessEmail(site,{fromName:site.business?.name || "WebFactory Business",to:email,...renderBookingEmail(site,record,{audience,change:record.managementChange}),...(ics?{attachments:[{filename:"appointment.ics",content:ics,contentType:"text/calendar; charset=utf-8"}]}:{})});
       await persist({...record,[flag]:true});
     } catch { /* Successful recipients are stored separately; unsent mail is retried. */ }
