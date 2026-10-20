@@ -28,6 +28,10 @@ Preview: https://deploy-preview-120--webfactorypr.netlify.app
   Frappe runtime or database test.
 - Impeccable detector: 20 existing advisories, no findings in the new financial
   panel files. Exit 2 denotes advisories, not a failed invocation.
+- Portal navigation: all 20 client/admin viewport/theme scenarios passed locally;
+  eight mobile/desktop ES/EN Light/Dark destination, draft-save and plan-gate
+  scenarios passed with isolated records.
+- actionlint 1.7.12: updated workflow passed; official release hash verified.
 - git diff --check: passed. No npm lint script exists; none was claimed as run.
 
 ## Errors found and corrected
@@ -73,7 +77,12 @@ Workforce/Training/POS/kiosk/auth/Builder checks. The preview job loads the actu
 deployed app using isolated handlers, and accounting-access-http-smoke.mjs tests
 the real protected Netlify endpoints without credentials or mutations.
 
-Consult current PR checks for the exact final SHA and their conclusions; earlier
+A later full-suite portal-navigation check failed with a generic CI exit code;
+its complete local rerun passed all 20 client/admin viewport/theme scenarios.
+No product defect was inferred without a reproducible error. The workflow now
+captures safe failure context and runs the same checks in independent core,
+commerce and experience groups; the required verify check aggregates all three.
+No assertion or test was removed. Consult current PR checks for the exact final SHA and their conclusions; earlier
 failed runs are retained and must not be presented as passing. Direct preview
 HTTP access from this execution environment is blocked by its network proxy, so
 deployed-browser/authentication evidence is collected by GitHub Actions. Netlify
