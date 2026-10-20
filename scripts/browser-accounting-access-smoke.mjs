@@ -21,10 +21,11 @@ let site=kioskFixture(root).site;site.members=[{email:owner.email,role:'owner'}]
 const db=new Map(),etags=new Map();
 const store={get:async key=>structuredClone(db.get(key)||null),getWithMetadata:async key=>db.has(key)?{data:structuredClone(db.get(key)),etag:String(etags.get(key)||1)}:null,list:async function*({prefix}){yield{blobs:[...db.keys()].filter(key=>key.startsWith(prefix)).map(key=>({key}))}},setJSON:async(key,value,options={})=>{if(options.onlyIfNew&&db.has(key)||options.onlyIfMatch&&options.onlyIfMatch!==String(etags.get(key)||1))return{modified:false};db.set(key,structuredClone(value));etags.set(key,(etags.get(key)||1)+1);return{modified:true}}};
 const errors=[],messages=[];let writes=0,lastPage;
+const seedPreferences=({lang,theme,origin})=>{if(window!==window.top||location.origin!==origin)return;localStorage.setItem('wf-lang',lang);localStorage.setItem('wf-theme',theme);localStorage.setItem('webfactory-theme-v2',theme)};
 async function contextFor(user,width=390,lang='en',theme='light',malformed=false){
  const context=await browser.newContext({viewport:{width,height:950},reducedMotion:'reduce',serviceWorkers:'block',...(isWebKit?{hasTouch:true}:{})}),page=await context.newPage();lastPage=page;page.setDefaultTimeout(18000);
  page.on('pageerror',error=>errors.push(error.message));
- await context.addInitScript(({lang,theme})=>{localStorage.setItem('wf-lang',lang);localStorage.setItem('wf-theme',theme);localStorage.setItem('webfactory-theme-v2',theme)}, {lang,theme});
+ await context.addInitScript(seedPreferences,{lang,theme,origin:new URL(root).origin});
  const authorize=async(id,roles=PORTAL_ROLES)=>{assert.equal(id,site.siteId);return authorizeSiteUser(user,structuredClone(site),roles)};
  const handlers={
   'client-accounting-access':createAccountingAccessHandler({authorize,currentUser:async()=>user,load:async()=>structuredClone(site),save:async next=>{assert.equal(next.revision,site.revision+1);site=structuredClone(next);writes++;return next},ensureIdentity:async()=>{},mailReady:()=>true,deliver:async message=>{messages.push(message)},history:siteId=>financialAuditHistory(store,siteId)}),
@@ -78,6 +79,15 @@ try{
  await own.page.reload();await own.page.locator('.ca-dashboard').waitFor();await selectPortalSection(own.page,'Business settings');own.page.once('dialog',dialog=>dialog.accept());await own.page.getByRole('button',{name:'Revoke',exact:true}).click();await own.page.getByText('Permissions updated.',{exact:true}).waitFor();
  const revoked=await acc.page.evaluate(async siteId=>(await fetch('/.netlify/functions/client-business-accounting?'+new URLSearchParams({siteId,from:'2026-10-01',to:'2026-10-30'}))).status,site.siteId);assert.equal(revoked,403);
  await acc.context.close();await own.context.close();
- const broken=await contextFor(owner,390,'en','light',true);await broken.page.goto(root+'/client-admin');await broken.page.locator('.ca-dashboard').waitFor();await selectPortalSection(broken.page,'Business settings');await broken.page.getByRole('button',{name:'Retry modules',exact:true}).waitFor();await broken.page.getByText('Accounting permissions could not be verified. Retry.',{exact:true}).waitFor();await broken.page.locator('.kiosk-settings').waitFor();await broken.context.close();assert.deepEqual(errors,[]);assert.equal(writes,3);
+ const broken=await contextFor(owner,390,'en','light',true);await broken.page.goto(root+'/client-admin');await broken.page.locator('.ca-dashboard').waitFor();await selectPortalSection(broken.page,'Business settings');await broken.page.getByRole('button',{name:'Retry modules',exact:true}).waitFor();await broken.page.getByText('Accounting permissions could not be verified. Retry.',{exact:true}).waitFor();await broken.page.locator('.kiosk-settings').waitFor();await broken.context.close();
+ // Preview tooling injects sandboxed frames with opaque origins. Reproduce one
+ // without the app or Playwright's service-worker-blocking init script.
+ const frameContext=await browser.newContext();const framePage=await frameContext.newPage();framePage.on('pageerror',error=>errors.push(error.message));
+ await frameContext.addInitScript(seedPreferences,{lang:'en',theme:'light',origin:new URL(root).origin});
+ await frameContext.route('**/*',route=>route.fulfill({contentType:'text/html',body:'<!doctype html><title>Isolated frame fixture</title>'}));
+ await framePage.goto(root+'/__accounting-qa-frame');assert.equal(await framePage.evaluate(()=>localStorage.getItem('wf-lang')),'en');
+ await framePage.evaluate(()=>new Promise(resolve=>{const frame=document.createElement('iframe');frame.setAttribute('sandbox','allow-scripts');frame.srcdoc='<p>Isolated preview frame</p>';frame.onload=()=>resolve();document.body.append(frame)}));
+ assert.equal(await framePage.frames()[1].evaluate(()=>{try{localStorage.getItem('wf-lang');return false}catch{return true}}),true);
+ await frameContext.close();assert.deepEqual(errors,[]);assert.equal(writes,3);
  console.log(JSON.stringify({engine:isWebKit?'webkit':'chromium',visualCases,functional:['invite','review','accept','read-only API denial','revocation with existing session','independent module enable/disable','malformed financial responses preserve kiosk settings'],realEmails:0,realFinancialTransactions:0,errors}));
 }catch(error){console.error('Browser errors:',errors);if(lastPage&&!lastPage.isClosed()){await writeFile(output+'/failure.html',await lastPage.content());console.error((await lastPage.locator('body').innerText()).slice(0,3000));await lastPage.screenshot({path:output+'/failure.png',fullPage:true})}throw error;}finally{await browser.close();await new Promise(resolve=>server.httpServer.close(resolve));}

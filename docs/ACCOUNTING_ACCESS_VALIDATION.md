@@ -61,6 +61,11 @@ Preview: https://deploy-preview-120--webfactorypr.netlify.app
   WebKit kiosk regressions passed. No default configuration or permissions are
   invented when validation fails.
 
+- Preview Accounting Access QA exposed test initialization writing storage in
+  sandboxed frames with opaque origins. Fixture setup now requires the main
+  application document and its exact origin. A sandboxed-frame regression keeps
+  error detection enabled; service workers are blocked only in isolated QA.
+
 ## CI and deployment evidence
 
 The PR repeats unit/build, Chromium/WebKit Accounting Access and existing
