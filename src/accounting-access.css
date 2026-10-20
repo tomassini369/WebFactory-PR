@@ -1,0 +1,15 @@
+.wf-financial-access { min-width: 0; }
+.wf-financial-access fieldset { min-width: 0; border: 1px solid var(--border, #7d8ba455); border-radius: 14px; padding: 16px; margin: 16px 0; }
+.wf-financial-access legend { font-weight: 700; padding: 0 8px; }
+.wf-financial-access label { display: grid; gap: 8px; margin: 12px 0; }
+.wf-financial-access input:not([type=checkbox]),.wf-financial-access select { width: 100%; min-width: 0; min-height: 44px; font-size: 16px; }
+.wf-financial-access .wf-financial-permissions { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap: 8px 20px; }
+.wf-financial-access .wf-financial-permissions label,.wf-financial-access .wf-module-option { display: flex; align-items: center; gap: 12px; min-height: 44px; margin: 0; }
+.wf-financial-access input[type=checkbox] { flex: 0 0 20px; width: 20px; height: 20px; }
+.wf-financial-access button { min-height: 44px; white-space: normal; }
+.wf-financial-access article,.wf-financial-access li { overflow-wrap: anywhere; }
+.wf-financial-actions { display: flex; flex-wrap: wrap; gap: 10px; margin: 16px 0; }
+.wf-financial-access summary { cursor: pointer; padding: 14px 0; font-weight: 700; }
+.wf-financial-audit { padding-inline-start: 24px; }
+.wf-financial-audit li { padding-block: 10px; font-variant-numeric: tabular-nums; }
+.wf-financial-audit time,.wf-financial-audit span { display: block; }

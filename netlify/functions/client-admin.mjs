@@ -1,7 +1,9 @@
 import { sanitizePolicies } from "../lib/publication-review.mjs";
 import { readPosOperations } from '../lib/pos-operations.mjs';
-import { assertSameOrigin, authorizedSites, errorResponse, requireSiteAccess, siteRoleCapabilities } from "../lib/client-auth.mjs";
-import { normalizeEmail, patchClientSite, publicClientSite, renameClientSiteSlug } from "../lib/client-store.mjs";
+import { assertSameOrigin, authorizedSites, errorResponse, requireSiteAccess, membershipCapabilities } from "../lib/client-auth.mjs";
+import {PORTAL_ROLES} from '../lib/financial-permissions.mjs';
+import {financialOnly,financialPortalSite,financialMembershipView,operationalPortalSite} from '../lib/financial-portal.mjs';
+import { normalizeEmail, patchClientSite, publicClientSite, renameClientSiteSlug,clientCommerceStore } from "../lib/client-store.mjs";
 import { cleanText, validEmail } from "../lib/platform-utils.mjs";
 import { normalizeTaxConfig } from "../lib/webfactory-v3-domain.mjs";
 
@@ -186,12 +188,15 @@ export function normalizeClientSection(site, section, incoming, user, membership
       value = payload.value.slice(0, 50).map((member) => {
         const email = normalizeEmail(member.email);
         if (!email) throw Object.assign(new Error("Member email is required."), { status: 400 });
+        const financial=(site.members||[]).find(current=>normalizeEmail(current.email)===email&&current.financialManaged);
+        if(financial)return financial;
         const role = email === ownerEmail ? "owner" : ["manager","employee","cashier","staff"].includes(member.role) ? member.role : "staff";
         const allowedLocations = new Set((site.business?.locations || []).map((location) => location.id));
         const locationIds = Array.isArray(member.locationIds) ? [...new Set(member.locationIds.map((id) => cleanText(id, 120)).filter((id) => allowedLocations.has(id)))].slice(0, 30) : [];
         return { email, role, locationIds };
       });
       if (!value.some((member) => member.email === ownerEmail && member.role === "owner")) value.unshift({ email: ownerEmail, role: "owner", locationIds: [] });
+      for(const financial of (site.members||[]).filter(member=>member.financialManaged))if(!value.some(member=>member.email===financial.email))value.push(financial);
     }
     if (section === "reviewSettings") value = {
       enabled: Boolean(payload.value?.enabled),
@@ -231,8 +236,10 @@ export default async (req) => {
           siteId: site.siteId, slug: site.slug, status: site.status, revision: site.revision, businessName: site.business?.name,
         })) }, { headers: { "Cache-Control": "no-store" } });
       }
-      const { user, site, membership } = await requireSiteAccess(siteId);
-      return Response.json({ ok: true, user: { id: user.id, email: user.email, name: user.name }, membership: { ...membership, capabilities: siteRoleCapabilities(membership?.role || "staff") }, site, posOperations: await readPosOperations(site.siteId) }, { headers: { "Cache-Control": "no-store" } });
+      const { user, site, membership } = await requireSiteAccess(siteId,PORTAL_ROLES);
+      const capabilities=membershipCapabilities(membership),professional=financialOnly(membership);
+      if(professional&&capabilities.includes('attendance.view')&&(await clientCommerceStore().get(`${siteId}/workforce/state.json`,{type:'json'}))?.enabled)capabilities.push('attendance');
+      return Response.json({ ok: true, user: { id: user.id, email: user.email, name: user.name }, membership:financialMembershipView(membership,capabilities),site:professional?financialPortalSite(site,membership):operationalPortalSite(site,membership),...(!professional?{posOperations:await readPosOperations(site.siteId)}:{}) }, { headers: { "Cache-Control": "no-store" } });
     }
 
     if (req.method !== "PATCH") return Response.json({ ok: false, message: "Method not allowed." }, { status: 405 });

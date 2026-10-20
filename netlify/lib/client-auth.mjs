@@ -2,6 +2,7 @@ import { getUser } from "@netlify/identity";
 import { getClientSite, normalizeEmail, sitesForEmail } from "./client-store.mjs";
 import { assertSecondFactor } from "./mfa-security.mjs";
 import { authorizedAction } from "./internal-action-auth.mjs";
+import {activeMembership,financialPermissions,hasFinancialPermission,FINANCIAL_PERMISSIONS,PORTAL_ROLES} from './financial-permissions.mjs';
 
 export function assertSameOrigin(req) {
   if (["GET", "HEAD", "OPTIONS"].includes(req.method)) return;
@@ -47,7 +48,9 @@ export function isPlatformAdmin(user, ownerEmail = env("WEBFACTORY_ADMIN_EMAIL")
 // Membership is resolved from the authenticated identity, never from request fields.
 export function authorizeSiteUser(user, site, roles = ["owner", "manager", "employee", "cashier"]) {
   const email = normalizeEmail(user?.email);
-  const membership = (site?.members || []).find(member => normalizeEmail(member.email) === email);
+  if(site?.deletedAt||site?.status==='deleted')throw Object.assign(new Error('Business not found.'),{status:404});
+  const membership = (site?.members || []).find(member => normalizeEmail(member.email) === email&&activeMembership(member));
+  if(membership?.financialUserId&&membership.financialUserId!==String(user?.id||user?.sub||'')&&!siteRoleCapabilities(membership.role).length&&!isPlatformAdmin(user))throw Object.assign(new Error('Financial identity no longer matches this grant.'),{status:403});
   if (!email || (!isPlatformAdmin(user) && (!membership || !roles.includes(membership.role)))) {
     throw Object.assign(new Error("You do not have access to this business."), { status: 403 });
   }
@@ -90,12 +93,12 @@ export async function requireSiteAccess(siteId, roles = ["owner", "manager", "em
 
 
 export const SITE_ROLE_CAPABILITIES = {
-  owner: ["overview","website","share","orders","bookings","customers","catalog","employees","payments","pos","marketing","analytics","integrations","settings","billing","refunds","kitchen"],
+  owner: ["overview","website","share","orders","bookings","customers","catalog","employees","payments","pos","marketing","analytics","integrations","settings","billing","refunds","kitchen","accounting"],
   manager: ["overview","website","share","orders","bookings","customers","catalog","employees","payments","pos","marketing","analytics","integrations","settings","refunds","kitchen"],
   employee: ["overview","share","bookings","customers","kitchen"],
   cashier: ["overview","share","orders","customers","payments","pos","kitchen"],
   staff: ["overview","share"],
-  admin: ["overview","website","orders","bookings","customers","catalog","employees","payments","pos","marketing","analytics","integrations","settings","billing","refunds"],
+  admin: ["overview","website","orders","bookings","customers","catalog","employees","payments","pos","marketing","analytics","integrations","settings","billing","refunds","accounting"],
 };
 
 export function siteRoleCapabilities(role = "") {
@@ -103,7 +106,24 @@ export function siteRoleCapabilities(role = "") {
 }
 
 export function membershipHasCapability(membership, capability) {
+  if(!activeMembership(membership))return false;
+  if(FINANCIAL_PERMISSIONS.includes(capability))return hasFinancialPermission(membership,capability);
   return siteRoleCapabilities(membership?.role || "").includes(capability);
+}
+
+export function membershipCapabilities(membership){
+ if(!activeMembership(membership))return [];
+ const financial=financialPermissions(membership);
+ return [...new Set([...siteRoleCapabilities(membership.role),...financial,...(financial.includes('accounting.view')?['accounting']:[]),...(membership.financialManaged?['financial_access']:[])])];
+}
+
+export async function requireFinancialPermission(siteId,permission){
+ if(!FINANCIAL_PERMISSIONS.includes(permission))throw Object.assign(new Error('Unknown financial permission.'),{status:403});
+ const result=await requireSiteAccess(siteId,PORTAL_ROLES);
+ const membership=isPlatformAdmin(result.user)?{...result.membership,role:'admin'}:result.membership;
+ if(membership.financialUserId&&membership.financialUserId!==String(result.user.id||result.user.sub||''))throw Object.assign(new Error('Financial identity mismatch.'),{status:403});
+ if(!hasFinancialPermission(membership,permission))throw Object.assign(new Error('Financial permission required / Se requiere autorización financiera.'),{status:403});
+ return {...result,membership};
 }
 
 export async function requireSiteCapability(siteId, capability) {

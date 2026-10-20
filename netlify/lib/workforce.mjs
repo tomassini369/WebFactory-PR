@@ -1,6 +1,8 @@
 import crypto from 'node:crypto';
 import {localDay, csvCell} from './business-accounting.mjs';
 import { normalizeEmail } from './client-store.mjs';
+import {applyModuleSettings} from './business-modules.mjs';
+import {hasFinancialPermission} from './financial-permissions.mjs';
 export const wfFail=(message,status=400)=>Object.assign(new Error(message),{status});
 export const workforceKey=siteId=>`${siteId}/workforce/state.json`;
 export const workforceAdmin=membership=>['owner','manager','admin'].includes(membership?.role);
@@ -29,10 +31,14 @@ export function transitionWorkforce(state,input,site,user,membership,now=Date.no
  const actor=String(user.id||user.sub||''),hash=fingerprint({input,actor}),prior=Object.hasOwn(state.operations,id)?state.operations[id]:null;
  if(prior){if(prior.hash!==hash)throw wfFail('This identifier belongs to another operation / Identificador reutilizado.',409);return {state,reused:true};}
  if(!actor)throw wfFail('Identity required.',403);
- const next=structuredClone(state),at=new Date(now).toISOString(),action=input.action,admin=workforceAdmin(membership);
+ let next=structuredClone(state);const at=new Date(now).toISOString(),action=input.action,admin=workforceAdmin(membership);
  let employeeId='',shiftId='';
- if(['configure','bind','approve','review_correction','close_shift'].includes(action)&&!admin)throw wfFail('Administrative permission required / Permiso administrativo requerido.',403);
- if(action==='configure'){
+ if(!state.enabled&&['approve','review_correction','close_shift'].includes(action))throw wfFail('Attendance is disabled. Historical records remain readable.',403);
+ if(['configure','bind','approve','review_correction','close_shift'].includes(action)&&!admin&&!(hasFinancialPermission(membership,'attendance.approve')&&['approve','review_correction'].includes(action)))throw wfFail('Administrative permission required / Permiso administrativo requerido.',403);
+ if(action==='configure_modules'){
+  if(!['owner','admin'].includes(membership.role))throw wfFail('Only the owner manages modules / Solo el propietario administra módulos.',403);
+  next=applyModuleSettings(next,input);
+ }else if(action==='configure'){
   if(membership.role==='manager'&&(membership.locationIds||[]).length)throw wfFail('Business-wide settings require the owner / Los ajustes globales requieren al dueño.',403);
   if(typeof input.enabled!=='boolean'||typeof input.paidBreaks!=='boolean')throw wfFail('Invalid workforce settings.');
   if(state.shifts.some(s=>!s.end)&&(input.enabled===false||input.paidBreaks!==state.paidBreaks))throw wfFail('Close open shifts before changing these rules / Cierra los turnos abiertos primero.',409);
@@ -61,6 +67,7 @@ export function transitionWorkforce(state,input,site,user,membership,now=Date.no
   const shift=next.shifts.find(s=>s.id===input.shiftId);if(!shift||!shift.end)throw wfFail('Closed shift required / Se requiere turno cerrado.',409);
   if(!locationAllowed(membership,shift.locationId))throw wfFail('Branch permission required.',403);
   if(shift.approvedAt)throw wfFail('Already approved / Ya aprobado.',409);
+  if(!admin&&shift.userId===actor)throw wfFail('A separate attendance approver is required.',403);
   if(next.requests.some(r=>r.shiftId===shift.id&&r.status==='pending'))throw wfFail('Review pending correction first / Revisa la corrección pendiente.',409);
   shift.approvedAt=at;shift.approvedBy=actor;employeeId=shift.employeeId;shiftId=shift.id;
  }else if(action==='review_correction'){
@@ -118,13 +125,13 @@ export function attendanceTotals(shifts, now, timeZone='America/Puerto_Rico'){
  return {todayMinutes:shifts.reduce((sum,s)=>sum+within(s,todayStart),0),weekMinutes:shifts.reduce((sum,s)=>sum+within(s,weekStart),0),weekStart:localDay(new Date(weekStart).toISOString(),timeZone)};
 }
 export function workforceView(state,site,user,membership,now=Date.now()){
- const admin=workforceAdmin(membership);let bound=null;try{bound=boundEmployee(state,site,user,membership)}catch{}
- const shifts=state.shifts.filter(s=>locationAllowed(membership,s.locationId)&&(admin||(s.employeeId===bound?.employee.id&&s.userId===bound?.userId))).map(s=>({...s,...shiftMinutes(s.correction?{...s,start:s.correction.start,end:s.correction.end}:s,now)}));
- const requests=state.requests.filter(r=>shifts.some(s=>s.id===r.shiftId)&&(admin||(r.employeeId===bound?.employee.id&&r.userId===bound?.userId)));
- const employees=(site.employees||[]).filter(e=>e.active!==false&&(!(membership.role==='manager'&&(membership.locationIds||[]).length)||(e.locationIds||[]).some(id=>membership.locationIds.includes(id)))&&(admin||e.id===bound?.employee.id)).map(e=>({id:e.id,name:e.name,locationIds:e.locationIds||[]}));
+ const admin=workforceAdmin(membership),readAll=admin||hasFinancialPermission(membership,'attendance.view');let bound=null;try{bound=boundEmployee(state,site,user,membership)}catch{}
+ const shifts=state.shifts.filter(s=>locationAllowed(membership,s.locationId)&&(readAll||(s.employeeId===bound?.employee.id&&s.userId===bound?.userId))).map(s=>({...s,...shiftMinutes(s.correction?{...s,start:s.correction.start,end:s.correction.end}:s,now)}));
+ const requests=state.requests.filter(r=>shifts.some(s=>s.id===r.shiftId)&&(readAll||(r.employeeId===bound?.employee.id&&r.userId===bound?.userId)));
+ const employees=(site.employees||[]).filter(e=>e.active!==false&&(!(membership.role==='manager'&&(membership.locationIds||[]).length)||(e.locationIds||[]).some(id=>membership.locationIds.includes(id)))&&(readAll||e.id===bound?.employee.id)).map(e=>({id:e.id,name:e.name,locationIds:e.locationIds||[]}));
  const timeZone=site.settings?.timezone||'America/Puerto_Rico';
  const totals=attendanceTotals(shifts.filter(s=>s.employeeId===bound?.employee.id&&s.userId===bound?.userId),now,timeZone);
- return {totals,timeZone:site.settings?.timezone||'America/Puerto_Rico',confirmedOperationIds:state.events.filter(e=>e.actor===String(user.id||user.sub||'')).map(e=>e.id),enabled:state.enabled,paidBreaks:state.paidBreaks,revision:state.revision,serverNow:new Date(now).toISOString(),admin,employeeId:bound?.employee.id||'',shifts,requests,employees,bindings:admin?state.bindings.filter(b=>locationAllowed(membership,b.locationId)):[],events:admin?state.events.filter(e=>!e.shiftId||shifts.some(s=>s.id===e.shiftId)):state.events.filter(e=>e.actor===bound?.userId),locations:(site.business?.locations||[]).filter(l=>locationAllowed(membership,l.id)&&(admin||l.id===bound?.binding.locationId)).map(l=>({id:l.id,name:l.name,active:l.active!==false}))};
+ return {totals,timeZone:site.settings?.timezone||'America/Puerto_Rico',confirmedOperationIds:state.events.filter(e=>e.actor===String(user.id||user.sub||'')).map(e=>e.id),enabled:state.enabled,paidBreaks:state.paidBreaks,revision:state.revision,serverNow:new Date(now).toISOString(),admin,canApprove:state.enabled&&(admin||hasFinancialPermission(membership,'attendance.approve')),employeeId:bound?.employee.id||'',shifts,requests,employees,bindings:admin?state.bindings.filter(b=>locationAllowed(membership,b.locationId)):[],events:admin?state.events.filter(e=>!e.shiftId||shifts.some(s=>s.id===e.shiftId)):state.events.filter(e=>e.actor===bound?.userId),locations:(site.business?.locations||[]).filter(l=>locationAllowed(membership,l.id)&&(readAll||l.id===bound?.binding.locationId)).map(l=>({id:l.id,name:l.name,active:l.active!==false}))};
 }
 export function attendanceCsv(view,from='',to='',employeeId='',locationId=''){
  const validDate=v=>/^\d{4}-\d{2}-\d{2}$/.test(v)&&Number.isFinite(Date.parse(v))&&new Date(v).toISOString().slice(0,10)===v;

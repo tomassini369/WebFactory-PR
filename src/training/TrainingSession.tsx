@@ -22,7 +22,7 @@ export default function TrainingSession(props:Props){
 function Session({scope,course,lang:initialLang,onExit,onCourseChange,onRestart}:Props&{course:ReturnType<typeof availableCourses>[number];onRestart:()=>void}){
  const discarded=useRef(false)
  const [progress]=useState(()=>loadProgress(scope)),attempt=progress.attempts?.[course.id]
- const [runtime]=useState(()=>{const runtime=createPracticeRuntime({...scope,snapshot:attempt?.snapshot});runtime.ui.portalTab ||= course.tab;return runtime})
+ const [runtime]=useState(()=>{const runtime=createPracticeRuntime({...scope,snapshot:attempt?.snapshot});if(course.id==='accounting'&&runtime.ui.portalTab==='analytics')runtime.ui.portalTab='accounting';runtime.ui.portalTab ||= course.tab;return runtime})
  const [index,setIndex]=useState(attempt?.step||0),indexRef=useRef(index),[paused,setPaused]=useState(false),[surface,setSurface]=useState(runtime.surface),[lang,setLang]=useState(initialLang),[saved,setSaved]=useState(true),[notice,setNotice]=useState(''),[targetMissing,setTargetMissing]=useState(true)
  const root=useRef<HTMLDivElement>(null),coach=useRef<HTMLElement>(null),spotlight=useRef<Spotlight|null>(null),progressRef=useRef<TrainingProgress>(progress),persistenceTimer=useRef<ReturnType<typeof setTimeout>|null>(null),finished=index>=course.steps.length
  const es=lang==='es',step=course.steps[index]
