@@ -186,12 +186,15 @@ export function normalizeClientSection(site, section, incoming, user, membership
       value = payload.value.slice(0, 50).map((member) => {
         const email = normalizeEmail(member.email);
         if (!email) throw Object.assign(new Error("Member email is required."), { status: 400 });
+        const financial=(site.members||[]).find(current=>normalizeEmail(current.email)===email&&current.financialManaged);
+        if(financial)return financial;
         const role = email === ownerEmail ? "owner" : ["manager","employee","cashier","staff"].includes(member.role) ? member.role : "staff";
         const allowedLocations = new Set((site.business?.locations || []).map((location) => location.id));
         const locationIds = Array.isArray(member.locationIds) ? [...new Set(member.locationIds.map((id) => cleanText(id, 120)).filter((id) => allowedLocations.has(id)))].slice(0, 30) : [];
         return { email, role, locationIds };
       });
       if (!value.some((member) => member.email === ownerEmail && member.role === "owner")) value.unshift({ email: ownerEmail, role: "owner", locationIds: [] });
+      for(const financial of (site.members||[]).filter(member=>member.financialManaged))if(!value.some(member=>member.email===financial.email))value.push(financial);
     }
     if (section === "reviewSettings") value = {
       enabled: Boolean(payload.value?.enabled),

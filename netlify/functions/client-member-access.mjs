@@ -24,6 +24,7 @@ export default async(req)=>{
     const {site,membership}=await requireSiteAccess(payload.siteId,["owner"]);
     if((membership.role||"owner")!=="owner"&&membership.role!=="admin")throw Object.assign(new Error("Only the owner can manage portal access."),{status:403});
     const action=cleanText(payload.action,80);
+    if((site.members||[]).some(member=>normalizeEmail(member.email)===normalizeEmail(payload.email)&&member.financialManaged))throw Object.assign(new Error('Manage this relationship under Accounting Access / Administra esta relación en Acceso contable.'),{status:409});
 
     if(action==="invite"){
       const email=normalizeEmail(payload.email);
@@ -52,7 +53,7 @@ export default async(req)=>{
           role:user.role==="admin"?"admin":"client",
           app_metadata:{
             ...(user.appMetadata||{}),
-            roles:user.role==="admin"?["admin"]:["client"],
+            roles:[...new Set([...(Array.isArray(user.appMetadata?.roles)?user.appMetadata.roles:[]),user.role==="admin"?"admin":"client"])],
             webfactory_site_ids:[...new Set([...previousSites,site.siteId])],
           },
         });
