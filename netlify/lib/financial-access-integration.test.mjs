@@ -29,6 +29,7 @@ test('attendance professionals can view/approve only explicitly granted business
  let state={...emptyWorkforce('a'),enabled:true,shifts:[{id:'shift-a',employeeId:'e',userId:'employee-user',locationId:'',start:'2026-10-20T12:00:00Z',end:'2026-10-20T13:00:00Z',breaks:[],paidBreaks:false}]};
  const membership={role:'accountant',financialUserId:user.id,financialPermissions:['attendance.view']};
  assert.equal(workforceView(state,site,user,membership).shifts.length,1);assert.equal(workforceView(state,site,user,membership).admin,false);
+ const branches={...site,business:{...site.business,locations:[{id:'branch-a',name:'Authorized branch'}]}};assert.deepEqual(workforceView(state,branches,user,membership).locations.map(location=>location.name),['Authorized branch']);
  const input={action:'approve',shiftId:'shift-a',operationId:'approval-123'};
  assert.throws(()=>transitionWorkforce(state,input,site,user,membership),{status:403});
  membership.financialPermissions.push('attendance.approve');state=transitionWorkforce(state,input,site,user,membership).state;assert.ok(state.shifts[0].approvedAt);
