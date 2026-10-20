@@ -17,6 +17,9 @@ Preview: https://deploy-preview-120--webfactorypr.netlify.app
 - Workforce Chromium: 28 combinations; clock/break/out/approval, correction review,
   member settings, server recovery and restricted employee access passed.
 - POS Chromium: 390/1440, ES/EN, Light/Dark passed with isolated catalog/cart.
+- Kiosk regression: Chromium 390/1440 and WebKit 390, ES/EN and Light/Dark;
+  pairing, cart, isolated provider return, recovery, privacy reset, administrator
+  enablement and device revocation passed after the response-validation fix.
 - Training Chromium: 390, English/Dark plus the complete functional course set,
   checkpoint recovery, role filtering, safe activity restart and preservation of
   the live cart. The accounting lesson now targets Accounting and migrates its
@@ -49,6 +52,12 @@ Preview: https://deploy-preview-120--webfactorypr.netlify.app
   task-created image/layers were removed, recovering 26 GB. No site was created.
 - ERP health responses are allowlisted; refunded sources require reconciliation;
   delivery leases have an ownership identifier in addition to CAS metadata.
+- Remote kiosk QA exposed a malformed-success response that could crash the new
+  financial panels and blank Settings. Both panels now validate their response
+  contract and show independent retry/error states. A browser test verifies
+  malformed financial responses leave kiosk settings accessible; Chromium and
+  WebKit kiosk regressions passed. No default configuration or permissions are
+  invented when validation fails.
 
 ## CI and deployment evidence
 

@@ -21,7 +21,7 @@ let site=kioskFixture(root).site;site.members=[{email:owner.email,role:'owner'}]
 const db=new Map(),etags=new Map();
 const store={get:async key=>structuredClone(db.get(key)||null),getWithMetadata:async key=>db.has(key)?{data:structuredClone(db.get(key)),etag:String(etags.get(key)||1)}:null,list:async function*({prefix}){yield{blobs:[...db.keys()].filter(key=>key.startsWith(prefix)).map(key=>({key}))}},setJSON:async(key,value,options={})=>{if(options.onlyIfNew&&db.has(key)||options.onlyIfMatch&&options.onlyIfMatch!==String(etags.get(key)||1))return{modified:false};db.set(key,structuredClone(value));etags.set(key,(etags.get(key)||1)+1);return{modified:true}}};
 const errors=[],messages=[];let writes=0,lastPage;
-async function contextFor(user,width=390,lang='en',theme='light'){
+async function contextFor(user,width=390,lang='en',theme='light',malformed=false){
  const context=await browser.newContext({viewport:{width,height:950},reducedMotion:'reduce',...(isWebKit?{hasTouch:true}:{})}),page=await context.newPage();lastPage=page;page.setDefaultTimeout(18000);
  page.on('pageerror',error=>errors.push(error.message));
  await context.addInitScript(({lang,theme})=>{localStorage.setItem('wf-lang',lang);localStorage.setItem('wf-theme',theme);localStorage.setItem('webfactory-theme-v2',theme)}, {lang,theme});
@@ -33,6 +33,7 @@ async function contextFor(user,width=390,lang='en',theme='light'){
  };
  await context.route('**/.netlify/functions/**',async route=>{
   const req=route.request(),url=new URL(req.url()),name=url.pathname.split('/').at(-1);
+  if(malformed&&['client-business-modules','client-accounting-access'].includes(name))return route.fulfill({json:{ok:true}});
   if(handlers[name]){const response=await handlers[name](new Request(req.url(),{method:req.method(),headers:req.headers(),...(req.method()==='POST'?{body:req.postData()}: {})}));return route.fulfill({status:response.status,headers:Object.fromEntries(response.headers),body:await response.text()});}
   assert(req.method()==='GET'||name==='portal-session',`Unexpected live operation ${name}`);
   let data={ok:true};
@@ -76,6 +77,7 @@ try{
  const denial=await acc.page.evaluate(async siteId=>{const response=await fetch('/.netlify/functions/client-business-accounting',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({siteId,type:'expense',id:'forbidden-123',revision:0,date:'2026-10-20',category:'operations',description:'Blocked',amountCents:100,quantity:0})});return response.status},site.siteId);assert.equal(denial,403);
  await own.page.reload();await own.page.locator('.ca-dashboard').waitFor();await selectPortalSection(own.page,'Business settings');own.page.once('dialog',dialog=>dialog.accept());await own.page.getByRole('button',{name:'Revoke',exact:true}).click();await own.page.getByText('Permissions updated.',{exact:true}).waitFor();
  const revoked=await acc.page.evaluate(async siteId=>(await fetch('/.netlify/functions/client-business-accounting?'+new URLSearchParams({siteId,from:'2026-10-01',to:'2026-10-30'}))).status,site.siteId);assert.equal(revoked,403);
- await acc.context.close();await own.context.close();assert.deepEqual(errors,[]);assert.equal(writes,3);
- console.log(JSON.stringify({engine:isWebKit?'webkit':'chromium',visualCases,functional:['invite','review','accept','read-only API denial','revocation with existing session','independent module enable/disable'],realEmails:0,realFinancialTransactions:0,errors}));
+ await acc.context.close();await own.context.close();
+ const broken=await contextFor(owner,390,'en','light',true);await broken.page.goto(root+'/client-admin');await broken.page.locator('.ca-dashboard').waitFor();await selectPortalSection(broken.page,'Business settings');await broken.page.getByRole('button',{name:'Retry modules',exact:true}).waitFor();await broken.page.getByText('Accounting permissions could not be verified. Retry.',{exact:true}).waitFor();await broken.page.locator('.kiosk-settings').waitFor();await broken.context.close();assert.deepEqual(errors,[]);assert.equal(writes,3);
+ console.log(JSON.stringify({engine:isWebKit?'webkit':'chromium',visualCases,functional:['invite','review','accept','read-only API denial','revocation with existing session','independent module enable/disable','malformed financial responses preserve kiosk settings'],realEmails:0,realFinancialTransactions:0,errors}));
 }catch(error){console.error('Browser errors:',errors);if(lastPage){await writeFile(output+'/failure.html',await lastPage.content());console.error((await lastPage.locator('body').innerText()).slice(0,3000));await lastPage.screenshot({path:output+'/failure.png',fullPage:true})}throw error;}finally{await browser.close();await new Promise(resolve=>server.httpServer.close(resolve));}
