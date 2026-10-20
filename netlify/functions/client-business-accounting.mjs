@@ -2,7 +2,7 @@ import { assertSameOrigin, errorResponse, requireSiteAccess } from '../lib/clien
 import { clientCommerceStore } from '../lib/client-store.mjs';
 import {importApprovedShift} from '../lib/workforce-accounting.mjs';
 import {workforceKey} from '../lib/workforce.mjs';
-import { accountingReport, appendEntry, emptyLedger, fail, reportCsv } from '../lib/business-accounting.mjs';
+import { accountingReport, appendEntry, emptyLedger, fail, reportCsv, sameAccountingActor } from '../lib/business-accounting.mjs';
 import {PORTAL_ROLES,requireAccountingAction,privateAccountingReport} from '../lib/accounting-policy.mjs';
 import {isPlatformAdmin} from '../lib/client-auth.mjs';
 import {hasFinancialPermission} from '../lib/financial-permissions.mjs';
@@ -48,12 +48,13 @@ export function createAccountingHandler({authorize=requireSiteAccess,getStore=cl
       const target=ledger.entries.find(entry=>entry.id===payload.targetId);
       if(payload.type==='void'&&target&&['rate','work','payment'].includes(target.type)&&(!hasFinancialPermission(membership,'payroll.view')||!hasFinancialPermission(membership,'payroll.prepare')))throw fail('Payroll permission required for this correction.',403);
       if(payload.type==='financial_approval'&&target&&['rate','work','payment'].includes(target.type))requireAccountingAction(membership,'approve');
-      if(payload.type==='approve'&&target?.createdBy===(user.email||user.id)&&!['owner','admin'].includes(membership.role))throw fail('A separate approver is required.',403);
+      if(['approve','financial_approval'].includes(payload.type)&&target&&!target.createdById&&!['owner','admin'].includes(membership.role))throw fail('Historical author identity requires owner review / La identidad histórica requiere revisión del propietario.',403);
+      if(payload.type==='approve'&&sameAccountingActor(target,user.email||user.id,String(user.id||user.sub||''))&&!['owner','admin'].includes(membership.role))throw fail('A separate approver is required.',403);
       if(payload.type==='allocation') {
         const transactions=await loadAccountingTransactions(store,site.siteId);
         if(!transactions.some(e=>e.transactionId===payload.transactionId))throw fail('Transaction does not belong to this business.',404);
       }
-      const next=payload.type==='attendance_import'?importApprovedShift(ledger,payload,await store.get(workforceKey(site.siteId),{type:'json'}),site,user.email||user.id):appendEntry(ledger,payload,site,user.email||user.id,undefined,{requiresApproval:!['owner','admin'].includes(membership.role)});
+      const next=payload.type==='attendance_import'?importApprovedShift(ledger,payload,await store.get(workforceKey(site.siteId),{type:'json'}),site,user.email||user.id,{actorId:String(user.id||user.sub||'')}):appendEntry(ledger,payload,site,user.email||user.id,undefined,{requiresApproval:!['owner','admin'].includes(membership.role),actorId:String(user.id||user.sub||'')});
       if(next!==ledger){
         if(saved&&!saved.etag)throw fail('Concurrency information unavailable.',503);
         const result=await store.setJSON(key,next,saved?{onlyIfMatch:saved.etag}:{onlyIfNew:true});

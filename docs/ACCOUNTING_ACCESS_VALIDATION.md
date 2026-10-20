@@ -7,7 +7,7 @@ Preview: https://deploy-preview-120--webfactorypr.netlify.app
 
 ## Executed locally
 
-- npm test: 639 passed; no skipped tests.
+- npm test: 640 passed; no skipped tests.
 - npm run build: passed with Node 22, including application TypeScript check.
 - Chromium Accounting Access: 28 viewport/theme/language combinations, plus
   authenticated same-email invitation review/acceptance, read-only mutation
@@ -44,6 +44,10 @@ Preview: https://deploy-preview-120--webfactorypr.netlify.app
   generate per-member projection reads/writes.
 - Independent CPA review compares both Identity subject and email, so changing
   an email cannot turn the same account into its own credential reviewer.
+  New ledger entries also retain the server-authenticated Identity subject;
+  draft/work approvals and retries cannot impersonate a separate actor by
+  changing email. Historical email attribution remains intact; entries without
+  a recorded subject require owner review before delegated approval.
 - CI log redaction covers invitation credentials following any query/fragment
   separator, including the second fragment parameter.
 - Legacy member forms could erase financial fields: server-owned protection and

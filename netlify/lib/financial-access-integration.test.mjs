@@ -38,3 +38,15 @@ test('attendance professionals can view/approve only explicitly granted business
  const request=new Request('https://example.invalid/api',{method:'POST',headers:{origin:'https://example.invalid'},body:JSON.stringify({siteId:'a',action:'clock_in',employeeId:'e',operationId:'clock-in-123'})});assert.equal((await handler(request)).status,403);
  assert.throws(()=>transitionWorkforce({...state,enabled:false},{...input,operationId:'disabled-123'},site,user,membership),{status:403});
 });
+
+test('changing email cannot let a preparer approve their own work through the accounting API',async()=>{
+ let writes=0;
+ const ledger={version:1,siteId:'a',revision:1,entries:[{id:'work-subject-123',type:'work',date:'2026-10-20',createdBy:'old-email@example.invalid',createdById:user.id}]};
+ const membership={role:'accountant',financialUserId:user.id,financialPermissions:['accounting.view','accounting.entries.approve','payroll.view','payroll.approve']};
+ const handler=createAccountingHandler({authorize:async()=>({site,user,membership}),audit:async()=>{},getStore:()=>({getWithMetadata:async()=>({data:ledger,etag:'1'}),setJSON:async()=>{writes++;return{modified:true}}})});
+ const request=new Request('https://example.invalid/api',{method:'POST',headers:{origin:'https://example.invalid'},body:JSON.stringify({siteId:'a',id:'approval-subject-123',revision:1,type:'approve',targetId:'work-subject-123',date:'2026-10-20'})});
+ assert.equal((await handler(request)).status,403);assert.equal(writes,0);
+ delete ledger.entries[0].createdById;
+ const legacyRequest=new Request('https://example.invalid/api',{method:'POST',headers:{origin:'https://example.invalid'},body:JSON.stringify({siteId:'a',id:'legacy-approval-123',revision:1,type:'approve',targetId:'work-subject-123',date:'2026-10-20'})});
+ assert.equal((await handler(legacyRequest)).status,403,'Legacy author attribution requires owner review, rather than guessing a subject from email');assert.equal(writes,0);
+});

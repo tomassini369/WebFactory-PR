@@ -19,29 +19,30 @@ export function activeEntries(ledger) {
  return effective.filter(e=>e.type!=='void'&&!voided.has(e.id));
 }
 export function rateOn(entries, employeeId, date) { return entries.filter(e => e.type === 'rate' && e.employeeId === employeeId && e.date <= date).sort((a,b) => b.date.localeCompare(a.date))[0]; }
-export function appendEntry(ledger, input, site, actor, now = new Date().toISOString(),{requiresApproval=false}={}) {
+export function sameAccountingActor(entry,actor,actorId=''){return entry?.createdBy===actor||Boolean(actorId&&entry?.createdById===actorId);}
+export function appendEntry(ledger, input, site, actor, now = new Date().toISOString(),{requiresApproval=false,actorId=''}={}) {
   if (!/^[a-zA-Z0-9_-]{8,120}$/.test(input.id || '')) throw fail('Stable entry ID required.');
   const duplicate = ledger.entries.find(e => e.id === input.id);
   if (duplicate) {
-    if(duplicate.createdBy!==actor||duplicate.type!==input.type)throw fail('This identifier belongs to another operation.',409);
+    if((duplicate.createdById?(!actorId||duplicate.createdById!==actorId):duplicate.createdBy!==actor)||duplicate.type!==input.type)throw fail('This identifier belongs to another operation.',409);
     if(duplicate.requestFingerprint&&duplicate.requestFingerprint!==entryFingerprint(input))throw fail('This identifier was reused with different data.',409);
     return ledger;
   }
   if (input.revision !== ledger.revision) throw fail('Reload: another owner changed this ledger / Recarga los datos.', 409);
   const entries = activeEntries(ledger);
-  let entry = { id: input.id, type: input.type, date: day(input.date), createdAt: now, createdBy: actor, note: text(input.note) };
+  let entry = { id: input.id, type: input.type, date: day(input.date), createdAt: now, createdBy: actor, ...(actorId?{createdById:actorId}:{}), note: text(input.note) };
   const employee = (site.employees || []).find(e => e.id === input.employeeId);
   if (['rate','work','allocation'].includes(input.type) && !employee) throw fail('Choose a saved employee / Selecciona un empleado guardado.');
   if (employee) entry = { ...entry, employeeId: employee.id, employeeName: employee.name || employee.nameEn || employee.nameEs || employee.id };
   if(input.type==='financial_approval'){
     const target=ledger.entries.find(e=>e.id===input.targetId&&e.requiresApproval);
     if(!target||ledger.entries.some(e=>e.type==='financial_approval'&&e.targetId===target.id))throw fail('Pending financial entry not found.',409);
-    if(target.createdBy===actor)throw fail('A separate approver is required / Se requiere otro aprobador.',403);
+    if(target.createdById&&!actorId||sameAccountingActor(target,actor,actorId))throw fail('A separate approver is required / Se requiere otro aprobador.',403);
     if(entry.date<target.date)throw fail('Approval cannot precede the entry date.');
     // Revalidate against current effective records. A draft cannot bypass a
     // rate collision, duplicate allocation or a newly-paid work constraint.
     const validation={...ledger,entries:ledger.entries.filter(e=>e.id!==target.id)};
-    appendEntry(validation,{...target,revision:ledger.revision},site,target.createdBy,now);
+    appendEntry(validation,{...target,revision:ledger.revision},site,target.createdBy,now,{actorId:target.createdById||''});
     entry.targetId=target.id;
   } else if (input.type === 'rate') {
     if (entries.some(e => e.type === 'rate' && e.employeeId === employee.id && e.date === entry.date)) throw fail('A rate already exists for this date. Void it before replacing it.',409);

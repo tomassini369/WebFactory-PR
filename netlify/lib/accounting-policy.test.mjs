@@ -26,4 +26,11 @@ test('delegated expenses remain drafts until a different authorized actor approv
  assert.throws(()=>appendEntry(approved,{...approval,id:'approval-other',revision:2},site,'approver'),{status:409});
  assert.equal(appendEntry(approved,input,site,'preparer'),approved);
  assert.throws(()=>appendEntry(approved,{...input,amountCents:2000},site,'preparer'),{status:409});
+ const boundDraft=appendEntry(emptyLedger(),input,site,'old-email@example.invalid',undefined,{requiresApproval:true,actorId:'preparer-subject'});
+ assert.throws(()=>appendEntry(boundDraft,approval,site,'new-email@example.invalid',undefined,{actorId:'preparer-subject'}),{status:403});
+ assert.throws(()=>appendEntry(boundDraft,approval,site,'another@example.invalid'),{status:403},'A bound entry requires a verified approver subject');
+ const boundApproved=appendEntry(boundDraft,approval,site,'another@example.invalid',undefined,{actorId:'independent-subject'});
+ assert.equal(activeEntries(boundApproved).filter(e=>e.type==='expense').length,1);
+ assert.equal(appendEntry(boundApproved,input,site,'new-email@example.invalid',undefined,{actorId:'preparer-subject'}),boundApproved);
+ assert.throws(()=>appendEntry(boundApproved,input,site,'old-email@example.invalid',undefined,{actorId:'foreign-subject'}),{status:409});
 });
