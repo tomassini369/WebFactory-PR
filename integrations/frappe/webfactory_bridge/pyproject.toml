@@ -1,0 +1,14 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "webfactory_bridge"
+version = "0.1.0"
+description = "Tenant-bound transactional WebFactory accounting bridge"
+requires-python = ">=3.10"
+dependencies = []
+
+[tool.bench.frappe-dependencies]
+frappe = ">=15.111.0,<16.0.0"
+erpnext = ">=15.0.0,<16.0.0"

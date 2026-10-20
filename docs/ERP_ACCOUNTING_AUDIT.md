@@ -99,3 +99,33 @@ and validation; no default legal/tax calculation is represented as approved.
 
 AGENTS.md and the existing visual system remain authoritative. No main merge,
 production deploy or real financial/employee transaction is authorized by this task.
+
+## Implemented on this branch
+
+| Function | Current implementation | Evidence / remaining limit |
+| --- | --- | --- |
+| Current member authorization | Active canonical membership required; deleted sites denied; financial grants bind Identity subject | Revoked/suspended/old-session and cross-tenant tests |
+| Business selector/index repair | Paginated canonical filtering; CAS revisioned projections/tombstones | Stale index and racing regrant tests |
+| Financial roles | Explicit per-tenant allowlisted capabilities; titles grant nothing | Read-only/write/export/approval API denial tests |
+| Invitations | Owner email invitation, seven-day hashed token, authenticated same-email single-use acceptance | Node + Chromium/WebKit isolated functional handlers; actual external email delivery not attempted |
+| Existing Identity users | Reused without overwriting roles/MFA; new invitees use existing password recovery | External Identity provisioning still needs staging credentials to exercise live |
+| CPA credential | Jurisdiction/license captured as unverified; independent platform review with evidence/date | Role selection cannot verify or grant access; no live PR registry verification claimed |
+| Revocation | Immediate current-state denial; old JWT site metadata does not authorize; underlying operational role preserved | Existing-session browser/API revocation and multi-business tests |
+| Access and operations audit | Hash-chained grant history in canonical CAS; immutable conditional records for financial reads/exports/requests/results | Audit write failure denies disclosure; records not deleted |
+| Existing accounting ledger | Reused unchanged historical entries; granular API gates, payroll redaction before JSON/CSV | Separate draft approvals and idempotency fingerprint tests |
+| Financial drafts | Delegated expense/rate/allocation/correction excluded until separate approval | Another actor required; original entries retained; no GL or tax-return claim |
+| Portal | Existing sidebar extended with permission-scoped Accounting, authorization summary and enabled Attendance | ES/EN; Light/Dark; seven widths; existing portal/components reused |
+| Optional modules | Central settings reuse existing Workforce CAS and enabled flag; new defaults off; historical preferences retained | Open shifts block disabling; payroll/scheduling activation fails closed |
+| Attendance delegation | View/approve rights reuse existing state machine; no arbitrary employee clock or configuration rights | API role/action tests; historical records preserved |
+| ERP binding/client | Fixed HTTPS allowlist/site/company, server secrets, bounded requests and no redirects | Mock protocol/auth/tenant tests; no configured live endpoint |
+| ERP outbox | Existing Commerce storage, immutable source snapshots, CAS lease, five retries/dead letter, source repair scan | Local concurrent/retry tests; no automatic sync or financial postings |
+| Frappe bridge | Prepared separate-site connector app; unique receipt + draft journal in one transaction; no submit/payout | Python syntax only; live Frappe DB/permission/rollback tests BLOCKED |
+| Formal ERP/HRMS modules | Not enabled or exposed as working destinations | Persistent staging, configuration, live integration and professional payroll validation required |
+
+See [ERP_CONNECTOR.md](ERP_CONNECTOR.md) for the attempted Docker test, recovered
+space, compatible upstream versions, license review, deployment/secret contract,
+source authority, limits and the exact staging acceptance checklist.
+
+No GitHub, Netlify, WebFactory, Graphify or Frappe MCP was callable in this
+session. Git, GitHub CLI/API, public Netlify status, official upstream metadata,
+Node tests and Playwright were used instead. No MCP connection is claimed.
