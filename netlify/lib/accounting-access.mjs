@@ -95,7 +95,7 @@ export function changeAccountingAccess(site,input,user,{now=Date.now(),token='',
    member.professionalCredential={jurisdiction,licenseNumber,status:'unverified',submittedAt:at};
    detail={jurisdiction,licenseNumber};
   }else if(action==='credential_review'){
-   if(!platformAdmin||target===actor)throw fail('Independent platform review required / Se requiere revisión independiente de la plataforma.',403);
+   if(!platformAdmin||target===actor||member.financialUserId===subject)throw fail('Independent platform review required / Se requiere revisión independiente de la plataforma.',403);
    const credential=member.professionalCredential,evidenceReference=text(input.evidenceReference,500);
    if(!credential?.jurisdiction||!credential?.licenseNumber||!evidenceReference||!['verified','rejected'].includes(input.status))throw fail('License evidence and review decision required.');
    if(input.expiresAt&&(!Number.isFinite(Date.parse(input.expiresAt))||Date.parse(input.expiresAt)<=now))throw fail('Invalid license expiration date.');

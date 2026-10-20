@@ -51,6 +51,7 @@ test('CPA evidence requires an independent platform reviewer and never changes g
  const input={action:'credential_review',email:accountant.email,status:'verified',evidenceReference:'Official registry reviewed manually'};
  assert.throws(()=>changeAccountingAccess(site,input,owner,{now}),{status:403});
  assert.throws(()=>changeAccountingAccess(site,input,accountant,{now,platformAdmin:true}),{status:403});
+ assert.throws(()=>changeAccountingAccess(site,input,{...accountant,email:'changed-email@example.com'},{now,platformAdmin:true}),{status:403},'The same Identity subject cannot review its own license after an email change');
  site=changeAccountingAccess(site,input,{id:'reviewer-id',email:'reviewer@example.com'},{now,platformAdmin:true});
  assert.equal(accessView(site).members[0].credential.status,'verified');assert.deepEqual(site.members[1].financialPermissions,['accounting.view']);
 });

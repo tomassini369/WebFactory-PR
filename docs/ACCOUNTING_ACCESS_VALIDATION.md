@@ -42,6 +42,10 @@ Preview: https://deploy-preview-120--webfactorypr.netlify.app
   keeps accepted memberships discoverable without granting access prematurely.
   Only changed memberships refresh their index; catalog/design edits do not
   generate per-member projection reads/writes.
+- Independent CPA review compares both Identity subject and email, so changing
+  an email cannot turn the same account into its own credential reviewer.
+- CI log redaction covers invitation credentials following any query/fragment
+  separator, including the second fragment parameter.
 - Legacy member forms could erase financial fields: server-owned protection and
   dedicated audited grant mutations preserve authorization.
 - Wage data could be inferred through summaries/CSV: JSON and CSV redact rates,
