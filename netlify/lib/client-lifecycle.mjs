@@ -1,4 +1,5 @@
 import Stripe from "stripe";
+import crypto from 'node:crypto';
 import {withBookingLock} from "./booking-lock.mjs";
 import {deleteStorePrefix} from "./store-maintenance.mjs";
 import { purgeAccountSecurity } from "./mfa-security.mjs";
@@ -142,7 +143,6 @@ async function purgeClientSiteRecords(siteId,{cancelSubscription=true}={}){
 export async function removeUserFromSite(site,email){
   const normalized=normalizeEmail(email);
   const members=(site.members||[]).filter((member)=>normalizeEmail(member.email)!==normalized);
-  await clientSiteStore().delete(`members/${emailHash(normalized)}/${site.siteId}.json`).catch(()=>{});
   try{
     const perPage=100;
     for(let page=1;page<=20;page+=1){
@@ -162,7 +162,15 @@ export async function removeUserFromSite(site,email){
     }
   }catch{}
   if(members.length===(site.members||[]).length)return site;
-  return saveClientSite({...site,members,revision:Number(site.revision||0)+1,updatedAt:new Date().toISOString()});
+  const accountingAccess=site.accountingAccess?structuredClone(site.accountingAccess):undefined;
+  if(accountingAccess){
+    // Account deletion is already authenticated by client-delete-account. Keep
+    // an append-only event rather than silently erasing a delegated relationship.
+    const record={id:crypto.randomUUID(),siteId:site.siteId,action:'account_deleted',actor:normalized,target:normalized,at:new Date().toISOString(),previous:accountingAccess.audit.at(-1)?.hash||''};
+    accountingAccess.audit.push({...record,hash:crypto.createHash('sha256').update(JSON.stringify(record)).digest('hex')});
+    for(const invitation of accountingAccess.invitations)if(invitation.email===normalized&&invitation.status==='pending')invitation.status='cancelled';
+  }
+  return saveClientSite({...site,members,...(accountingAccess?{accountingAccess}:{}),revision:Number(site.revision||0)+1,updatedAt:new Date().toISOString()},{financialMutation:true});
 }
 
 export async function deleteIdentityUser(user){

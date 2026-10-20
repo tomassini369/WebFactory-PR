@@ -114,7 +114,7 @@ export function membershipHasCapability(membership, capability) {
 export function membershipCapabilities(membership){
  if(!activeMembership(membership))return [];
  const financial=financialPermissions(membership);
- return [...new Set([...siteRoleCapabilities(membership.role),...financial,...(financial.includes('accounting.view')?['accounting']:[])])];
+ return [...new Set([...siteRoleCapabilities(membership.role),...financial,...(financial.includes('accounting.view')?['accounting']:[]),...(membership.financialManaged?['financial_access']:[])])];
 }
 
 export async function requireFinancialPermission(siteId,permission){

@@ -56,7 +56,7 @@ test('CPA evidence requires an independent platform reviewer and never changes g
 });
 test('HTTP invitation delivery failure is explicit; no raw token is returned or access granted',async()=>{
  let site=business('a'),sent;
- const handler=createAccountingAccessHandler({authorize:async()=>({site,user:owner,membership:site.members[0]}),save:async next=>{site=next;return next},mailReady:()=>true,deliver:async message=>{sent=message;throw Error('do not log this provider secret')},clock:()=>now,randomToken:()=>token});
+ const handler=createAccountingAccessHandler({authorize:async()=>({site,user:owner,membership:site.members[0]}),save:async next=>{site=next;return next},ensureIdentity:async()=>{},mailReady:()=>true,deliver:async message=>{sent=message;throw Error('do not log this provider secret')},clock:()=>now,randomToken:()=>token});
  const req=new Request('https://example.com/.netlify/functions/client-accounting-access',{method:'POST',headers:{origin:'https://example.com'},body:JSON.stringify({siteId:'a',action:'invite',revision:0,email:accountant.email,role:'accountant',permissions:['accounting.view']})});
  const response=await handler(req),data=await response.json();assert.equal(response.status,202);assert.equal(data.invitationSent,false);assert.equal(JSON.stringify(data).includes(token),false);assert.equal(site.members.length,1);assert.ok(sent.text.includes('#accountingSite=a&accountingInvite='));
 });

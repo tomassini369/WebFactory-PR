@@ -1,7 +1,9 @@
 import { sanitizePolicies } from "../lib/publication-review.mjs";
 import { readPosOperations } from '../lib/pos-operations.mjs';
-import { assertSameOrigin, authorizedSites, errorResponse, requireSiteAccess, siteRoleCapabilities } from "../lib/client-auth.mjs";
-import { normalizeEmail, patchClientSite, publicClientSite, renameClientSiteSlug } from "../lib/client-store.mjs";
+import { assertSameOrigin, authorizedSites, errorResponse, requireSiteAccess, membershipCapabilities } from "../lib/client-auth.mjs";
+import {PORTAL_ROLES} from '../lib/financial-permissions.mjs';
+import {financialOnly,financialPortalSite,financialMembershipView,operationalPortalSite} from '../lib/financial-portal.mjs';
+import { normalizeEmail, patchClientSite, publicClientSite, renameClientSiteSlug,clientCommerceStore } from "../lib/client-store.mjs";
 import { cleanText, validEmail } from "../lib/platform-utils.mjs";
 import { normalizeTaxConfig } from "../lib/webfactory-v3-domain.mjs";
 
@@ -234,8 +236,10 @@ export default async (req) => {
           siteId: site.siteId, slug: site.slug, status: site.status, revision: site.revision, businessName: site.business?.name,
         })) }, { headers: { "Cache-Control": "no-store" } });
       }
-      const { user, site, membership } = await requireSiteAccess(siteId);
-      return Response.json({ ok: true, user: { id: user.id, email: user.email, name: user.name }, membership: { ...membership, capabilities: siteRoleCapabilities(membership?.role || "staff") }, site, posOperations: await readPosOperations(site.siteId) }, { headers: { "Cache-Control": "no-store" } });
+      const { user, site, membership } = await requireSiteAccess(siteId,PORTAL_ROLES);
+      const capabilities=membershipCapabilities(membership),professional=financialOnly(membership);
+      if(professional&&capabilities.includes('attendance.view')&&(await clientCommerceStore().get(`${siteId}/workforce/state.json`,{type:'json'}))?.enabled)capabilities.push('attendance');
+      return Response.json({ ok: true, user: { id: user.id, email: user.email, name: user.name }, membership:financialMembershipView(membership,capabilities),site:professional?financialPortalSite(site,membership):operationalPortalSite(site,membership),...(!professional?{posOperations:await readPosOperations(site.siteId)}:{}) }, { headers: { "Cache-Control": "no-store" } });
     }
 
     if (req.method !== "PATCH") return Response.json({ ok: false, message: "Method not allowed." }, { status: 405 });

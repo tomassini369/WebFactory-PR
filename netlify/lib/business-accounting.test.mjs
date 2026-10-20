@@ -21,7 +21,7 @@ test('Validation rejects tampering, lost updates, invalid dates and over-24-hour
  assert.throws(()=>add(l,{type:'work',employeeId:'e1',regularMinutes:1440,overtimeMinutes:0,commissionCents:0,tipCents:0}));
  assert.throws(()=>add(l,{type:'rate',employeeId:'e1',hourlyCents:100,revision:0}));
  assert.throws(()=>day('2026-02-30'));assert.throws(()=>accountingReport(l,[],site,'2026-11-01','2026-10-01'));
- const last=l.entries.at(-1);assert.equal(appendEntry(l,{id:last.id},site,'owner'),l);
+ const last=l.entries.at(-1);assert.throws(()=>appendEntry(l,{id:last.id},site,'owner'),{status:409});
 });
 test('Purchases are separate from consumption and sales are deduplicated; refunds visibly estimated',()=>{
  let l=emptyLedger();l=add(l,{type:'expense',category:'inventory_purchase',description:'Stock',amountCents:10000,quantity:10});

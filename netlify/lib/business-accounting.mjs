@@ -1,4 +1,6 @@
 // Private owner ledger. Money is integer USD cents; time is integer minutes.
+import crypto from 'node:crypto';
+const entryFingerprint=input=>crypto.createHash('sha256').update(JSON.stringify(Object.fromEntries(Object.entries(input).filter(([key])=>!['revision','id','siteId'].includes(key)).sort(([a],[b])=>a.localeCompare(b))))).digest('hex');
 export const fail = (message, status = 400) => Object.assign(new Error(message), { status });
 export const emptyLedger = () => ({ revision: 0, entries: [] });
 export function day(value) {
@@ -10,19 +12,38 @@ function integer(value, max = 100000000, min = 0) {
   return value;
 }
 const text = (value, max = 300) => String(value || '').trim().slice(0, max);
-export function activeEntries(ledger) { const voided = new Set(ledger.entries.filter(e => e.type === 'void').map(e => e.targetId)); return ledger.entries.filter(e => e.type !== 'void' && !voided.has(e.id)); }
+export function activeEntries(ledger) {
+ const approved=new Set(ledger.entries.filter(e=>e.type==='financial_approval').map(e=>e.targetId));
+ const effective=ledger.entries.filter(e=>!e.requiresApproval||approved.has(e.id));
+ const voided=new Set(effective.filter(e=>e.type==='void').map(e=>e.targetId));
+ return effective.filter(e=>e.type!=='void'&&!voided.has(e.id));
+}
 export function rateOn(entries, employeeId, date) { return entries.filter(e => e.type === 'rate' && e.employeeId === employeeId && e.date <= date).sort((a,b) => b.date.localeCompare(a.date))[0]; }
-export function appendEntry(ledger, input, site, actor, now = new Date().toISOString()) {
+export function appendEntry(ledger, input, site, actor, now = new Date().toISOString(),{requiresApproval=false}={}) {
   if (!/^[a-zA-Z0-9_-]{8,120}$/.test(input.id || '')) throw fail('Stable entry ID required.');
   const duplicate = ledger.entries.find(e => e.id === input.id);
-  if (duplicate) return ledger; // Safe retry after a lost response; no second write.
+  if (duplicate) {
+    if(duplicate.createdBy!==actor||duplicate.type!==input.type)throw fail('This identifier belongs to another operation.',409);
+    if(duplicate.requestFingerprint&&duplicate.requestFingerprint!==entryFingerprint(input))throw fail('This identifier was reused with different data.',409);
+    return ledger;
+  }
   if (input.revision !== ledger.revision) throw fail('Reload: another owner changed this ledger / Recarga los datos.', 409);
   const entries = activeEntries(ledger);
   let entry = { id: input.id, type: input.type, date: day(input.date), createdAt: now, createdBy: actor, note: text(input.note) };
   const employee = (site.employees || []).find(e => e.id === input.employeeId);
   if (['rate','work','allocation'].includes(input.type) && !employee) throw fail('Choose a saved employee / Selecciona un empleado guardado.');
   if (employee) entry = { ...entry, employeeId: employee.id, employeeName: employee.name || employee.nameEn || employee.nameEs || employee.id };
-  if (input.type === 'rate') {
+  if(input.type==='financial_approval'){
+    const target=ledger.entries.find(e=>e.id===input.targetId&&e.requiresApproval);
+    if(!target||ledger.entries.some(e=>e.type==='financial_approval'&&e.targetId===target.id))throw fail('Pending financial entry not found.',409);
+    if(target.createdBy===actor)throw fail('A separate approver is required / Se requiere otro aprobador.',403);
+    if(entry.date<target.date)throw fail('Approval cannot precede the entry date.');
+    // Revalidate against current effective records. A draft cannot bypass a
+    // rate collision, duplicate allocation or a newly-paid work constraint.
+    const validation={...ledger,entries:ledger.entries.filter(e=>e.id!==target.id)};
+    appendEntry(validation,{...target,revision:ledger.revision},site,target.createdBy,now);
+    entry.targetId=target.id;
+  } else if (input.type === 'rate') {
     if (entries.some(e => e.type === 'rate' && e.employeeId === employee.id && e.date === entry.date)) throw fail('A rate already exists for this date. Void it before replacing it.',409);
     entry.hourlyCents = integer(input.hourlyCents, 10000000);
   } else if (input.type === 'work') {
@@ -76,6 +97,8 @@ export function appendEntry(ledger, input, site, actor, now = new Date().toISOSt
     if (target.type === 'work' && entries.some(e => e.type === 'payment' && e.targetId === target.id)) throw fail('Void its payment records first.',409);
     entry.targetId = target.id; entry.employeeId = target.employeeId || ''; entry.employeeName = target.employeeName || ''; 
   } else throw fail('Unknown ledger action.');
+  if(requiresApproval&&['rate','expense','allocation','void'].includes(input.type))entry.requiresApproval=true;
+  entry.requestFingerprint=entryFingerprint(input);
   const result = { ...ledger, revision: ledger.revision + 1, entries: [...ledger.entries, entry] };
   if (result.entries.length > 5000 || Buffer.byteLength(JSON.stringify(result)) > 2*1024*1024) throw fail('Ledger capacity reached. Contact support; no records were discarded.',413);
   return result;

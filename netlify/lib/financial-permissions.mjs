@@ -16,6 +16,7 @@ export function normalizeFinancialPermissions(value){
 export function financialPermissions(member){
  if(!activeMembership(member))return [];
  if(['owner','admin'].includes(member.role))return [...FINANCIAL_PERMISSIONS];
+ if(member.financialStatus&&member.financialStatus!=='active')return [];
  return [...new Set((Array.isArray(member.financialPermissions)?member.financialPermissions:[]).filter(p=>FINANCIAL_PERMISSIONS.includes(p)&&p!=='accounting.access.manage'))];
 }
 export const hasFinancialPermission=(member,permission)=>financialPermissions(member).includes(permission);

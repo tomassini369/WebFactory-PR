@@ -41,6 +41,11 @@ export function accessView(site){
  const state=site.accountingAccess||{invitations:[],audit:[]};
  return {revision:Number(site.revision||0),members:(site.members||[]).filter(accountingManaged).map(member=>({email:member.email,role:member.financialRole||member.role,permissions:member.financialPermissions||[],status:member.financialStatus||'active',credential:professionalCredential(member)})),invitations:(state.invitations||[]).map(({tokenHash:secret,...invitation})=>invitation),audit:state.audit||[]};
 }
+export function reviewAccountingInvitation(site,token,user,now=Date.now()){
+ const invitation=(site.accountingAccess?.invitations||[]).find(item=>item.tokenHash===tokenHash(token));
+ if(site.deletedAt||site.status==='deleted'||!invitation||invitation.email!==email(user?.email)||invitation.status!=='pending'||Date.parse(invitation.expiresAt)<=now)throw fail('Invitation invalid, expired or for a different email / Invitación inválida, vencida o para otro email.',403);
+ return {siteId:site.siteId,businessName:site.business?.name||site.siteId,role:invitation.role,permissions:invitation.permissions,expiresAt:invitation.expiresAt};
+}
 
 export function changeAccountingAccess(site,input,user,{now=Date.now(),token='',platformAdmin=false}={}){
  const actor=email(user?.email),subject=String(user?.id||user?.sub||'');
@@ -66,6 +71,7 @@ export function changeAccountingAccess(site,input,user,{now=Date.now(),token='',
   const existing=(next.members||[]).find(member=>email(member.email)===actor);
   if(existing?.role==='owner'||existing?.financialUserId&&existing.financialUserId!==subject)throw fail('Identity does not match the existing authorization.',403);
   const member={...(existing||{email:actor,role:invitation.role,locationIds:[]}),financialManaged:true,financialRole:invitation.role,financialPermissions:invitation.permissions,financialUserId:subject,financialStatus:'active'};
+  if(FINANCIAL_ROLES.includes(member.role))delete member.suspendedAt;
   next.members=[...(next.members||[]).filter(item=>email(item.email)!==actor),member];
   invitation.status='accepted';invitation.acceptedAt=at;invitation.acceptedBy=subject;
   detail={invitationId:invitation.id,role:invitation.role,permissions:invitation.permissions};
@@ -81,6 +87,7 @@ export function changeAccountingAccess(site,input,user,{now=Date.now(),token='',
   }else if(action==='suspend'||action==='revoke'){
    member.financialPermissions=[];member.financialStatus=action==='suspend'?'suspended':'revoked';
    if(FINANCIAL_ROLES.includes(member.role)){if(action==='revoke')next.members=next.members.filter(item=>item!==member);else member.suspendedAt=at;}
+   else if(action==='revoke')for(const field of protectedFields)delete member[field];
    for(const invitation of state.invitations)if(invitation.email===target&&invitation.status==='pending')invitation.status='cancelled';
   }else if(action==='credential_submit'){
    const jurisdiction=text(input.jurisdiction,80),licenseNumber=text(input.licenseNumber,120);
