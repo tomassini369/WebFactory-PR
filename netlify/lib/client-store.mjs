@@ -94,10 +94,15 @@ export async function saveClientSite(site,{financialMutation=false}={}) {
     }
   }else if(site.stockOperations||site.stockReservations||site.inventoryArchive)throw Object.assign(new Error('Inventory markers cannot be supplied when creating a business.'),{status:400});
   // All site writers respect existing aliases, including provisioning and edits.
+  const indexedEmails=new Set([...(previous?.data?.members||[]),...(site.members||[])].map(member=>normalizeEmail(member.email)).filter(Boolean));
+  // Seed discoverability before the canonical CAS. A failed grant leaves only
+  // an inert projection (readers revalidate membership). A successful grant
+  // cannot become invisible if its post-commit projection refresh fails.
+  for(const email of indexedEmails)await repairMemberIndex(store,site.siteId,email);
   await claimPublicSiteSlug(store, site.siteId, slugify(site.slug));
   const saved=await store.setJSON(siteKey(site.siteId),site,previous?{onlyIfMatch:previous.etag}:{onlyIfNew:true});
   if(!saved.modified)throw Object.assign(new Error('Business changed. Reload before saving.'),{status:409});
-  for(const email of new Set([...(previous?.data?.members||[]),...(site.members||[])].map(member=>normalizeEmail(member.email)).filter(Boolean)))await repairMemberIndex(store,site.siteId,email);
+  for(const email of indexedEmails){try{await repairMemberIndex(store,site.siteId,email)}catch{ /* Canonical membership remains authoritative; the seeded projection is sufficient. */ }}
   return site;
 }
 

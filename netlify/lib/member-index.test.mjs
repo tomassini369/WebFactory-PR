@@ -31,3 +31,14 @@ test('lost CAS retry rereads canonical membership rather than deleting a concurr
  store.setJSON=async(...args)=>{if(!calls++){data.set('sites/a.json',{siteId:'a',revision:3,members:[{email,role:'accountant'}]});return{modified:false};}return write(...args)};
  await repairMemberIndex(store,'a',email);assert.equal(data.get(key).active,true);assert.equal(data.get(key).revision,3);
 });
+test('pre-commit projections grant nothing, then keep accepted membership discoverable after refresh failure',async()=>{
+ const {data,store}=fixture(),email='new-accountant@example.com';
+ data.set('sites/a.json',{siteId:'a',revision:2,members:[]});
+ await repairMemberIndex(store,'a',email);
+ assert.deepEqual(await currentIndexedSites(store,email),[]);
+ data.set('sites/a.json',{siteId:'a',revision:3,members:[{email,role:'accountant',financialPermissions:['accounting.view']}]});
+ // Simulate the response/update failing after the canonical grant committed.
+ store.setJSON=async()=>{throw Error('isolated index refresh outage')};
+ await assert.rejects(repairMemberIndex(store,'a',email));
+ assert.deepEqual((await currentIndexedSites(store,email)).map(site=>site.siteId),['a']);
+});
