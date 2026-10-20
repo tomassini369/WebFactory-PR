@@ -9,11 +9,13 @@ test('connector binds tenants server-side, requires HTTPS/allowlist and suppress
  assert.throws(()=>erpBinding('a',name=>name==='WEBFACTORY_ERP_BINDINGS_JSON'?JSON.stringify({a:{...binding,origin:'http://localhost'}}):'http://localhost'),{code:'ERP_CONFIGURATION_INVALID'});
  const bad=createErpConnector(binding,{fetcher:async()=>new Response('private provider secret',{status:403})});await assert.rejects(bad.health(),error=>error.code==='ERP_AUTHORIZATION_FAILED'&&!error.message.includes('secret'));
  const crossed=createErpConnector(binding,{fetcher:async()=>Response.json({message:{siteId:'other',company:binding.company,protocol:ERP_BRIDGE_PROTOCOL}})});await assert.rejects(crossed.health(),{code:'ERP_BINDING_MISMATCH'});
+ const health=createErpConnector(binding,{fetcher:async()=>Response.json({message:{siteId:'a',company:binding.company,protocol:ERP_BRIDGE_PROTOCOL,draftJournal:true,apiSecret:'never return provider extras'}})});assert.equal(JSON.stringify(await health.health()).includes('never return'),false);
 });
 test('source adapter uses settled server records without customers, PINs, unpaid charges or invented refund splits',()=>{
  assert.equal(event.revenueCents,2200);assert.equal(JSON.stringify(event).includes('customer'),false);
  assert.equal(settledSaleEvent({siteId:'a',paymentStatus:'due'},'a'),null);
  assert.throws(()=>settledSaleEvent({siteId:'b'},'a'),{status:403});
+ assert.throws(()=>settledSaleEvent({siteId:'a',paymentStatus:'refunded',refundedAmount:100},'a'),{code:'ERP_SOURCE_REQUIRES_RECONCILIATION'});
  assert.throws(()=>settledSaleEvent({siteId:'a',transactionId:'x',paidAt:'now',paymentStatus:'paid',amountTotal:1,tax:2},'a'),{status:409});
 });
 function storeFixture(){let data,etag=0;return{get:async()=>data?structuredClone(data):null,getWithMetadata:async()=>data?{data:structuredClone(data),etag:String(etag)}:null,setJSON:async(key,value,options)=>{if(options.onlyIfNew&&data||options.onlyIfMatch&&options.onlyIfMatch!==String(etag))return{modified:false};data=structuredClone(value);etag++;return{modified:true}}};}

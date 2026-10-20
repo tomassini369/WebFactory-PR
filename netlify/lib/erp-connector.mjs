@@ -22,12 +22,13 @@ export function createErpConnector(binding,{fetcher=fetch}={}){
   if(!message||message.siteId!==binding.siteId||message.company!==binding.company||message.protocol!==ERP_BRIDGE_PROTOCOL)throw fail('ERP_BINDING_MISMATCH',502);
   return message;
  }
- return{health:()=>call('health'),ingest:event=>call('ingest_sale',{event}),receipt:externalId=>call('receipt',{external_id:externalId})};
+ return{health:async()=>{const value=await call('health');return{protocol:value.protocol,siteId:value.siteId,company:value.company,draftJournal:value.draftJournal===true,hrmsInstalled:value.hrmsInstalled===true,payroll:value.payroll===true,scheduling:value.scheduling===true}},ingest:event=>call('ingest_sale',{event}),receipt:externalId=>call('receipt',{external_id:externalId})};
 }
 export const erpEventHash=event=>crypto.createHash('sha256').update(JSON.stringify(event)).digest('hex');
 export function settledSaleEvent(transaction,siteId,timeZone='America/Puerto_Rico'){
  if(transaction?.siteId!==siteId)throw fail('ERP_SOURCE_TENANT_MISMATCH',403);
  if(!['paid','paid_in_person','partially_refunded','refunded'].includes(transaction.paymentStatus))return null;
+ if(['partially_refunded','refunded'].includes(transaction.paymentStatus)||Number(transaction.refundedAmount||0)>0)throw fail('ERP_SOURCE_REQUIRES_RECONCILIATION',409);
  if(!transaction.transactionId||!transaction.paidAt)return null;
  if(!Number.isFinite(Date.parse(transaction.paidAt)))throw fail('ERP_SOURCE_REQUIRES_RECONCILIATION',409);
  const total=transaction.amountTotal,tax=transaction.tax||0,tip=transaction.tip||0;

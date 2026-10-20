@@ -1,4 +1,5 @@
 import {erpEventHash,settledSaleEvent} from './erp-connector.mjs';
+import crypto from 'node:crypto';
 const fail=(message,status=409)=>Object.assign(new Error(message),{status});
 export const erpOutboxKey=event=>`${event.siteId}/erp/outbox/${erpEventHash({externalId:event.externalId})}.json`;
 export async function enqueueErpEvent(store,event,now=Date.now()){
@@ -13,9 +14,9 @@ export async function deliverErpEvent(store,key,siteId,connector,now=Date.now())
  const saved=await store.getWithMetadata(key,{type:'json'});if(!saved?.etag)throw fail('ERP concurrency metadata unavailable.',503);
  const record=saved.data;if(record.siteId!==siteId||record.event.siteId!==siteId||!key.startsWith(`${siteId}/erp/outbox/`))throw fail('ERP tenant mismatch.',403);
  if(record.state==='confirmed'||record.state==='dead_letter'||record.nextAttemptAt>now||record.state==='processing'&&record.leaseUntil>now)return record;
- const claimed={...record,state:'processing',attempts:record.attempts+1,leaseUntil:now+30000};
+ const claimed={...record,state:'processing',attempts:record.attempts+1,leaseId:crypto.randomUUID(),leaseUntil:now+30000};
  if(!(await store.setJSON(key,claimed,{onlyIfMatch:saved.etag})).modified)throw fail('ERP job already claimed.');
- const lease=await store.getWithMetadata(key,{type:'json'});if(!lease?.etag)throw fail('ERP job lease unavailable.',503);
+ const lease=await store.getWithMetadata(key,{type:'json'});if(!lease?.etag)throw fail('ERP job lease unavailable.',503);if(lease.data.leaseId!==claimed.leaseId)throw fail('ERP delivery lease changed.');
  let next;
  try{
   const receipt=await connector.ingest(record.event);

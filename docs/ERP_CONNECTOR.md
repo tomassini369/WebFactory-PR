@@ -65,7 +65,9 @@ No scheduler or automatic activation is added. The scanner refuses more than
 Refund component allocation, stock valuation/adjustment, definitive posting,
 period closing, AP/AR/purchases/formal statements, HRMS schedules/leave and fiscal
 payroll are NOT operational in this slice. Existing refund estimates cannot
-become formal reversals. No invented split is sent to ERP. Scheduling/payroll
+become formal reversals. Refunded/partially refunded source records fail closed
+with ERP_SOURCE_REQUIRES_RECONCILIATION; no original sale is newly delivered
+without reviewing the missing reversal. No invented split is sent to ERP. Scheduling/payroll
 remain unavailable in the UI/backend until implemented and validated.
 
 ## Staging acceptance and rollback
