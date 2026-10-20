@@ -304,6 +304,25 @@ jobs:
             node scripts/report-kiosk-ci-error.mjs /tmp/unified-preview-build.log build
             exit 1
           }
+      - name: Check deployed financial authentication and CSRF boundaries
+        env:
+          PREVIEW_URL: https://deploy-preview-${{ github.event.pull_request.number }}--webfactorypr.netlify.app
+        run: node scripts/accounting-access-http-smoke.mjs
+      - name: Check deployed Accounting Access with isolated browser handlers
+        env:
+          QA_ORIGIN: https://deploy-preview-${{ github.event.pull_request.number }}--webfactorypr.netlify.app
+          QA_WIDTHS: 390,1440
+        run: |
+          for engine in chromium webkit; do
+            phase="accounting-$engine"
+            log="/tmp/$phase-preview.log"
+            if ! QA_ENGINE="$engine" QA_PORT=5312 node scripts/browser-accounting-access-smoke.mjs > "$log" 2>&1; then
+              cat "$log"
+              node scripts/report-kiosk-ci-error.mjs "$log" "$phase"
+              exit 1
+            fi
+            cat "$log"
+          done
       - name: Check deployed login and MFA text contrast with isolated sessions
         env:
           QA_ORIGIN: https://deploy-preview-${{ github.event.pull_request.number }}--webfactorypr.netlify.app
@@ -429,17 +448,6 @@ jobs:
         env:
           PREVIEW_URL: https://deploy-preview-${{ github.event.pull_request.number }}--webfactorypr.netlify.app
         run: node scripts/public-site-link-http-smoke.mjs
-      - name: Check deployed Accounting Access with isolated browser handlers
-        env:
-          QA_ORIGIN: https://deploy-preview-${{ github.event.pull_request.number }}--webfactorypr.netlify.app
-          QA_WIDTHS: 390,1440
-        run: |
-          QA_PORT=5312 node scripts/browser-accounting-access-smoke.mjs
-          QA_ENGINE=webkit QA_PORT=5313 node scripts/browser-accounting-access-smoke.mjs
-      - name: Check deployed financial authentication and CSRF boundaries
-        env:
-          PREVIEW_URL: https://deploy-preview-${{ github.event.pull_request.number }}--webfactorypr.netlify.app
-        run: node scripts/accounting-access-http-smoke.mjs
       - name: Check deployed public URL editor on Chromium and WebKit with isolated fixtures
         env:
           QA_ORIGIN: https://deploy-preview-${{ github.event.pull_request.number }}--webfactorypr.netlify.app
