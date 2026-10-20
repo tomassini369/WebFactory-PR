@@ -3,7 +3,7 @@ import crypto from "node:crypto";
 import { claimPublicSiteSlug, renamePublicSiteSlug } from "./client-site-slug.mjs";
 import { getDeployStore, getStore } from "@netlify/blobs";
 import {protectAccountingState} from './accounting-access.mjs';
-import {currentIndexedSites,repairMemberIndex} from './member-index.mjs';
+import {currentIndexedSites,repairMemberIndex,changedMembershipEmails} from './member-index.mjs';
 import { cleanText } from "./platform-utils.mjs";
 
 function isProduction() {
@@ -94,7 +94,7 @@ export async function saveClientSite(site,{financialMutation=false}={}) {
     }
   }else if(site.stockOperations||site.stockReservations||site.inventoryArchive)throw Object.assign(new Error('Inventory markers cannot be supplied when creating a business.'),{status:400});
   // All site writers respect existing aliases, including provisioning and edits.
-  const indexedEmails=new Set([...(previous?.data?.members||[]),...(site.members||[])].map(member=>normalizeEmail(member.email)).filter(Boolean));
+  const indexedEmails=changedMembershipEmails(previous?.data?.members||[],site.members||[]);
   // Seed discoverability before the canonical CAS. A failed grant leaves only
   // an inert projection (readers revalidate membership). A successful grant
   // cannot become invisible if its post-commit projection refresh fails.

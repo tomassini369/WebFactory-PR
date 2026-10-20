@@ -1,7 +1,12 @@
 import crypto from 'node:crypto';
+import {isDeepStrictEqual} from 'node:util';
 import {activeMembership} from './financial-permissions.mjs';
 
 const normalized=value=>String(value||'').trim().toLowerCase();
+export function changedMembershipEmails(before=[],after=[]){
+ const previous=new Map(before.map(member=>[normalized(member.email),member])),next=new Map(after.map(member=>[normalized(member.email),member]));
+ return [...new Set([...previous.keys(),...next.keys()])].filter(email=>email&&!isDeepStrictEqual(previous.get(email),next.get(email)));
+}
 export const memberIndexKey=(email,siteId)=>`members/${crypto.createHash('sha256').update(normalized(email)).digest('hex')}/${siteId}.json`;
 const currentMember=(site,email)=>site&&!site.deletedAt&&site.status!=='deleted'&&(site.members||[]).find(m=>normalized(m.email)===email&&activeMembership(m));
 

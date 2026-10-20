@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {currentIndexedSites,repairMemberIndex,memberIndexKey} from './member-index.mjs';
+import {currentIndexedSites,repairMemberIndex,memberIndexKey,changedMembershipEmails} from './member-index.mjs';
 function fixture(){
  const data=new Map(),etags=new Map();
  const store={get:async key=>structuredClone(data.get(key)||null),getWithMetadata:async key=>data.has(key)?{data:structuredClone(data.get(key)),etag:String(etags.get(key)||1)}:null,list:async function*({prefix}){for(const key of data.keys())if(key.startsWith(prefix))yield{blobs:[{key}]};},setJSON:async(key,value,options)=>{
@@ -8,6 +8,13 @@ function fixture(){
   data.set(key,structuredClone(value));etags.set(key,(etags.get(key)||1)+1);return{modified:true};
  }};return{data,store};
 }
+test('catalog/design saves do not refresh unchanged membership indexes; grants and revocations refresh only affected emails',()=>{
+ const members=[{email:'owner@example.com',role:'owner'},{email:'a@example.com',role:'accountant',financialPermissions:['accounting.view']}];
+ assert.deepEqual(changedMembershipEmails(members,structuredClone(members)),[]);
+ assert.deepEqual(changedMembershipEmails(members,[members[0]]),['a@example.com']);
+ assert.deepEqual(changedMembershipEmails(members,[members[0],{...members[1],suspendedAt:'now'}]),['a@example.com']);
+ assert.deepEqual(changedMembershipEmails([],[members[0]]),['owner@example.com']);
+});
 test('stale and paginated indexes never expose revoked, suspended, deleted or foreign businesses',async()=>{
  const {data,store}=fixture();const email='accountant@example.com';
  for(const id of ['a','b','c','d','e'])data.set(memberIndexKey(email,id),{email,siteId:id});

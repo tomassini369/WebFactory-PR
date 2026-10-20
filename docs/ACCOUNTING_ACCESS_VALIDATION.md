@@ -7,7 +7,7 @@ Preview: https://deploy-preview-120--webfactorypr.netlify.app
 
 ## Executed locally
 
-- npm test: 638 passed; no skipped tests.
+- npm test: 639 passed; no skipped tests.
 - npm run build: passed with Node 22, including application TypeScript check.
 - Chromium Accounting Access: 28 viewport/theme/language combinations, plus
   authenticated same-email invitation review/acceptance, read-only mutation
@@ -36,6 +36,8 @@ Preview: https://deploy-preview-120--webfactorypr.netlify.app
   revalidation plus CAS projections/tombstones now prevent disclosure.
 - A grant could commit before index refresh failed: pre-commit inert projection
   keeps accepted memberships discoverable without granting access prematurely.
+  Only changed memberships refresh their index; catalog/design edits do not
+  generate per-member projection reads/writes.
 - Legacy member forms could erase financial fields: server-owned protection and
   dedicated audited grant mutations preserve authorization.
 - Wage data could be inferred through summaries/CSV: JSON and CSV redact rates,
