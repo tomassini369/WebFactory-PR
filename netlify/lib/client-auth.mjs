@@ -1,3 +1,4 @@
+import {activeMembership, commercialCapabilities, COMMERCIAL_ROLES} from "./commercial-access.mjs";
 import { getUser } from "@netlify/identity";
 import { getClientSite, normalizeEmail, sitesForEmail } from "./client-store.mjs";
 import { assertSecondFactor } from "./mfa-security.mjs";
@@ -45,13 +46,15 @@ export function isPlatformAdmin(user, ownerEmail = env("WEBFACTORY_ADMIN_EMAIL")
 }
 
 // Membership is resolved from the authenticated identity, never from request fields.
-export function authorizeSiteUser(user, site, roles = ["owner", "manager", "employee", "cashier"]) {
+export function authorizeSiteUser(user, site, roles = COMMERCIAL_ROLES) {
   const email = normalizeEmail(user?.email);
-  const membership = (site?.members || []).find(member => normalizeEmail(member.email) === email);
-  if (!email || (!isPlatformAdmin(user) && (!membership || !roles.includes(membership.role)))) {
-    throw Object.assign(new Error("You do not have access to this business."), { status: 403 });
+  const membership = (site?.members || []).find(member => normalizeEmail(member.email) === email && activeMembership(member));
+  if (!site || site.deletedAt || site.status === "deleted") throw Object.assign(new Error("Business unavailable."), {status:403});
+  if (!isPlatformAdmin(user) && membership?.userId && membership.userId !== user.id) throw Object.assign(new Error("Portal identity does not match this membership."), {status:403});
+  if (!email || (!isPlatformAdmin(user) && (!membership || !COMMERCIAL_ROLES.includes(membership.role) || !roles.includes(membership.role)))) {
+    throw Object.assign(new Error("You do not have access to this business. Legacy roles require owner review / Los accesos heredados requieren revisión del Dueño."), { status: 403 });
   }
-  return { user, site, membership: membership || { email, role: "admin" } };
+  return { user, site, membership: isPlatformAdmin(user) ? { email, role: "admin", platform: true } : membership };
 }
 
 export async function requirePlatformAdmin() {
@@ -71,10 +74,10 @@ export async function requirePlatformAdmin() {
 export async function authorizedSites() {
   const user = await requireClientUser();
   const sites = await sitesForEmail(user.email);
-  return { user, sites };
+  return { user, sites:sites.filter(site=>{try{authorizeSiteUser(user,site);return true}catch{return false}}) };
 }
 
-export async function requireSiteAccess(siteId, roles = ["owner", "manager", "employee", "cashier"]) {
+export async function requireSiteAccess(siteId, roles = COMMERCIAL_ROLES) {
   if (authorizedAction() && authorizedAction().siteId !== siteId) {
     throw Object.assign(new Error("Cross-business access denied."), { status: 403 });
   }
@@ -89,25 +92,12 @@ export async function requireSiteAccess(siteId, roles = ["owner", "manager", "em
 }
 
 
-export const SITE_ROLE_CAPABILITIES = {
-  owner: ["overview","website","share","orders","bookings","customers","catalog","employees","payments","pos","marketing","analytics","integrations","settings","billing","refunds","kitchen"],
-  manager: ["overview","website","share","orders","bookings","customers","catalog","employees","payments","pos","marketing","analytics","integrations","settings","refunds","kitchen"],
-  employee: ["overview","share","bookings","customers","kitchen"],
-  cashier: ["overview","share","orders","customers","payments","pos","kitchen"],
-  staff: ["overview","share"],
-  admin: ["overview","website","orders","bookings","customers","catalog","employees","payments","pos","marketing","analytics","integrations","settings","billing","refunds"],
-};
-
-export function siteRoleCapabilities(role = "") {
-  return Object.hasOwn(SITE_ROLE_CAPABILITIES, role) ? SITE_ROLE_CAPABILITIES[role] : [];
-}
-
-export function membershipHasCapability(membership, capability) {
-  return siteRoleCapabilities(membership?.role || "").includes(capability);
-}
+export const SITE_ROLE_CAPABILITIES = Object.freeze({owner:commercialCapabilities({role:'owner'}),employee:commercialCapabilities({role:'employee'})});
+export function siteRoleCapabilities(role = '') { return commercialCapabilities({role}); }
+export function membershipHasCapability(membership, capability) { return commercialCapabilities(membership).includes(capability); }
 
 export async function requireSiteCapability(siteId, capability) {
-  const result = await requireSiteAccess(siteId, ["owner","manager","employee","cashier"]);
+  const result = await requireSiteAccess(siteId, COMMERCIAL_ROLES);
   if (!membershipHasCapability(result.membership, capability)) {
     const error = new Error("This role does not have permission for this action.");
     error.status = 403;

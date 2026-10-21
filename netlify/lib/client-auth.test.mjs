@@ -8,24 +8,14 @@ test("owner has billing and refund access", () => {
   assert.ok(caps.includes("refunds"));
 });
 
-test("manager can operate business but cannot manage billing", () => {
-  const caps = siteRoleCapabilities("manager");
-  assert.ok(caps.includes("orders"));
-  assert.ok(caps.includes("payments"));
-  assert.ok(caps.includes("refunds"));
-  assert.equal(caps.includes("billing"), false);
+test("legacy roles grant no commercial permissions until owner-confirmed migration", () => {
+ for(const role of ['manager','cashier','staff','accountant'])assert.deepEqual(siteRoleCapabilities(role),[]);
 });
-
-test("employee can manage assigned bookings, kitchen orders and customer work", () => {
-  const caps = siteRoleCapabilities("employee");
-  assert.deepEqual(caps, ["overview","share","bookings","customers","kitchen"]);
-});
-
-test("cashier can use POS but cannot refund or edit catalog", () => {
-  assert.equal(membershipHasCapability({ role: "cashier" }, "pos"), true);
-  assert.equal(membershipHasCapability({ role: "cashier" }, "payments"), true);
-  assert.equal(membershipHasCapability({ role: "cashier" }, "refunds"), false);
-  assert.equal(membershipHasCapability({ role: "cashier" }, "catalog"), false);
+test("employee defaults to own appointments, with independent optional POS and collection grants", () => {
+ assert.deepEqual(siteRoleCapabilities('employee'),['overview','bookings']);
+ assert.equal(membershipHasCapability({role:'employee',permissions:{pos:true}},'pos'),true);
+ assert.equal(membershipHasCapability({role:'employee',permissions:{pos:true}},'collect'),false);
+ assert.equal(membershipHasCapability({role:'employee',permissions:{collect:true}},'payments'),false);
 });
 
 test("unknown or missing roles have no permissions", () => {
@@ -38,11 +28,7 @@ test("unknown or missing roles have no permissions", () => {
   }
 });
 
-test("every client role can view and share its public business QR", () => {
-  for (const role of ["owner", "manager", "employee", "cashier", "staff"]) {
-    assert.equal(membershipHasCapability({ role }, "share"), true);
-  }
-});
+test("business sharing is an owner capability",()=>{assert(membershipHasCapability({role:'owner'},'share'));assert(!membershipHasCapability({role:'employee'},'share'));});
 
 test("cross-business access and missing membership roles are denied", () => {
   const user = { email: "owner@example.com" };

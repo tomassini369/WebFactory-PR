@@ -6,7 +6,7 @@ import {getStore} from '@netlify/blobs';
 import {clientSiteStore,clientCommerceStore,clientOAuthStore,commerceKey} from './client-store.mjs';
 import {bookingVersion,changePrivateBooking,finishBookingChange,canManageBooking} from './booking-management.mjs';
 import {renderBookingEmail,safeWebUrl} from './booking-email-template.mjs';
-import {createBookingHold,availabilityForDate} from './booking-engine.mjs';
+import {createBookingHold,availabilityForDate,availabilityForMonth} from './booking-engine.mjs';
 import {syncBookingCalendar} from './booking-calendar.mjs';
 import {encryptToken} from './google-calendar.mjs';
 import manage from '../functions/manage-booking.mjs';
@@ -78,4 +78,28 @@ test('Google-invited customer rescheduling does not attach a second standalone c
  assert.equal(f.mails.length,2);
  assert.equal(f.mails[0].attachments,undefined);
  assert.doesNotMatch(f.mails[0].html,/Add to calendar|Añadir al calendario/);
+});
+
+test('daily, monthly and locked confirmation enforce daily caps, time off, appointment breaks, buffers and cancelled capacity',async t=>{
+ const f=fixture(t);await f.prepare();f.site.employees[0].dailyLimit=1;
+ assert.deepEqual(await availabilityForDate(f.site,'haircut','alex',f.date,'one'),[]);
+ assert.equal((await availabilityForMonth(f.site,'haircut','alex',f.date.slice(0,7),'one'))[f.date],undefined);
+ await assert.rejects(createBookingHold(f.site,{serviceId:'haircut',employeeId:'alex',locationId:'one',start:f.date+'T15:00:00Z'}),{status:409});
+ await f.store.setJSON(f.key,{...f.record,status:'cancelled'});
+ assert((await availabilityForDate(f.site,'haircut','alex',f.date,'one')).length>0);
+ f.site.employees[0].timeOff=[{start:f.date,end:f.date}];
+ assert.equal((await availabilityForDate(f.site,'haircut','alex',f.date,'one')).length,0);
+ await assert.rejects(createBookingHold(f.site,{serviceId:'haircut',employeeId:'alex',locationId:'one',start:f.date+'T15:00:00Z'}),{status:409});
+ f.site.employees[0].timeOff=[];f.site.employees[0].dailyLimit=8;
+ f.site.employees[0].schedule={Monday:{enabled:true,open:'10:00',close:'18:00',breaks:[{start:'12:00',end:'13:00'}]}};
+ f.site.catalog[0].bufferMinutes=30;
+ const slots=await availabilityForDate(f.site,'haircut','alex',f.date,'one');
+ assert.equal(slots[0].start,f.date+'T14:00:00.000Z');assert(slots.every(slot=>Date.parse(slot.end)+30*60000<=Date.parse(f.date+'T21:00:00Z')));
+ assert(!slots.some(slot=>slot.start===f.date+'T16:00:00.000Z'));
+ await assert.rejects(createBookingHold(f.site,{serviceId:'haircut',employeeId:'alex',locationId:'other',start:f.date+'T15:00:00Z'}),{status:404});
+ await assert.rejects(createBookingHold(f.site,{serviceId:'unassigned',employeeId:'alex',locationId:'one',start:f.date+'T15:00:00Z'}),{status:404});
+});
+test('Google failure blocks daily, monthly and final confirmation equally',async t=>{
+ const f=fixture(t);await f.prepare();f.site.googleCalendar={connected:true};f.site.employees[0].calendarId='external-calendar';
+ for(const operation of [()=>availabilityForDate(f.site,'haircut','alex',f.date,'one'),()=>availabilityForMonth(f.site,'haircut','alex',f.date.slice(0,7),'one'),()=>createBookingHold(f.site,{serviceId:'haircut',employeeId:'alex',locationId:'one',start:f.date+'T15:00:00Z'},{strictGoogle:false})])await assert.rejects(operation(),{status:503});
 });

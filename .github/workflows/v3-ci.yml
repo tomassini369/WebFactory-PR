@@ -10,9 +10,13 @@ on:
       - main
 
 jobs:
-  verify:
+  verify-suite:
     runs-on: ubuntu-latest
-    timeout-minutes: 55
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        suite: [core, commerce, experience]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -24,6 +28,7 @@ jobs:
       - name: Install
         run: npm ci
       - name: Test
+        if: matrix.suite == 'core'
         run: npm test
       - name: Build
         run: npm run build
@@ -31,7 +36,30 @@ jobs:
         run: npx playwright install --with-deps --only-shell chromium
       - name: Install WebKit for mobile FAQ QA
         run: npx playwright install --with-deps webkit
+      - name: Check sidebar destinations, location drafts and redesign plan access
+        if: matrix.suite == 'core'
+        run: |
+          phase="portal-menu"
+          log="/tmp/$phase.log"
+          if ! node scripts/browser-portal-menu-destinations-smoke.mjs > "$log" 2>&1; then
+            cat "$log"
+            node scripts/report-kiosk-ci-error.mjs "$log" "$phase"
+            exit 1
+          fi
+          cat "$log"
+      - name: Check portal workspaces, mobile menus and navigation transitions
+        if: matrix.suite == 'core'
+        run: |
+          phase="portal-workspace"
+          log="/tmp/$phase.log"
+          if ! node scripts/browser-portal-workspace-glass-smoke.mjs > "$log" 2>&1; then
+            cat "$log"
+            node scripts/report-kiosk-ci-error.mjs "$log" "$phase"
+            exit 1
+          fi
+          cat "$log"
       - name: Check login and MFA text contrast on Chromium and WebKit
+        if: matrix.suite == 'core'
         run: |
           for engine in chromium webkit; do
             phase="auth-contrast-$engine"
@@ -44,7 +72,7 @@ jobs:
             cat "$log"
           done
       - name: Save login contrast browser evidence
-        if: always()
+        if: always() && matrix.suite == 'core'
         uses: actions/upload-artifact@v4
         with:
           name: auth-contrast-browser-evidence
@@ -52,19 +80,29 @@ jobs:
             /tmp/webfactory-auth-contrast/
             /tmp/auth-contrast-*.log
           if-no-files-found: ignore
-      - name: Check Workforce identity, clock controls and responsive review
+      - name: Check Owner/Employee portal and safe workforce retirement
+        if: matrix.suite == 'core'
         env:
           QA_BUILT: 1
           QA_PORT: 5222
         run: node scripts/browser-workforce-smoke.mjs
-      - name: Check Workforce on touch WebKit
+      - name: Check Owner/Employee portal on touch WebKit
+        if: matrix.suite == 'core'
         env:
           QA_BUILT: 1
           QA_ENGINE: webkit
           QA_PORT: 5223
           QA_WIDTHS: 320,375,390,430
         run: node scripts/browser-workforce-smoke.mjs
+      - name: Save commercial access browser evidence
+        if: always() && matrix.suite == 'core'
+        uses: actions/upload-artifact@v4
+        with:
+          name: commercial-access-browser-evidence
+          path: /tmp/webfactory-commercial-access/
+          if-no-files-found: ignore
       - name: Check interactive platform training, roles and safe practice
+        if: matrix.suite == 'core'
         run: |
           for engine in chromium webkit; do
             phase="training-$engine"
@@ -77,7 +115,7 @@ jobs:
             cat "$log"
           done
       - name: Save training browser evidence
-        if: always()
+        if: always() && matrix.suite == 'core'
         uses: actions/upload-artifact@v4
         with:
           name: training-browser-evidence
@@ -86,18 +124,24 @@ jobs:
             /tmp/training-*.log
           if-no-files-found: ignore
       - name: Check unified workspace hierarchy, disclosures and Builder state
+        if: matrix.suite == 'experience'
         run: |
           node scripts/browser-workspace-experience-smoke.mjs
           node scripts/browser-admin-experience-smoke.mjs
       - name: Check portal route transitions and template Home controls
+        if: matrix.suite == 'experience'
         run: node scripts/browser-route-transitions-smoke.mjs
       - name: Check stable authentication cards, keyboard and mobile hero
+        if: matrix.suite == 'experience'
         run: node scripts/browser-auth-stability-smoke.mjs
       - name: Check initial login visibility, locale handoff and failure states
+        if: matrix.suite == 'experience'
         run: node scripts/browser-auth-usability-smoke.mjs
       - name: Check Home FAQ desktop/mobile, themes and languages
+        if: matrix.suite == 'experience'
         run: node scripts/browser-home-faq-smoke.mjs
       - name: Check POS 2.0 responsive checkout and retry protection
+        if: matrix.suite == 'commerce'
         env:
           QA_BUILT: 1
         run: |
@@ -110,6 +154,7 @@ jobs:
           fi
           cat "$log"
       - name: Check POS 2.0 on touch WebKit
+        if: matrix.suite == 'commerce'
         env:
           QA_BUILT: 1
           QA_ENGINE: webkit
@@ -125,27 +170,47 @@ jobs:
           fi
           cat "$log"
       - name: Check business profiles, POS module permissions and settings on Chromium
+        if: matrix.suite == 'commerce'
         env:
           QA_PORT: 5244
-        run: node scripts/browser-pos-capabilities-smoke.mjs
+        run: |
+          log="/tmp/capabilities-chromium.log"
+          if ! node scripts/browser-pos-capabilities-smoke.mjs > "$log" 2>&1; then
+            cat "$log"
+            node scripts/report-kiosk-ci-error.mjs "$log" capabilities-chromium
+            exit 1
+          fi
+          cat "$log"
       - name: Check business profiles, POS module permissions and settings on WebKit
+        if: matrix.suite == 'commerce'
         env:
           QA_ENGINE: webkit
           QA_PORT: 5245
-        run: node scripts/browser-pos-capabilities-smoke.mjs
+        run: |
+          log="/tmp/capabilities-webkit.log"
+          if ! node scripts/browser-pos-capabilities-smoke.mjs > "$log" 2>&1; then
+            cat "$log"
+            node scripts/report-kiosk-ci-error.mjs "$log" capabilities-webkit
+            exit 1
+          fi
+          cat "$log"
       - name: Check editable public URLs, aliases and mobile accessibility on Chromium
+        if: matrix.suite == 'commerce'
         run: node scripts/browser-public-site-link-smoke.mjs
       - name: Check editable public URLs and safe retry on touch WebKit
+        if: matrix.suite == 'commerce'
         env:
           QA_ENGINE: webkit
           QA_PORT: 5261
         run: node scripts/browser-public-site-link-smoke.mjs
       - name: Check Customer Display pairing, privacy and two-device sale
+        if: matrix.suite == 'commerce'
         env:
           QA_BUILT: 1
           QA_PORT: 5224
         run: node scripts/browser-customer-display-smoke.mjs
       - name: Check Customer Display on touch WebKit
+        if: matrix.suite == 'commerce'
         env:
           QA_BUILT: 1
           QA_ENGINE: webkit
@@ -153,46 +218,81 @@ jobs:
           QA_WIDTHS: 320,375,390,430
         run: node scripts/browser-customer-display-smoke.mjs
       - name: Check homepage responsive controls, tour and demos
+        if: matrix.suite == 'experience'
         run: node scripts/browser-home-evolution-smoke.mjs
       - name: Check all template renderers and saved storefront data
+        if: matrix.suite == 'experience'
         run: node scripts/test-template-layout.mjs
       - name: Check template library and Builder responsive parity
+        if: matrix.suite == 'experience'
         run: node scripts/browser-template-workspace-smoke.mjs
       - name: Check shared glass composition and motion
+        if: matrix.suite == 'experience'
         run: node scripts/browser-template-glass-smoke.mjs
       - name: Check kiosk pairing, privacy, checkout and mobile layouts on Chromium
+        if: matrix.suite == 'commerce'
         run: node scripts/browser-kiosk-smoke.mjs
       - name: Check kiosk pairing, privacy, checkout and mobile layouts on WebKit
+        if: matrix.suite == 'commerce'
         env:
           QA_ENGINE: webkit
           QA_PORT: 5227
         run: node scripts/browser-kiosk-smoke.mjs
       - name: Check spatial highlights on Chromium and WebKit
+        if: matrix.suite == 'experience'
         run: node scripts/browser-spatial-carousel-smoke.mjs
       - name: Check functions for every template and language
+        if: matrix.suite == 'experience'
         run: node scripts/browser-template-functions-smoke.mjs
       - name: Check Builder cart and draft interactions
+        if: matrix.suite == 'experience'
         run: node scripts/browser-interactions-smoke.mjs
       - name: Check ChatGPT configuration on mobile and desktop
+        if: matrix.suite == 'experience'
         run: node scripts/browser-chatgpt-ui-smoke.mjs
       - name: Check installed Shadcn components on desktop and mobile
+        if: matrix.suite == 'experience'
         run: node scripts/browser-shadcn-smoke.mjs
       - name: Check floating portal login cards and return controls
+        if: matrix.suite == 'experience'
         run: node scripts/browser-portal-glass-smoke.mjs
-      - name: Check portal workspaces, mobile menus and navigation transitions
-        run: node scripts/browser-portal-workspace-glass-smoke.mjs
-      - name: Check sidebar destinations, location drafts and redesign plan access
-        run: node scripts/browser-portal-menu-destinations-smoke.mjs
       - name: Check receipt presentation and cart flight without changing commerce
+        if: matrix.suite == 'commerce'
         run: node scripts/browser-reference-styles-smoke.mjs
       - name: Check automatic buyer receipts, demo isolation, PDF and printing
+        if: matrix.suite == 'commerce'
         run: node scripts/browser-buyer-receipt-smoke.mjs
       - name: Check portal login fields on desktop and mobile
+        if: matrix.suite == 'experience'
         run: node scripts/browser-login-layout-smoke.mjs
       - name: Check panel keyboard navigation
+        if: matrix.suite == 'experience'
         run: node scripts/browser-accessibility-smoke.mjs
       - name: Check email previews on mobile and desktop
+        if: matrix.suite == 'experience'
         run: node scripts/browser-email-smoke.mjs
+      - name: Save portal navigation failure evidence
+        if: failure() && matrix.suite == 'core'
+        uses: actions/upload-artifact@v4
+        with:
+          name: portal-navigation-failure-evidence
+          path: |
+            /tmp/portal-workspace.log
+            /tmp/portal-menu.log
+            /tmp/webfactory-portal-workspace-failure.png
+          if-no-files-found: ignore
+
+  # Preserve the existing required check name while all suites finish independently.
+  verify:
+    needs: verify-suite
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Require every verification suite to pass
+        env:
+          SUITE_RESULT: ${{ needs.verify-suite.result }}
+        run: test "$SUITE_RESULT" = success
 
   kiosk-bookings:
     runs-on: ubuntu-latest
@@ -293,6 +393,23 @@ jobs:
             node scripts/report-kiosk-ci-error.mjs /tmp/unified-preview-build.log build
             exit 1
           }
+      - name: Check deployed commercial authentication boundaries
+        env:
+          PREVIEW_URL: https://deploy-preview-${{ github.event.pull_request.number }}--webfactorypr.netlify.app
+        run: node scripts/commercial-access-http-smoke.mjs
+      - name: Check deployed Owner Employee portal with isolated fixtures
+        env:
+          QA_ORIGIN: https://deploy-preview-${{ github.event.pull_request.number }}--webfactorypr.netlify.app
+          QA_WIDTHS: 390,1440
+        run: |
+          QA_PORT=5322 node scripts/browser-commercial-access-smoke.mjs
+          QA_ENGINE=webkit QA_PORT=5323 node scripts/browser-commercial-access-smoke.mjs
+      - name: Check existing isolated phone review without real business data
+        env:
+          QA_ORIGIN: https://deploy-preview-${{ github.event.pull_request.number }}--webfactorypr.netlify.app
+        run: |
+          QA_PORT=5333 node scripts/browser-commercial-review-smoke.mjs
+          QA_ENGINE=webkit QA_PORT=5334 node scripts/browser-commercial-review-smoke.mjs
       - name: Check deployed login and MFA text contrast with isolated sessions
         env:
           QA_ORIGIN: https://deploy-preview-${{ github.event.pull_request.number }}--webfactorypr.netlify.app

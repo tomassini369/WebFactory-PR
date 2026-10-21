@@ -25,7 +25,7 @@ export function createCustomerDisplayHandler({authorize=requireSiteCapability,ge
     }
    }else if(!matchesDisplayToken(deviceToken,state.deviceHash))throw displayFail('Screen not paired.',401);
    const site=await getSite(state.siteId);const member=site?.members?.find(x=>String(x.email).toLowerCase()===state.email);
-   if(!site||!membershipHasCapability(member,'pos'))throw displayFail('Cashier access revoked / Acceso del cajero revocado.',403);
+   if(!site||!membershipHasCapability(member,'pos')||member.userId&&member.userId!==state.actor)throw displayFail('Cashier access revoked / Acceso del cajero revocado.',403);
    const body=await publicDisplayView(store,state,site,now);
    return Response.json({ok:true,...body},{headers:{...headers,...(responseCookie?{'Set-Cookie':responseCookie}:{})}});
   }

@@ -111,7 +111,7 @@ export async function performCheckout(req, { kiosk = false, balanceBooking = nul
       const service = (site.catalog || []).find((item) => item.id === payload.booking.serviceId && item.type === "service" && item.requiresAppointment && item.active !== false);
       const employee = (site.employees || []).find((member) => member.id === payload.booking.employeeId && member.active !== false && (member.serviceIds || []).includes(service?.id) && (!locations.length || (locationId && (member.locationIds || []).includes(locationId))));
       if (!service || !employee) throw Object.assign(new Error("The selected service or employee is unavailable."), { status: 409 });
-      hold = await createBookingHold(site, { ...payload.booking, locationId },{strictGoogle:kiosk});
+      hold = await createBookingHold(site, { ...payload.booking, locationId },{strictGoogle:true});
       const fullAmount = Math.round(Number(service.price) * 100);
       const unitAmount = site.paymentRules?.bookingPayment === "deposit"
         ? Math.round(fullAmount * Number(site.paymentRules?.bookingDepositPercent || 25) / 100)

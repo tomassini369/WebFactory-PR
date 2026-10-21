@@ -7,7 +7,7 @@ const copy = value => structuredClone(value)
 const json = (value, status = 200) => new Response(JSON.stringify(value), {status, headers: {'Content-Type': 'application/json'}})
 const fail = (message, status = 400) => Object.assign(new Error(message), {status})
 const text = value => typeof value === 'string' ? value.trim().slice(0, 300) : ''
-const adminRoles = new Set(['owner', 'admin', 'manager'])
+const adminRoles = new Set(['owner', 'admin'])
 const accountingRoles = new Set(['owner', 'admin'])
 const safeColor = (color, fallback) => /^#[a-f\d]{6}$/i.test(color || '') ? color : fallback
 const sampleProduct = {id:'practice-product',type:'product',name:'Practice product',nameEn:'Practice product',nameEs:'Producto de práctica',description:'Sample only',descriptionEn:'Sample only',descriptionEs:'Solo ejemplo',price:12,active:true,inventory:20,trackInventory:true,requiresAppointment:false,duration:30,bufferMinutes:0}
@@ -16,7 +16,7 @@ const sampleService = {...sampleProduct,id:'practice-service',type:'service',nam
 export function createPracticeRuntime(options) {
  const clock = options.now || Date.now
  const siteId = 'wf-practice-' + crypto.randomUUID()
- const role = ['owner','admin','manager','cashier','employee'].includes(options.role) ? options.role : 'employee'
+ const role = ['owner','admin','employee'].includes(options.role) ? options.role : 'employee'
  const capabilities = [...new Set((options.capabilities || []).filter(value => typeof value === 'string'))]
  const listeners = new Set()
  const admin = adminRoles.has(role)
@@ -65,7 +65,7 @@ export function createPracticeRuntime(options) {
  const process = (name, method, query, body) => {
   const writing = method !== 'GET'
   if (name==='client-admin') {
-   if (!writing) return query.has('siteId') ? {ok:true,site:copy(site),membership:{role,capabilities},posOperations:state.operations} : {ok:true,sites:[{siteId,slug:site.slug,businessName:site.business.name,status:'draft'}]}
+   if (!writing) return query.has('siteId') ? {ok:true,site:copy(site),membership:{role,capabilities,employeeId:'practice-employee',permissions:{pos:capabilities.includes('pos'),collect:capabilities.includes('collect')},locationIds:['practice-location']},posOperations:state.operations} : {ok:true,sites:[{siteId,slug:site.slug,businessName:site.business.name,status:'draft'}]}
    const map={business:'overview',catalog:'catalog',employees:'employees',hours:'website',slug:'website',settings:'settings',paymentRules:'payments',reviewSettings:'marketing'}
    if (!map[body.section]) throw fail('This action is not available in practice. / Acción no disponible en práctica.',403)
    requireCapability(map[body.section]);requireAdmin()
@@ -81,18 +81,19 @@ export function createPracticeRuntime(options) {
    else site[body.section]=copy(body.value)
    site.revision++;emit('saved.'+body.section,{site});return {ok:true,site:copy(site)}
   }
+  if(name==='client-professional'&&!writing){if(!admin&&!capabilities.includes('availabilityRequests'))throw fail('Not authorized.',403);return {ok:true,requests:[]}}
   if (name==='client-commerce-admin') {
    if (!writing) return {ok:true,orders:state.orders,bookings:state.bookings}
    requireCapability(body.action==='kitchen_status'?'kitchen':body.kind==='booking'?'bookings':'orders')
    const row=(body.kind==='booking'?state.bookings:state.orders).find(row=>row.transactionId===body.transactionId)
    if(!row)throw fail('Practice record missing. / Registro de práctica no encontrado.',404)
    if(body.action==='kitchen_status'){row.kitchenStatus=body.kitchenStatus;emit('order.prepared',row)}
-   else if(['complete','cancel','check_in'].includes(body.action)){row.status=body.action==='complete'?'completed':body.action==='cancel'?'cancelled':'confirmed';if(body.action==='check_in')row.checkedInAt=timestamp();emit(body.kind==='booking'?'booking.updated':'order.updated',row)}
+   else if(['complete','cancel','check_in','confirm'].includes(body.action)){row.status=body.action==='complete'?'completed':body.action==='cancel'?'cancelled':'confirmed';if(body.action==='check_in')row.checkedInAt=timestamp();emit(body.kind==='booking'?'booking.updated':'order.updated',row)}
    else throw fail('This operation is excluded from practice. / Operación excluida de práctica.',403)
    return {ok:true}
   }
   if (name==='client-pos-sale-idempotent') {
-   requireCapability('pos');if(!state.operations.cashierEnabled)throw fail('Practice POS is disabled. / POS de práctica deshabilitado.',403)
+   requireCapability('pos');if(!admin&&!capabilities.includes('collect'))throw fail('Separate collection permission required / Se requiere permiso independiente de cobro.',403);if(!state.operations.cashierEnabled)throw fail('Practice POS is disabled. / POS de práctica deshabilitado.',403)
    if(!writing||body.paymentMethod!=='cash')throw fail('Use sample cash for this exercise. / Usa efectivo de ejemplo en este ejercicio.',403)
    if(typeof body.saleAttemptId!=='string'||!/^[a-zA-Z0-9_-]{8,120}$/.test(body.saleAttemptId))throw fail('Invalid practice attempt.')
    const existing=state.receipts.find(row=>row.saleAttemptId===body.saleAttemptId)
@@ -171,7 +172,7 @@ export function createPracticeRuntime(options) {
   if(['google-calendar-status','stripe-connect-status','ath-connect-status','client-stripe-status','client-ath-status'].includes(name)&&!writing)return {ok:true,connected:false,configured:false,calendars:[],readiness:{},status:{}}
   throw fail('This action is not enabled in Training. No request was sent. / Esta acción no está habilitada en Training. No se envió ninguna solicitud.',403)
  }
- const runtime={siteId,user,membership:{role,capabilities},get operations(){return state.operations},site,ui:state.ui,surface:['portal','display','kiosk'].includes(state.ui.trainingSurface)?state.ui.trainingSurface:'portal',subscribe(listener){listeners.add(listener);return()=>listeners.delete(listener)},emit,draft(value){if(value?.siteId!==siteId)return;Object.assign(site,copy(value));site.siteId=siteId;emit('draft.updated',site)},setUi(key,value){state.ui[key]=copy(value);emit('ui.'+key,value)},setSurface(surface){runtime.surface=surface;state.ui.trainingSurface=surface;emit('surface.changed',surface)},snapshot,
+ const runtime={siteId,user,membership:{role,capabilities,employeeId:'practice-employee',permissions:{pos:capabilities.includes('pos'),collect:capabilities.includes('collect')},locationIds:['practice-location']},get operations(){return state.operations},site,ui:state.ui,surface:['portal','display','kiosk'].includes(state.ui.trainingSurface)?state.ui.trainingSurface:'portal',subscribe(listener){listeners.add(listener);return()=>listeners.delete(listener)},emit,draft(value){if(value?.siteId!==siteId)return;Object.assign(site,copy(value));site.siteId=siteId;emit('draft.updated',site)},setUi(key,value){state.ui[key]=copy(value);emit('ui.'+key,value)},setSurface(surface){runtime.surface=surface;state.ui.trainingSurface=surface;emit('surface.changed',surface)},snapshot,
   async fetch(input,init){try{
    if(init?.signal?.aborted)throw new DOMException('Aborted','AbortError')
    const raw=input instanceof Request?input.url:String(input)

@@ -11,7 +11,7 @@ export default async(req)=>{
     const payload=await req.json();
     const action=cleanText(payload.action,80);
     if(action==="configure_ath")assertAthProduction(req.url);
-    const {site,membership}=await requireSiteAccess(payload.siteId,["owner","manager"]);
+    const {site,membership}=await requireSiteAccess(payload.siteId,["owner"]);
     if(!["owner","manager","admin"].includes(membership.role||""))throw Object.assign(new Error("This role cannot manage integrations."),{status:403});
 
     let updated=site;

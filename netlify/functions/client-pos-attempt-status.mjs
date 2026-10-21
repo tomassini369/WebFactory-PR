@@ -5,9 +5,10 @@ export function createPosAttemptStatusHandler({authorize=requireSiteCapability,g
   if(req.method!=='GET')return new Response(null,{status:405,headers:{Allow:'GET'}});
   const url=new URL(req.url),id=url.searchParams.get('saleAttemptId');
   if(!/^[a-zA-Z0-9_-]{8,120}$/.test(id||''))throw Object.assign(new Error('Invalid sale attempt.'),{status:400});
-  const {site}=await authorize(url.searchParams.get('siteId'),'pos');
+  const {site,user,membership}=await authorize(url.searchParams.get('siteId'),'pos');
   const marker=await getStore().get(commerceKey(site.siteId,'pos-attempts',id),{type:'json'});
   if(marker&&marker.siteId!==site.siteId)throw Object.assign(new Error('POS attempt not found.'),{status:404});
+  if(marker && !['owner','admin'].includes(membership?.role) && marker.actorId!==user?.id)throw Object.assign(new Error('POS attempt not assigned to this operator.'),{status:403});
   return Response.json({ok:true,status:marker?.status||'unknown',receiptId:marker?.status==='completed'?marker.receiptId||'':'',transactionId:marker?.transactionId||''},{headers:{'Cache-Control':'private, no-store'}});
  }catch(error){return errorResponse(error)}
 }}

@@ -1,3 +1,4 @@
+import {assertPosLocation} from "../lib/commercial-access.mjs";
 import { requirePosAdjustments } from '../lib/pos-permissions.mjs';
 import { requireCashierPos } from '../lib/pos-operations.mjs';
 import { applyCustomerTransaction } from '../lib/customer-transactions.mjs';
@@ -17,6 +18,8 @@ export function createPosSaleHandler({ authorize = requireSiteCapability, getSto
     assertSameOrigin(req);
     const payload = await req.json();
     let { site, user, membership } = await authorize(payload.siteId, "pos");
+    assertPosLocation(site,membership,payload);
+    if (!['owner','admin'].includes(membership?.role) && membership?.permissions?.collect !== true) throw Object.assign(new Error('Collection permission required / Se requiere permiso de cobro.'),{status:403});
     requirePosAdjustments(membership,payload);
     await requireCashierPos(site.siteId, getStore());
     return await withBookingLock(clientCommerceStore(), `locks/commerce/${site.siteId}`, async () => {
@@ -98,6 +101,7 @@ export function createPosSaleHandler({ authorize = requireSiteCapability, getSto
       posAttemptId:cleanText(payload.saleAttemptId,120).replace(/[^a-zA-Z0-9_-]/g,''),
       posAttemptFingerprint:crypto.createHash('sha256').update(JSON.stringify({items:payload.items,customer:payload.customer,discountCents:payload.discountCents,tipCents:payload.tipCents,paymentMethod:payload.paymentMethod})).digest('hex'),
       siteId: site.siteId,
+      locationId:cleanText(payload.locationId,120),
       kind: "order",
       source: "pos",
       customer,
@@ -116,7 +120,7 @@ export function createPosSaleHandler({ authorize = requireSiteCapability, getSto
       completedAt: now,
       createdAt: now,
       updatedAt: now,
-      createdBy: cleanText(user.email || user.id, 320),
+      createdById:user.id,createdBy: cleanText(user.email || user.id, 320),
     };
 
     // Persist the transaction before the stock side effect so an interrupted
@@ -156,6 +160,7 @@ export function createPosSaleHandler({ authorize = requireSiteCapability, getSto
       await putV3Record(site.siteId, "review-requests", reviewRequestId, {
         reviewRequestId,
         siteId: site.siteId,
+      locationId:cleanText(payload.locationId,120),
         transactionId,
         kind: "order",
         customer: { name: customer.name || "", email: customer.email, reviewOptIn: customer.reviewOptIn === true },

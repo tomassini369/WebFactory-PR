@@ -1,0 +1,12 @@
+.ca-commercial-access,.ca-professionals,.ca-employee-workspace{min-width:0;overflow-wrap:anywhere}
+.ca-commercial-access fieldset,.ca-professionals fieldset{min-width:0;margin:16px 0;padding:14px;border:1px solid var(--ca-line);border-radius:12px}
+.ca-commercial-access legend,.ca-professionals legend{max-width:100%;padding:0 6px;font-weight:650;white-space:normal}
+.ca-commercial-access label,.ca-professionals label{min-width:0}
+.ca-commercial-access .check,.ca-professionals .check{display:flex;align-items:center;gap:10px;min-height:44px}
+.ca-commercial-access input:not([type=checkbox]),.ca-commercial-access select,.ca-professionals input:not([type=checkbox]),.ca-professionals select,.ca-employee-workspace input{min-width:0;width:100%;min-height:44px;font:inherit;font-size:16px}
+.ca-commercial-access .ca-actions,.ca-professionals .ca-actions{display:flex;gap:12px;flex-wrap:wrap}
+.ca-commercial-access button,.ca-professionals button,.ca-employee-workspace button{min-height:44px;min-width:44px;white-space:normal}
+.ca-commercial-access article>header{display:flex;flex-wrap:wrap;align-items:baseline;gap:12px}
+.ca-commercial-access form{margin-bottom:24px}
+
+.ca-professionals input[type=checkbox],.ca-commercial-access input[type=checkbox]{flex:none;width:20px;min-width:20px;height:20px;min-height:20px;margin:0;accent-color:var(--ca-accent,#285fa6)}

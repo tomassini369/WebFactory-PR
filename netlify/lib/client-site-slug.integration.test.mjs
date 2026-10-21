@@ -41,8 +41,8 @@ test('real session and tenant roles reject unauthenticated, cashier, employee an
   globalThis.netlifyIdentityContext={user:{email:'outsider@example.invalid',sub:'outsider',app_metadata:{}}};assert.equal((await handler(request())).status,403);
   assert.equal(await f.store.get('slugs/fixture-new.json',{type:'json'}),null);assert.equal((await getClientSite(f.a.siteId)).slug,f.a.slug);
 });
-test('real manager membership can save; rejected origin and reserved names never reserve an address',async t=>{
-  const f=fixture(t);await f.prepare();const manager=structuredClone(f.a);manager.members[0].role='manager';await f.store.setJSON('sites/'+f.a.siteId+'.json',manager);
+test('real owner membership can save; rejected origin and reserved names never reserve an address',async t=>{
+  const f=fixture(t);await f.prepare();const manager=structuredClone(f.a);manager.members[0].role='owner';await f.store.setJSON('sites/'+f.a.siteId+'.json',manager);
   assert.equal((await handler(request(f.a.siteId,'fixture-new',3,'https://foreign.example.invalid'))).status,403);
   const invalid=await handler(request(f.a.siteId,'builder'));assert.equal(invalid.status,400);assert.equal((await invalid.json()).code,'SLUG_INVALID');assert.equal(await f.store.get('slugs/builder.json',{type:'json'}),null);
   assert.equal((await handler(request())).status,200);
@@ -76,4 +76,13 @@ test('stale revisions and missing ETags fail closed without overwriting the busi
 });
 test('slug errors offer both locales and never assert success after an uncertain response',()=>{
   assert.match(publicSiteSlugMessage('SLUG_IN_USE','es'),/ya está en uso/);assert.match(publicSiteSlugMessage('SLUG_STALE','en'),/Reload/);assert.match(publicSiteSlugMessage('','es',401),/sesión/);assert.match(publicSiteSlugMessage('','en',403),/cannot change/);assert.match(publicSiteSlugMessage('','es',503),/verificar/);
+});
+
+test('real portal GET redacts employee data and PATCH cannot elevate through body role or employeeId',async t=>{
+ const f=fixture(t);await f.prepare();const site=structuredClone(f.a);site.members[0]={...site.members[0],role:'employee',employeeId:'keep-employee',userId:'fixture-owner',permissions:{}};
+ site.employees.push({id:'private-other-professional',name:'Private other',salary:'DO-NOT-SEND'});site.googleCalendar={connected:true,credentials:'DO-NOT-SEND'};site.servicePlan={subscriptionId:'DO-NOT-SEND'};
+ await f.store.setJSON('sites/'+site.siteId+'.json',site);
+ const response=await handler(new Request('https://pos.example.invalid/.netlify/functions/client-admin?siteId='+site.siteId));assert.equal(response.status,200);const result=await response.json();assert.deepEqual(result.membership.capabilities,['overview','bookings']);assert.equal(result.site.employees.length,1);assert(!JSON.stringify(result.site).includes('private-fixture-salary'));assert(!JSON.stringify(result.site).includes('DO-NOT-SEND'));assert(!result.site.members);
+ assert.equal((await handler(request())).status,403);
+ await f.store.setJSON('sites/'+site.siteId+'.json',{...site,members:[]});assert.equal((await handler(new Request('https://pos.example.invalid/.netlify/functions/client-admin?siteId='+site.siteId))).status,403);
 });

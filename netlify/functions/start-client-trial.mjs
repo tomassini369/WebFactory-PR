@@ -7,7 +7,7 @@ export default async (req) => {
   try {
     assertSameOrigin(req);
     const payload = await req.json();
-    const { site } = await requireSiteAccess(payload.siteId, ["owner", "manager"]);
+    const { site } = await requireSiteAccess(payload.siteId, ["owner"]);
     if (site.servicePlan?.billingModel === "complimentary") {
       throw Object.assign(new Error("This website has complimentary access and does not require a trial or subscription."), { status: 409 });
     }

@@ -1,3 +1,4 @@
+import {assertPosLocation} from "../lib/commercial-access.mjs";
 import { requirePosAdjustments } from '../lib/pos-permissions.mjs';
 import { requireCashierPos } from '../lib/pos-operations.mjs';
 import { clientCommerceStore } from '../lib/client-store.mjs';
@@ -14,6 +15,7 @@ export function createTerminalPaymentIntentHandler({ authorize = requireSiteCapa
     assertSameOrigin(req);
     const payload=await req.json();
     const {site,user,membership}=await authorize(payload.siteId,"pos");
+    assertPosLocation(site,membership,payload);
     requirePosAdjustments(membership,payload);
     await requireCashierPos(site.siteId,getStore());
     const requested=Array.isArray(payload.items)?payload.items.slice(0,50):[];
@@ -66,7 +68,7 @@ export function createTerminalPaymentIntentHandler({ authorize = requireSiteCapa
       items:items.map(({taxable,taxRateOverride,...item})=>item),
       subtotal,discounts:discount,tax,tip,amountTotal:total,currency:"usd",
       paymentStatus:"pending",status:"payment_pending",createdAt:now,updatedAt:now,
-      createdBy:cleanText(user.email||user.id,320),stripeAccountId:accountId,
+      createdById:user.id,locationId:cleanText(payload.locationId,120),createdBy:cleanText(user.email||user.id,320),stripeAccountId:accountId,
     };
     const {intent}=await createReservedTerminalIntent(record,{requestUrl:req.url});
     return Response.json({ok:true,transactionId,paymentIntentId:intent.id,clientSecret:intent.client_secret||""},{headers:{"Cache-Control":"no-store"}});

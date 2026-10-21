@@ -34,7 +34,7 @@ export default async (req) => {
     assertSameOrigin(req);
     const form = await req.formData();
     const siteId = cleanText(form.get("siteId"), 120);
-    await requireSiteAccess(siteId, ["owner", "manager"]);
+    await requireSiteAccess(siteId, ["owner"]);
     const file = form.get("file");
     if (!(file instanceof File)) throw Object.assign(new Error("Image file is required."), { status: 400 });
     if (!ALLOWED_TYPES.has(file.type)) throw Object.assign(new Error("Use a JPG, PNG, WebP, or GIF image."), { status: 400 });

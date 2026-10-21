@@ -1,3 +1,4 @@
+import {canAccessCommerce, assertCommerceAction, employeeCommerceRecord, isBusinessOwner} from "../lib/commercial-access.mjs";
 import {bookingBalance} from '../lib/kiosk-bookings.mjs';
 import {reconcileBookingBalance} from '../lib/booking-balance-reconciliation.mjs';
 import {displayActor} from '../lib/customer-display.mjs';
@@ -20,49 +21,52 @@ import { assertStripeWriteAllowed } from "../lib/stripe-runtime.mjs";
 
 function env(name) { return globalThis.Netlify?.env?.get(name) || ""; }
 
-async function listRecords(siteId, kind) {
-  const result = await clientCommerceStore().list({ prefix: `${siteId}/${kind}/` });
-  const records = [];
-  const blobs = result.blobs || [];
-  for (let index = 0; index < blobs.length; index += 40) {
-    const batch = await Promise.all(blobs.slice(index, index + 40).map((blob) => clientCommerceStore().get(blob.key, { type: "json" })));
-    records.push(...batch.filter(Boolean));
+async function listRecords(siteId, kind, getStore=clientCommerceStore, visible=()=>true) {
+  const pages=getStore().list({prefix:`${siteId}/${kind}/`,paginate:true});
+  let records=[];
+  for await (const page of pages[Symbol.asyncIterator]?pages:[await pages]) {
+    for(let index=0;index<(page.blobs || []).length;index+=40) {
+      const batch=await Promise.all(page.blobs.slice(index,index+40).map(blob=>getStore().get(blob.key,{type:'json'})));
+      records.push(...batch.filter(record=>record && visible(record)));
+      records.sort((a,b)=>Date.parse(b.createdAt||'')-Date.parse(a.createdAt||''));records=records.slice(0,250);
+    }
   }
-  return records.sort((a, b) => Date.parse(b.createdAt || "") - Date.parse(a.createdAt || "")).slice(0, 250);
+  return records;
 }
 
-export default async (req) => {
+export function createCommerceAdminHandler({authorizeAccess=requireSiteAccess,authorizeCapability=requireSiteCapability,getStore=clientCommerceStore,pendingSales=listPosProcessing}={}) {return async (req) => {
   try {
     if (req.method === "GET") {
       const siteId = new URL(req.url).searchParams.get("siteId") || "";
-      const { site, membership } = await requireSiteAccess(siteId);
-      const [orders, bookings, pendingPos] = await Promise.all([listRecords(siteId, "orders"), listRecords(siteId, "bookings"),listPosProcessing(siteId)]);
+      const { site, membership } = await authorizeAccess(siteId);
+      const [orders, bookings, pendingPos] = await Promise.all([listRecords(siteId, "orders",getStore,record=>canAccessCommerce(site,membership,record)), listRecords(siteId, "bookings",getStore,record=>canAccessCommerce(site,membership,record)),pendingSales(siteId)]);
       const mergedOrders=[...new Map([...orders,...pendingPos].map(record=>[record.transactionId,record])).values()];
-      const limited = ["employee", "cashier", "staff"].includes(membership?.role) && (site.business?.locations || []).length > 0;
-      const visible = (records) => limited ? records.filter((record) => (membership.locationIds || []).includes(record.locationId)) : records;
-      const visibleBookings=await Promise.all(visible(bookings).map(async row=>row.bookingTotalCents!=null||row.balanceAttempt?{...row,bookingBalance:await bookingBalance(clientCommerceStore(),row)}:row));
-      return Response.json({ ok: true, orders: visible(mergedOrders), bookings: visibleBookings }, { headers: { "Cache-Control": "no-store" } });
+      const visible = records => records.filter(record => canAccessCommerce(site,membership,record));
+      const visibleBookings=await Promise.all(visible(bookings).map(async row=>row.bookingTotalCents!=null||row.balanceAttempt?{...row,bookingBalance:await bookingBalance(getStore(),row)}:row));
+      return Response.json({ ok: true, orders: visible(mergedOrders).map(row=>employeeCommerceRecord(row,membership)), bookings: visibleBookings.map(row=>employeeCommerceRecord(row,membership)) }, { headers: { "Cache-Control": "no-store" } });
     }
     if (req.method !== "POST") return Response.json({ ok: false, message: "Method not allowed." }, { status: 405 });
     assertSameOrigin(req);
     const payload = await req.json();
     const requestedCapability = payload.action === "recover_pos" ? "pos" : payload.action === "refund" ? "refunds" : payload.action === "kitchen_status" ? "kitchen" : (payload.kind === "booking" ? "bookings" : "orders");
-    const { site, membership, user } = await requireSiteCapability(payload.siteId, requestedCapability);
+    const { site, membership, user } = await authorizeCapability(payload.siteId, requestedCapability);
+    if (['mark_paid','recover_pos','recover_ath'].includes(payload.action) && !membershipHasCapability(membership,'collect')) throw Object.assign(new Error('Collection permission required / Se requiere permiso de cobro.'),{status:403});
     const balanceAction=['review_booking_balance','close_booking_balance'].includes(payload.action);
     if(balanceAction&&(payload.kind!=='booking'||!membershipHasCapability(membership,'payments')))throw Object.assign(new Error('Booking and payment permissions required / Se requieren permisos de citas y pagos.'),{status:403});
     const kind = payload.kind === "booking" ? "bookings" : "orders";
     const run=async()=>{
     const key = commerceKey(site.siteId, kind, payload.transactionId);
-    let record = await clientCommerceStore().get(key, { type: "json" });
-    if(payload.action==='recover_pos')record=await clientCommerceStore().get(commerceKey(site.siteId,'transactions',payload.transactionId),{type:'json'});
-    if(payload.action === "preview_confirmation" && record && !["confirmed","completed","cancelled"].includes(record.status)) throw Object.assign(new Error("Only confirmed or cancelled appointments have confirmations."),{status:409});
-    if(payload.action === "preview_confirmation" && kind === "bookings" && record) return Response.json({ok:true,html:renderBookingEmail(site,record,{change:record.status === "cancelled"?"cancelled":"confirmed"}).html},{headers:{"Cache-Control":"no-store"}});
-    const recordMetadata=record?.calendarToken ? await clientCommerceStore().getWithMetadata(key,{type:"json"}) : null;
+    let record = await getStore().get(key, { type: "json" });
+    if(payload.action==='recover_pos')record=await getStore().get(commerceKey(site.siteId,'transactions',payload.transactionId),{type:'json'});
+    if (!record) throw Object.assign(new Error('Transaction not found.'),{status:404});
+    assertCommerceAction(site,membership,record,payload.action);
+    const recordMetadata=record?.calendarToken ? await getStore().getWithMetadata(key,{type:"json"}) : null;
     if(recordMetadata?.data) record=recordMetadata.data;
     if (!record) throw Object.assign(new Error("Transaction not found."), { status: 404 });
-    if (["employee", "cashier", "staff"].includes(membership?.role) && (site.business?.locations || []).length > 0 && !(membership.locationIds || []).includes(record.locationId)) {
-      throw Object.assign(new Error("This account is not assigned to the order location."), { status: 403 });
-    }
+    assertCommerceAction(site,membership,record,payload.action);
+    if(payload.action === "preview_confirmation" && record && !["confirmed","completed","cancelled"].includes(record.status)) throw Object.assign(new Error("Only confirmed or cancelled appointments have confirmations."),{status:409});
+    if(payload.action === "preview_confirmation" && kind === "bookings" && record) return Response.json({ok:true,html:renderBookingEmail(site,record,{change:record.status === "cancelled"?"cancelled":"confirmed"}).html},{headers:{"Cache-Control":"no-store"}});
+
 
     if(balanceAction)return Response.json(await reconcileBookingBalance(site,record.transactionId,{expectedAttempt:payload.expectedBalanceAttempt,close:payload.action==='close_booking_balance',actor:displayActor(user),requestUrl:req.url,lockHeld:true}),{headers:{'Cache-Control':'no-store'}});
     if(kind==='bookings'&&record.balanceAttempt&&(payload.action==='mark_paid'||record.balancePaymentStatus!=='paid'&&['cancel','refund'].includes(payload.action)))throw Object.assign(new Error('Use Review balance checkout on this booking before changing its payment / Usa Revisar cobro de saldo en esta cita antes de cambiar su pago.'),{status:409});
@@ -74,7 +78,7 @@ export default async (req) => {
       return Response.json({ok:true,record:recovered},{headers:{'Cache-Control':'no-store'}});
     }
     if (payload.action === "kitchen_status") {
-      if (kind !== "orders" || !record.queueNumber) throw Object.assign(new Error("Kitchen updates are only available for paid food orders."), { status: 409 });
+      if (kind !== "orders" || !record.queueNumber || !["paid","paid_in_person"].includes(record.paymentStatus) || ["cancelled","refunded","failed"].includes(record.status)) throw Object.assign(new Error("Kitchen updates are only available for paid food orders."), { status: 409 });
       const kitchenStatus = String(payload.kitchenStatus || "");
       if (!["received", "preparing", "ready", "completed"].includes(kitchenStatus)) throw Object.assign(new Error("Invalid kitchen status."), { status: 400 });
       record = { ...record, kitchenStatus, updatedAt: new Date().toISOString() };
@@ -97,9 +101,12 @@ export default async (req) => {
         record.kitchenStatus = "received";
         record.queueNumber = `Q${Date.parse(record.paidAt)}`;
       }
+    } else if (payload.action === "confirm" && kind === "bookings") {
+      if (record.status !== "confirmed") throw Object.assign(new Error("Only existing confirmed bookings may acknowledge attendance."),{status:409});
+      record={...record,attendanceConfirmedAt:new Date().toISOString(),updatedAt:new Date().toISOString()};
     } else if (payload.action === "complete") {
       if(record.kind==='order'&&(record.inventoryNeedsReview||record.status==='processing'||(record.inventoryProtocol===1&&!record.inventoryAppliedAt))) throw Object.assign(new Error("Reconcile inventory before completing this order."),{status:409});
-      if(record.kind==='booking'&&record.balanceAttempt){const balance=await bookingBalance(clientCommerceStore(),record);if(!balance.known||balance.due!==0)throw Object.assign(new Error("Booking balance is not settled."),{status:409});}
+      if(record.kind==='booking'&&record.balanceAttempt){const balance=await bookingBalance(getStore(),record);if(!balance.known||balance.due!==0)throw Object.assign(new Error("Booking balance is not settled."),{status:409});}
       if (!["paid","paid_in_person"].includes(record.paymentStatus)&&record.balancePaymentStatus!=="paid") throw Object.assign(new Error("Only paid transactions can be completed."), { status: 409 });
       record = { ...record, status: "completed", completedAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
 
@@ -183,7 +190,7 @@ export default async (req) => {
         const restockItems=original?original.deltas.map(delta=>({id:delta.itemId,quantity:-delta.quantityDelta})):record.items;
         if(restockItems.length&&((record.inventoryProtocol!==1&&!record.inventoryNeedsReview)||original)){
           const applied=await applyStockOperation(site.siteId,{kind:'refund',referenceId:record.transactionId,items:restockItems,direction:1,reason:'refund'});
-          await projectStockMovements(site.siteId,applied.operation,clientCommerceStore());
+          await projectStockMovements(site.siteId,applied.operation,getStore());
         }
         if(record.inventoryProtocol!==1&&record.inventoryNeedsReview) record.inventoryRestockNeedsReview=true;
         else record.inventoryRestoredAt = new Date().toISOString();
@@ -204,14 +211,15 @@ export default async (req) => {
       throw Object.assign(new Error("Unsupported transaction action."), { status: 400 });
     }
     if (payload.action === "mark_paid" && kind === "bookings") record = await syncBookingCalendar(site, record);
-    const write=await clientCommerceStore().setJSON(key,record,recordMetadata?.etag?{onlyIfMatch:recordMetadata.etag}:{});
+    const write=await getStore().setJSON(key,record,recordMetadata?.etag?{onlyIfMatch:recordMetadata.etag}:{});
     if(recordMetadata?.etag && !write.modified) throw Object.assign(new Error("The booking changed. Reload and try again."),{status:409});
     const transactionKey = commerceKey(site.siteId, "transactions", record.transactionId);
-    if (await clientCommerceStore().get(transactionKey)) await clientCommerceStore().setJSON(transactionKey, record);
+    if (await getStore().get(transactionKey)) await getStore().setJSON(transactionKey, record);
     if(payload.action === "cancel" && record.calendarToken) record=await finishBookingChange(site,record);
-    return Response.json({ ok: true, record }, { headers: { "Cache-Control": "no-store" } });
+    return Response.json({ ok: true, record:employeeCommerceRecord(record,membership) }, { headers: { "Cache-Control": "no-store" } });
     };
-    const bookingRow=kind==='bookings'?await clientCommerceStore().get(commerceKey(site.siteId,kind,payload.transactionId),{type:'json'}):null;
-    return !balanceAction&&((kind==='bookings'&&!bookingRow?.balanceAttempt&&bookingRow?.bookingTotalCents==null)||['recover_pos','recover_ath'].includes(payload.action))?await run():await withBookingLock(clientCommerceStore(),`locks/commerce/${site.siteId}`,run);
+    const bookingRow=kind==='bookings'?await getStore().get(commerceKey(site.siteId,kind,payload.transactionId),{type:'json'}):null;
+    return !balanceAction&&((kind==='bookings'&&!bookingRow?.balanceAttempt&&bookingRow?.bookingTotalCents==null)||['recover_pos','recover_ath'].includes(payload.action))?await run():await withBookingLock(getStore(),`locks/commerce/${site.siteId}`,run);
   } catch (error) { return errorResponse(error); }
-};
+};}
+export default createCommerceAdminHandler();
