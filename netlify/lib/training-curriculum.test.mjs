@@ -9,11 +9,13 @@ test('courses follow the authenticated role capability set',()=>{
  for(const id of ['catalog','pos','team','accounting','settings','billing','builder','kiosk'])assert(!employee.includes(id),id)
  assert(!employee.includes('workforce'));assert(employee.includes('my-bookings'))
  const cashier=availableCourses(scope('employee',{capabilities:['overview','bookings','pos']})).map(course=>course.id)
- assert(cashier.includes('pos'));assert(!cashier.includes('catalog'));assert(!cashier.includes('accounting'))
+ assert(cashier.includes('pos-cart'));assert(!cashier.includes('pos'));assert(!cashier.includes('catalog'));assert(!cashier.includes('accounting'))
 })
 test('disabled cashier/display modules are absent from the training library',()=>{
  const courses=availableCourses(scope('owner',{operations:{cashierEnabled:false,displayEnabled:false}})).map(course=>course.id)
  assert(!courses.includes('pos'));assert(!courses.includes('display'))
+ const employee=availableCourses(scope('employee',{capabilities:['overview','bookings','pos'],operations:{cashierEnabled:false}})).map(course=>course.id)
+ assert(!employee.includes('pos-cart'))
 })
 test('kitchen practice appears for food businesses using existing capabilities',()=>{
  assert(!availableCourses(scope('owner')).some(course=>course.id==='kitchen'))
@@ -41,3 +43,13 @@ test('course IDs and step IDs remain unique and every course has bilingual instr
  assert.equal(new Set(trainingCourses.map(course=>course.id)).size,trainingCourses.length)
  for(const course of trainingCourses){assert(course.steps.length>0);assert.equal(new Set(course.steps.map(step=>step.id)).size,course.steps.length);for(const step of course.steps){assert(step.target);assert(step.title.every(Boolean));assert(step.instruction.every(Boolean));assert(step.read||step.event)}}
 })
+
+test('employee learning follows each independent permission combination without owner-only actions',()=>{
+ const keys=['pos','collect','orders','kitchen','individualStats','availabilityRequests'];
+ for(let mask=0;mask<64;mask++){
+  const capabilities=['overview','bookings',...keys.filter((_,i)=>mask&(1<<i))],courses=availableCourses(scope('employee',{capabilities})).map(course=>course.id);
+  assert(!courses.includes('orders'));assert.equal(courses.includes('orders-employee'),capabilities.includes('orders'));
+  assert.equal(courses.includes('pos'),capabilities.includes('pos')&&capabilities.includes('collect'));
+  assert.equal(courses.includes('pos-cart'),capabilities.includes('pos')&&!capabilities.includes('collect'));
+ }
+});

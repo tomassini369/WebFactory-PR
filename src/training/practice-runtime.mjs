@@ -93,7 +93,7 @@ export function createPracticeRuntime(options) {
    return {ok:true}
   }
   if (name==='client-pos-sale-idempotent') {
-   requireCapability('pos');if(!state.operations.cashierEnabled)throw fail('Practice POS is disabled. / POS de práctica deshabilitado.',403)
+   requireCapability('pos');if(!admin&&!capabilities.includes('collect'))throw fail('Separate collection permission required / Se requiere permiso independiente de cobro.',403);if(!state.operations.cashierEnabled)throw fail('Practice POS is disabled. / POS de práctica deshabilitado.',403)
    if(!writing||body.paymentMethod!=='cash')throw fail('Use sample cash for this exercise. / Usa efectivo de ejemplo en este ejercicio.',403)
    if(typeof body.saleAttemptId!=='string'||!/^[a-zA-Z0-9_-]{8,120}$/.test(body.saleAttemptId))throw fail('Invalid practice attempt.')
    const existing=state.receipts.find(row=>row.saleAttemptId===body.saleAttemptId)

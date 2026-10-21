@@ -45,3 +45,9 @@ test('malformed practice JSON does not echo submitted data',async()=>{const runt
 test('practice public links use the same 64-character validator as production',async()=>{const runtime=create(),slug='practice-'+ 'x'.repeat(55);assert.equal(slug.length,64);const response=await runtime.fetch('/.netlify/functions/client-admin',{method:'PATCH',body:JSON.stringify({siteId:runtime.siteId,section:'slug',value:slug})});assert.equal(response.status,200);assert.equal(runtime.site.slug,slug);assert.equal(create('owner',{snapshot:runtime.snapshot()}).site.slug,slug)})
 
 test('practice kiosk derives its presentation from existing business capabilities',async()=>{const runtime=create('owner',{category:'Restaurant',operations:{profile:'auto',cashierEnabled:true}});const {data}=await call(runtime,'client-kiosk');assert.equal(data.presentation.profile,'restaurant')})
+
+test('practice POS also requires a separate collection grant and never falls back to live payment',async()=>{
+ const input={items:[{id:'practice-product',quantity:1}],customer:{name:'Example',email:'example@example.invalid'},paymentMethod:'cash',saleAttemptId:'practice-collect-0001'};
+ const view=create('employee',{capabilities:['overview','bookings','pos']});assert.equal((await call(view,'client-pos-sale-idempotent',input)).status,403);assert.equal(view.snapshot().receipts.length,0);
+ const collect=create('employee',{capabilities:['overview','bookings','pos','collect']});assert.equal((await call(collect,'client-pos-sale-idempotent',input)).status,200);assert.equal(collect.snapshot().receipts.length,1);
+});
