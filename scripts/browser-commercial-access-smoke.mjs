@@ -19,7 +19,7 @@ try{
   let site={siteId:'commercial-qa',slug:'commercial-qa',status:'active',revision:1,business:{name:'Isolated commercial QA',category:'Barbershop',locations:[{id:'one',name:'One',active:true}]},design:{primary:'#0b1529',secondary:'#285fa6'},employees:[{id:'p1',name:'Professional QA',role:'Barber',serviceIds:['s1'],locationIds:['one'],active:true,dailyLimit:8,schedule:{},timeOff:[],calendarId:''}],catalog:[{id:'s1',name:'Service QA',type:'service',price:25,active:true,requiresAppointment:true,duration:30}],members:[member,...(role==='owner'?[{email:'legacy@example.invalid',role:'manager'}]:[])],membershipAudit:[],hours:{Monday:{enabled:true,open:'09:00',close:'17:00'}},settings:{timezone:'America/Puerto_Rico',locale:lang},paymentRules:{},googleCalendar:{},features:{},servicePlan:{subscriptionStatus:'complimentary',billingModel:'complimentary'}}
   const record={siteId:site.siteId,transactionId:'booking-qa',kind:'booking',employeeId:'p1',locationId:'one',status:'confirmed',paymentStatus:'due',start:'2028-02-01T14:00:00Z',end:'2028-02-01T14:30:00Z',customer:{name:'Assigned customer',email:'customer@example.invalid',phone:''},items:[{name:'Service QA',quantity:1,unitAmount:2500}],amountTotal:2500,calendarToken:'PRIVATE-DO-NOT-SEND'}
   let writes=0,retiredCalls=0
-  await page.addInitScript(theme=>localStorage.setItem('webfactory-theme-v2',theme),theme)
+  await page.addInitScript(theme=>{if(window!==window.top)return;localStorage.setItem('webfactory-theme-v2',theme)},theme)
   await page.route('**/.netlify/functions/**',async route=>{
    const request=route.request(),url=new URL(request.url()),name=url.pathname.split('/').at(-1);let body={ok:true},status=200
    if(name==='portal-session')body={ok:true,user}
@@ -48,6 +48,7 @@ try{
   }else{
    await page.getByRole('heading',{name:lang==='es'?'Mi agenda':'My appointments',exact:true}).waitFor()
    assert.equal(await page.getByText('Assigned customer',{exact:true}).count(),1)
+   assert.equal(await page.getByText(lang==='es'?'Confirmada · Pago pendiente':'Confirmed · Payment due',{exact:true}).count(),1)
    assert.equal(await page.getByRole('button',{name:lang==='es'?'Registrar pago recibido':'Record received payment',exact:true}).count(),0)
    assert.equal(await page.locator('.ca-work').getByText(/PRIVATE-DO-NOT-SEND/).count(),0)
    assert.equal(await page.locator('.ca-commercial-access').count(),0)
@@ -55,6 +56,7 @@ try{
   }
   assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),`No horizontal overflow ${width}/${theme}/${lang}/${role}`)
   for(const input of await page.locator('.ca-work input:not([type=checkbox]),.ca-work select').all())if(await input.isVisible())assert(Number.parseFloat(await input.evaluate(element=>getComputedStyle(element).fontSize))>=16)
+  await page.evaluate(()=>{const frame=document.createElement('iframe');frame.hidden=true;frame.title='Isolated preview review';frame.setAttribute('sandbox','allow-scripts');frame.srcdoc='<!doctype html><html><body></body></html>';document.body.appendChild(frame)});await page.waitForTimeout(60)
   assert.equal(retiredCalls,0);assert.deepEqual(errors,[])
   if([390,1440].includes(width))await page.screenshot({path:`${out}/${engine}-${width}-${theme}-${lang}-${role}.png`})
   console.log('PASS commercial access',engine,width,theme,lang,role)

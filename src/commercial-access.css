@@ -8,3 +8,5 @@
 .ca-commercial-access button,.ca-professionals button,.ca-employee-workspace button{min-height:44px;min-width:44px;white-space:normal}
 .ca-commercial-access article>header{display:flex;flex-wrap:wrap;align-items:baseline;gap:12px}
 .ca-commercial-access form{margin-bottom:24px}
+
+.ca-professionals input[type=checkbox],.ca-commercial-access input[type=checkbox]{flex:none;width:20px;min-width:20px;height:20px;min-height:20px;margin:0;accent-color:var(--ca-accent,#285fa6)}

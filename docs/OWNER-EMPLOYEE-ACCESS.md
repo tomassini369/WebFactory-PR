@@ -69,7 +69,10 @@ not represented as externally verified. Calendar errors no longer fail open.
 - Chromium detailed Training: catalog/checkpoint recovery, inventory, public URL,
   professionals, orders, branches, expenses, POS settings, kiosk/display, Builder,
   appointment practice, role filtering and safe isolation passed.
-- Remote PR preview regression: pending final CI; recorded in the PR when complete.
+- Remote preview results are recorded against the final commit in PR #121.
+  A QA-only localStorage initializer was restricted to the top frame after the
+  Netlify review iframe reproduced an opaque-origin SecurityError; the browser
+  suite now creates an equivalent isolated iframe as a regression check.
 
 Browser validation is automated/emulated; no physical iPhone test is claimed.
 Production deployment and merging require explicit approval.
