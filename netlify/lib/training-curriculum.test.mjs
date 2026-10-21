@@ -7,8 +7,8 @@ const scope=(role,extra={})=>({role,siteId:'unit-site',userId:'unit-user',capabi
 test('courses follow the authenticated role capability set',()=>{
  const employee=availableCourses(scope('employee')).map(course=>course.id)
  for(const id of ['catalog','pos','team','accounting','settings','billing','builder','kiosk'])assert(!employee.includes(id),id)
- assert(employee.includes('workforce'));assert(employee.includes('bookings'))
- const cashier=availableCourses(scope('cashier')).map(course=>course.id)
+ assert(!employee.includes('workforce'));assert(employee.includes('my-bookings'))
+ const cashier=availableCourses(scope('employee',{capabilities:['overview','bookings','pos']})).map(course=>course.id)
  assert(cashier.includes('pos'));assert(!cashier.includes('catalog'));assert(!cashier.includes('accounting'))
 })
 test('disabled cashier/display modules are absent from the training library',()=>{
@@ -36,11 +36,7 @@ test('POS quantity step requires the selected practice product and a changed qua
  assert.equal(acceptsStep(step,{name:'ui.pos',detail:{cart:[{id:'practice-product',quantity:1}]}},runtime),false)
  assert.equal(acceptsStep(step,{name:'ui.pos',detail:{cart:[{id:'practice-product',quantity:2}]}},runtime),true)
 })
-test('workforce steps wait for the matching successful attendance action',()=>{
- const runtime=createPracticeRuntime(scope('employee')),step=trainingCourses.find(course=>course.id==='workforce').steps[0]
- assert.equal(acceptsStep(step,{name:'workforce.clock_out'},runtime),false)
- assert.equal(acceptsStep(step,{name:'workforce.clock_in'},runtime),true)
-})
+test('retired workforce lessons are absent for every commercial role',()=>{assert(!trainingCourses.some(course=>course.id==='workforce'));});
 test('course IDs and step IDs remain unique and every course has bilingual instructions',()=>{
  assert.equal(new Set(trainingCourses.map(course=>course.id)).size,trainingCourses.length)
  for(const course of trainingCourses){assert(course.steps.length>0);assert.equal(new Set(course.steps.map(step=>step.id)).size,course.steps.length);for(const step of course.steps){assert(step.target);assert(step.title.every(Boolean));assert(step.instruction.every(Boolean));assert(step.read||step.event)}}

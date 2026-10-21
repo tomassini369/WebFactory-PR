@@ -86,3 +86,18 @@ Driver.js. Run the training unit suites, build and
 `scripts/browser-training-smoke.mjs` on Chromium and WebKit, including the
 existing widths, ES/EN and Light/Dark. Preserve the normal live transport and
 run the existing POS, workforce, kiosk and Builder regression checks.
+
+
+## Commercial access (Owner / Employee)
+
+The active commercial product has only `owner` and `employee`. Internal platform
+admin is a trusted authorization, never a selectable business role. Reuse
+`netlify/lib/commercial-access.mjs` and the canonical site membership on every
+request; never infer authority from a sidebar, cached token role or email index.
+Professional profiles do not require portal accounts. Only the Owner may bind
+an authenticated Identity ID to a professional or grant optional capabilities.
+See `docs/OWNER-EMPLOYEE-ACCESS.md` for reviewed legacy migration and API history.
+ERP, payroll and advanced HR expansion are canceled. Preserve historical data
+without restoring clock/salary controls or using attendance for booking slots.
+Run the existing browser-workforce entry point as the retirement regression,
+plus the commercial-access, training, POS/kiosk and booking security suites.

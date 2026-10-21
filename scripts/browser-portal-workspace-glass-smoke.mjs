@@ -126,4 +126,4 @@ try{
  assert.equal(await page.locator('.ca-site-switcher select').inputValue(),'restricted-two')
  assert.deepEqual(errors,[])
  console.log('PASS: homepage/portal return, both workspaces, themes, languages, mobile menus and panel focus')
-}finally{await browser.close();await new Promise(resolve=>server.httpServer.close(resolve))}
+}catch(error){console.error('WORKSPACE_QA_CONTEXT',JSON.stringify({url:page.url(),viewport:page.viewportSize(),errors}));await page.screenshot({path:'/tmp/webfactory-portal-workspace-failure.png',fullPage:true}).catch(()=>{});throw error;}finally{await browser.close();await new Promise(resolve=>server.httpServer.close(resolve))}

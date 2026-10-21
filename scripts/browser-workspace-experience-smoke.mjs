@@ -94,7 +94,8 @@ try{
   await noOverflow(page)
   if([390,1440].includes(width))await page.screenshot({path:`${output}/builder-${width}-${theme}-${lang}-${isWebKit?'webkit':'chromium'}.png`})
   role='employee';await page.goto(origin+'/client-admin');await page.locator('.ca-dashboard').waitFor();await page.locator('.portal-language').getByRole('button',{name:lang.toUpperCase(),exact:true}).click();assert.equal(await page.locator('.sidebar-container button[aria-label="POS"]').count(),0);assert.equal(await page.locator('.sidebar-container button').filter({hasText:/Business settings|Ajustes del negocio/}).count(),0)
-  balanceMode=true;balanceClosed=false;balanceCancelled=false;balanceReviewed=false;await selectPortalSection(page,lang==='es'?'Ver citas':'View appointments');await page.locator('.ca-balance-review').waitFor();assert.equal(await page.getByRole('button',{name:lang==='es'?'Revisar cobro de saldo':'Review balance checkout',exact:true}).count(),0);assert.match(await page.locator('.ca-balance-review').innerText(),lang==='es'?/administrador/:/administrator/);assert(await page.getByRole('button',{name:lang==='es'?'Cancelar':'Cancel',exact:true}).isDisabled())
+  balanceMode=true;balanceClosed=false;balanceCancelled=false;balanceReviewed=false;await selectPortalSection(page,lang==='es'?'Ver citas':'View appointments');await page.locator('[data-training="employee-agenda"]').waitFor();assert.equal(await page.getByRole('button',{name:/Review balance checkout|Revisar cobro de saldo|Cancel|Cancelar/,exact:true}).count(),0)
+
   assert.equal(writes,0);assert.deepEqual(errors,[]);console.log(`PASS unified hierarchy, balance review/close/cancel, permissions, focus and Builder persistence ${width} ${theme} ${lang}`);await context.close()
  }
 }finally{await browser.close();await new Promise(resolve=>server.httpServer.close(resolve))}
