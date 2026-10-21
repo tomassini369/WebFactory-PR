@@ -1,87 +1,40 @@
-import crypto from "node:crypto";
-import { admin, requestPasswordRecovery } from "@netlify/identity";
-import { assertSameOrigin, errorResponse, requireSiteAccess } from "../lib/client-auth.mjs";
-import { normalizeEmail, saveClientSite } from "../lib/client-store.mjs";
-import { cleanText, validEmail } from "../lib/platform-utils.mjs";
-
-async function findIdentityUserByEmail(email){
-  const target=normalizeEmail(email);
-  const perPage=100;
-  for(let page=1;page<=50;page+=1){
-    const users=await admin.listUsers({page,perPage});
-    const found=(users||[]).find((candidate)=>normalizeEmail(candidate.email)===target);
+import crypto from 'node:crypto';
+import {admin,requestPasswordRecovery} from '@netlify/identity';
+import {assertSameOrigin,errorResponse,requireSiteAccess} from '../lib/client-auth.mjs';
+import {normalizeEmail,saveClientSite} from '../lib/client-store.mjs';
+import {validEmail} from '../lib/platform-utils.mjs';
+import {changeCommercialMember} from '../lib/commercial-members.mjs';
+async function findIdentity(email) {
+  for(let page=1;page<=50;page++) {
+    const users=await admin.listUsers({page,perPage:100});
+    const found=(users || []).find(user=>normalizeEmail(user.email)===email);
     if(found)return found;
-    if(!Array.isArray(users)||users.length<perPage)break;
+    if(!Array.isArray(users)||users.length<100)break;
   }
   return null;
 }
-
-export default async(req)=>{
-  try{
-    if(req.method!=="POST")return Response.json({ok:false,message:"Method not allowed."},{status:405});
+export function createMemberAccessHandler({authorize=requireSiteAccess,save=saveClientSite,findUser=findIdentity,createUser=input=>admin.createUser(input),sendInvite=requestPasswordRecovery}={}) { return async req=>{
+  try {
+    if(req.method!=='POST')return new Response(null,{status:405,headers:{Allow:'POST'}});
     assertSameOrigin(req);
-    const payload=await req.json();
-    const {site,membership}=await requireSiteAccess(payload.siteId,["owner"]);
-    if((membership.role||"owner")!=="owner"&&membership.role!=="admin")throw Object.assign(new Error("Only the owner can manage portal access."),{status:403});
-    const action=cleanText(payload.action,80);
-
-    if(action==="invite"){
-      const email=normalizeEmail(payload.email);
-      const role=["manager","employee","cashier"].includes(payload.role)?payload.role:"employee";
-      if(!validEmail(email))throw Object.assign(new Error("A valid email is required."),{status:400});
-      const ownerEmail=normalizeEmail((site.members||[]).find((member)=>member.role==="owner")?.email);
-      if(email===ownerEmail)throw Object.assign(new Error("The owner already has access."),{status:409});
-
-      const members=[...(site.members||[]).filter((member)=>normalizeEmail(member.email)!==email),{email,role,locationIds:[]}];
-      const updated=await saveClientSite({...site,members,revision:Number(site.revision||0)+1,updatedAt:new Date().toISOString()});
-
-      let user=await findIdentityUserByEmail(email);
-      if(!user){
-        user=await admin.createUser({
-          email,
-          password:crypto.randomBytes(48).toString("base64url"),
-          data:{
-            role:"client",
-            app_metadata:{roles:["client"],webfactory_site_ids:[site.siteId]},
-            user_metadata:{business_name:site.business?.name||""},
-          },
-        });
-      }else{
-        const previousSites=Array.isArray(user.appMetadata?.webfactory_site_ids)?user.appMetadata.webfactory_site_ids:[];
-        await admin.updateUser(user.id,{
-          role:user.role==="admin"?"admin":"client",
-          app_metadata:{
-            ...(user.appMetadata||{}),
-            roles:user.role==="admin"?["admin"]:["client"],
-            webfactory_site_ids:[...new Set([...previousSites,site.siteId])],
-          },
-        });
-      }
-
-      await requestPasswordRecovery(email);
-      return Response.json({ok:true,site:updated,invitationSent:true},{headers:{"Cache-Control":"no-store"}});
+    const raw=await req.text();if(Buffer.byteLength(raw)>12000)throw Object.assign(new Error('Request too large.'),{status:413});
+    let input;try{input=JSON.parse(raw)}catch{throw Object.assign(new Error('Invalid JSON.'),{status:400})}
+    if(!input||typeof input!=='object'||Array.isArray(input))throw Object.assign(new Error('Invalid access request.'),{status:400});
+    const email=normalizeEmail(input.email);
+    const actor=await authorize(input.siteId,['owner']);
+    if(!validEmail(email))throw Object.assign(new Error('A valid email is required.'),{status:400});
+    // Validate all grants before any Identity side effect. Identity metadata is
+    // advisory; canonical site membership is revalidated on every API request.
+    changeCommercialMember(actor.site,input,actor,{id:'pending-validation',email});
+    let identity;
+    if(!['revoke','undo_migration'].includes(input.action)) {
+      identity=await findUser(email);
+      if(!identity && input.action==='invite')identity=await createUser({email,password:crypto.randomBytes(48).toString('base64url'),data:{role:'client',app_metadata:{roles:['client']}}});
     }
-
-    if(action==="revoke"){
-      const email=normalizeEmail(payload.email);
-      const ownerEmail=normalizeEmail((site.members||[]).find((member)=>member.role==="owner")?.email);
-      if(!email||email===ownerEmail)throw Object.assign(new Error("Owner access cannot be revoked here."),{status:409});
-      const members=(site.members||[]).filter((member)=>normalizeEmail(member.email)!==email);
-      const updated=await saveClientSite({...site,members,revision:Number(site.revision||0)+1,updatedAt:new Date().toISOString()});
-
-      const user=await findIdentityUserByEmail(email);
-      if(user){
-        const previousSites=Array.isArray(user.appMetadata?.webfactory_site_ids)?user.appMetadata.webfactory_site_ids:[];
-        await admin.updateUser(user.id,{
-          app_metadata:{
-            ...(user.appMetadata||{}),
-            webfactory_site_ids:previousSites.filter((id)=>id!==site.siteId),
-          },
-        });
-      }
-      return Response.json({ok:true,site:updated},{headers:{"Cache-Control":"no-store"}});
-    }
-
-    throw Object.assign(new Error("Unsupported member access action."),{status:400});
-  }catch(error){return errorResponse(error);}
-};
+    const updated=await save(changeCommercialMember(actor.site,input,actor,identity));
+    let invitationSent=false;
+    if(input.action==='invite') {try{await sendInvite(email);invitationSent=true}catch{/* Saved access is visible; report delivery failure without pretending success. */}}
+    return Response.json({ok:true,site:updated,invitationSent},{headers:{'Cache-Control':'private, no-store'}});
+  } catch(error) {return errorResponse(error);}
+};}
+export default createMemberAccessHandler();

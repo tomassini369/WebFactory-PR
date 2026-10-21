@@ -1,0 +1,51 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {currentIndexedSites,repairMemberIndex,memberIndexKey,changedMembershipEmails} from './member-index.mjs';
+function fixture(){
+ const data=new Map(),etags=new Map();
+ const store={get:async key=>structuredClone(data.get(key)||null),getWithMetadata:async key=>data.has(key)?{data:structuredClone(data.get(key)),etag:String(etags.get(key)||1)}:null,list:async function*({prefix}){for(const key of data.keys())if(key.startsWith(prefix))yield{blobs:[{key}]};},setJSON:async(key,value,options)=>{
+  if(options.onlyIfNew&&data.has(key)||options.onlyIfMatch&&options.onlyIfMatch!==String(etags.get(key)||1))return{modified:false};
+  data.set(key,structuredClone(value));etags.set(key,(etags.get(key)||1)+1);return{modified:true};
+ }};return{data,store};
+}
+test('catalog/design saves do not refresh unchanged membership indexes; grants and revocations refresh only affected emails',()=>{
+ const members=[{email:'owner@example.com',role:'owner'},{email:'a@example.com',role:'accountant',financialPermissions:['accounting.view']}];
+ assert.deepEqual(changedMembershipEmails(members,structuredClone(members)),[]);
+ assert.deepEqual(changedMembershipEmails(members,[members[0]]),['a@example.com']);
+ assert.deepEqual(changedMembershipEmails(members,[members[0],{...members[1],suspendedAt:'now'}]),['a@example.com']);
+ assert.deepEqual(changedMembershipEmails([],[members[0]]),['owner@example.com']);
+});
+test('stale and paginated indexes never expose revoked, suspended, deleted or foreign businesses',async()=>{
+ const {data,store}=fixture();const email='accountant@example.com';
+ for(const id of ['a','b','c','d','e'])data.set(memberIndexKey(email,id),{email,siteId:id});
+ data.set('sites/a.json',{siteId:'a',members:[{email,role:'accountant'}]});
+ data.set('sites/b.json',{siteId:'b',members:[]});
+ data.set('sites/c.json',{siteId:'c',members:[{email,role:'accountant',suspendedAt:'now'}]});
+ data.set('sites/d.json',{siteId:'d',status:'deleted',members:[{email,role:'accountant'}]});
+ data.set('sites/e.json',{siteId:'e',members:[{email:'other@example.com',role:'owner'}]});
+ assert.deepEqual((await currentIndexedSites(store,email.toUpperCase())).map(s=>s.siteId),['a']);
+});
+test('revocation writes a versioned tombstone and regrant restores the same projection',async()=>{
+ const {data,store}=fixture(),email='a@example.com',key=memberIndexKey(email,'a');
+ data.set('sites/a.json',{siteId:'a',revision:2,members:[]});data.set(key,{email,siteId:'a',revision:1});
+ await repairMemberIndex(store,'a',email);assert.equal(data.get(key).active,false);
+ data.set('sites/a.json',{siteId:'a',revision:3,members:[{email,role:'accountant'}]});
+ await repairMemberIndex(store,'a',email);assert.equal(data.get(key).active,true);assert.equal(data.get(key).revision,3);
+});
+test('lost CAS retry rereads canonical membership rather than deleting a concurrent regrant',async()=>{
+ const {data,store}=fixture(),email='a@example.com',key=memberIndexKey(email,'a');
+ data.set('sites/a.json',{siteId:'a',revision:2,members:[]});let calls=0;const write=store.setJSON;
+ store.setJSON=async(...args)=>{if(!calls++){data.set('sites/a.json',{siteId:'a',revision:3,members:[{email,role:'accountant'}]});return{modified:false};}return write(...args)};
+ await repairMemberIndex(store,'a',email);assert.equal(data.get(key).active,true);assert.equal(data.get(key).revision,3);
+});
+test('pre-commit projections grant nothing, then keep accepted membership discoverable after refresh failure',async()=>{
+ const {data,store}=fixture(),email='new-accountant@example.com';
+ data.set('sites/a.json',{siteId:'a',revision:2,members:[]});
+ await repairMemberIndex(store,'a',email);
+ assert.deepEqual(await currentIndexedSites(store,email),[]);
+ data.set('sites/a.json',{siteId:'a',revision:3,members:[{email,role:'accountant',financialPermissions:['accounting.view']}]});
+ // Simulate the response/update failing after the canonical grant committed.
+ store.setJSON=async()=>{throw Error('isolated index refresh outage')};
+ await assert.rejects(repairMemberIndex(store,'a',email));
+ assert.deepEqual((await currentIndexedSites(store,email)).map(site=>site.siteId),['a']);
+});

@@ -30,7 +30,7 @@ export default async (req) => {
 
     assertSameOrigin(req);
     const payload = await req.json();
-    const { user, site } = await requireSiteAccess(payload.siteId, ["owner", "manager"]);
+    const { user, site } = await requireSiteAccess(payload.siteId, ["owner"]);
     const action = cleanText(payload.action, 80);
 
     if (action === "create_payment_link") {

@@ -9,7 +9,7 @@ export default async (req) => {
   try {
     assertSameOrigin(req);
     const { siteId } = await req.json();
-    const { site } = await requireSiteAccess(siteId, ["owner", "manager"]);
+    const { site } = await requireSiteAccess(siteId, ["owner"]);
     const accountId = site.paymentRules?.stripeConnectedAccountId;
     if (!accountId) throw Object.assign(new Error("Stripe has not been connected for this business."), { status: 409 });
     assertStripeWriteAllowed({ requestUrl: req.url });

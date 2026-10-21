@@ -10,7 +10,7 @@ export default async (req) => {
   try {
     if (!googleConfigured()) throw Object.assign(new Error("Google Calendar is not configured yet."), { status: 503 });
     const siteId = new URL(req.url).searchParams.get("siteId") || "";
-    const { user } = await requireSiteAccess(siteId, ["owner", "manager"]);
+    const { user } = await requireSiteAccess(siteId, ["owner"]);
     const state = crypto.randomBytes(32).toString("base64url");
     await clientOAuthStore().setJSON(`states/${state}.json`, {
       kind: "calendar",

@@ -1,7 +1,8 @@
+import {commercialCapabilities, employeeSiteView} from "../lib/commercial-access.mjs";
 import { sanitizePolicies } from "../lib/publication-review.mjs";
 import { readPosOperations } from '../lib/pos-operations.mjs';
-import { assertSameOrigin, authorizedSites, errorResponse, requireSiteAccess, siteRoleCapabilities } from "../lib/client-auth.mjs";
-import { normalizeEmail, patchClientSite, publicClientSite, renameClientSiteSlug } from "../lib/client-store.mjs";
+import { assertSameOrigin, authorizedSites, errorResponse, requireSiteAccess } from "../lib/client-auth.mjs";
+import { patchClientSite, publicClientSite, renameClientSiteSlug } from "../lib/client-store.mjs";
 import { cleanText, validEmail } from "../lib/platform-utils.mjs";
 import { normalizeTaxConfig } from "../lib/webfactory-v3-domain.mjs";
 
@@ -103,7 +104,7 @@ function sanitizeEmployees(value, catalog, locations = []) {
       : [],
     calendarId: cleanText(member.calendarId, 500),
     dailyLimit: Math.max(1, Math.min(100, Number(member.dailyLimit || 8))),
-    schedule: member.schedule && typeof member.schedule === "object" ? member.schedule : {},
+    schedule: sanitizeHours(member.schedule || {}),
     timeOff: Array.isArray(member.timeOff) ? member.timeOff.slice(0, 365).map((entry) => ({
       start: cleanText(entry.start, 40), end: cleanText(entry.end, 40), note: cleanText(entry.note, 300),
     })) : [],
@@ -114,6 +115,7 @@ function sanitizeHours(value = {}) {
   const result = {};
   for (const [day, hours] of Object.entries(value).slice(0, 14)) {
     result[cleanText(day, 40)] = {
+      breaks: Array.isArray(hours?.breaks)?hours.breaks.slice(0,12).map(entry=>({start:cleanText(entry.start,5),end:cleanText(entry.end,5)})).filter(entry=>/^([01]\d|2[0-3]):[0-5]\d$/.test(entry.start)&&/^([01]\d|2[0-3]):[0-5]\d$/.test(entry.end)&&entry.start<entry.end):[],
       enabled: Boolean(hours?.enabled),
       open: /^\d{2}:\d{2}$/.test(hours?.open || "") ? hours.open : "09:00",
       close: /^\d{2}:\d{2}$/.test(hours?.close || "") ? hours.close : "17:00",
@@ -175,24 +177,22 @@ export function normalizeClientSection(site, section, incoming, user, membership
       for (const feature of allowedFeatures) if (payload.value?.[feature] !== undefined) value[feature] = Boolean(payload.value[feature]);
     }
     if (section === "catalog") value = sanitizeCatalog(payload.value);
-    if (section === "employees") value = sanitizeEmployees(payload.value, site.catalog, site.business?.locations || []);
+    if (section === "employees") {
+      if (!Array.isArray(payload.value)) throw Object.assign(new Error("Professionals must be a list."),{status:400});
+      for (const professional of payload.value) {
+        if (professional.dailyLimit!==undefined && (!Number.isInteger(Number(professional.dailyLimit)) || Number(professional.dailyLimit)<1 || Number(professional.dailyLimit)>100)) throw Object.assign(new Error("Choose a daily limit from 1 to 100."),{status:400});
+        for (const block of professional.timeOff || []) {
+          if (!block.start || !block.end || !Number.isFinite(Date.parse(block.start)) || !Number.isFinite(Date.parse(block.end)) || Date.parse(block.end)<Date.parse(block.start)) throw Object.assign(new Error("Choose valid unavailable dates."),{status:400});
+        }
+      }
+      value = sanitizeEmployees(payload.value, site.catalog, site.business?.locations || []).map(employee=>({...((site.employees || []).find(existing=>existing.id===employee.id)||{}),...employee}));
+      if (new Set(value.map(employee=>employee.id)).size!==value.length) throw Object.assign(new Error("Professional IDs must be unique."),{status:400});
+      if ((site.members || []).some(member=>member.employeeId && !value.some(employee=>employee.id===member.employeeId))) throw Object.assign(new Error("Unlink portal access before removing a professional. Deactivate to preserve bookings."),{status:409});
+    }
     if (section === "hours") value = sanitizeHours(payload.value);
     if (section === "paymentRules") value = sanitizePaymentRules(payload.value, site.paymentRules);
     if (section === "taxConfig") value = normalizeTaxConfig(payload.value);
-    if (section === "members") {
-      if ((membership.role || "owner") !== "owner") throw Object.assign(new Error("Only the owner can change portal roles."), { status: 403 });
-      if (!Array.isArray(payload.value)) throw Object.assign(new Error("Members must be a list."), { status: 400 });
-      const ownerEmail = normalizeEmail((site.members || []).find((member) => member.role === "owner")?.email || user.email);
-      value = payload.value.slice(0, 50).map((member) => {
-        const email = normalizeEmail(member.email);
-        if (!email) throw Object.assign(new Error("Member email is required."), { status: 400 });
-        const role = email === ownerEmail ? "owner" : ["manager","employee","cashier","staff"].includes(member.role) ? member.role : "staff";
-        const allowedLocations = new Set((site.business?.locations || []).map((location) => location.id));
-        const locationIds = Array.isArray(member.locationIds) ? [...new Set(member.locationIds.map((id) => cleanText(id, 120)).filter((id) => allowedLocations.has(id)))].slice(0, 30) : [];
-        return { email, role, locationIds };
-      });
-      if (!value.some((member) => member.email === ownerEmail && member.role === "owner")) value.unshift({ email: ownerEmail, role: "owner", locationIds: [] });
-    }
+    if (section === "members") throw Object.assign(new Error("Use the verified portal access controls."), {status:403});
     if (section === "reviewSettings") value = {
       enabled: Boolean(payload.value?.enabled),
       postalAddress: cleanText(payload.value?.postalAddress, 500),
@@ -232,7 +232,7 @@ export default async (req) => {
         })) }, { headers: { "Cache-Control": "no-store" } });
       }
       const { user, site, membership } = await requireSiteAccess(siteId);
-      return Response.json({ ok: true, user: { id: user.id, email: user.email, name: user.name }, membership: { ...membership, capabilities: siteRoleCapabilities(membership?.role || "staff") }, site, posOperations: await readPosOperations(site.siteId) }, { headers: { "Cache-Control": "no-store" } });
+      return Response.json({ ok: true, user: { id: user.id, email: user.email, name: user.name }, membership: { ...membership, capabilities: commercialCapabilities(membership) }, site: employeeSiteView(site,membership), posOperations: await readPosOperations(site.siteId) }, { headers: { "Cache-Control": "no-store" } });
     }
 
     if (req.method !== "PATCH") return Response.json({ ok: false, message: "Method not allowed." }, { status: 405 });
@@ -240,16 +240,15 @@ export default async (req) => {
     const payload = await req.json();
     const section = cleanText(payload.section, 40);
     if (!allowedSections.has(section)) throw Object.assign(new Error("Invalid settings section."), { status: 400 });
-    const { user, site, membership } = await requireSiteAccess(payload.siteId, ["owner", "manager"]);
-    if (membership.role === "staff") throw Object.assign(new Error("Staff cannot change business settings."), { status: 403 });
+    const { user, site, membership } = await requireSiteAccess(payload.siteId, ["owner"]);
     if (section === "slug") {
       const updated = await renameClientSiteSlug(site.siteId, payload.value, payload.revision);
       return Response.json({ ok: true, site: updated, publicSite: publicClientSite(updated) }, { headers: { "Cache-Control": "no-store" } });
     }
     const value = normalizeClientSection(site, section, payload.value, user, membership);
 
-    if(section==='catalog'&&!Number.isInteger(payload.revision))throw Object.assign(new Error('Reload the portal before editing the catalog.'),{status:409});
-    const updated = await patchClientSite(site.siteId, { [section]: value },section==='catalog'?{expectedRevision:payload.revision}:{});
+    if(['catalog','employees'].includes(section)&&!Number.isInteger(payload.revision))throw Object.assign(new Error('Reload the portal before editing the catalog.'),{status:409});
+    const updated = await patchClientSite(site.siteId, { [section]: value },['catalog','employees'].includes(section)?{expectedRevision:payload.revision}:{});
     return Response.json({ ok: true, site: updated, publicSite: publicClientSite(updated) }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
     if (typeof error?.code === 'string' && /^SLUG_[A-Z_]+$/.test(error.code)) return Response.json({ ok: false, code: error.code, message: error.status >= 500 ? 'The change could not be confirmed. Reload before retrying.' : error.message }, { status: error.status, headers: { 'Cache-Control': 'no-store' } });

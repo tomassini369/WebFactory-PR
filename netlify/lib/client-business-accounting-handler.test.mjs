@@ -13,7 +13,7 @@ test('HTTP boundary rejects foreign origins before storage and requires owner fo
 test('Concurrent save failure is a 409, and writes use private tenant key and conditional creation',async()=>{
  const store={getWithMetadata:async()=>null,setJSON:async(key,value,options)=>{assert.equal(key,'a/accounting/ledger.json');assert.equal(value.siteId,'a');assert.deepEqual(options,{onlyIfNew:true});return {modified:false}}};
  const handler=createAccountingHandler({authorize:async()=>({site,user:{email:'owner'}}),getStore:()=>store});
- const response=await handler(request({siteId:'a',id:'request-123',revision:0,type:'rate',date:'2026-10-01',employeeId:'e',hourlyCents:1200}));assert.equal(response.status,409);
+ const response=await handler(request({siteId:'a',id:'request-123',revision:0,type:'expense',date:'2026-10-01',description:'Fixture expense',category:'operations',amountCents:1200,quantity:0}));assert.equal(response.status,409);
 });
 test('Transaction reader consumes every page and refuses cross-tenant records',async()=>{
  const store={list:async function*({prefix}){yield {blobs:[{key:prefix+'1'}]};yield {blobs:[{key:prefix+'2'}]}},get:async key=>({siteId:'a',transactionId:key})};

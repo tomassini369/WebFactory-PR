@@ -1,3 +1,4 @@
+import {assertOwnPosRecord} from "../lib/commercial-access.mjs";
 import { errorResponse, requireSiteCapability } from "../lib/client-auth.mjs";
 import { clientCommerceStore, commerceKey } from "../lib/client-store.mjs";
 import { cleanText } from "../lib/platform-utils.mjs";
@@ -8,10 +9,11 @@ export default async(req)=>{
     const url=new URL(req.url);
     const siteId=cleanText(url.searchParams.get("siteId"),120);
     const transactionId=cleanText(url.searchParams.get("transactionId"),160);
-    const {site}=await requireSiteCapability(siteId,"pos");
+    const {site,membership,user}=await requireSiteCapability(siteId,"pos");
     const record=await clientCommerceStore().get(commerceKey(site.siteId,"transactions",transactionId),{type:"json"});
     if(!record||record.source!=="pos_remote"||!record.checkoutUrl)throw Object.assign(new Error("POS checkout not found."),{status:404});
 
+    assertOwnPosRecord(site,membership,user,record);
     const qrUrl=new URL("https://quickchart.io/qr");
     qrUrl.searchParams.set("text",record.checkoutUrl);
     qrUrl.searchParams.set("size","900");

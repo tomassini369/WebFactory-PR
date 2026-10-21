@@ -15,10 +15,10 @@ export function createPosSettingsHandler({ authorize = requireSiteAccess, getSto
       if (!input || typeof input !== 'object' || Array.isArray(input)) throw kioskFail('Invalid request.');
       const siteId = req.method === 'POST' ? input.siteId : new URL(req.url).searchParams.get('siteId');
       if (!/^[a-zA-Z0-9_-]{1,120}$/.test(siteId || '')) throw kioskFail('Invalid business.');
-      const { site, user, membership } = await authorize(siteId, ['owner', 'manager', 'employee', 'cashier']);
+      const { site, user, membership } = await authorize(siteId, ['owner','employee']);
       if (site.siteId !== siteId) throw kioskFail('Business mismatch.', 403);
       const member = site.members?.find(item => String(item.email).toLowerCase() === String(user.email).toLowerCase());
-      const canManage = ['owner', 'manager'].includes(membership?.role) && member?.role === membership.role && membershipHasCapability(member, 'settings');
+      const canManage = ['owner'].includes(membership?.role) && member?.role === membership.role && membershipHasCapability(member, 'settings');
       if (req.method === 'POST' && !canManage) throw kioskFail('Business administrator required / Administrador del negocio requerido.', 403);
       const store = getStore();
       const operations = req.method === 'POST' ? await configurePosOperations(store, siteId, input, displayActor(user), clock()) : await readPosOperations(siteId, store);

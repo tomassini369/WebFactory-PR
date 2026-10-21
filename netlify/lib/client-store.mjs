@@ -1,5 +1,6 @@
 import { availableInventory, reservedQuantity } from './inventory-availability.mjs';
 import crypto from "node:crypto";
+import {currentIndexedSites,repairMemberIndex,changedMembershipEmails} from "./member-index.mjs";
 import { claimPublicSiteSlug, renamePublicSiteSlug } from "./client-site-slug.mjs";
 import { getDeployStore, getStore } from "@netlify/blobs";
 import { cleanText } from "./platform-utils.mjs";
@@ -91,18 +92,12 @@ export async function saveClientSite(site) {
     }
   }else if(site.stockOperations||site.stockReservations||site.inventoryArchive)throw Object.assign(new Error('Inventory markers cannot be supplied when creating a business.'),{status:400});
   // All site writers respect existing aliases, including provisioning and edits.
+  const indexedEmails=changedMembershipEmails(previous?.data?.members||[],site.members||[]);
+  for(const email of indexedEmails)await repairMemberIndex(store,site.siteId,email);
   await claimPublicSiteSlug(store, site.siteId, slugify(site.slug));
   const saved=await store.setJSON(siteKey(site.siteId),site,previous?{onlyIfMatch:previous.etag}:{onlyIfNew:true});
   if(!saved.modified)throw Object.assign(new Error('Business changed. Reload before saving.'),{status:409});
-  for (const member of site.members || []) {
-    const email = normalizeEmail(member.email);
-    if (!email) continue;
-    await clientSiteStore().setJSON(`members/${emailHash(email)}/${site.siteId}.json`, {
-      siteId: site.siteId,
-      email,
-      role: member.role || "owner",
-    });
-  }
+  for(const email of indexedEmails){try{await repairMemberIndex(store,site.siteId,email)}catch{ /* Canonical membership authorizes; seeded index preserves discoverability. */ }}
   return site;
 }
 
@@ -126,17 +121,7 @@ export async function renameClientSiteSlug(siteId, requestedSlug, expectedRevisi
 }
 
 export async function sitesForEmail(email) {
-  const normalized = normalizeEmail(email);
-  if (!normalized) return [];
-  const result = await clientSiteStore().list({ prefix: `members/${emailHash(normalized)}/` });
-  const sites = [];
-  for (const blob of result.blobs || []) {
-    const member = await clientSiteStore().get(blob.key, { type: "json" });
-    if (member?.email !== normalized) continue;
-    const site = await getClientSite(member.siteId);
-    if (site) sites.push(site);
-  }
-  return sites;
+  return (await currentIndexedSites(clientSiteStore(),email)).map(site=>({...site,revision:Number(site.revision||0),design:normalizeSiteDesign(site.design||{})}));
 }
 
 export function publicClientSite(site) {

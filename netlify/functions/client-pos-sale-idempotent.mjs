@@ -1,3 +1,4 @@
+import {assertPosLocation} from "../lib/commercial-access.mjs";
 import { requirePosAdjustments } from '../lib/pos-permissions.mjs';
 import { requireCashierPos } from '../lib/pos-operations.mjs';
 import crypto from "node:crypto";
@@ -14,7 +15,9 @@ export function createIdempotentPosSaleHandler({ authorize = requireSiteCapabili
     if(req.method!=="POST") return Response.json({ok:false,message:"Method not allowed."},{status:405});
     assertSameOrigin(req);
     const payload=await req.clone().json();
-    const {site,membership}=await authorize(payload.siteId,"pos");
+    const {site,membership,user}=await authorize(payload.siteId,"pos");
+    assertPosLocation(site,membership,payload);
+    if (!['owner','admin'].includes(membership?.role) && membership?.permissions?.collect !== true) throw Object.assign(new Error('Collection permission required / Se requiere permiso de cobro.'),{status:403});
     requirePosAdjustments(membership,payload);
     const saleAttemptId=cleanText(payload.saleAttemptId,120).replace(/[^a-zA-Z0-9_-]/g,"");
     if(saleAttemptId.length<8) throw Object.assign(new Error("A valid sale attempt ID is required."),{status:400});
@@ -24,6 +27,7 @@ export function createIdempotentPosSaleHandler({ authorize = requireSiteCapabili
     return await withBookingLock(store, `locks/pos-attempt/${site.siteId}/${saleAttemptId}`, async()=>{
     const fingerprint=crypto.createHash("sha256").update(JSON.stringify({items:payload.items,customer:payload.customer,discountCents:payload.discountCents,tipCents:payload.tipCents,paymentMethod:payload.paymentMethod})).digest("hex");
     const existing=await store.get(key,{type:"json"});
+    if(existing && !['owner','admin'].includes(membership?.role) && existing.actorId !== user.id)throw Object.assign(new Error('Sale attempt belongs to another operator.'),{status:403});
     if(existing?.fingerprint&&existing.fingerprint!==fingerprint)throw Object.assign(new Error("Use a new attempt ID for a changed sale."),{status:409});
     if(existing?.status==="uncertain")throw Object.assign(new Error("This sale requires review before retrying. Check orders and inventory in your portal."),{status:409});
     if(existing?.status==="completed"&&existing?.response){
@@ -36,7 +40,7 @@ export function createIdempotentPosSaleHandler({ authorize = requireSiteCapabili
     await requireCashierPos(site.siteId, store);
 
     await store.setJSON(key,{
-      siteId:site.siteId,
+      siteId:site.siteId,actorId:user?.id,
       saleAttemptId,
       fingerprint,
       status:"processing",
@@ -49,7 +53,7 @@ export function createIdempotentPosSaleHandler({ authorize = requireSiteCapabili
 
     if(response.ok&&body?.ok){
       await store.setJSON(key,{
-        siteId:site.siteId,
+        siteId:site.siteId,actorId:user?.id,
         saleAttemptId,
         fingerprint,
         status:"completed",
@@ -62,7 +66,7 @@ export function createIdempotentPosSaleHandler({ authorize = requireSiteCapabili
       if(body.record?.transactionId)await store.delete(commerceKey(site.siteId,'pos-processing',body.record.transactionId));
     }else{
       await store.setJSON(key,{
-        siteId:site.siteId,
+        siteId:site.siteId,actorId:user?.id,
         saleAttemptId,
         fingerprint,
         status:response.status>=500?"uncertain":"failed",

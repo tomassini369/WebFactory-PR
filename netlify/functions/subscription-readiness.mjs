@@ -5,7 +5,7 @@ export default async (req) => {
   if (req.method !== "GET") return Response.json({ ok: false, message: "Method not allowed." }, { status: 405 });
   try {
     const siteId = new URL(req.url).searchParams.get("siteId") || "";
-    const { site } = await requireSiteAccess(siteId, ["owner", "manager"]);
+    const { site } = await requireSiteAccess(siteId, ["owner"]);
     return Response.json({
       ok: true,
       readiness: subscriptionBillingReadiness(),

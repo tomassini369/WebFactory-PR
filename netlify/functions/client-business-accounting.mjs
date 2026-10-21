@@ -36,6 +36,8 @@ export function createAccountingHandler({authorize=requireSiteAccess,getStore=cl
     const saved=await store.getWithMetadata(key,{type:'json'});
     const ledger=saved?.data||{...emptyLedger(),siteId:site.siteId};
     if(req.method==='POST') {
+      if(!['expense','allocation','void'].includes(payload.type))throw fail('Workforce and salary operations are archived.',410);
+      if(payload.type==='void'&&!ledger.entries?.some(entry=>entry.id===payload.targetId&&['expense','allocation'].includes(entry.type)))throw fail('Only commercial costs and allocations may be corrected here.',403);
       if(payload.type==='allocation') {
         const transactions=await loadAccountingTransactions(store,site.siteId);
         if(!transactions.some(e=>e.transactionId===payload.transactionId))throw fail('Transaction does not belong to this business.',404);

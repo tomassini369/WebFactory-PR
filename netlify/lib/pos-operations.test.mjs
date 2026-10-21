@@ -31,13 +31,13 @@ test('default modules preserve existing cashier/display and infer capabilities f
  const manual=posCapabilities({business:{category:'Retail'}},{...defaults,profile:'restaurant'});assert.equal(manual.profile,'restaurant');assert.equal(manual.kitchen,false,'presentation override cannot pretend checkout has restaurant settlement');
  assert.equal(posCapabilities({design:{templateCategory:'Barbershop'}}).profile,'barber');
 });
-test('settings writes require real same-tenant owner/manager membership and never leak private records',async()=>{
+test('settings writes require real same-tenant owner membership and never leak private records',async()=>{
  const f=fixture();f.site.members[0].salary=99999;
  let response=await f.handler(request());assert.equal(response.status,200);const body=await response.json();assert.equal(body.canManage,true);assert(!JSON.stringify(body).includes('salary'));assert(!JSON.stringify(body).includes('owner@example.invalid'));
  for(const role of ['cashier','employee','admin']){f.setMember(role);assert.equal((await f.handler(request({siteId:f.site.siteId,...defaults,cashierEnabled:false}))).status,403);}
  f.setMember('owner','outsider@example.invalid');assert.equal((await f.handler(request({siteId:f.site.siteId,...defaults,cashierEnabled:false}))).status,403);
  f.setMember('owner','owner@example.invalid');assert.equal((await f.handler(request({siteId:'tenant-other',...defaults,cashierEnabled:false}))).status,403);assert.equal(f.rows.size,0);
- f.setMember('manager');f.site.members[0].role='manager';response=await f.handler(request({siteId:f.site.siteId,...defaults,profile:'barber',employeeId:'arbitrary',amountTotal:1}));assert.equal(response.status,200);const saved=f.rows.get(kioskConfigKey(f.site.siteId)).data;assert.equal(saved.operations.revision,1);assert.equal(saved.operations.events[0].at,1234567);assert.equal(saved.operations.events[0].actor,'actor-fixture');assert.equal(saved.employeeId,undefined);assert.equal(saved.enabled,false);
+ f.setMember('owner');f.site.members[0].role='owner';response=await f.handler(request({siteId:f.site.siteId,...defaults,profile:'barber',employeeId:'arbitrary',amountTotal:1}));assert.equal(response.status,200);const saved=f.rows.get(kioskConfigKey(f.site.siteId)).data;assert.equal(saved.operations.revision,1);assert.equal(saved.operations.events[0].at,1234567);assert.equal(saved.operations.events[0].actor,'actor-fixture');assert.equal(saved.employeeId,undefined);assert.equal(saved.enabled,false);
 });
 test('concurrent administrators cannot overwrite settings; kiosk pairing/configuration survive operation changes',async()=>{
  const f=fixture(),paired=await f.paired();
