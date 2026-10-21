@@ -58,7 +58,7 @@ not represented as externally verified. Calendar errors no longer fail open.
 
 ## Validation record
 
-- Node 22: `npm test`: 631 passed, 0 failed at the current checkpoint.
+- Node 22: `npm test`: 632 passed, 0 failed at the current checkpoint.
 - TypeScript and Vite: `npm run build` passed.
 - Chromium initial 390/1440, ES/EN, Light/Dark, Owner/Employee: 16 cases passed.
 - Impeccable 4.1.0: exit 2, 20 pre-existing advisories/warnings; none in the

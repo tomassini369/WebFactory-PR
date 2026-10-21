@@ -9,11 +9,12 @@ const port=Number(process.env.QA_PORT||5320),engine=process.env.QA_ENGINE||'chro
 await mkdir(out,{recursive:true})
 const server=process.env.QA_ORIGIN?null:await preview({preview:{host:'127.0.0.1',port,strictPort:true}})
 const browser=await(engine==='webkit'?webkit:chromium).launch(engine==='webkit'?(process.env.QA_WEBKIT_PATH?{executablePath:process.env.QA_WEBKIT_PATH}:{}):(process.env.QA_CHROMIUM_PATH?{executablePath:process.env.QA_CHROMIUM_PATH,args:['--no-sandbox']}:{}))
+let activePage
 const root=process.env.QA_ORIGIN||`http://127.0.0.1:${port}`
 try{
  for(const width of (process.env.QA_WIDTHS||'320,375,390,430,768,1024,1440').split(',').map(Number))for(const theme of ['light','dark'])for(const lang of ['es','en'])for(const role of ['owner','employee']){
   const context=await browser.newContext({viewport:{width,height:950},reducedMotion:'reduce'}),page=await context.newPage(),errors=[]
-  page.on('pageerror',error=>errors.push(error.message));page.on('dialog',dialog=>dialog.accept())
+  activePage=page;page.on('pageerror',error=>errors.push(error.message));page.on('dialog',dialog=>dialog.accept())
   const user={id:role+'-qa',email:role+'@example.invalid',mfa:{required:false}},member={email:user.email,role,userId:user.id,employeeId:role==='employee'?'p1':'',permissions:{},locationIds:role==='employee'?['one']:[]}
   let site={siteId:'commercial-qa',slug:'commercial-qa',status:'active',revision:1,business:{name:'Isolated commercial QA',category:'Barbershop',locations:[{id:'one',name:'One',active:true}]},design:{primary:'#0b1529',secondary:'#285fa6'},employees:[{id:'p1',name:'Professional QA',role:'Barber',serviceIds:['s1'],locationIds:['one'],active:true,dailyLimit:8,schedule:{},timeOff:[],calendarId:''}],catalog:[{id:'s1',name:'Service QA',type:'service',price:25,active:true,requiresAppointment:true,duration:30}],members:[member,...(role==='owner'?[{email:'legacy@example.invalid',role:'manager'}]:[])],membershipAudit:[],hours:{Monday:{enabled:true,open:'09:00',close:'17:00'}},settings:{timezone:'America/Puerto_Rico',locale:lang},paymentRules:{},googleCalendar:{},features:{},servicePlan:{subscriptionStatus:'complimentary',billingModel:'complimentary'}}
   const record={siteId:site.siteId,transactionId:'booking-qa',kind:'booking',employeeId:'p1',locationId:'one',status:'confirmed',paymentStatus:'due',start:'2028-02-01T14:00:00Z',end:'2028-02-01T14:30:00Z',customer:{name:'Assigned customer',email:'customer@example.invalid',phone:''},items:[{name:'Service QA',quantity:1,unitAmount:2500}],amountTotal:2500,calendarToken:'PRIVATE-DO-NOT-SEND'}
@@ -59,4 +60,8 @@ try{
   console.log('PASS commercial access',engine,width,theme,lang,role)
   await context.close()
  }
+}catch(error){
+ const detail=String(error?.stack||error).replace(/%/g,'%25').replace(/\r/g,'%0D').replace(/\n/g,'%0A');console.error('::error title=Commercial portal QA::'+detail);
+ if(activePage&&!activePage.isClosed())await activePage.screenshot({path:out+'/failure-'+engine+'.png'}).catch(()=>{});
+ throw error;
 }finally{await browser.close();if(server)await new Promise(resolve=>server.httpServer.close(resolve))}

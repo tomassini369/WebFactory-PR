@@ -105,3 +105,11 @@ test('employee appointment discovery filters every page before applying the boun
  const handler=createCommerceAdminHandler({authorizeAccess:async()=>access,getStore:()=>store,pendingSales:async()=>[]});
  const response=await handler(new Request('https://example.invalid/api?siteId='+site.siteId));assert.equal(response.status,200);assert.deepEqual((await response.json()).bookings.map(record=>record.transactionId),['booking-one']);
 });
+
+test('kitchen capability cannot prepare an unpaid order or issue a refund',async()=>{
+ const site=fixture(),member={...employee,permissions:{kitchen:true}},row={...booking({kind:'order',transactionId:'unpaid-food',queueNumber:'Q1',calendarToken:null}),paymentStatus:'due'},key=site.siteId+'/orders/unpaid-food.json',rows=new Map([[key,row]]);
+ const store={get:async key=>rows.get(key),setJSON:async(key,value,options)=>{if(options?.onlyIfNew&&rows.has(key))return {modified:false};rows.set(key,value);return {modified:true}},delete:async key=>rows.delete(key)};
+ const handler=createCommerceAdminHandler({authorizeCapability:async()=>({site,user,membership:member}),getStore:()=>store});
+ const result=await handler(req({siteId:site.siteId,kind:'order',transactionId:'unpaid-food',action:'kitchen_status',kitchenStatus:'preparing'}));assert.equal(result.status,409);assert.equal(rows.get(key).paymentStatus,'due');assert(!rows.get(key).kitchenStatus);
+ const refund=await handler(req({siteId:site.siteId,kind:'order',transactionId:'unpaid-food',action:'refund'}));assert.equal(refund.status,403);
+});
