@@ -28,6 +28,7 @@ try{
   await page.locator('input[type=email]').waitFor()
   const card=page.locator('.ca-login,.wfa-login'),login=await card.boundingBox()
   for(const key of ['x','y','width','height'])assert(Math.abs(loading[key]-login[key])<2,`${path} ${width} ${theme}: stable ${key}`)
+  if(width>820)assert(await card.evaluate(el=>el.scrollHeight<=el.clientHeight+2),'Desktop card fits the full login, including submit and recovery')
   assert.deepEqual(requests,['POST','GET'],'MFA and portal share one server session check')
   await page.locator('input[type=email]').fill('lifecycle@example.invalid')
   await page.locator('input[autocomplete=current-password]').fill('disposable-local-fixture')
