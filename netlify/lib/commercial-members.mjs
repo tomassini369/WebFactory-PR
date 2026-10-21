@@ -8,14 +8,17 @@ export function changeCommercialMember(site,input,actor,identity,now=new Date().
   if (input.role && !['owner','employee'].includes(input.role) && input.action!=='migrate') throw fail('Only Owner and Employee are commercial roles.');
   const email=emailOf(input.email), current=(site.members || []).find(member=>emailOf(member.email)===email);
   if (!email || !email.includes('@')) throw fail('A valid email is required.');
-  if (!['invite','configure','migrate','undo_migration','revoke'].includes(input.action)) throw fail('Unsupported access action.');
+  if (!['invite','configure','migrate','undo_migration','revoke','resend_invite'].includes(input.action)) throw fail('Unsupported access action.');
   if (input.action === 'invite' && current) throw fail('This account already has access. Edit its permissions instead.',409);
   if (input.action !== 'invite' && !current) throw fail('Membership not found.',404);
   if (current?.role === 'owner' && input.action !== 'configure') throw fail('Owner access cannot be changed here.',409);
   if (input.action === 'migrate' && (['owner','employee'].includes(current.role) || input.confirmLegacy !== true)) throw fail('The owner must explicitly confirm this legacy conversion.',409);
   if (input.action === 'configure' && !['owner','employee'].includes(current.role)) throw fail('Confirm the legacy migration first.',409);
   let next;
-  if (input.action === 'undo_migration') {
+  if (input.action === 'resend_invite') {
+    if(current.role!=='employee')throw fail('Review legacy access first.',409);
+    next=current;
+  } else if (input.action === 'undo_migration') {
     const event=(site.membershipAudit || []).find(event=>event.id===input.migrationId && event.email===email && event.action==='migrate');
     const latest=(site.membershipAudit || []).filter(event=>event.email===email).at(-1);
     if (!event || latest?.id!==event.id) throw fail('Only the most recent unchanged migration can be reversed.',409);

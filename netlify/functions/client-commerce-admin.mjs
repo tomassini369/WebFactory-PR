@@ -21,15 +21,17 @@ import { assertStripeWriteAllowed } from "../lib/stripe-runtime.mjs";
 
 function env(name) { return globalThis.Netlify?.env?.get(name) || ""; }
 
-async function listRecords(siteId, kind, getStore=clientCommerceStore) {
-  const result = await getStore().list({ prefix: `${siteId}/${kind}/` });
-  const records = [];
-  const blobs = result.blobs || [];
-  for (let index = 0; index < blobs.length; index += 40) {
-    const batch = await Promise.all(blobs.slice(index, index + 40).map((blob) => getStore().get(blob.key, { type: "json" })));
-    records.push(...batch.filter(Boolean));
+async function listRecords(siteId, kind, getStore=clientCommerceStore, visible=()=>true) {
+  const pages=getStore().list({prefix:`${siteId}/${kind}/`,paginate:true});
+  let records=[];
+  for await (const page of pages[Symbol.asyncIterator]?pages:[await pages]) {
+    for(let index=0;index<(page.blobs || []).length;index+=40) {
+      const batch=await Promise.all(page.blobs.slice(index,index+40).map(blob=>getStore().get(blob.key,{type:'json'})));
+      records.push(...batch.filter(record=>record && visible(record)));
+      records.sort((a,b)=>Date.parse(b.createdAt||'')-Date.parse(a.createdAt||''));records=records.slice(0,250);
+    }
   }
-  return records.sort((a, b) => Date.parse(b.createdAt || "") - Date.parse(a.createdAt || "")).slice(0, 250);
+  return records;
 }
 
 export function createCommerceAdminHandler({authorizeAccess=requireSiteAccess,authorizeCapability=requireSiteCapability,getStore=clientCommerceStore,pendingSales=listPosProcessing}={}) {return async (req) => {
@@ -37,7 +39,7 @@ export function createCommerceAdminHandler({authorizeAccess=requireSiteAccess,au
     if (req.method === "GET") {
       const siteId = new URL(req.url).searchParams.get("siteId") || "";
       const { site, membership } = await authorizeAccess(siteId);
-      const [orders, bookings, pendingPos] = await Promise.all([listRecords(siteId, "orders",getStore), listRecords(siteId, "bookings",getStore),pendingSales(siteId)]);
+      const [orders, bookings, pendingPos] = await Promise.all([listRecords(siteId, "orders",getStore,record=>canAccessCommerce(site,membership,record)), listRecords(siteId, "bookings",getStore,record=>canAccessCommerce(site,membership,record)),pendingSales(siteId)]);
       const mergedOrders=[...new Map([...orders,...pendingPos].map(record=>[record.transactionId,record])).values()];
       const visible = records => records.filter(record => canAccessCommerce(site,membership,record));
       const visibleBookings=await Promise.all(visible(bookings).map(async row=>row.bookingTotalCents!=null||row.balanceAttempt?{...row,bookingBalance:await bookingBalance(getStore(),row)}:row));
@@ -76,7 +78,7 @@ export function createCommerceAdminHandler({authorizeAccess=requireSiteAccess,au
       return Response.json({ok:true,record:recovered},{headers:{'Cache-Control':'no-store'}});
     }
     if (payload.action === "kitchen_status") {
-      if (kind !== "orders" || !record.queueNumber) throw Object.assign(new Error("Kitchen updates are only available for paid food orders."), { status: 409 });
+      if (kind !== "orders" || !record.queueNumber || !["paid","paid_in_person"].includes(record.paymentStatus) || ["cancelled","refunded","failed"].includes(record.status)) throw Object.assign(new Error("Kitchen updates are only available for paid food orders."), { status: 409 });
       const kitchenStatus = String(payload.kitchenStatus || "");
       if (!["received", "preparing", "ready", "completed"].includes(kitchenStatus)) throw Object.assign(new Error("Invalid kitchen status."), { status: 400 });
       record = { ...record, kitchenStatus, updatedAt: new Date().toISOString() };

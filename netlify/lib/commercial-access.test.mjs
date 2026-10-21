@@ -92,3 +92,16 @@ test('owner reviews availability requests with CAS; employees cannot approve the
  assert.equal((await make({...employee,permissions:{availabilityRequests:true}})(req({siteId:site.siteId,action:'review',id:'request-one'}))).status,403);assert.equal(writes,0);
  assert.equal((await make(owner)(req({siteId:site.siteId,action:'review',id:'request-one'}))).status,200);assert.equal(saved.status,'reviewed');assert.equal(saved.reviewedBy,user.id);assert.equal(writes,1);
 });
+
+test('a failed invitation can be resent without changing the existing identity, profile or grants',async()=>{
+ let site=fixture(),attempts=0;site.members=[owner];
+ const handler=createMemberAccessHandler({authorize:async()=>({site,user:{id:'owner-id'},membership:owner}),findUser:async email=>({id:user.id,email}),save:async next=>(site=next),sendInvite:async()=>{if(++attempts===1)throw Error('Isolated delivery failure')}});
+ const first=await handler(req({siteId:site.siteId,revision:3,action:'invite',email:user.email,employeeId:'p1'}));assert.equal(first.status,200);assert.equal((await first.json()).invitationSent,false);const before=structuredClone(site.members.find(member=>member.email===user.email));
+ const retry=await handler(req({siteId:site.siteId,revision:4,action:'resend_invite',email:user.email}));assert.equal(retry.status,200);assert.equal((await retry.json()).invitationSent,true);assert.deepEqual(site.members.find(member=>member.email===user.email),before);
+});
+test('employee appointment discovery filters every page before applying the bounded history limit',async()=>{
+ const site=fixture(),access={site,user,membership:employee},own=booking(),foreign=Array.from({length:260},(_,i)=>booking({transactionId:'foreign-'+i,employeeId:'p2'}));
+ const store={list:async function*({prefix}){if(prefix.includes('/bookings/')){yield {blobs:foreign.map((_,i)=>({key:String(i)}))};yield {blobs:[{key:'own'}]}}},get:async key=>key==='own'?own:foreign[Number(key)]};
+ const handler=createCommerceAdminHandler({authorizeAccess:async()=>access,getStore:()=>store,pendingSales:async()=>[]});
+ const response=await handler(new Request('https://example.invalid/api?siteId='+site.siteId));assert.equal(response.status,200);assert.deepEqual((await response.json()).bookings.map(record=>record.transactionId),['booking-one']);
+});

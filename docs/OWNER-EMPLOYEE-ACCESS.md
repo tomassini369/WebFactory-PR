@@ -58,14 +58,18 @@ not represented as externally verified. Calendar errors no longer fail open.
 
 ## Validation record
 
-- Node 22: `npm test`: 629 passed, 0 failed at the current checkpoint.
+- Node 22: `npm test`: 631 passed, 0 failed at the current checkpoint.
 - TypeScript and Vite: `npm run build` passed.
 - Chromium initial 390/1440, ES/EN, Light/Dark, Owner/Employee: 16 cases passed.
 - Impeccable 4.1.0: exit 2, 20 pre-existing advisories/warnings; none in the
   new CommercialAccessPanel, ProfessionalEditor, EmployeeWorkspace or scoped CSS.
 - Workflow YAML: actionlint passed; no npm lint script exists.
-- Full responsive Chromium/WebKit, Training and remote PR preview: pending
-  final CI, recorded in the pull request when completed.
+- Chromium and WebKit: all seven widths (320/375/390/430/768/1024/1440),
+  ES/EN, Light/Dark, Owner/Employee: 56 cases per engine passed.
+- Chromium detailed Training: catalog/checkpoint recovery, inventory, public URL,
+  professionals, orders, branches, expenses, POS settings, kiosk/display, Builder,
+  appointment practice, role filtering and safe isolation passed.
+- Remote PR preview regression: pending final CI; recorded in the PR when complete.
 
 Browser validation is automated/emulated; no physical iPhone test is claimed.
 Production deployment and merging require explicit approval.

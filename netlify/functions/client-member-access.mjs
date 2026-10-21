@@ -27,13 +27,13 @@ export function createMemberAccessHandler({authorize=requireSiteAccess,save=save
     // advisory; canonical site membership is revalidated on every API request.
     changeCommercialMember(actor.site,input,actor,{id:'pending-validation',email});
     let identity;
-    if(!['revoke','undo_migration'].includes(input.action)) {
+    if(!['revoke','undo_migration','resend_invite'].includes(input.action)) {
       identity=await findUser(email);
       if(!identity && input.action==='invite')identity=await createUser({email,password:crypto.randomBytes(48).toString('base64url'),data:{role:'client',app_metadata:{roles:['client']}}});
     }
     const updated=await save(changeCommercialMember(actor.site,input,actor,identity));
     let invitationSent=false;
-    if(input.action==='invite') {try{await sendInvite(email);invitationSent=true}catch{/* Saved access is visible; report delivery failure without pretending success. */}}
+    if(['invite','resend_invite'].includes(input.action)) {try{await sendInvite(email);invitationSent=true}catch{/* Saved access is visible; report delivery failure without pretending success. */}}
     return Response.json({ok:true,site:updated,invitationSent},{headers:{'Cache-Control':'private, no-store'}});
   } catch(error) {return errorResponse(error);}
 };}
