@@ -1,10 +1,9 @@
 import PortalReturnHome from './PortalReturnHome'
+import {usePortalLanguage} from './portal-language'
 import { useEffect, useState } from 'react'
 import { handleAuthCallback, updateUser } from './portal-auth'
 import './client-admin.css'
 import { AdaptiveLogo, ThemeToggle } from './theme'
-
-type Language='es'|'en'
 
 const copy={
   es:{
@@ -42,7 +41,7 @@ const copy={
 }
 
 export default function PasswordRecoveryPage(){
-  const [lang,setLang]=useState<Language>('en')
+  const [lang,setLang]=usePortalLanguage()
   const [hasRecoveryLink,setHasRecoveryLink]=useState(false)
   const [password,setPassword]=useState('')
   const [confirm,setConfirm]=useState('')
@@ -72,7 +71,7 @@ export default function PasswordRecoveryPage(){
     }catch{setError(t.failure)}finally{setBusy(false)}
   }
 
-  return <main className="ca-page">
+  return <main translate="no" className="ca-page">
     <section className="ca-login">
       <div className="portal-language"><PortalReturnHome lang={lang}/><button className={lang==='en'?'active':''} onClick={()=>setLang('en')}>EN</button><button className={lang==='es'?'active':''} onClick={()=>setLang('es')}>ES</button><ThemeToggle/></div>
       <AdaptiveLogo alt="WebFactory PR"/>

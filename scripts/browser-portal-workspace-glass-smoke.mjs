@@ -123,6 +123,7 @@ try{
  assert.equal(await restricted.getByRole('button',{name:'Products and services',exact:true,includeHidden:true}).count(),1)
  await selectPortalSection(page,'Products and services');assert.equal(await restricted.getByRole('button',{name:'Products and services',exact:true}).getAttribute('aria-current'),'page');
  await Promise.all([page.waitForResponse(response=>response.url().includes('client-admin?siteId=restricted-two')),page.locator('.ca-site-switcher select').selectOption('restricted-two')])
+ await page.waitForFunction(()=>document.querySelector('.ca-site-switcher select')?.value==='restricted-two')
  assert.equal(await page.locator('.ca-site-switcher select').inputValue(),'restricted-two')
  assert.deepEqual(errors,[])
  console.log('PASS: homepage/portal return, both workspaces, themes, languages, mobile menus and panel focus')

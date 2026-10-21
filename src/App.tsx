@@ -35,7 +35,8 @@ const ShadcnPreview = __WF_PREVIEW_REVIEW__ ? lazy(() => import('./ShadcnPreview
 const TemplateParityReview = __WF_PREVIEW_REVIEW__ ? lazy(() => import('./TemplateParityReview')) : null
 
 function RouteView({children,portal=false}:{children:ReactNode;portal?:boolean}){
-  const es=document.documentElement.lang==='es'
+  const [lang]=usePortalLanguage()
+  const es=lang==='es'
   const fallback=portal?<PortalLoadingCard lang={es?'es':'en'}/>:<div className="public-route-loading" aria-busy="true"><div aria-hidden="true"><span/><span/></div><p role="status">{es?'Cargando página…':'Loading page…'}</p></div>
   return <Suspense fallback={fallback}>{children}</Suspense>
 }
@@ -54,8 +55,11 @@ function Heading({data,invert=false}:{data:string[],invert?:boolean}) {
 function App(){
   useFeedbackExperience()
   const pathname=usePortalNavigation()
-  const [lang,setLang]=usePortalLanguage('en')
+  const [lang,setLang]=usePortalLanguage()
   const t=content[lang]
+  useEffect(()=>{
+    if(!/^\/(?:sites|templates)\/[^/]+\/?$/.test(pathname))document.documentElement.lang=lang
+  },[lang,pathname])
   useEffect(()=>{
     if(pathname==='/'||/^\/templates\/?$/.test(pathname))document.title='WebFactory PR | Plataforma de comercio y reservas'
   },[lang,pathname])
