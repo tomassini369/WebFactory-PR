@@ -35,7 +35,8 @@ const ShadcnPreview = __WF_PREVIEW_REVIEW__ ? lazy(() => import('./ShadcnPreview
 const TemplateParityReview = __WF_PREVIEW_REVIEW__ ? lazy(() => import('./TemplateParityReview')) : null
 
 function RouteView({children,portal=false}:{children:ReactNode;portal?:boolean}){
-  const es=document.documentElement.lang==='es'
+  const [lang]=usePortalLanguage()
+  const es=lang==='es'
   const fallback=portal?<PortalLoadingCard lang={es?'es':'en'}/>:<div className="public-route-loading" aria-busy="true"><div aria-hidden="true"><span/><span/></div><p role="status">{es?'Cargando página…':'Loading page…'}</p></div>
   return <Suspense fallback={fallback}>{children}</Suspense>
 }
