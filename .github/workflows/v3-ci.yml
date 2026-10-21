@@ -134,6 +134,11 @@ jobs:
       - name: Check stable authentication cards, keyboard and mobile hero
         if: matrix.suite == 'experience'
         run: node scripts/browser-auth-stability-smoke.mjs
+      - name: Check login locale persistence and single session handoff
+        if: matrix.suite == 'experience'
+        run: |
+          QA_BUILT=1 node scripts/browser-login-lifecycle-smoke.mjs
+          QA_BUILT=1 QA_ENGINE=webkit node scripts/browser-login-lifecycle-smoke.mjs
       - name: Check initial login visibility, locale handoff and failure states
         if: matrix.suite == 'experience'
         run: node scripts/browser-auth-usability-smoke.mjs

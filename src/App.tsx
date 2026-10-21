@@ -54,8 +54,11 @@ function Heading({data,invert=false}:{data:string[],invert?:boolean}) {
 function App(){
   useFeedbackExperience()
   const pathname=usePortalNavigation()
-  const [lang,setLang]=usePortalLanguage('en')
+  const [lang,setLang]=usePortalLanguage()
   const t=content[lang]
+  useEffect(()=>{
+    if(!/^\/(?:sites|templates)\/[^/]+\/?$/.test(pathname))document.documentElement.lang=lang
+  },[lang,pathname])
   useEffect(()=>{
     if(pathname==='/'||/^\/templates\/?$/.test(pathname))document.title='WebFactory PR | Plataforma de comercio y reservas'
   },[lang,pathname])

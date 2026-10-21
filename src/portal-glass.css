@@ -200,6 +200,10 @@ html body .wf-creation-header .wf-creation-home{display:inline-flex;align-items:
 html[data-wf-theme=dark] .header .portal-return-home{color:#bdd6ff}
 html body .portal-loading-page{min-height:100dvh;display:grid;place-items:center;padding:24px}
 .portal-loading-card{animation:none!important;min-height:min(720px,calc(100svh - 48px))}
+/* Desktop loading and login occupy the same space; handoffs do not recenter. */
+@media(min-width:821px){
+ html body #root :is(.portal-loading-card,.portal-login-card){height:720px;min-height:720px;box-sizing:border-box;overflow-y:auto;animation:none!important}
+}
 .portal-loading-placeholder{display:grid;gap:20px;margin:32px 0}
 .portal-loading-placeholder span{height:44px;border-radius:12px;background:var(--pg-soft)}
 .portal-loading-placeholder span:first-child{height:30px;width:75%}

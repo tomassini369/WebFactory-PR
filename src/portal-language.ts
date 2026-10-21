@@ -1,24 +1,25 @@
-import {useCallback,useEffect,useState} from 'react'
+import {useSyncExternalStore} from 'react'
 
 type PortalLanguage='es'|'en'
-const currentLanguage=():PortalLanguage=>document.documentElement.lang==='es'?'es':'en'
+const LANGUAGE_KEY='webfactory-language'
+const listeners=new Set<()=>void>()
+let language:PortalLanguage=document.documentElement.lang==='es'?'es':'en'
+try{
+  const saved=localStorage.getItem(LANGUAGE_KEY)
+  if(saved==='es'||saved==='en')language=saved
+}catch{ /* Locale still works when browser storage is unavailable. */ }
+document.documentElement.lang=language
 
-// MFA stays mounted around the portal. Share the document locale so a handoff,
-// security verification or logout cannot silently reset the selected language.
-export function usePortalLanguage(initialLanguage?:PortalLanguage){
-  const [lang,setLang]=useState<PortalLanguage>(()=>initialLanguage??currentLanguage())
-  useEffect(()=>{
-    // App sets the existing default once; route changes never reset a user's choice.
-    if(initialLanguage)document.documentElement.lang=initialLanguage
-    const sync=()=>setLang(currentLanguage())
-    const observer=new MutationObserver(sync)
-    observer.observe(document.documentElement,{attributes:true,attributeFilter:['lang']})
-    sync()
-    return()=>observer.disconnect()
-  },[initialLanguage])
-  const chooseLanguage=useCallback((next:PortalLanguage)=>{
-    document.documentElement.lang=next
-    setLang(next)
-  },[])
-  return [lang,chooseLanguage] as const
+const subscribe=(listener:()=>void)=>{listeners.add(listener);return()=>{listeners.delete(listener)}}
+const snapshot=()=>language
+function chooseLanguage(next:PortalLanguage){
+  language=next
+  document.documentElement.lang=next
+  try{localStorage.setItem(LANGUAGE_KEY,next)}catch{ /* Keep the in-memory choice. */ }
+  listeners.forEach(listener=>listener())
+}
+
+// Application state owns the locale; translator DOM mutations cannot change it.
+export function usePortalLanguage(){
+  return [useSyncExternalStore(subscribe,snapshot),chooseLanguage] as const
 }

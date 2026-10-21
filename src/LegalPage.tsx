@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
+import {usePortalLanguage} from './portal-language'
 import './legal.css'
 import { AdaptiveLogo, ThemeToggle } from './theme'
 
-type Language='en'|'es'
 type LegalKind='privacy'|'terms'|'refund'
 
 const updated={en:'Effective: September 21, 2026 · Last updated: October 4, 2026',es:'Vigente: 21 de septiembre de 2026 · Última actualización: 4 de octubre de 2026'}
@@ -389,7 +389,7 @@ const copy={
 } as const
 
 export default function LegalPage({kind}:{kind:LegalKind}){
-  const [lang,setLang]=useState<Language>('en')
+  const [lang,setLang]=usePortalLanguage()
   const page=copy[lang][kind]
   useEffect(()=>{document.documentElement.lang=lang;document.title=`${page.title} | WebFactory PR`},[lang,page.title])
   return <main className="legal-page">
