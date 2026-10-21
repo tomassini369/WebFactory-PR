@@ -16,7 +16,7 @@ Branch: `feat/owner-employee-commercial-access`. Production is unchanged.
 | Revocation | Stale membership indexes could expose business selector metadata | Canonical membership and bound identity rechecked every request and selector; CAS/tombstone indexes | member-index concurrency tests; removed members denied with still-valid identity |
 | Workforce | Overview, Team and Training clock controls and salary forms | No active clock or salary UI; no new workforce or salary API writes | Historical owner-only GET/export preserved; POST returns 410; pure historical calculation/audit tests retained |
 | Operating costs | Embedded with salary controls | Existing ledger and expense persistence reused; commercial results by professional retained as estimates | Owner-only expenses; no financial engine or payroll integration |
-| Availability | Employee schedule overrode business/branch hours; timeOff, daily limit and breaks not enforced; Google failure sometimes advertised unchecked slots | Intersect business/branch/individual hours, ES/EN day keys, appointment breaks, inclusive date blocks, daily cap, existing and new buffers | Same rules for daily, monthly and locked hold confirmation; paginated reservations; Google failure → 503 in all required external checks |
+| Availability | Employee schedule overrode business/branch hours; timeOff, daily limit and breaks not enforced; Google failure sometimes advertised unchecked slots | Intersect business/branch/individual hours, ES/EN day keys, appointment breaks, inclusive date blocks, daily cap, existing and new buffers | Same rules for daily, monthly and locked hold confirmation; paginated reservations, DST-aware local day boundaries; Google failure → 503 in all required external checks |
 | Availability requests | None | Optional employee request, own identity and server time; Owner reviews in the existing Team screen | Existing commerce store, conditional create/review, no duplicate requests or automatic schedule changes |
 | Learning | Included workforce lesson | Professional/service tasks, scoped employee appointment practice and operating-expense practice | Same isolated runtime, no network fallback or real operations |
 
@@ -58,7 +58,7 @@ not represented as externally verified. Calendar errors no longer fail open.
 
 ## Validation record
 
-- Node 22: `npm test`: 634 passed, 0 failed at the current checkpoint.
+- Node 22: `npm test`: 635 passed, 0 failed at the current checkpoint.
 - TypeScript and Vite: `npm run build` passed.
 - Chromium initial 390/1440, ES/EN, Light/Dark, Owner/Employee: 16 cases passed.
 - Impeccable 4.1.0: exit 2, 20 pre-existing advisories/warnings; none in the

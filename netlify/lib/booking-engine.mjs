@@ -64,14 +64,18 @@ function effectiveSchedule(site,employee,locationId,day) {
   if (open>=close) return null;
   return {enabled:true,open,close,breaks:schedules.flatMap(schedule=>schedule.breaks || [])};
 }
+function localDayEnd(date,timeZone) {
+  const next=new Date(date+'T12:00:00Z');next.setUTCDate(next.getUTCDate()+1);
+  return zonedToUtc(next.toISOString().slice(0,10),'00:00',timeZone).getTime();
+}
 function ruleSlots({date,timeZone,service,employee,site,blocks,locationId='',clock=Date.now}) {
   const midday=zonedToUtc(date,'12:00',timeZone);
   const day=DAY_NAMES[new Intl.DateTimeFormat('en-US',{timeZone,weekday:'short'}).format(midday)];
   const schedule=effectiveSchedule(site,employee,locationId,day);
   if(!schedule)return [];
-  const dayStart=zonedToUtc(date,'00:00',timeZone).getTime(),dayEnd=dayStart+86400000;
+  const dayStart=zonedToUtc(date,'00:00',timeZone).getTime(),dayEnd=localDayEnd(date,timeZone);
   if (Number(employee.dailyLimit)>0 && blocks.filter(block=>block.reservationId && block.start>=dayStart && block.start<dayEnd).length>=Number(employee.dailyLimit)) return [];
-  const off=(employee.timeOff || []).map(entry=>({start: /^\d{4}-\d{2}-\d{2}$/.test(entry.start)?zonedToUtc(entry.start,'00:00',timeZone).getTime():Date.parse(entry.start),end:/^\d{4}-\d{2}-\d{2}$/.test(entry.end)?zonedToUtc(entry.end,'00:00',timeZone).getTime()+86400000:Date.parse(entry.end)}));
+  const off=(employee.timeOff || []).map(entry=>({start: /^\d{4}-\d{2}-\d{2}$/.test(entry.start)?zonedToUtc(entry.start,'00:00',timeZone).getTime():Date.parse(entry.start),end:/^\d{4}-\d{2}-\d{2}$/.test(entry.end)?localDayEnd(entry.end,timeZone):Date.parse(entry.end)}));
   const breaks=(schedule.breaks || []).map(entry=>({start:zonedToUtc(date,entry.start,timeZone).getTime(),end:zonedToUtc(date,entry.end,timeZone).getTime()}));
   return slotsForSchedule({date,schedule,service,blocks:[...blocks,...off,...breaks],timeZone,clock});
 }

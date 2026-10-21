@@ -58,3 +58,11 @@ test('business and employee hours intersect; English branch keys, breaks, inclus
  assert.equal(count({},[{start:Date.parse(date+'T14:00:00Z'),end:Date.parse(date+'T14:30:00Z'),reservationId:'one'},{start:Date.parse(date+'T15:00:00Z'),end:Date.parse(date+'T15:30:00Z'),reservationId:'two'}]),0);
  site.hours.Martes.enabled=false;assert.equal(count(),0);
 });
+
+test('full-day time off follows business-local midnight through 23-hour and 25-hour days',()=>{
+ const employee={timeOff:[{start:'2028-11-05',end:'2028-11-05'}]};
+ const fall=monthAvailabilityFromBlocks({month:'2028-11',timeZone:'America/New_York',service:{duration:30},employee,site:{hours:{Sunday:{enabled:true,open:'23:00',close:'23:59'}}},blocks:[]});
+ assert.equal(fall['2028-11-05'],undefined,'A day off must also block the final hour of a 25-hour day');
+ const spring=monthAvailabilityFromBlocks({month:'2028-03',timeZone:'America/New_York',service:{duration:30},employee:{timeOff:[{start:'2028-03-12',end:'2028-03-12'}]},site:{hours:{Monday:{enabled:true,open:'00:00',close:'02:00'}}},blocks:[]});
+ assert.equal(spring['2028-03-13'],7,'A 23-hour day off must not block the next working day');
+});
