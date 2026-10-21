@@ -1,3 +1,4 @@
+import {createIdempotentPosSaleHandler} from '../functions/client-pos-sale-idempotent.mjs';
 import {createProfessionalHandler} from '../functions/client-professional.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -112,4 +113,22 @@ test('kitchen capability cannot prepare an unpaid order or issue a refund',async
  const handler=createCommerceAdminHandler({authorizeCapability:async()=>({site,user,membership:member}),getStore:()=>store});
  const result=await handler(req({siteId:site.siteId,kind:'order',transactionId:'unpaid-food',action:'kitchen_status',kitchenStatus:'preparing'}));assert.equal(result.status,409);assert.equal(rows.get(key).paymentStatus,'due');assert(!rows.get(key).kitchenStatus);
  const refund=await handler(req({siteId:site.siteId,kind:'order',transactionId:'unpaid-food',action:'refund'}));assert.equal(refund.status,403);
+});
+
+test('real POS entry requires separate collection grant, keeps branch scope, and rechecks revocation before cached retries',async()=>{
+ const site=fixture(),rows=new Map();let sales=0;
+ const store={get:async key=>rows.get(key),getWithMetadata:async key=>rows.has(key)?{data:rows.get(key),etag:'1'}:null,setJSON:async(key,value,options)=>{if(options?.onlyIfNew&&rows.has(key))return {modified:false};rows.set(key,value);return {modified:true}},delete:async key=>rows.delete(key)};
+ site.members[1].permissions={pos:true};
+ const handler=createIdempotentPosSaleHandler({authorize:async(id,capability)=>{assert.equal(id,site.siteId);const access=authorizeSiteUser(user,site);if(!membershipHasCapability(access.membership,capability))throw Object.assign(new Error('Denied'),{status:403});return access},getStore:()=>store,performSale:async()=>{sales++;return Response.json({ok:true,record:{transactionId:'fixture-sale'},receiptId:'fixture-receipt'})}});
+ const input={siteId:site.siteId,locationId:'one',saleAttemptId:'pos-employee-attempt',items:[{id:'product',quantity:1}],paymentMethod:'cash'};
+ assert.equal((await handler(req(input))).status,403);assert.equal(sales,0);assert.equal(rows.size,0);
+ site.members[1].permissions.collect=true;
+ assert.equal((await handler(req({...input,locationId:'two'}))).status,403);assert.equal(sales,0);
+ assert.equal((await handler(req(input))).status,200);assert.equal((await handler(req(input))).status,200);assert.equal(sales,1);
+ site.members=[owner];assert.equal((await handler(req(input))).status,403);assert.equal(sales,1);
+});
+
+test('unlinked accounts never match a malformed legacy professional with a missing ID',()=>{
+ const site=fixture();site.employees.unshift({name:'Other private professional',serviceIds:['s2'],schedule:{Monday:{enabled:true}},salary:999999});
+ const view=employeeSiteView(site,{...employee,employeeId:undefined});assert.deepEqual(view.employees,[]);assert.deepEqual(view.catalog,[]);assert(!JSON.stringify(view).includes('Other private professional'));
 });

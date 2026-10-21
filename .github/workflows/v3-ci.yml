@@ -173,13 +173,27 @@ jobs:
         if: matrix.suite == 'commerce'
         env:
           QA_PORT: 5244
-        run: node scripts/browser-pos-capabilities-smoke.mjs
+        run: |
+          log="/tmp/capabilities-chromium.log"
+          if ! node scripts/browser-pos-capabilities-smoke.mjs > "$log" 2>&1; then
+            cat "$log"
+            node scripts/report-kiosk-ci-error.mjs "$log" capabilities-chromium
+            exit 1
+          fi
+          cat "$log"
       - name: Check business profiles, POS module permissions and settings on WebKit
         if: matrix.suite == 'commerce'
         env:
           QA_ENGINE: webkit
           QA_PORT: 5245
-        run: node scripts/browser-pos-capabilities-smoke.mjs
+        run: |
+          log="/tmp/capabilities-webkit.log"
+          if ! node scripts/browser-pos-capabilities-smoke.mjs > "$log" 2>&1; then
+            cat "$log"
+            node scripts/report-kiosk-ci-error.mjs "$log" capabilities-webkit
+            exit 1
+          fi
+          cat "$log"
       - name: Check editable public URLs, aliases and mobile accessibility on Chromium
         if: matrix.suite == 'commerce'
         run: node scripts/browser-public-site-link-smoke.mjs
@@ -390,6 +404,12 @@ jobs:
         run: |
           QA_PORT=5322 node scripts/browser-commercial-access-smoke.mjs
           QA_ENGINE=webkit QA_PORT=5323 node scripts/browser-commercial-access-smoke.mjs
+      - name: Check existing isolated phone review without real business data
+        env:
+          QA_ORIGIN: https://deploy-preview-${{ github.event.pull_request.number }}--webfactorypr.netlify.app
+        run: |
+          QA_PORT=5333 node scripts/browser-commercial-review-smoke.mjs
+          QA_ENGINE=webkit QA_PORT=5334 node scripts/browser-commercial-review-smoke.mjs
       - name: Check deployed login and MFA text contrast with isolated sessions
         env:
           QA_ORIGIN: https://deploy-preview-${{ github.event.pull_request.number }}--webfactorypr.netlify.app

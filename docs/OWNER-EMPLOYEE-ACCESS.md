@@ -58,7 +58,7 @@ not represented as externally verified. Calendar errors no longer fail open.
 
 ## Validation record
 
-- Node 22: `npm test`: 632 passed, 0 failed at the current checkpoint.
+- Node 22: `npm test`: 634 passed, 0 failed at the current checkpoint.
 - TypeScript and Vite: `npm run build` passed.
 - Chromium initial 390/1440, ES/EN, Light/Dark, Owner/Employee: 16 cases passed.
 - Impeccable 4.1.0: exit 2, 20 pre-existing advisories/warnings; none in the
@@ -76,3 +76,11 @@ not represented as externally verified. Calendar errors no longer fail open.
 
 Browser validation is automated/emulated; no physical iPhone test is claimed.
 Production deployment and merging require explicit approval.
+
+## Review from a phone
+
+The existing preview-only route `/design-preview/portal/preview.html` renders the
+same portal with clearly labeled, isolated sample data. Its Owner/Employee links
+allow review without copying production customers into the preview. Use Training
+for supported practice actions; outgoing messages and live operations are disabled
+in this visual review. This bundle is explicitly excluded from production.

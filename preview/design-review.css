@@ -4,3 +4,7 @@
 html[lang=es] .design-review-es{display:inline}
 html[lang=es] .design-review-en{display:none}
 @media(max-width:600px){.design-review-banner{padding:12px 18px;align-items:flex-start;font-size:.75rem}.design-review-banner>span{max-width:220px}}
+
+.design-review-banner{flex-wrap:wrap}
+.design-review-banner a{display:inline-flex;align-items:center;min-height:44px;min-width:44px}
+@media(max-width:600px){.design-review-banner>span{max-width:none;flex-basis:100%}}

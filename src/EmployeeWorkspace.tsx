@@ -4,7 +4,7 @@ import {useWorkspaceApi} from './training/workspace-services'
 export default function EmployeeWorkspace({site,membership,commerce,lang,onAction,ordersOnly=false}:any){
  const status=(value:string)=>({confirmed:['Confirmada','Confirmed'],completed:['Completada','Completed'],cancelled:['Cancelada','Cancelled'],pending:['Pendiente','Pending'],processing:['Procesando','Processing'],due:['Pago pendiente','Payment due'],paid:['Pagado','Paid'],paid_in_person:['Pagado presencialmente','Paid in person'],refunded:['Reembolsado','Refunded'],partially_refunded:['Reembolso parcial','Partially refunded']}[value]?.[lang==='es'?0:1]||value)
  const dayName=(value:string)=>{const days=[['Lunes','Monday'],['Martes','Tuesday'],['Miércoles','Wednesday'],['Jueves','Thursday'],['Viernes','Friday'],['Sábado','Saturday'],['Domingo','Sunday']];return days.find(day=>day.includes(value))?.[lang==='es'?0:1]||value}
- const api=useWorkspaceApi(),es=lang==='es',t=(a:string,b:string)=>es?a:b,professional=site.employees.find((employee:any)=>employee.id===membership.employeeId)
+ const api=useWorkspaceApi(),es=lang==='es',t=(a:string,b:string)=>es?a:b,professional=membership.employeeId?site.employees.find((employee:any)=>employee.id===membership.employeeId):null
  const [requests,setRequests]=useState<any[]>([]),[start,setStart]=useState(''),[end,setEnd]=useState(''),[message,setMessage]=useState(''),[busy,setBusy]=useState(false)
  const canRequest=membership.permissions?.availabilityRequests===true
  const load=async()=>{const result=await api('/.netlify/functions/client-professional?siteId='+encodeURIComponent(site.siteId));setRequests(result.requests||[])}

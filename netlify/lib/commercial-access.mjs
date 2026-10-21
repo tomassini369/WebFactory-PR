@@ -42,7 +42,7 @@ export function employeeCommerceRecord(record, member) {
 }
 export function employeeSiteView(site, member) {
   if (isBusinessOwner(member)) return site;
-  const professional = (site.employees || []).find(employee => employee.id === member.employeeId);
+  const professional = member.employeeId ? (site.employees || []).find(employee => employee.id === member.employeeId) : null;
   const pos = member.permissions?.pos === true;
   return {siteId:site.siteId,slug:site.slug,status:site.status,revision:site.revision,
     business:{name:site.business?.name,nameEn:site.business?.nameEn,nameEs:site.business?.nameEs,category:site.business?.category,logoAssetKey:site.business?.logoAssetKey,locations:(site.business?.locations || []).filter(location => member.locationIds?.includes(location.id)).map(({id,name,hours})=>({id,name,hours}))},
