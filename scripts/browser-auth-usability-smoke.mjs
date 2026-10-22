@@ -45,10 +45,10 @@ try{
   assert.equal(await page.getByRole('alert').count(),0)
   recoveryFail=true;await recover.click();await page.getByRole('alert').waitFor()
   assert.equal(await page.locator('.ca-success,.wfa-alert.success').count(),0,'Clear stale success before retries')
-  await page.locator('.portal-return-home').click();await page.locator('.wf-h-login').waitFor()
+  await page.locator('.portal-return-home').click();await page.locator('.mk-login').waitFor()
   assert.equal(await page.locator('html').getAttribute('lang'),'es','Portal locale follows back to Home')
-  assert.match(await page.locator('.wf-hero h1').innerText(),/Todo tu negocio/)
-  sessionFail=true;await page.locator('.wf-h-login').click();await page.getByRole('alert').waitFor()
+  assert.match(await page.locator('.mk-hero h1').innerText(),/Descubre negocios/)
+  sessionFail=true;await page.locator('.mk-login').click();await page.getByRole('alert').waitFor()
   assert.equal(await page.getByRole('alert').innerText(),'No se pudo comprobar tu sesión.')
   assert(await page.getByRole('button',{name:'Intentar de nuevo',exact:true}).isVisible())
   sessionFail=false

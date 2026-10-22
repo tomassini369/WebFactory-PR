@@ -8,13 +8,13 @@ try {
  for(let i=0;i<80;i++){try{if((await fetch(origin)).ok){ready=true;break}}catch{}await new Promise(r=>setTimeout(r,100))}
  assert(ready,'Vite did not start');
  for(const [engine,options,label] of [[chromium,{viewport:{width:1440,height:900}},'desktop Chromium'],[webkit,devices['iPhone 13'],'mobile WebKit']]){
-  const browser=await engine.launch();
+  const browser=await engine.launch(engine===webkit?(process.env.QA_WEBKIT_PATH?{executablePath:process.env.QA_WEBKIT_PATH}:{}):(process.env.QA_CHROMIUM_PATH?{executablePath:process.env.QA_CHROMIUM_PATH,args:['--no-sandbox']}:{}));
   try{
    for(const theme of ['dark','light'])for(const lang of ['en','es']){
     const context=await browser.newContext(options);
     await context.addInitScript(t=>localStorage.setItem('webfactory-theme-v2',t),theme);
     const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
-    await page.goto(origin);await page.locator('.wf-h-header').waitFor();
+    await page.goto(origin+'/crear');await page.locator('.wf-h-header').waitFor();
     if(lang==='es')await page.getByRole('button',{name:'ES',exact:true}).click();
     const mobile=label.startsWith('mobile'),menu=page.locator('.wf-h-menu');
     if(mobile)await menu.click();

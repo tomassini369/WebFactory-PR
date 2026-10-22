@@ -33,3 +33,18 @@ Verify 320/375/390/430px mobile and 768/1024/1440px desktop/tablet; ES/EN, Light
 ## Related surfaces
 
 Template and storefront composition follows [DESIGN-TEMPLATES.md](docs/design/DESIGN-TEMPLATES.md). Portal surfaces follow [DESIGN-PORTALS.md](docs/design/DESIGN-PORTALS.md). The approved storefront photographic overlay is distinct from the homepage video hero.
+
+## Public entry points: Marketplace Phase 1
+
+The owner-approved consumer Marketplace occupies `/`. The complete original
+business landing occupies `/crear`; its video Hero, native scroll tour, demos,
+pricing and Factory AI retain the contract above. The Marketplace is a separate
+public surface using the same native typography, navy/blue tokens, Light/Dark
+and ES/EN controls. Its discovery filters are local presentation state until a
+public directory exists. Keep honest empty featured/feed/promotion sections.
+Do not invent listings, ratings, offers, maps, favorites or following.
+
+Both routes use `AdaptiveLogo` and the two original PNGs without recoloring,
+filters, clipping or replacement. Verify and report SHA-256 before/after.
+An eventual real Puerto Rico photograph is a local asset with documented source
+and license, and never replaces the original video on `/crear`.

@@ -128,6 +128,19 @@ jobs:
         run: |
           node scripts/browser-workspace-experience-smoke.mjs
           node scripts/browser-admin-experience-smoke.mjs
+      - name: Check Marketplace and preserved Crear landing on Chromium and WebKit
+        if: matrix.suite == 'experience'
+        env:
+          QA_WIDTHS: 390,1440
+        run: |
+          for engine in chromium webkit; do
+            log="/tmp/marketplace-$engine.log"
+            if ! QA_ENGINE="$engine" QA_PORT=5340 node scripts/browser-marketplace-smoke.mjs > "$log" 2>&1; then
+              node scripts/report-kiosk-ci-error.mjs "$log" "marketplace-$engine"
+              exit 1
+            fi
+            cat "$log"
+          done
       - name: Check portal route transitions and template Home controls
         if: matrix.suite == 'experience'
         run: node scripts/browser-route-transitions-smoke.mjs
@@ -355,7 +368,7 @@ jobs:
         env:
           PREVIEW_URL: https://deploy-preview-${{ github.event.pull_request.number }}--webfactorypr.netlify.app
         run: |
-          for path in / /templates /builder /client-admin /kiosk; do
+          for path in / /crear /templates /builder /client-admin /kiosk; do
             echo "Checking $PREVIEW_URL$path"
             curl -fLsS --retry 4 --retry-delay 2 --max-time 30 -o /dev/null "$PREVIEW_URL$path"
           done
@@ -398,6 +411,19 @@ jobs:
             node scripts/report-kiosk-ci-error.mjs /tmp/unified-preview-build.log build
             exit 1
           }
+      - name: Check actual Marketplace and Crear routes on the Deploy Preview
+        env:
+          QA_ORIGIN: https://deploy-preview-${{ github.event.pull_request.number }}--webfactorypr.netlify.app
+          QA_WIDTHS: 390,1440
+        run: |
+          for engine in chromium webkit; do
+            log="/tmp/marketplace-preview-$engine.log"
+            if ! QA_ENGINE="$engine" node scripts/browser-marketplace-smoke.mjs > "$log" 2>&1; then
+              node scripts/report-kiosk-ci-error.mjs "$log" "marketplace-preview-$engine"
+              exit 1
+            fi
+            cat "$log"
+          done
       - name: Check deployed commercial authentication boundaries
         env:
           PREVIEW_URL: https://deploy-preview-${{ github.event.pull_request.number }}--webfactorypr.netlify.app
