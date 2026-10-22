@@ -120,6 +120,9 @@ minimum. Moving the form over a dark Hero exposed inherited white labels in
 Light mode; explicit form text tokens corrected that contrast failure. QA also
 separates skip-link fragment navigation from clean-route SPA checks and counts
 only the five commercial platform cards, keeping the independent MCP cards.
+The published smoke exposed an overly broad iframe assertion; it now checks
+inside the Marketplace container, allowing preview tooling outside the product.
+The independent checks for commercial bundle/video requests remain in place.
 
 ## Future backlog, not implemented
 

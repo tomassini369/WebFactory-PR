@@ -51,7 +51,8 @@ try{
   assert.equal(await page.locator('.wf-theme-toggle').count(),1,'No duplicated floating theme control')
   assert.equal(await page.locator('.mk-root select option').count(),79,'All 78 municipalities plus All')
   assert.equal(await page.locator('.mk-category-list button').count(),9)
-  assert.equal(await page.locator('.wf-premium-home,video,iframe,.template-highlights').count(),0)
+  // Deploy Preview tooling may add its own iframe outside the application.
+  assert.equal(await page.locator('.mk-root').locator('.wf-premium-home,video,iframe,.template-highlights').count(),0)
   assert.deepEqual(media,[],'Marketplace must not load the commercial landing/video')
   assert.deepEqual(functions,[],'No private tenant listing or fabricated feed API')
   await noOverflow(page);await checkAccessibility(page)
