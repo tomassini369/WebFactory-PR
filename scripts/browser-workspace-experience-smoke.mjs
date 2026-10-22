@@ -8,15 +8,19 @@ const port=Number(process.env.QA_PORT||5280),isWebKit=process.env.QA_ENGINE==='w
 const server=await preview({preview:{host:'127.0.0.1',port,strictPort:true}})
 const origin=process.env.QA_ORIGIN||`http://127.0.0.1:${port}`
 const pageLoadTimeout=process.env.QA_ORIGIN?60000:30000
-async function openPortal(page){
- const response=await page.goto(origin+'/client-admin',{waitUntil:process.env.QA_ORIGIN?'domcontentloaded':'load',timeout:pageLoadTimeout})
- try{await page.locator('.ca-dashboard').waitFor({timeout:pageLoadTimeout})}
+async function openPage(page,path,selector){
+ let response
+ try{
+  response=await page.goto(origin+path,{waitUntil:process.env.QA_ORIGIN?'domcontentloaded':'load',timeout:pageLoadTimeout})
+  await page.locator(selector).waitFor({timeout:pageLoadTimeout})
+ }
  catch(error){
-  const state=await page.evaluate(()=>({readyState:document.readyState,dashboard:document.querySelectorAll('.ca-dashboard').length,login:document.querySelectorAll('.portal-auth').length})).catch(()=>({readyState:'unavailable'}))
-  console.error('Isolated portal bootstrap diagnostic',JSON.stringify({status:response?.status(),path:new URL(page.url()).pathname,...state}))
+  const state=await page.evaluate(()=>({readyState:document.readyState,dashboard:document.querySelectorAll('.ca-dashboard').length,builder:document.querySelectorAll('.wf-builder-app').length,login:document.querySelectorAll('.portal-auth').length})).catch(()=>({readyState:'unavailable'}))
+  console.error('Isolated portal bootstrap diagnostic',JSON.stringify({status:response?.status(),expectedPath:path,selector,path:new URL(page.url()).pathname,...state}))
   throw error
  }
 }
+const openPortal=page=>openPage(page,'/client-admin','.ca-dashboard')
 const browser=await (isWebKit?webkit:chromium).launch(isWebKit?(process.env.QA_WEBKIT_PATH?{executablePath:process.env.QA_WEBKIT_PATH}:{}):(process.env.QA_CHROMIUM_PATH?{executablePath:process.env.QA_CHROMIUM_PATH,args:['--no-sandbox']}:{}))
 const widths=(process.env.QA_WIDTHS||'320,375,390,430,768,1024,1440').split(',').map(Number)
 const output='/tmp/webfactory-workspace-experience';await mkdir(output,{recursive:true})
@@ -74,7 +78,7 @@ try{
    await selectPortalSection(page,lang==='es'?'Conexiones':'Connected apps')
    const connect=page.getByRole('link',{name:lang==='es'?'Conectar Gmail / Google Workspace':'Connect Gmail / Google Workspace',exact:true})
    await connect.waitFor();assert.match(await connect.getAttribute('href'),/business-email-google-start\?siteId=workspace-ui/);await noOverflow(page)
-   emailConnected=true;await page.reload();await page.locator('.bcc').waitFor();await page.locator('.portal-language').getByRole('button',{name:lang.toUpperCase(),exact:true}).click();assert.equal(await page.locator('html').getAttribute('lang'),lang);await selectPortalSection(page,lang==='es'?'Conexiones':'Connected apps')
+   emailConnected=true;await page.reload();await page.locator('.bcc').waitFor({timeout:pageLoadTimeout});await page.locator('.portal-language').getByRole('button',{name:lang.toUpperCase(),exact:true}).click();assert.equal(await page.locator('html').getAttribute('lang'),lang);await selectPortalSection(page,lang==='es'?'Conexiones':'Connected apps')
    const renew=page.getByRole('link',{name:lang==='es'?'Renovar autorización de Gmail':'Renew Gmail authorization',exact:true})
    await renew.waitFor();await renew.focus();await page.keyboard.press('Tab');await page.keyboard.press('Shift+Tab');assert.equal(await renew.evaluate(el=>el===document.activeElement),true)
    assert.notEqual(await renew.evaluate(el=>getComputedStyle(el).outlineStyle),'none');await noOverflow(page)
@@ -95,11 +99,11 @@ try{
   page.once('dialog',dialog=>dialog.accept());await close.click();await page.waitForFunction(()=>!document.querySelector('.ca-balance-review'));assert(await cancel.isEnabled());assert.match(await balanceRow.innerText(),/A0B1C2D3/)
   page.once('dialog',dialog=>dialog.accept());await cancel.click();await page.waitForFunction(()=>[...document.querySelectorAll('.ca-transactions article')].some(el=>el.textContent.includes('Isolated balance recovery')&&el.textContent.includes('cancelled')))
   assert.deepEqual(balanceActions,['review_booking_balance','close_booking_balance','cancel']);assert.match(await balanceRow.innerText(),/due/);await noOverflow(page);balanceMode=false
-  await page.goto(origin+'/builder');await page.locator('.wf-builder-app').waitFor();await page.locator('.header .langs button').filter({hasText:new RegExp('^'+lang.toUpperCase()+'$')}).click();assert.equal(await page.locator('html').getAttribute('lang'),lang);await page.locator('.wf-builder-nav button').first().click()
+  await openPage(page,'/builder','.wf-builder-app');await page.locator('.header .langs button').filter({hasText:new RegExp('^'+lang.toUpperCase()+'$')}).click();assert.equal(await page.locator('html').getAttribute('lang'),lang);await page.locator('.wf-builder-nav button').first().click()
   const more=page.locator('.wf-builder-disclosure');if(!await more.evaluate(el=>el.open))await more.locator(':scope>summary').click();await more.getByLabel('Instagram',{exact:true}).fill('https://instagram.com/isolated-qa');await more.getByLabel('Instagram',{exact:true}).fill('');assert(await more.evaluate(el=>el.open),'Clearing the optional field must not close the section')
   await page.getByLabel('Business name · English',{exact:true}).fill('Preserved fixture draft')
   await page.evaluate(opaque=>{const frame=document.createElement('iframe');frame.hidden=true;frame.title='Isolated review-tool frame';if(opaque){frame.setAttribute('sandbox','allow-scripts');frame.srcdoc='<!doctype html><html><body></body></html>'}document.body.appendChild(frame)},process.env.QA_OPAQUE_REVIEW==='1');
-  await showBuilderPreview(page);await page.frameLocator('.wf-template-preview-frame').locator('.template-site').waitFor();const frame=await page.locator('.wf-template-preview-frame').elementHandle()
+  await showBuilderPreview(page);await page.frameLocator('.wf-template-preview-frame').locator('.template-site').waitFor({timeout:pageLoadTimeout});const frame=await page.locator('.wf-template-preview-frame').elementHandle()
   const views=page.locator('.wf-builder-view-switch');if(await views.isVisible()){await views.getByRole('button',{name:/^(Edit|Editar)$/}).click();assert.equal(await page.getByLabel('Business name · English',{exact:true}).inputValue(),'Preserved fixture draft');await showBuilderPreview(page);assert(await frame.evaluate(el=>el.isConnected),'Preview iframe stays mounted');assert.equal(await page.locator('.wf-template-preview-frame').count(),1)}
   await noOverflow(page)
   if([390,1440].includes(width))await page.screenshot({path:`${output}/builder-${width}-${theme}-${lang}-${isWebKit?'webkit':'chromium'}.png`})

@@ -163,6 +163,11 @@ There are no automatic transaction retries. Portal bootstrap failures report
 only HTTP status, pathname, document readiness and structural element counts.
 Both scripts passed locally on Chromium and WebKit at 390/1440, ES/EN and
 Light/Dark, including their isolated operational scenarios, after this change.
+The same readiness budget covers Builder, its template iframe and the kiosk
+administration page; diagnostic output distinguishes the expected path and
+component from the actual document. The browser suites use Ubuntu 24.04,
+matching the preview smoke rather than a moving runner image. Production
+draft protection, authentication and transaction behavior are unchanged.
 
 ## Future backlog, not implemented
 

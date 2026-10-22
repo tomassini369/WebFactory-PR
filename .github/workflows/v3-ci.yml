@@ -11,7 +11,8 @@ on:
 
 jobs:
   verify-suite:
-    runs-on: ubuntu-latest
+    # Use the same pinned browser environment as the Deploy Preview smoke.
+    runs-on: ubuntu-24.04
     timeout-minutes: 35
     strategy:
       fail-fast: false
@@ -313,7 +314,7 @@ jobs:
         run: test "$SUITE_RESULT" = success
 
   kiosk-bookings:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     strategy:
       fail-fast: false
