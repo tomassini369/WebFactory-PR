@@ -7,6 +7,16 @@ import {selectPortalSection,openPanelTools,showBuilderPreview} from './qa-worksp
 const port=Number(process.env.QA_PORT||5280),isWebKit=process.env.QA_ENGINE==='webkit'
 const server=await preview({preview:{host:'127.0.0.1',port,strictPort:true}})
 const origin=process.env.QA_ORIGIN||`http://127.0.0.1:${port}`
+const pageLoadTimeout=process.env.QA_ORIGIN?60000:30000
+async function openPortal(page){
+ const response=await page.goto(origin+'/client-admin',{waitUntil:process.env.QA_ORIGIN?'domcontentloaded':'load',timeout:pageLoadTimeout})
+ try{await page.locator('.ca-dashboard').waitFor({timeout:pageLoadTimeout})}
+ catch(error){
+  const state=await page.evaluate(()=>({readyState:document.readyState,dashboard:document.querySelectorAll('.ca-dashboard').length,login:document.querySelectorAll('.portal-auth').length})).catch(()=>({readyState:'unavailable'}))
+  console.error('Isolated portal bootstrap diagnostic',JSON.stringify({status:response?.status(),path:new URL(page.url()).pathname,...state}))
+  throw error
+ }
+}
 const browser=await (isWebKit?webkit:chromium).launch(isWebKit?(process.env.QA_WEBKIT_PATH?{executablePath:process.env.QA_WEBKIT_PATH}:{}):(process.env.QA_CHROMIUM_PATH?{executablePath:process.env.QA_CHROMIUM_PATH,args:['--no-sandbox']}:{}))
 const widths=(process.env.QA_WIDTHS||'320,375,390,430,768,1024,1440').split(',').map(Number)
 const output='/tmp/webfactory-workspace-experience';await mkdir(output,{recursive:true})
@@ -17,7 +27,7 @@ const noOverflow=async page=>assert(await page.evaluate(()=>document.documentEle
 try{
  for(const width of widths)for(const theme of ['light','dark'])for(const lang of (process.env.QA_LANGS||'es,en').split(',')){
   let role='owner',writes=0,emailConnected=false,oauthStarts=0,deliveryReason='',balanceMode=false,balanceReviewed=false,balanceClosed=false,balanceCancelled=false;const balanceActions=[]
-  const context=await browser.newContext({viewport:{width,height:950},reducedMotion:'reduce',serviceWorkers:process.env.QA_OPAQUE_REVIEW==='1'?'allow':'block',...(isWebKit?{hasTouch:true}: {})}),page=await context.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message))
+  const context=await browser.newContext({viewport:{width,height:950},reducedMotion:'reduce',serviceWorkers:process.env.QA_OPAQUE_REVIEW==='1'?'allow':'block',...(isWebKit?{hasTouch:true}: {})}),page=await context.newPage();const errors=[];page.setDefaultNavigationTimeout(pageLoadTimeout);page.on('pageerror',e=>errors.push(e.message))
   await page.addInitScript(theme=>{if(window!==window.top)return;localStorage.setItem('webfactory-theme-v2',theme);sessionStorage.clear()},theme)
   await page.route('**/.netlify/functions/**',async route=>{
    const req=route.request(),url=new URL(req.url()),name=url.pathname.split('/').at(-1)
@@ -43,7 +53,7 @@ try{
    if(name==='client-inventory-health')data={ok:true,checkedAt:new Date().toISOString(),heldCount:0,reviewCount:0,hiddenReviewCount:0,reservations:[],journal:{operationCount:0,reservationCount:0,bytes:0,nearCapacity:false,atCapacity:false},pos:{pointerCount:0,cleanupEligibleCount:0,reviewCount:0,hiddenCount:0,rows:[]}}
    await route.fulfill({contentType:'application/json',body:JSON.stringify(data)})
   })
-  await page.goto(origin+'/client-admin');await page.locator('.bcc').waitFor();await page.locator('.portal-language').getByRole('button',{name:lang.toUpperCase(),exact:true}).click();assert.equal(await page.locator('html').getAttribute('lang'),lang);assert.equal(await page.locator('html').getAttribute('data-wf-theme'),theme)
+  await openPortal(page);await page.locator('.bcc').waitFor();await page.locator('.portal-language').getByRole('button',{name:lang.toUpperCase(),exact:true}).click();assert.equal(await page.locator('html').getAttribute('lang'),lang);assert.equal(await page.locator('html').getAttribute('data-wf-theme'),theme)
   await noOverflow(page);assert.equal(await page.locator('.ca-dashboard').evaluate(el=>getComputedStyle(el).backgroundImage),'none')
   assert.equal(await page.locator('.sidebar-primary-navigation button').count(),5)
   assert.equal(await page.locator('.bcc-metrics article').count(),4)
@@ -70,7 +80,7 @@ try{
    assert.notEqual(await renew.evaluate(el=>getComputedStyle(el).outlineStyle),'none');await noOverflow(page)
    await renew.click();await page.waitForURL('**/.netlify/functions/business-email-google-start?siteId=workspace-ui');await page.getByText('Isolated Gmail authorization fixture',{exact:true}).waitFor();assert.equal(oauthStarts,1,'Renew uses existing OAuth flow, intercepted without contacting Google')
   }
-  balanceMode=true;await page.goto(origin+'/client-admin');await page.locator('.ca-dashboard').waitFor();await page.locator('.portal-language').getByRole('button',{name:lang.toUpperCase(),exact:true}).click();await selectPortalSection(page,lang==='es'?'Resumen':'Overview');await selectPortalSection(page,lang==='es'?'Ver citas':'View appointments')
+  balanceMode=true;await openPortal(page);await page.locator('.portal-language').getByRole('button',{name:lang.toUpperCase(),exact:true}).click();await selectPortalSection(page,lang==='es'?'Resumen':'Overview');await selectPortalSection(page,lang==='es'?'Ver citas':'View appointments')
   const balanceRow=page.locator('.ca-transactions article').filter({hasText:'Isolated balance recovery'}),cancel=balanceRow.getByRole('button',{name:lang==='es'?'Cancelar':'Cancel',exact:true})
   assert(await cancel.isDisabled());assert.equal(await balanceRow.getByRole('button',{name:lang==='es'?'Cerrar checkout sin cobrar':'Close unpaid checkout',exact:true}).count(),0)
   const review=balanceRow.getByRole('button',{name:lang==='es'?'Revisar cobro de saldo':'Review balance checkout',exact:true});await review.focus();await page.keyboard.press('Tab');await page.keyboard.press('Shift+Tab');assert.equal(await review.evaluate(el=>el===document.activeElement),true);assert.notEqual(await review.evaluate(el=>getComputedStyle(el).outlineStyle),'none');await page.keyboard.press('Enter')
@@ -93,7 +103,7 @@ try{
   const views=page.locator('.wf-builder-view-switch');if(await views.isVisible()){await views.getByRole('button',{name:/^(Edit|Editar)$/}).click();assert.equal(await page.getByLabel('Business name · English',{exact:true}).inputValue(),'Preserved fixture draft');await showBuilderPreview(page);assert(await frame.evaluate(el=>el.isConnected),'Preview iframe stays mounted');assert.equal(await page.locator('.wf-template-preview-frame').count(),1)}
   await noOverflow(page)
   if([390,1440].includes(width))await page.screenshot({path:`${output}/builder-${width}-${theme}-${lang}-${isWebKit?'webkit':'chromium'}.png`})
-  role='employee';await page.goto(origin+'/client-admin');await page.locator('.ca-dashboard').waitFor();await page.locator('.portal-language').getByRole('button',{name:lang.toUpperCase(),exact:true}).click();assert.equal(await page.locator('.sidebar-container button[aria-label="POS"]').count(),0);assert.equal(await page.locator('.sidebar-container button').filter({hasText:/Business settings|Ajustes del negocio/}).count(),0)
+  role='employee';await openPortal(page);await page.locator('.portal-language').getByRole('button',{name:lang.toUpperCase(),exact:true}).click();assert.equal(await page.locator('.sidebar-container button[aria-label="POS"]').count(),0);assert.equal(await page.locator('.sidebar-container button').filter({hasText:/Business settings|Ajustes del negocio/}).count(),0)
   balanceMode=true;balanceClosed=false;balanceCancelled=false;balanceReviewed=false;await selectPortalSection(page,lang==='es'?'Ver citas':'View appointments');await page.locator('[data-training="employee-agenda"]').waitFor();assert.equal(await page.getByRole('button',{name:/Review balance checkout|Revisar cobro de saldo|Cancel|Cancelar/,exact:true}).count(),0)
 
   assert.equal(writes,0);assert.deepEqual(errors,[]);console.log(`PASS unified hierarchy, balance review/close/cancel, permissions, focus and Builder persistence ${width} ${theme} ${lang}`);await context.close()

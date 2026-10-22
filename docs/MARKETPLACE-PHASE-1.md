@@ -155,6 +155,15 @@ Actionlint passed and the same workflow executed in prior attempts; the precise
 startup failure is not established. Current CI status and any remaining blocker
 are recorded in the PR rather than represented here as a passed check.
 
+Later remote regressions exposed a 15-second kiosk reload timeout and a
+30-second dashboard bootstrap timeout. The two smoke scripts now allow 60
+seconds for remote document/bootstrap readiness, while keeping existing control
+action limits and every payment, permission, revocation and persistence assertion.
+There are no automatic transaction retries. Portal bootstrap failures report
+only HTTP status, pathname, document readiness and structural element counts.
+Both scripts passed locally on Chromium and WebKit at 390/1440, ES/EN and
+Light/Dark, including their isolated operational scenarios, after this change.
+
 ## Future backlog, not implemented
 
 1. Efficient public directory/index; `/buscar`, municipality/category filters,
