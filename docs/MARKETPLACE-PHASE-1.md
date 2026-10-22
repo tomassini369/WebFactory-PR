@@ -124,6 +124,37 @@ The published smoke exposed an overly broad iframe assertion; it now checks
 inside the Marketplace container, allowing preview tooling outside the product.
 The independent checks for commercial bundle/video requests remain in place.
 
+## Published verification evidence
+
+Netlify Deploy Preview: https://deploy-preview-123--webfactorypr.netlify.app/
+Business landing: https://deploy-preview-123--webfactorypr.netlify.app/crear
+PR: https://github.com/tomassini369/WebFactory-PR/pull/123
+
+The complete `deploy-preview-smoke` job passed on the deployed application in
+[CI attempt 2](https://github.com/tomassini369/WebFactory-PR/actions/runs/39793310690/attempts/2),
+job `119893700517`, for application commit `d7fb0db4f97597e8c354c535425358f8774866da`.
+The Marketplace/Crear step passed at 14:51:22 UTC on 2026-10-22. Later documentation
+changes do not change this application code or its assets.
+
+| Scope | Executed result |
+| --- | --- |
+| Unit/integration/security suites | 642 passed; no failures or skips |
+| TypeScript and production build | Passed |
+| Local Marketplace, seven widths × two themes × two languages | 28 cases per engine; 56 total, Chromium + WebKit |
+| Published Marketplace/Crear, 390 and 1440, both languages/themes | 16 matrix cases total, both engines; history, original landing/video, reduced motion and image failure passed |
+| Preserved commercial landing | 28 responsive cases and eight FAQ cases passed |
+| Published portal security and UI | Authentication boundaries, Owner/Employee, phone review, login/MFA contrast and workspaces passed |
+| Published operational regressions | Training, booking kiosk, device kiosk, privacy, POS profiles, MCP HTTP boundaries and public URL editor passed |
+| Original PNGs | Both baseline SHA-256 digests unchanged; deployed production logos also matched via HTTP |
+
+The global CI state is separate from the passed preview job: the commercial
+matrix job was canceled during a WebKit installation in an earlier attempt.
+Its initial run passed with the same product code. Attempts to rerun the copied
+canceled job subsequently ended in `startup_failure` without creating jobs.
+Actionlint passed and the same workflow executed in prior attempts; the precise
+startup failure is not established. Current CI status and any remaining blocker
+are recorded in the PR rather than represented here as a passed check.
+
 ## Future backlog, not implemented
 
 1. Efficient public directory/index; `/buscar`, municipality/category filters,
