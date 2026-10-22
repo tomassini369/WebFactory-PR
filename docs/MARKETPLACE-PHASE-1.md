@@ -107,6 +107,12 @@ query/fragment links retain the existing native-navigation safety policy.
   with the same application entry. The main entry is 243.31 kB (76.24 kB gzip),
   compared with the baseline 298.68 kB (93.73 kB gzip).
 - Remote CI repeats Marketplace/Crear against the actual Netlify Deploy Preview.
+  The initial remote job timed out during dependency/browser installation and
+  its isolated retry failed in the same combined setup step, before this test.
+  Preview browser QA now pins Ubuntu 24.04 and separates npm/browser setup with
+  individual time limits. The existing error reporter accepts Marketplace phases.
+  Detailed original setup logs were inaccessible from Codex; the underlying
+  install error is not claimed as diagnosed. Final results are in the PR.
 - Browser testing is automated/emulated. No physical iPhone is claimed.
 
 The English All category initially measured 39px and was raised to the 44px

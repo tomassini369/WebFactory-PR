@@ -336,7 +336,8 @@ jobs:
 
   deploy-preview-smoke:
     if: github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
+    # Keep browser dependencies reproducible during ubuntu-latest image migrations.
+    runs-on: ubuntu-24.04
     timeout-minutes: 25
     permissions:
       contents: read
@@ -401,10 +402,12 @@ jobs:
         with:
           node-version: 22
           cache: npm
-      - name: Install verification dependencies and browsers
-        run: |
-          npm ci
-          npx playwright install --with-deps chromium webkit
+      - name: Install preview verification dependencies
+        timeout-minutes: 5
+        run: npm ci
+      - name: Install preview verification browsers
+        timeout-minutes: 8
+        run: npx playwright install --with-deps chromium webkit
       - name: Build deployed-preview verification bundle
         run: |
           npm run build > /tmp/unified-preview-build.log 2>&1 || {
