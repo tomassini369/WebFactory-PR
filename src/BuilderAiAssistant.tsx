@@ -108,6 +108,7 @@ export default function BuilderAiAssistant({state,setState,lang}:{state:any;setS
     </button>
     {open&&<div className="wf-ai-body">
       <p>{lang==='es'?'Describe el negocio o el cambio que quieres. La IA solo modifica la configuración dentro de WebFactory; nunca crea otro proyecto o deployment.':'Describe the business or change you want. AI only modifies configuration inside WebFactory; it never creates another project or deployment.'}</p>
+      <p>{lang==='es'?'Factory AI usa los datos del Builder que envías para generar propuestas. No pegues mensajes de Gmail, datos de Google Calendar ni otra información personal sensible en la solicitud.':'Factory AI uses the Builder information you submit to generate proposals. Do not paste Gmail messages, Google Calendar data, or other sensitive personal information into the request.'}</p>
       <textarea rows={5} maxLength={1400} value={prompt} onChange={e=>setPrompt(e.target.value)} placeholder={lang==='es'?'Ejemplo: Tengo un salón de belleza en Puerto Rico. Quiero un website moderno con servicios de color, keratina, uñas y booking por especialista.':'Example: I own a beauty salon in Puerto Rico. I want a modern website with color, keratin, nails and specialist booking.'}/>
       <div className="wf-ai-actions"><span>{prompt.length}/1400</span><button type="button" disabled={busy} onClick={generate}>{busy?(lang==='es'?'Factory AI está creando…':'Factory AI is creating…'):(lang==='es'?'Generar propuesta':'Generate proposal')} ✦</button></div>
       {error&&<div className="wf-ai-error">{error}</div>}
