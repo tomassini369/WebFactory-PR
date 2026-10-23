@@ -90,3 +90,12 @@ ENERGY 2 / RHYTHM 2 / MOTION 1. Density 6, variance 4, motion 2.
 
 The original Hero video and scroll on `/crear` remain intact. Both `/crear` and
 `/builder` expose a dedicated, labeled Marketplace return icon in their headers.
+
+### Consumer access appearance · October 23, 2026
+
+The owner requests the existing portal login's visual treatment for `/cuenta`,
+while explicitly preserving the Marketplace account layout. Keep its header,
+form order, copy, spacing, language/theme controls and account behavior. Scope
+the portal slate/navy canvas, translucent card, inset pill fields and blue pill
+action to signed-out consumer access and confirmation only. Do not move the
+controls into the card, add a desktop welcome column or change authentication.
