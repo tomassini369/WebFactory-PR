@@ -32,7 +32,7 @@ await page.route('**/.netlify/functions/**',async route=>{
 try{
  // Homepage click and actual return button use real route navigation; no auth mutation.
  await page.goto('http://127.0.0.1:5196/')
- await page.locator('.mk-login').click()
+ await page.locator('.mk-footer a[href="/client-admin"]').click()
  await page.waitForURL('**/client-admin');await page.locator('.ca-login input[type=email]').waitFor()
  await page.locator('button.portal-return-home').click()
  await page.waitForURL('http://127.0.0.1:5196/')

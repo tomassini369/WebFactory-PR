@@ -111,6 +111,10 @@ plan, database, package dependency or paid generation was added.
   public allowlists, entitlement, bounded reads, canonical identity, profile
   isolation/CAS, favorites and registration CSRF/validation/provider-disabled states.
 - TypeScript and production build passed. Original logo hashes match.
+- The first Netlify preview build failed because the isolated visual-review
+  Identity adapter lacked the new getSettings export. Reproduced with
+  CONTEXT=deploy-preview; the adapter now returns disabled registration without
+  network access. CI builds the exact preview context to catch this dependency.
 - Browser checks exercise Marketplace, consumer signup/login/profile/favorites/
   logout, business gallery/catalog, disabled registration and header return routes
   with isolated fixtures. Full results and exact commit are recorded in PR #123.

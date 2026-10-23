@@ -420,7 +420,7 @@ jobs:
         run: npx playwright install --with-deps chromium webkit
       - name: Build deployed-preview verification bundle
         run: |
-          npm run build > /tmp/unified-preview-build.log 2>&1 || {
+          CONTEXT=deploy-preview npm run build > /tmp/unified-preview-build.log 2>&1 || {
             node scripts/report-kiosk-ci-error.mjs /tmp/unified-preview-build.log build
             exit 1
           }
