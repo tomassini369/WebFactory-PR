@@ -67,7 +67,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     () => typeof window !== 'undefined' && (
       legalPlatformPath(pathname)
       || pathname === '/'
-      || /^\/(?:crear|builder|templates|preview-review|chatgpt|customer-display|kiosk)\/?$/.test(pathname)
+      || /^\/(?:crear|cuenta|builder|templates|preview-review|chatgpt|customer-display|kiosk)\/?$/.test(pathname)
+      || /^\/negocios\//.test(pathname)
       || /^\/(?:webfactory-admin|client-admin|password|password-recovery)\/?$/.test(pathname)
       || /^#(?:invite_token|recovery_token)=/.test(window.location.hash)
     ),

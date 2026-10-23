@@ -41,7 +41,7 @@ try{
   const page=await context.newPage(),errors=[],functions=[],media=[]
   page.on('pageerror',error=>errors.push(error.message))
   page.on('request',request=>{if(request.url().includes('/.netlify/functions/'))functions.push(request.url());if(/webfactory-hero|HomePage-[^/]+\.(js|css)/.test(request.url()))media.push(request.url())})
-  await page.route('**/.netlify/functions/**',route=>route.fulfill({status:500,contentType:'application/json',body:JSON.stringify({ok:false,message:'Unexpected function request on public Marketplace'})}))
+  await page.route('**/.netlify/functions/**',route=>route.fulfill({status:route.request().url().includes('/marketplace-directory')?200:500,contentType:'application/json',body:JSON.stringify(route.request().url().includes('/marketplace-directory')?{ok:true,entries:[],truncated:false}:{ok:false,message:'Unexpected private function request on public Marketplace'})}))
   await page.goto(origin+'/',{waitUntil:'domcontentloaded'});await page.locator('.mk-root').waitFor()
   await page.waitForFunction(()=>{const image=document.querySelector('.mk-hero-photo img');return image?.complete&&image.naturalWidth>0})
   assert.match(await page.locator('.mk-hero-photo img').getAttribute('src'),/^\/marketplace\//)
@@ -54,7 +54,8 @@ try{
   // Deploy Preview tooling may add its own iframe outside the application.
   assert.equal(await page.locator('.mk-root').locator('.wf-premium-home,video,iframe,.template-highlights').count(),0)
   assert.deepEqual(media,[],'Marketplace must not load the commercial landing/video')
-  assert.deepEqual(functions,[],'No private tenant listing or fabricated feed API')
+  assert(functions.every(url=>new URL(url).pathname==='/.netlify/functions/marketplace-directory'),'Only the public allowlisted directory is requested')
+  await page.locator('.mk-business-empty').waitFor()
   await noOverflow(page);await checkAccessibility(page)
   const query=page.getByRole('searchbox'),municipality=page.locator('select[name="municipio"]')
   await query.fill('café & servicio');await municipality.selectOption('Rincón');await page.locator('.mk-search-button').click()
@@ -70,7 +71,7 @@ try{
   await page.keyboard.press('Control+Home');await page.keyboard.press('Tab');await noOverflow(page)
   await page.evaluate(()=>{if(document.activeElement instanceof HTMLElement)document.activeElement.blur()})
   if([390,1440].includes(width))await page.screenshot({path:`${artifact}/marketplace-${width}-${theme}-${lang}-${engine}.png`,fullPage:true})
-  assert.equal(await page.locator('.mk-navigation a[href="#descubrir"]').getAttribute('href'),'#descubrir')
+  assert.equal(await page.locator('.mk-navigation a[href="/#descubrir"]').getAttribute('href'),'/#descubrir')
   assert.equal(await page.locator('.mk-create-link').getAttribute('href'),'/crear')
   assert.deepEqual(errors,[]);console.log('PASS Marketplace filters, locales, theme, empty states, logo and accessibility',width,theme,lang,engine)
   await context.close()
@@ -80,7 +81,7 @@ try{
  await context.addInitScript(()=>{if(window.top!==window)return;localStorage.setItem('webfactory-language','es')})
  const page=await context.newPage(),errors=[];let documents=0
  page.on('pageerror',error=>errors.push(error.message));page.on('request',request=>{if(request.isNavigationRequest()&&request.frame()===page.mainFrame())documents++})
- await page.route('**/.netlify/functions/**',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({ok:true,user:null})}))
+ await page.route('**/.netlify/functions/**',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({ok:true,user:null,entries:[],truncated:false})}))
  await page.goto(origin+'/',{waitUntil:'domcontentloaded'});await page.locator('.mk-root').waitFor();const baseline=documents
  await page.keyboard.press('Tab');assert(await page.locator('.mk-skip').evaluate(node=>node===document.activeElement));await page.keyboard.press('Enter');assert(await page.locator('#marketplace-content').evaluate(node=>node===document.activeElement))
  // Skip-link fragments intentionally use native navigation in the existing router.

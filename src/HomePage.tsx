@@ -7,6 +7,7 @@ import './home-apple.css'
 import './home-evolution.css'
 import './home-craft-phase2.css'
 import { useSelectionPill } from './useSelectionPill'
+import MarketplaceReturn from './MarketplaceReturn'
 
 type Language = 'en' | 'es'
 
@@ -418,6 +419,7 @@ export default function HomePage({ lang, setLang }: { lang: Language, setLang: (
         <a href="/" className="wf-h-logo"><AdaptiveLogo alt="WebFactory PR" /></a>
         <nav id="wf-main-nav" className={menu ? 'open' : ''} aria-label={t.mainNav}><a href="/" onClick={() => setMenu(false)}>{t.marketplaceNav}</a>{t.nav.map((label, i) => <a key={label} href={nav[i]} onClick={() => setMenu(false)}>{label}</a>)}<a href="/templates" onClick={() => setMenu(false)}>{t.templatesNav}</a></nav>
         <div className="wf-h-actions">
+          <MarketplaceReturn lang={lang}/>
           <div className="wf-h-languages" role="group" aria-label="Language / Idioma"><button aria-pressed={lang === 'en'} onClick={() => setLang('en')}>EN</button><button aria-pressed={lang === 'es'} onClick={() => setLang('es')}>ES</button></div>
           <ThemeToggle />
           <a className="wf-h-login" href="/client-admin">{t.login}</a>

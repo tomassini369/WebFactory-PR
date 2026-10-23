@@ -27,6 +27,6 @@ test('public metadata separates discovery from creating and never overrides tena
  const {publicPageMetadata}=await import('../../src/public-page-metadata.ts')
  assert.equal(publicPageMetadata('/crear','es').url,'https://webfactorypr.com/crear')
  assert.match(publicPageMetadata('/crear/','en').description,/business website/)
- assert.match(publicPageMetadata('/','es').description,/Directorio en preparación/)
+ assert.match(publicPageMetadata('/','es').description,/negocios, servicios y productos publicados/)
  for(const path of ['/sites/business','/client-admin','/webfactory-admin','/pay/business/private','/track/private','/kiosk'])assert.equal(publicPageMetadata(path,'es'),null,path)
 })

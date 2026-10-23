@@ -48,3 +48,45 @@ Both routes use `AdaptiveLogo` and the two original PNGs without recoloring,
 filters, clipping or replacement. Verify and report SHA-256 before/after.
 An eventual real Puerto Rico photograph is a local asset with documented source
 and license, and never replaces the original video on `/crear`.
+
+## Marketplace reference revision (October 23, 2026)
+
+The owner explicitly requests the supplied desktop/mobile Marketplace reference.
+For this surface, replace the first-phase presentation with a panoramic Puerto
+Rico photograph, white integrated search, category capsules, compact business
+cards, a business-creation banner, consumer account and mobile bottom navigation.
+The public directory now reads eligible active/trial storefronts with public
+entitlement. The previous presentation-only filter rule is superseded. Never
+publish preview/setup/hidden/expired tenants, invented ratings, verification
+badges or promotions. Consumer access is explicitly authorized functional work;
+it reuses Identity/MFA without granting commercial roles or membership.
+
+Design Read: consumer discovery for Puerto Rico, navy photographic reference;
+ENERGY 2 / RHYTHM 2 / MOTION 1. Density 6, variance 4, motion 2.
+
+- Color: deep ocean navy (#061624) connects discovery to the reference and brand;
+  raised navy (#0C2233), pale text (#F2F6FC), muted steel (#B7C5D5), and blue
+  action (#215FC5) create hierarchy. Light surfaces remain #F6F9FE / #FFFFFF,
+  navy text #102237, secondary #4D6076. Blue focus #A9CDFF / #235CA8.
+- Typography: retain the native sans-serif stack and original PNG logo for brand
+  continuity and loading performance. Display uses clamp, tight tracking, 1.04
+  leading; body 1rem, secondary 14px, max 65ch. No new font downloads.
+- Layout: left discovery copy with a small local-support aside mirrors the
+  supplied composition. On phones, one column, two-row search, horizontal
+  category/business rails contained inside the page, and a safe-area bottom nav.
+- Cards distinguish individual published businesses; public business detail
+  uses its real images/catalog and routes commerce into the existing storefront.
+  No parallel booking, payment, reviews, promotion or follow subsystem is added.
+- White search is the discovery focal point. Capsule categories identify filter
+  choices, not decorative badges. One blurred support aside separates text from
+  the photo; other surfaces remain solid. The blue banner routes business owners
+  into `/crear`. Store icons identify this destination and Marketplace return.
+- Motion is limited to tap feedback and native scrolling, with reduced-motion
+  support. No continuous effects. Controls have 44px minimum targets and visible
+  keyboard focus, loading/error/empty states, Escape-close menus and native dialog.
+- Banned: fabricated listings/reviews/metrics, decorative badge claims, clipped
+  logos, changes to tenant branding, dead account buttons, consent by default,
+  AI neon effects, duplicated business systems or ambient animations.
+
+The original Hero video and scroll on `/crear` remain intact. Both `/crear` and
+`/builder` expose a dedicated, labeled Marketplace return icon in their headers.

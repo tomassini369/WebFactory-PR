@@ -1,188 +1,141 @@
-# Marketplace Phase 1
+# Marketplace: reference design and consumer access
 
-Base: `main` at `a097d6e0439a039c5042bb8c6f22632c0afd2fdf` (includes portal/login locale PR #122).
-Work branch: `feat/marketplace-phase-1`. Review through its PR and Netlify Deploy Preview.
-No merge, production deployment, tenant migration, purchase or real booking is authorized.
+Branch: `feat/marketplace-phase-1`, PR #123. Based on current main including
+Google Limited Use changes from PR #124. Preview only; no production publication.
+This revision supersedes the original presentation-only phase-one specification.
 
-## What changed
+## User-approved scope
 
-- `/` is consumer discovery using the existing WebFactory identity, original logo,
-  navy/blue palette, native fonts, ES/EN and Light/Dark.
-- The owner's supplied conceptual reference guides the panoramic photographic
-  Hero, integrated search and compact category chips. Its approximate logo,
-  invented businesses, reviews, ratings, offers and account screens are not used.
-- The Hero uses a real photograph of Old San Juan by Pedro Colon, not generated
-  scenery. Two local WebP sizes (960: 101,320 bytes; 1800: 293,428 bytes) use native
-  srcset. There is no runtime Pexels API/CDN dependency. See the [source and license](licenses/marketplace-puerto-rico-photo.md).
-- Manual choice of all 78 municipalities; eight local business categories;
-  normalized search text. Submitting, category selection and clearing update
-  visible criteria, location context and shareable URL parameters on `/`.
-- These are presentation filters, not an implemented directory lookup. The page
-  states the directory is being prepared and contains no real published entries.
-  Featured, community and promotion sections show honest empty states. No real
-  businesses are hidden by a fabricated zero-result response.
-- The map context is explicitly future functionality with no map tiles, fake pins,
-  geolocation request or map provider. It is omitted on narrow phones.
-- Business CTAs point to `/crear`. The existing login is explicitly labeled as the
-  business portal; consumer sign-up and accounts are not presented as ready.
-- `/crear` renders the same `HomePage` with its original video, native scroll tour,
-  all demos, prices, CTAs, Factory AI, FAQ, MCP section, footer and legal links.
-  Only the reciprocal Marketplace navigation link was added to that component.
-  Existing sound/haptic preferences are also reused in the Marketplace footer.
-- Both public entries load their page code lazily. Marketplace does not request
-  the old landing code, CSS, poster or video. The main entry bundle is smaller than
-  the baseline 298.68 kB (exact final sizes are in the build log).
-- Initial static `/crear/index.html` shares the Vite application and carries its
-  business metadata for link previews before JavaScript. Canonical/title/locale
-  metadata also update on browser navigation. `/crear` is in the existing sitemap.
+Match the owner's October 23 desktop/mobile reference using the original logo,
+real public WebFactory content, consumer sign-in/registration, and a dedicated
+Marketplace return icon in the business landing and website Builder headers.
+The original PNGs, commercial Hero video, interactive tour, catalog/booking/
+checkout, pricing, portals, roles, Identity/MFA, tenant stores and APIs are reused.
+Stitch Design Taste and vendored Anti-Slop instructions inform the reference
+contract in DESIGN.md. No Stitch/21st provider generation was executed; those
+private provider tools were not advertised. WebFactory/Admin connection verified.
+Graph context was attempted twice, first correcting its 1600-token input limit;
+its second response failed. Dependency review continued through current source.
 
-No new library, font, database, provider integration, paid service or Netlify
-project was added. Backend auth, membership, tenant separation, prices, commerce,
-webhooks, MFA, OAuth, catalog, POS, kiosk, bookings and inventory logic are intact.
-The only server-library change adds `/crear` to the existing public sitemap URLs.
+## Shipped in this branch
 
-## Original logo integrity
+- Panoramic real Puerto Rico photo, white integrated search, local-support aside,
+  capsule categories, public business cards, creation banner and mobile bottom nav.
+  The existing licensed Pedro Colon photograph is retained; the conceptual
+  reference's invented businesses, offers, ratings and logo are not reused.
+- `/cuenta` and `/cuenta?modo=crear`: consumer login and registration, explicit
+  Terms/Privacy acceptance, profile name/municipality and persisted favorites.
+  Business administration remains at `/client-admin`, explicitly labeled.
+- Existing Identity, primary HttpOnly session, MFA policy/enrollment, password
+  recovery, logout and revocation are reused. Registration does not assign roles,
+  create a business, change memberships or change provider configuration.
+- Signup checks the provider's current registration setting on client and server.
+  If invite-only/disabled or unavailable, the page explains that registration is
+  unavailable and does not enable it. Enabling Identity registration is a separate
+  configuration decision. No real consumer account/email was created during QA.
+- Confirmation links are removed from browser history and submitted by an explicit
+  account confirmation action. Verification calls the fixed Identity API endpoint,
+  discards returned tokens and requires password login afterward. It avoids the
+  SDK's shared browser-style confirmation user on concurrent server requests.
+- `/negocios/:slug` presents the public business photograph, gallery, catalog and
+  actual prices. Saving routes to consumer access. Book/purchase actions enter
+  the existing `/sites/:slug` flow to select service/employee/time or cart items.
+  No booking or payment engine is duplicated. Canonical is the existing tenant site.
+- A labeled Store icon in `/crear` and `/builder` returns to `/`; the official logo
+  remains unchanged. The business landing's original video/scroll are preserved.
+- Privacy ES/EN discloses the new consumer profile/favorites storage and deletion
+  request path. Existing Google Limited Use statements remain intact.
 
-These SHA-256 values are identical before and after implementation:
+## Public data and security boundaries
 
-| Original asset | SHA-256 before = after |
+`marketplace-directory` scans only canonical `sites/` keys in the existing scoped
+site store. It returns a strict display allowlist: slug, public names/descriptions,
+category, public photos, active catalog entries and active public locations.
+Only active/trial sites with current public subscription entitlement are listed.
+Preview, setup, suspended, expired and deleted sites are excluded. No members,
+Identity records, employee private data, orders/customers, OAuth, provider secrets,
+payment settings, billing configuration or private ledger are returned.
+
+The scan is bounded to 250 site records and six seconds between bounded batches,
+with ten parallel reads per batch. A `truncated` flag is visible in the UI; filters
+apply to the loaded subset, not an asserted full-platform result. CDN TTL is 30s,
+browser TTL 15s. This is a bounded first directory, not a large-scale search index.
+A dedicated publication index with stable cursors remains future scaling work.
+Municipalities are matched only from published active location addresses. The UI
+never guesses the visitor's location or claims distance ordering.
+
+Consumer data lives under a separate `marketplace/consumers/<hash-of-Identity-ID>`
+namespace in the existing scoped store. The authenticated immutable subject is
+always authoritative; request userId/email/roles/siteId cannot select another
+profile. Confirmed email and the existing second-factor rules are required.
+Profile responses are no-store. POSTs require exact same origin, JSON and a bounded
+body. Revision/ETag CAS rejects stale/concurrent saves without automatic replay.
+Favorites are bounded to 100 slugs and additions recheck public entitlement.
+Preview data uses the existing deploy-scoped isolation, never production stores.
+
+## Routes and real behavior
+
+| Route/control | Behavior |
+| --- | --- |
+| `/` | Public directory cards, local text/category/municipality filters and URL state |
+| `/negocios/:slug` | Allowlisted public profile, Escape-close gallery, real catalog |
+| `/cuenta` | Consumer login, profile, favorites and logout, existing MFA as required |
+| `/cuenta?modo=crear` | Registration with explicit consent when Identity permits it |
+| `/#confirmation_token=…` | Dedicated confirmation screen, token removed from history |
+| `/crear` | Complete original business landing with explicit Marketplace header icon |
+| `/builder`, `/builder?edit=…` | Existing Builder and authorized edit flow with return icon |
+| Business card bookmark | Consumer access and explicit save action for that business |
+| Profile Book/catalog actions | Existing tenant storefront; no direct fabricated transaction |
+| Promotion Center | Honest empty state; no made-up discount or promotion storage |
+| Location links | Actual allowlisted Google Maps URLs from public locations |
+| `/client-admin`, `/webfactory-admin` | Existing membership/admin/MFA boundaries |
+
+Favorites and following are different. Following, consumer reviews, promotion
+publishing, sponsored placements, interactive map tiles, notifications and verified
+badges are not implemented in this revision and are not presented as functioning.
+
+## Brand integrity
+
+| Original PNG | SHA-256 before = after |
 | --- | --- |
 | `assets/webfactory-pr-logo.png` | `1e92a89ec7e3771875bd1e30326478e6f4fdcd9aee2400bb0305d56ae7dd6f8a` |
 | `assets/webfactory-pr-logo-dark.png` | `2ae86e259775cb27f71757479a8e0fa620901aa6bc3cf837d785bbdec8ac270b` |
 
-`AdaptiveLogo` itself is unchanged. Its file only gains `/crear` in the existing
-inline-theme-control route list to avoid a duplicate floating toggle. Both
-original PNGs are served without conversion, cropping, filters, recoloring or
-replacement. Browser QA checks their source URLs, object-fit, filter, clipping
-and transforms. Unit tests lock the two approved file digests.
+The real assets retain contain sizing and have no recoloring, crop, filters or
+transforms. Native fonts and existing dependencies are used; no new provider,
+plan, database, package dependency or paid generation was added.
 
-## Route matrix
+## Validation and limitations
 
-| Route | Phase 1 behavior |
-| --- | --- |
-| `/` | Marketplace presentation, manual filters and honest empty sections |
-| `/?q=…&municipio=…&categoria=…` | Same Marketplace; normalizes/restores criteria, no private-data query |
-| `/crear`, `/crear/` | Complete existing business landing; original Hero, demos, prices and AI |
-| `/templates`, `/templates/:slug` | Existing catalog and template previews; current 3D carousel unchanged |
-| `/builder`, `/builder?edit=…` | Existing Builder and authorized edit entry |
-| `/client-admin`, `/webfactory-admin` | Existing authenticated portals and MFA |
-| `/sites/:slug` | Existing public tenant website; server-owned tenant metadata |
-| `/pay/:slug/:token` | Existing payment-link flow |
-| `/track/:token` | Existing private tracking flow |
-| `/kiosk`, `/customer-display` | Existing paired-device flows |
-| `/chatgpt` | Existing MCP connection/settings experience |
-| `/privacy`, `/terms`, `/refund-policy` | Existing legal pages |
-| `/password-recovery`, Identity invite/recovery fragments | Existing identity flows |
-| `/buscar`, `/negocios/:id`, `/cuenta`, `/cuenta/favoritos` | Not implemented or linked as available |
+- Unit/security suites: 651 passed, zero failures or skips. New coverage checks
+  public allowlists, entitlement, bounded reads, canonical identity, profile
+  isolation/CAS, favorites and registration CSRF/validation/provider-disabled states.
+- TypeScript and production build passed. Original logo hashes match.
+- Browser checks exercise Marketplace, consumer signup/login/profile/favorites/
+  logout, business gallery/catalog, disabled registration and header return routes
+  with isolated fixtures. Full results and exact commit are recorded in PR #123.
+- Chromium is available locally via a temporary test binary. The usual Playwright
+  browser download failed; WebKit and deployed-preview checks run in GitHub Actions.
+  No temporary browser package was added to the application or lockfile.
+- Pinned Impeccable detector: 20 pre-existing findings, none in Marketplace/Consumer
+  files. No source was changed solely to satisfy an unrelated advisory.
+- Narrow-view QA found overflowing profile catalog navigation at 320px and desktop
+  header density at 1024px. The catalog heading now reflows and mid-size headers
+  place navigation on its own row. No overflow is hidden with a page-wide clip.
+- Browser accounts, favorites, directory rows and galleries use isolated fixtures;
+  no live signup email, Identity account, business mutation, payment or booking.
+  Live HTTP smoke reads public data, checks 401/403/400 boundaries and sends only
+  rejected registration payloads, never creating an account.
+- Emulated browser checks are not a physical iPhone test. Identity delivery and
+  confirmation with a real mailbox are not claimed as validated.
 
-Navigation from portals and template previews returns to the Marketplace.
-Marketplace → Crear and clean-route returns preserve the existing SPA document;
-query/fragment links retain the existing native-navigation safety policy.
+## Delivery gate
 
-## Validation
-
-- Baseline main: 637 tests passed, 0 failed; TypeScript and build passed.
-- Phase 1: 642 tests passed, 0 failed, 0 skipped; TypeScript and build passed.
-  The full local Marketplace matrix passed: 28 cases per engine (56 total),
-  plus history, original landing, video, reduced-motion and image-failure checks.
-  A final 390/1440 rerun passed on both engines after the clear-filter focus fix.
-  The preserved commercial landing passed its 28-case matrix and eight FAQ cases.
-  Existing authentication and portal-navigation smoke tests also passed.
-  Remote CI results are recorded in the PR.
-- New browser smoke checks seven widths (320/375/390/430/768/1024/1440), two themes
-  and two languages on Chromium and touch WebKit. It checks search, municipalities,
-  categories, reset/reload, focus, 44px targets, computed text/control contrast,
-  original logo rendering, image availability, empty states and zero private
-  function requests from the Marketplace.
-- Additional checks cover skip link, browser history, cross-navigation, canonical
-  changes, complete commercial sections, unchanged demo cart/price, original video,
-  reduced motion and a failed photo load with the search still usable.
-- Existing auth/login locale, recovery/failure, MFA, viewport, portal navigation
-  and FAQ tests follow the new public entry point. Commercial landing tests now
-  target `/crear`, retaining their functional assertions.
-- Actionlint and `git diff --check` passed. The pinned Impeccable detector
-  reported 20 pre-existing findings (18 warnings and two advisories), none in
-  the new Marketplace files. No lint script is defined in package.json.
-- Local HTTP checks confirmed separate initial metadata for `/` and `/crear/`,
-  with the same application entry. The main entry is 243.31 kB (76.24 kB gzip),
-  compared with the baseline 298.68 kB (93.73 kB gzip).
-- Remote CI repeats Marketplace/Crear against the actual Netlify Deploy Preview.
-  The initial remote job timed out during dependency/browser installation and
-  its isolated retry failed in the same combined setup step, before this test.
-  Preview browser QA now pins Ubuntu 24.04 and separates npm/browser setup with
-  individual time limits. The existing error reporter accepts Marketplace phases.
-  Detailed original setup logs were inaccessible from Codex; the underlying
-  install error is not claimed as diagnosed. Final results are in the PR.
-- Browser testing is automated/emulated. No physical iPhone is claimed.
-
-The English All category initially measured 39px and was raised to the 44px
-minimum. Moving the form over a dark Hero exposed inherited white labels in
-Light mode; explicit form text tokens corrected that contrast failure. QA also
-separates skip-link fragment navigation from clean-route SPA checks and counts
-only the five commercial platform cards, keeping the independent MCP cards.
-The published smoke exposed an overly broad iframe assertion; it now checks
-inside the Marketplace container, allowing preview tooling outside the product.
-The independent checks for commercial bundle/video requests remain in place.
-
-## Published verification evidence
-
-Netlify Deploy Preview: https://deploy-preview-123--webfactorypr.netlify.app/
-Business landing: https://deploy-preview-123--webfactorypr.netlify.app/crear
-PR: https://github.com/tomassini369/WebFactory-PR/pull/123
-
-The complete `deploy-preview-smoke` job passed on the deployed application in
-[CI attempt 2](https://github.com/tomassini369/WebFactory-PR/actions/runs/39793310690/attempts/2),
-job `119893700517`, for application commit `d7fb0db4f97597e8c354c535425358f8774866da`.
-The Marketplace/Crear step passed at 14:51:22 UTC on 2026-10-22. Later documentation
-changes do not change this application code or its assets.
-
-| Scope | Executed result |
-| --- | --- |
-| Unit/integration/security suites | 642 passed; no failures or skips |
-| TypeScript and production build | Passed |
-| Local Marketplace, seven widths × two themes × two languages | 28 cases per engine; 56 total, Chromium + WebKit |
-| Published Marketplace/Crear, 390 and 1440, both languages/themes | 16 matrix cases total, both engines; history, original landing/video, reduced motion and image failure passed |
-| Preserved commercial landing | 28 responsive cases and eight FAQ cases passed |
-| Published portal security and UI | Authentication boundaries, Owner/Employee, phone review, login/MFA contrast and workspaces passed |
-| Published operational regressions | Training, booking kiosk, device kiosk, privacy, POS profiles, MCP HTTP boundaries and public URL editor passed |
-| Original PNGs | Both baseline SHA-256 digests unchanged; deployed production logos also matched via HTTP |
-
-The global CI state is separate from the passed preview job: the commercial
-matrix job was canceled during a WebKit installation in an earlier attempt.
-Its initial run passed with the same product code. Attempts to rerun the copied
-canceled job subsequently ended in `startup_failure` without creating jobs.
-Actionlint passed and the same workflow executed in prior attempts; the precise
-startup failure is not established. Current CI status and any remaining blocker
-are recorded in the PR rather than represented here as a passed check.
-
-Later remote regressions exposed a 15-second kiosk reload timeout and a
-30-second dashboard bootstrap timeout. The two smoke scripts now allow 60
-seconds for remote document/bootstrap readiness, while keeping existing control
-action limits and every payment, permission, revocation and persistence assertion.
-There are no automatic transaction retries. Portal bootstrap failures report
-only HTTP status, pathname, document readiness and structural element counts.
-Both scripts passed locally on Chromium and WebKit at 390/1440, ES/EN and
-Light/Dark, including their isolated operational scenarios, after this change.
-The same readiness budget covers Builder, its template iframe and the kiosk
-administration page; diagnostic output distinguishes the expected path and
-component from the actual document. The browser suites use Ubuntu 24.04,
-matching the preview smoke rather than a moving runner image. Production
-draft protection, authentication and transaction behavior are unchanged.
-
-## Future backlog, not implemented
-
-1. Efficient public directory/index; `/buscar`, municipality/category filters,
-   optional distance, business profiles `/negocios/:id` and a real contextual map.
-2. Free consumer `/cuenta`, persisted favorites, following by business/category/
-   municipality, Para ti/Siguiendo/Explorar feeds and opt-in alerts.
-3. Connect the actual `TemplateHighlights.tsx` and `carousel-original` 3D Glass
-   carousel to the full approved catalog without changing its style. One shared,
-   persistent favorite for heart/bookmark across views; following remains distinct.
-   Reuse each tenant's existing booking and checkout.
-4. Real 1–5 reviews with purchase/visit verification, comments, owner replies and
-   separate moderation; no invented badges or review counts.
-5. Promotion center with validity/expiry, organic posts, labeled sponsored ads,
-   paid campaigns and outside advertisers, separated platform Stripe/merchant
-   Stripe Connect, attribution and moderation.
-6. Extend existing Business/Platform Control Centers using existing commerce
-   records and APIs; no duplicate POS, bookings, catalog, stock or private ledger.
+After/audit-existing-work mode follows AGENTS.md. ENERGY 2 / RHYTHM 2 / MOTION 1.
+The preview must pass layout/contrast/44px-target and keyboard tests; root page
+motion is reduced-motion safe. The reference defines the photographic hierarchy,
+white search focal point and contained card rails. Store, Search, Bookmark,
+MapPin, Menu and account icons each identify a real function. Empty/promotions
+states contain no fabricated activity. Tests/build and browser evidence, rather
+than a successful deployment alone, determine verification status. Review the
+current PR check state before authorizing publication.
