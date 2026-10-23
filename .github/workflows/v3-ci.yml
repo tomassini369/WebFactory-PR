@@ -11,7 +11,8 @@ on:
 
 jobs:
   verify-suite:
-    runs-on: ubuntu-latest
+    # Use the same pinned browser environment as the Deploy Preview smoke.
+    runs-on: ubuntu-24.04
     timeout-minutes: 35
     strategy:
       fail-fast: false
@@ -71,6 +72,15 @@ jobs:
             fi
             cat "$log"
           done
+      - name: Check Marketplace consumer accounts and public business profiles
+        if: matrix.suite == 'experience'
+        env:
+          QA_WIDTHS: 390,1440
+        run: |
+          for engine in chromium webkit; do
+            QA_ENGINE="$engine" node scripts/browser-marketplace-consumer-smoke.mjs
+            QA_ENGINE="$engine" node scripts/browser-marketplace-return-smoke.mjs
+          done
       - name: Save login contrast browser evidence
         if: always() && matrix.suite == 'core'
         uses: actions/upload-artifact@v4
@@ -128,6 +138,19 @@ jobs:
         run: |
           node scripts/browser-workspace-experience-smoke.mjs
           node scripts/browser-admin-experience-smoke.mjs
+      - name: Check Marketplace and preserved Crear landing on Chromium and WebKit
+        if: matrix.suite == 'experience'
+        env:
+          QA_WIDTHS: 390,1440
+        run: |
+          for engine in chromium webkit; do
+            log="/tmp/marketplace-$engine.log"
+            if ! QA_ENGINE="$engine" QA_PORT=5340 node scripts/browser-marketplace-smoke.mjs > "$log" 2>&1; then
+              node scripts/report-kiosk-ci-error.mjs "$log" "marketplace-$engine"
+              exit 1
+            fi
+            cat "$log"
+          done
       - name: Check portal route transitions and template Home controls
         if: matrix.suite == 'experience'
         run: node scripts/browser-route-transitions-smoke.mjs
@@ -300,7 +323,7 @@ jobs:
         run: test "$SUITE_RESULT" = success
 
   kiosk-bookings:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     strategy:
       fail-fast: false
@@ -323,7 +346,8 @@ jobs:
 
   deploy-preview-smoke:
     if: github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
+    # Keep browser dependencies reproducible during ubuntu-latest image migrations.
+    runs-on: ubuntu-24.04
     timeout-minutes: 25
     permissions:
       contents: read
@@ -355,7 +379,7 @@ jobs:
         env:
           PREVIEW_URL: https://deploy-preview-${{ github.event.pull_request.number }}--webfactorypr.netlify.app
         run: |
-          for path in / /templates /builder /client-admin /kiosk; do
+          for path in / /crear /templates /builder /client-admin /kiosk; do
             echo "Checking $PREVIEW_URL$path"
             curl -fLsS --retry 4 --retry-delay 2 --max-time 30 -o /dev/null "$PREVIEW_URL$path"
           done
@@ -388,16 +412,41 @@ jobs:
         with:
           node-version: 22
           cache: npm
-      - name: Install verification dependencies and browsers
-        run: |
-          npm ci
-          npx playwright install --with-deps chromium webkit
+      - name: Install preview verification dependencies
+        timeout-minutes: 5
+        run: npm ci
+      - name: Install preview verification browsers
+        timeout-minutes: 8
+        run: npx playwright install --with-deps chromium webkit
       - name: Build deployed-preview verification bundle
         run: |
-          npm run build > /tmp/unified-preview-build.log 2>&1 || {
+          CONTEXT=deploy-preview npm run build > /tmp/unified-preview-build.log 2>&1 || {
             node scripts/report-kiosk-ci-error.mjs /tmp/unified-preview-build.log build
             exit 1
           }
+      - name: Check actual Marketplace and Crear routes on the Deploy Preview
+        env:
+          QA_ORIGIN: https://deploy-preview-${{ github.event.pull_request.number }}--webfactorypr.netlify.app
+          QA_WIDTHS: 390,1440
+        run: |
+          for engine in chromium webkit; do
+            log="/tmp/marketplace-preview-$engine.log"
+            if ! QA_ENGINE="$engine" node scripts/browser-marketplace-smoke.mjs > "$log" 2>&1; then
+              node scripts/report-kiosk-ci-error.mjs "$log" "marketplace-preview-$engine"
+              exit 1
+            fi
+            cat "$log"
+          done
+      - name: Check deployed consumer account and public business UI
+        env:
+          QA_ORIGIN: https://deploy-preview-${{ github.event.pull_request.number }}--webfactorypr.netlify.app
+          QA_WIDTHS: 390,1440
+        run: |
+          node scripts/marketplace-http-smoke.mjs
+          for engine in chromium webkit; do
+            QA_ENGINE="$engine" node scripts/browser-marketplace-consumer-smoke.mjs
+            QA_ENGINE="$engine" node scripts/browser-marketplace-return-smoke.mjs
+          done
       - name: Check deployed commercial authentication boundaries
         env:
           PREVIEW_URL: https://deploy-preview-${{ github.event.pull_request.number }}--webfactorypr.netlify.app
