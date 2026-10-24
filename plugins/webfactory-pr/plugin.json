@@ -1,21 +1,25 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "webfactory-pr",
-  "version": "0.1.0",
-  "description": "Read authorized WebFactory business data and prepare changes for human review in the portal.",
-  "author": {"name": "WebFactory PR"},
+  "version": "0.1.1",
+  "description": "Read authorized WebFactory data and execute supported changes with explicit OAuth consent.",
+  "author": {
+    "name": "WebFactory PR"
+  },
   "extensions": {
     "com.openai": {
       "interface": {
         "displayName": "WebFactory PR",
         "shortDescription": "Manage your business safely",
-        "longDescription": "Connect one business or an explicitly authorized platform administrator. Consult commerce and accounting information, prepare operational changes and preview website redesigns. Changes require confirmation inside WebFactory. Passwords, credentials and platform source code remain outside this connection.",
+        "longDescription": "Connect one business or explicitly authorize platform administration. Read commerce and accounting information and execute supported changes directly from ChatGPT when Execute is granted. Sensitive actions require an exact confirmation in the same chat. Private development tools require platform-admin consent. Passwords, credentials and private platform source remain outside this connection.",
         "developerName": "WebFactory PR",
         "category": "Productivity",
-        "capabilities": ["Interactive"],
+        "capabilities": [
+          "Interactive"
+        ],
         "logo": "./assets/icon.png",
         "composerIcon": "./assets/icon.png",
-        "defaultPrompt": "Muéstrame el estado de mi negocio en WebFactory y qué acciones puedo preparar."
+        "defaultPrompt": "Verifica mi cuenta, alcance, permisos y catálogo autorizado de herramientas de WebFactory."
       }
     }
   }

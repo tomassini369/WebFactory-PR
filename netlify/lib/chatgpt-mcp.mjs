@@ -10,7 +10,7 @@ import {createAdminOverviewHandler} from '../functions/webfactory-admin-overview
 import {operations,authorizeGrant,businessView,listRecords,readCollections,platformBusinesses,accountingForSite,safeOutput} from './chatgpt-operations.mjs';
 import {prepareProposal,proposalKey} from './chatgpt-proposals.mjs';
 import {clientOAuthStore} from './client-store.mjs';
-import {oauthError} from './chatgpt-oauth.mjs';
+import {oauthError,hash} from './chatgpt-oauth.mjs';
 import {graphifyAvailable,queryGraphContext} from './chatgpt-graphify.mjs';
 import {shadcnCatalog} from './chatgpt-shadcn.mjs';
 import {planShadcnComponents} from './shadcn-components.mjs';
@@ -21,16 +21,18 @@ export async function serveMcp(request,grant,user,context={}){
  if(!grant.scopes.includes('webfactory.read'))throw oauthError('Read scope is required.',403);
  const origin=new URL(request.url).origin;
  await authorizeGrant(grant,user,grant.siteId);
- const server=new McpServer({name:'WebFactory PR',version:'1.0.0'});
+ const serverVersion='1.0.2';
+ const server=new McpServer({name:'WebFactory PR',version:serverVersion},{instructions:'Call wf_connection to verify the active identity, tenant/platform scope and permissions before using this connection. Tools are registered for the current authenticated scope. After changing accounts or tenant/platform access, compare the authorized catalog with the client tools and refresh the existing connection metadata if they differ. Never broaden permissions or expose private development tools to tenants. A configured provider is not a verified provider read.'});
+ const toolNames=[];
  const out=value=>({content:[{type:'text',text:JSON.stringify(value)}]});
- function tool(name,description,schema,callback,propose=false,execute=false,external=false){server.registerTool(name,{description,inputSchema:schema,annotations:{readOnlyHint:!propose,destructiveHint:execute,idempotentHint:true,openWorldHint:external},_meta:{securitySchemes:[{type:'oauth2',scopes:execute?['webfactory.read','webfactory.execute']:propose?['webfactory.read','webfactory.propose']:['webfactory.read']}]}},async args=>{try{return out(await callback(args));}catch(e){return {...out({error:e.status&&e.status<500?e.message:'Unable to complete operation. Review the portal.'}),isError:true};}});}
+ function tool(name,description,schema,callback,propose=false,execute=false,external=false){toolNames.push(name);server.registerTool(name,{description,inputSchema:schema,annotations:{readOnlyHint:!propose,destructiveHint:execute,idempotentHint:!propose,openWorldHint:external},_meta:{securitySchemes:[{type:'oauth2',scopes:execute?['webfactory.read','webfactory.execute']:propose?['webfactory.read','webfactory.propose']:['webfactory.read']}]}},async args=>{try{return out(await callback(args));}catch(e){return {...out({error:e.publicMessage||(e.status&&e.status<500?e.message:'Unable to complete operation. Review the portal.'),...(e.publicCode?{code:e.publicCode}:{})}),isError:true};}});}
  const siteId=z.string().min(1).max(120).optional();
  const access=async(args,capability='overview')=>{
   if(!grant.platform&&args.siteId&&args.siteId!==grant.siteId)throw oauthError('Cross-business access denied.',403);
   const target=grant.platform?args.siteId:grant.siteId;if(!target)throw oauthError('Select a business siteId.');
   return authorizeGrant(grant,user,target,capability);
  };
- tool('wf_connection','Identify the current connection and its fixed permissions. Passwords, terminal, secrets and production deployments are unavailable. Platform administrators can use private ECC workflow, Shadcn, Stitch and 21st.dev development tools; tenant connections cannot access them. Existing platform source and provider credentials are never exposed.',z.object({}),async()=>({email:user.email,platform:grant.platform,siteId:grant.siteId,scopes:grant.scopes,expiresAt:grant.expiresAt,reviewUrl:origin+'/chatgpt',manualPortal:origin+(grant.platform?'/webfactory-admin':'/client-admin')}));
+ tool('wf_connection','Identify the current identity, fixed permissions and authorized server tool catalog. Compare this catalog with the tools available in the client to diagnose discovery. Passwords, terminal, secrets and production deployments are unavailable. Platform administrators can use private ECC workflow, Shadcn, Stitch and 21st.dev development tools; tenant connections cannot access them. Existing platform source and provider credentials are never exposed.',z.object({}),async()=>({email:user.email,platform:grant.platform,siteId:grant.siteId,scopes:grant.scopes,expiresAt:grant.expiresAt,reviewUrl:origin+'/chatgpt',manualPortal:origin+(grant.platform?'/webfactory-admin':'/client-admin'),diagnostics:{accessScope:grant.platform?'platform-admin':'tenant',serverVersion,transport:'streamable-http',stateless:true,catalog:{count:toolNames.length,tools:[...toolNames],fingerprint:hash(JSON.stringify({serverVersion,userId:user.id,platform:grant.platform,siteId:grant.siteId||'',scopes:[...grant.scopes].sort(),tools:toolNames})),refreshRequiredOnScopeChange:true},privateDevelopmentTools:grant.platform,graphContext:{advertised:true,configuredForScope:graphifyAvailable({platform:grant.platform}),providerReadVerified:false},grantExpiresAt:grant.expiresAt,accessTokenLifetimeSeconds:900,activation:grant.platform?'Compare the authorized server catalog with the client catalog.':'This connection is limited to the selected business. Private development tools require separate explicit platform-admin consent by an administrator; never upgrade this grant automatically.'}}));
  tool('wf_business','Read the selected business configuration. Platform administrators must specify siteId.',z.object({siteId}),async args=>{const a=await access(args);return businessView(a.site,a.membership);});
  tool('wf_image_upload_status','Read the state of an image upload created by this connection. Never exposes upload capabilities or credentials.',z.object({uploadId:z.string().uuid()}).strict(),args=>imageUploadStatus(grant,user,args));
  if(grant.scopes.includes('webfactory.execute')){
@@ -43,7 +45,7 @@ export async function serveMcp(request,grant,user,context={}){
  tool('wf_graph_context','Use only for complex dependency, impact, architecture, conflict or multi-system questions where a compact knowledge-graph answer can avoid broad file/data exploration. Do not call for simple reads or direct CRUD changes; use normal WebFactory tools instead. This tool is always advertised so clients can keep a stable tool catalog, but every call is read-only, re-authorized server-side, and fails closed when graph context is unavailable for the authenticated scope.',z.object({question:z.string().min(4).max(800),mode:z.enum(['bfs','dfs']).default('bfs'),depth:z.number().int().min(1).max(4).default(2),tokenBudget:z.number().int().min(200).max(1600).default(1200)}),async args=>{
   if(grant.platform)await authorizeGrant(grant,user,'','platform',{platform:true});
   else await access({},'overview');
-  if(!graphifyAvailable({platform:grant.platform}))throw oauthError(grant.platform?'Graph context is temporarily unavailable.':'Graph context is not enabled for this business.',503);
+  if(!graphifyAvailable({platform:grant.platform}))throw Object.assign(oauthError('Graph context unavailable.',503),{publicCode:grant.platform?'graph_context_unavailable':'graph_context_not_enabled',publicMessage:grant.platform?'Graph context is temporarily unavailable. Use direct tools or the connected GitHub repository for analysis.':'Graph context is not enabled for this business. Use direct business tools. Platform code analysis requires an explicitly authorized platform-admin connection.'});
   return queryGraphContext({...args,platform:grant.platform,siteId:grant.siteId,authorization:request.headers.get('authorization')||''});
  });
  if(grant.platform){
