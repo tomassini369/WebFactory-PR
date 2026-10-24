@@ -93,3 +93,17 @@ test('lost audit completion after SMTP cannot cause notification resend on a ret
  assert.equal((await s.reset({notify})).notification,'review_required');assert.equal(sends,1);
  assert.equal((await securityState(s.target,s.targetContext,s.store,false,s.clock())).verified,false);
 });
+
+// The preview exception never changes stored enrollment or creates MFA proof.
+test('preview MFA exception requires trusted deploy metadata, opt-in and a valid primary login',async t=>{
+ const previous=globalThis.Netlify;t.after(()=>{globalThis.Netlify=previous});const s=await setup();let context='deploy-preview',enabled=true;globalThis.Netlify={context:{deploy:{get context(){return context}}},env:{get:key=>key==='WEBFACTORY_PREVIEW_SKIP_MFA'&&enabled?'true':''}};
+ let state=await securityState(user,s.context,s.store,true,s.clock());assert.equal(state.required,false);assert.equal(state.previewBypass,true);assert.equal(state.verified,false);await assertSecondFactor(user,s.context,s.store,true);
+ const missing={cookies:{get:()=>null}};assert.equal((await securityState(user,missing,s.store,true,s.clock())).required,true);await assert.rejects(assertSecondFactor(user,missing,s.store,true));
+ for(const value of ['production','branch-deploy','dev','unknown','']){context=value;assert.equal((await securityState(user,s.context,s.store,true,s.clock())).required,true);await assert.rejects(assertSecondFactor(user,s.context,s.store,true));}
+ context='deploy-preview';enabled=false;assert.equal((await securityState(user,s.context,s.store,true,s.clock())).required,true);
+});
+test('preview MFA exception preserves enrolled factors and does not satisfy recent MFA for sensitive security actions',async t=>{
+ const previous=globalThis.Netlify;t.after(()=>{globalThis.Netlify=previous});const s=await setup();await enroll(s);await issuePrimarySession(user,s.context,s.store,s.clock());const before=JSON.stringify([...s.store.data]);globalThis.Netlify={context:{deploy:{context:'deploy-preview'}},env:{get:key=>key==='WEBFACTORY_PREVIEW_SKIP_MFA'?'true':''}};
+ const state=await securityState(user,s.context,s.store,true,s.clock());assert.equal(state.required,false);assert.equal(state.enrolled,true);assert.equal(state.verified,false);await assert.rejects(assertRecentSecondFactor(user,s.context,s.store,s.clock()));assert.equal(JSON.stringify([...s.store.data]),before);
+ globalThis.Netlify.context.deploy.context='production';assert.equal((await securityState(user,s.context,s.store,true,s.clock())).required,true);await assert.rejects(assertSecondFactor(user,s.context,s.store,true));
+});
