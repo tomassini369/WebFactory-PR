@@ -299,6 +299,43 @@ jobs:
           SUITE_RESULT: ${{ needs.verify-suite.result }}
         run: test "$SUITE_RESULT" = success
 
+  kiosk-skins:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        engine: [chromium, webkit]
+        skin: [classic, glass-premium, restaurant-touch, barber-luxury, retail-minimal]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: WF_DESIGN_PREVIEW=1 npm run build
+      - run: npx playwright install --with-deps ${{ matrix.engine }}
+      - name: Verify skin commerce, accessibility, bookings and receipts with isolated providers
+        env:
+          QA_ENGINE: ${{ matrix.engine }}
+          QA_SKIN: ${{ matrix.skin }}
+        run: |
+          node scripts/browser-kiosk-smoke.mjs
+          node scripts/browser-kiosk-bookings-smoke.mjs
+      - name: Verify appearance configurator and preview isolation
+        if: matrix.skin == 'classic'
+        env:
+          QA_ENGINE: ${{ matrix.engine }}
+        run: node scripts/browser-kiosk-skins-settings-smoke.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: kiosk-skins-${{ matrix.skin }}-${{ matrix.engine }}
+          path: |
+            /tmp/webfactory-kiosk/
+            /tmp/webfactory-kiosk-skins/
+
   kiosk-bookings:
     runs-on: ubuntu-latest
     timeout-minutes: 15

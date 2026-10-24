@@ -4,13 +4,14 @@ import {mkdir,readFile} from 'node:fs/promises'
 import {preview} from 'vite'
 import {chromium,webkit} from 'playwright'
 import {kioskFixture} from './fixtures/kiosk-fixture.mjs'
+import {kioskAppearance} from '../netlify/lib/kiosk-skins.mjs'
 const port=Number(process.env.QA_PORT||5226),server=await preview({preview:{host:'127.0.0.1',port,strictPort:true}}),root=process.env.QA_ORIGIN||`http://127.0.0.1:${port}`,engine=process.env.QA_ENGINE==='webkit'?webkit:chromium
 const browser=await engine.launch(process.env.QA_ENGINE==='webkit'?(process.env.QA_WEBKIT_PATH?{executablePath:process.env.QA_WEBKIT_PATH}:undefined):{...(process.env.QA_CHROMIUM_PATH?{executablePath:process.env.QA_CHROMIUM_PATH}:{}),args:['--no-sandbox'],...(process.env.QA_ORIGIN&&process.env.HTTPS_PROXY?{proxy:{server:process.env.HTTPS_PROXY}}:{})})
-const output='/tmp/webfactory-kiosk';await mkdir(output,{recursive:true});const photo=await readFile(new URL('../assets/template-images/262978.jpg',import.meta.url));const errors=[];let cookieTransportChecked=false
+const output='/tmp/webfactory-kiosk/'+(process.env.QA_SKIN||'classic');await mkdir(output,{recursive:true});const photo=await readFile(new URL('../assets/template-images/262978.jpg',import.meta.url));const errors=[];let cookieTransportChecked=false
 const navigationReady=process.env.QA_ORIGIN?'domcontentloaded':'load'
 const allWidths=[320,375,390,430,768,1024,1440],widths=process.env.QA_WIDTHS?process.env.QA_WIDTHS.split(',').map(Number):allWidths,primaries=['#78BD79','#070D1A','#f472b6','#fbbf24','#ffffff','#000000','#7546ba'],accents=['#D6CAAD','#285fa6','#b91c1c','#15803d','#ffffff','#000000','#777777']
 const rgb=value=>value.match(/[\d.]+/g).slice(0,3).map(Number),luminance=color=>{const channels=rgb(color).map(x=>x/255).map(x=>x<=.04045?x/12.92:((x+.055)/1.055)**2.4);return .2126*channels[0]+.7152*channels[1]+.0722*channels[2]},contrast=(a,b)=>{const x=luminance(a),y=luminance(b);return (Math.max(x,y)+.05)/(Math.min(x,y)+.05)}
-async function intercept(context,f){let cookie='',blocked=false,loseReset=false;await context.route('**/.netlify/functions/**',async route=>{const request=route.request(),url=new URL(request.url()),name=url.pathname.split('/').at(-1)
+async function intercept(context,f){if(process.env.QA_SKIN)assert.equal((await f.admin('appearance',{appearance:{...kioskAppearance(),skinId:process.env.QA_SKIN}})).status,200);let cookie='',blocked=false,loseReset=false;await context.route('**/.netlify/functions/**',async route=>{const request=route.request(),url=new URL(request.url()),name=url.pathname.split('/').at(-1)
  if(name==='client-kiosk'){
   if(process.env.QA_ORIGIN&&url.origin===root&&url.searchParams.get('qa_cookie_boundary')==='1'){assert.equal(request.method(),'GET');return route.continue()}
   if(blocked)return route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({message:'Isolated kiosk disconnect'})})
@@ -36,6 +37,12 @@ try{
   await page.waitForFunction(()=>document.querySelectorAll('.kiosk-product').length===3);assert.equal(await page.locator('.kiosk-product').count(),3);assert.equal(await page.getByRole('button',{name:/Add Sold out|Añadir Agotado/}).isDisabled(),true)
   if(!process.env.QA_ORIGIN&&width===320&&theme==='light'&&lang==='es'){await page.evaluate(()=>{const drawer=document.createElement('div');drawer.dataset.netlifyDeployId='isolated-preview-drawer';drawer.style.cssText='position:fixed;inset:0;z-index:99999';const frame=document.createElement('iframe');frame.title='Netlify Drawer';frame.style.cssText='position:fixed;inset:0;width:100%;height:100%';drawer.append(frame);document.body.append(drawer)});assert.equal(await page.locator('[data-netlify-deploy-id="isolated-preview-drawer"]').evaluate(el=>getComputedStyle(el).display),'none')}
   await page.getByRole('button',{name:lang==='es'?'Añadir Producto QA':'Add QA Product',exact:true}).click();
+  if(width===widths[0]&&theme==='light'&&lang==='en'){
+   const before=await page.locator('.kiosk-cart li').innerText();
+   await f.admin('appearance',{appearance:{...kioskAppearance(),skinId:process.env.QA_SKIN||'classic',font:'rounded'}});
+   await page.waitForFunction(()=>document.querySelector('main.wf-kiosk')?.dataset.font==='rounded');
+   assert.equal(await page.locator('.kiosk-cart li').innerText(),before,'Appearance polling must preserve the mounted cart');
+  }
   if(width<1100){await page.waitForFunction(()=>document.querySelector('.kiosk-mobile-cart')||document.querySelector('.kiosk-cart').getBoundingClientRect().top<innerHeight-72);const jump=page.getByRole('link',{name:lang==='es'?/Ver mi orden/:/View my order/});if(await jump.isVisible()){await jump.click();assert(await page.locator('.kiosk-cart').evaluate(el=>el.getBoundingClientRect().top<innerHeight));await jump.waitFor({state:'hidden'})}}
   await page.getByRole('button',{name:lang==='es'?'Aumentar Producto QA':'Increase QA Product',exact:true}).click();assert.match(await page.locator('.kiosk-total').innerText(),/22.30/);assert.equal(await page.getByRole('button',{name:lang==='es'?'Aumentar Producto QA':'Increase QA Product',exact:true}).isDisabled(),true)
   await page.getByRole('button',{name:lang==='es'?'Reducir Producto QA':'Decrease QA Product',exact:true}).click();assert.match(await page.locator('.kiosk-total').innerText(),/11.15/)

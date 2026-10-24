@@ -3,8 +3,9 @@ import {useEffect, useState} from 'react'
 import {PortalPanel} from './PortalPanel'
 import CopyButton from './CopyButton'
 import {useKioskRequest} from './kiosk-api'
+import KioskAppearanceSettings,{type KioskAppearanceSite} from './kiosk-skins/KioskAppearanceSettings'
 type Device = {id:string;label?:string;locationName:string;expiresAt:number}
-export default function KioskSettings({site,lang}:{site:{siteId:string;business:{locations?:Array<{id:string;name:string;active?:boolean}>}};lang:'es'|'en'}) {
+export default function KioskSettings({site,lang}:{site:KioskAppearanceSite;lang:'es'|'en'}) {
  const kioskRequest=useKioskRequest(),practice=usePractice()
  const t=(a:string,b:string)=>lang==='es'?a:b, [enabled,setEnabled]=useState(false),[bookingModes,setBookingModes]=useState({newBookings:false,existingBookings:false}),[devices,setDevices]=useState<Device[]>([]),[loading,setLoading]=useState(true),[busy,setBusy]=useState(false),[error,setError]=useState(''),[locationId,setLocationId]=useState(''),[label,setLabel]=useState(''),[pair,setPair]=useState<{id:string;pairUrl:string}|null>(null)
  const locations=(site.business.locations||[]).filter(x=>x.active!==false)
@@ -12,6 +13,7 @@ export default function KioskSettings({site,lang}:{site:{siteId:string;business:
  useEffect(()=>{let active=true;setLoading(true);kioskRequest({action:'admin',siteId:site.siteId}).then(data=>{if(active){setEnabled(data.enabled);setBookingModes(data.bookingModes||{newBookings:false,existingBookings:false});setDevices(data.devices||[]);setError('')}}).catch(e=>{if(active)setError(e.message)}).finally(()=>{if(active)setLoading(false)});return()=>{active=false}},[site.siteId])
  const act=async(action:string,extra:Record<string,unknown>={})=>{if(busy)return;setBusy(true);setError('');try{const data=await kioskRequest({action,siteId:site.siteId,...extra});if(action==='create')setPair(data);if(action==='revoke'&&extra.id===pair?.id)setPair(null);if(action==='configure'&&!extra.enabled)setPair(null);await refresh()}catch(e){setError(e instanceof Error?e.message:'Error')}finally{setBusy(false)}}
  return <PortalPanel className="ca-panel kiosk-settings"><header><h2>{t('POS · Kiosco de autoservicio','POS · Self-service kiosk')}</h2><p>{t('El cliente escoge del catálogo y paga con el checkout existente. Cada pantalla queda vinculada a una sucursal, sin permisos administrativos.','Customers choose from the catalog and use the existing checkout. Each screen is bound to a location, without administrative permissions.')}</p></header>
+ <KioskAppearanceSettings key={site.siteId} site={site} lang={lang}/>
  <p>{t('Usa un dispositivo o perfil de navegador dedicado, sin una sesión administrativa abierta. El enlace vence en diez minutos; la vinculación dura ocho horas.','Use a dedicated device or browser profile without an administrative session. The link expires in ten minutes; pairing lasts eight hours.')}</p>
  <button className="ca-save" disabled={busy||loading} onClick={()=>void act('configure',{enabled:!enabled})}>{enabled?t('Deshabilitar kiosco','Disable kiosk'):t('Habilitar kiosco','Enable kiosk')}</button>
  <p role="status">{loading?t('Consultando configuración…','Loading settings…'):enabled?t('Kiosco habilitado · vincula una pantalla','Kiosk enabled · pair a screen'):t('Kiosco deshabilitado','Kiosk disabled')}</p>

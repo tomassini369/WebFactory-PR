@@ -1,5 +1,6 @@
 import {kioskBookingModes,bookingKioskPin} from './kiosk-bookings.mjs';
 import crypto from 'node:crypto';
+import {kioskAppearance} from './kiosk-skins.mjs';
 import { availableInventory } from './inventory-availability.mjs';
 import { cleanText, validEmail } from './platform-utils.mjs';
 import { commerceKey } from './client-store.mjs';
@@ -83,7 +84,7 @@ export async function kioskView(store, state, site) {
     bookingModes:modes, bookingProviders:kioskBookingProviders(site),balanceProviders:kioskBookingProviders(site,true),timezone:site.settings?.timezone||'America/Puerto_Rico',
     appointmentServices:modes.newBookings?(site.catalog||[]).filter(x=>x.active!==false&&x.requiresAppointment&&x.type==='service').map(x=>({id:x.id,nameEn:x.nameEn||x.name,nameEs:x.nameEs||x.name,price:x.price})):[],
     professionals:modes.newBookings?(site.employees||[]).filter(x=>x.active!==false&&(!state.locationId||x.locationIds?.includes(state.locationId))).map(x=>({id:x.id,name:x.name,serviceIds:x.serviceIds||[]})):[],
-    presentation: { profile: capabilities.profile }, saleId: state.saleId, providers: kioskProviders(site), taxConfig: { enabled: site.taxConfig?.enabled !== false, stateRate: site.taxConfig?.stateRate ?? 10.5, municipalRate: site.taxConfig?.municipalRate ?? 1, pricesIncludeTax: Boolean(site.taxConfig?.pricesIncludeTax) },
+    presentation: { profile: capabilities.profile, appearance:kioskAppearance(configuration?.appearance) }, saleId: state.saleId, providers: kioskProviders(site), taxConfig: { enabled: site.taxConfig?.enabled !== false, stateRate: site.taxConfig?.stateRate ?? 10.5, municipalRate: site.taxConfig?.municipalRate ?? 1, pricesIncludeTax: Boolean(site.taxConfig?.pricesIncludeTax) },
     catalog: (site.catalog || []).filter(x => x.active !== false && !x.requiresAppointment && Number.isFinite(x.price) && x.price >= 0).map(x => ({ id: x.id, type: x.type, nameEn: x.nameEn || x.name || x.nameEs || x.id, nameEs: x.nameEs || x.nameEn || x.name || x.id,
       price: x.price, imageAssetKey: x.imageAssetKey || '', descriptionEn: x.descriptionEn || x.description || '', descriptionEs: x.descriptionEs || x.descriptionEn || x.description || '', taxable: x.taxable !== false, taxRateOverride: x.taxRateOverride ?? null,
       trackInventory: Boolean(x.trackInventory), inventory: x.type === 'product' && x.trackInventory && x.inventory != null ? availableInventory(site, x) : null, allowBackorder: Boolean(x.allowBackorder) })),
