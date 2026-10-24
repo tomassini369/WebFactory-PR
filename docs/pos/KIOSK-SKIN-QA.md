@@ -2,11 +2,31 @@
 
 2026-10-24. Implementation branch only; no merge or production deployment.
 
-- `npm test`: 647/647 passing, including skin security and active-sale preservation.
+- `npm test`: 663/663 passing, including skin security, active-sale preservation,
+  Stripe/ATH/in-person simulated checkout/receipt/reset contracts for every skin,
+  and suppression of public new-booking links when bookings are disabled.
 - `npm run build`: passed; `WF_DESIGN_PREVIEW=1 npm run build`: passed.
 - Classic Chromium at 390/1440, ES/EN, Light/Dark: passed existing commerce,
   accessibility, settings, receipt, retry, reset, recovery and long catalog checks.
-- Expanded five-skin browser matrix: in progress; results will be recorded here.
+- All five skins, Chromium: seven widths (320/375/390/430/768/1024/1440), both
+  languages/themes passed catalog, cart, totals, checkout, return, receipt,
+  recovery, quantity limits, keyboard focus, contrast, touch bounds and overflow.
+- All five skins, Chromium booking flows: 390/1440, both languages/themes passed
+  service/professional selection, appointment creation, code/PIN lookup, arrival,
+  balance payment, receipt, privacy and reset. CI also passed the full seven-width
+  Chromium booking matrix for each skin on initial PR commit `f107de0`.
+- Appearance configurator, Chromium: all seven widths, both languages/themes
+  passed five selections/previews, save, colors/font/buttons/cards/background/
+  motion, rejection of invalid input, restoration and absence of operational
+  network calls. Custom soft-card rendering is checked by computed border radius.
+- Shared POS, customer display and practice training: 390/1440, both languages/
+  themes passed their existing isolated Chromium regressions.
+- Initial PR CI run: https://github.com/tomassini369/WebFactory-PR/actions/runs/40112979190
+  WebKit skin checks are running; final revision status is reported in the PR.
+- The actual Netlify preview demo was opened and visually inspected. A field
+  layout/contrast issue in the standalone demo was corrected. Text contrast is
+  15.25:1 light / 14.60:1 dark; input borders are 4.72:1 / 6.98:1; action text 6.41:1.
+- Impeccable: 20 baseline and final findings, zero kiosk findings or additions.
 - Physical printer/iPhone hardware and real provider transactions: not performed.
 
 Standard Playwright browser download failed twice with corrupt/empty archives.

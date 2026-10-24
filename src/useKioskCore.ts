@@ -8,7 +8,6 @@ import {type KioskAppearance} from '../netlify/lib/kiosk-skins.mjs'
 type Language='es'|'en'
 type Sale={confirmationEmailStatus?:'sent'|'pending'|'action_required';bookingReference?:{code:string;pin:string};kind?:'order'|'booking';status:'review'|'pending'|'paid'|'due';saleId:string;canResume?:boolean;canReset:boolean;checkoutUrl?:string;transactionId?:string;total?:number;subtotal?:number;tax?:number;taxIncluded?:boolean;queueNumber?:string;receipt?:{id:string;createdAt:string}|null;items?:Array<{name:string;quantity:number;unitAmount:number}>}
 type View=BookingView & {business:{siteId:string;nameEn:string;nameEs:string;logoAssetKey:string;primary:string;secondary:string;locationName:string;bookingUrl:string};presentation?:{profile:PosProfile;appearance?:KioskAppearance};saleId:string;catalog:PosItem[];providers:string[];hasAppointments:boolean;taxConfig:PosTax;sale:Sale|null}
-const money=(n:number)=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(n/100)
 const emptyCustomer={name:'',email:'',phone:''}
 export function useKioskCore({lang,setLang,pairing}:{lang:Language;setLang:(lang:Language)=>void;pairing:string}) {
  const kioskRequest=useKioskRequest()
@@ -34,5 +33,6 @@ export function useKioskCore({lang,setLang,pairing}:{lang:Language;setLang:(lang
  const capabilities=posCapabilities({catalog:view?.catalog||[]},{...posOperations(),profile:view?.presentation?.profile||'general'}),profileCopy=posProfileCopy(capabilities,lang)
  const categories=[{id:'all',label:t('Todo','All')},...(capabilities.serviceFirst?[{id:'service',label:profileCopy.services},{id:'product',label:profileCopy.products}]:[{id:'product',label:profileCopy.products},{id:'service',label:profileCopy.services}])].filter(group=>group.id==='all'||view?.catalog.some(item=>item.type===group.id))
  const sale=view?.sale
- return {t,touch,profileCopy,chooseLanguage,ready,view,cart,search,setSearch,category,setCategory,customer,setCustomer,provider,setProvider,busy,error,offline,bookingMode,setBookingMode,orderPanel,orderVisible,total,locked,change,submit,resume,reset,visible,categories,sale,primary,pair,receive,kioskRequest}
+ const backFromBooking=()=>{setBookingMode(null);void kioskRequest({action:'clear_booking'}).then(receive).catch(()=>{})}
+ return {t,touch,profileCopy,chooseLanguage,ready,view,cart,search,setSearch,category,setCategory,customer,setCustomer,provider,setProvider,busy,error,offline,bookingMode,setBookingMode,orderPanel,orderVisible,total,locked,change,submit,resume,reset,visible,categories,sale,primary,pair,receive,backFromBooking}
 }

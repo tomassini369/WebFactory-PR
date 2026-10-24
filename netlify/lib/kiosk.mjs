@@ -88,5 +88,5 @@ export async function kioskView(store, state, site) {
     catalog: (site.catalog || []).filter(x => x.active !== false && !x.requiresAppointment && Number.isFinite(x.price) && x.price >= 0).map(x => ({ id: x.id, type: x.type, nameEn: x.nameEn || x.name || x.nameEs || x.id, nameEs: x.nameEs || x.nameEn || x.name || x.id,
       price: x.price, imageAssetKey: x.imageAssetKey || '', descriptionEn: x.descriptionEn || x.description || '', descriptionEs: x.descriptionEs || x.descriptionEn || x.description || '', taxable: x.taxable !== false, taxRateOverride: x.taxRateOverride ?? null,
       trackInventory: Boolean(x.trackInventory), inventory: x.type === 'product' && x.trackInventory && x.inventory != null ? availableInventory(site, x) : null, allowBackorder: Boolean(x.allowBackorder) })),
-    hasAppointments: (site.catalog || []).some(x => x.active !== false && x.requiresAppointment), sale: await kioskSaleView(store, state) };
+    hasAppointments: site.features?.bookings !== false && (site.catalog || []).some(x => x.active !== false && x.requiresAppointment), sale: await kioskSaleView(store, state) };
 }

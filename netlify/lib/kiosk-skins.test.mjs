@@ -37,3 +37,16 @@ test('invalid writes, employee writes, paired device writes and foreign tenants 
  await f.store.setJSON(kioskConfigKey(f.site.siteId),{...original,appearance:{skinId:'retail-minimal',version:99}});
  const view=await(await f.handler(f.request(null,p.cookie))).json();assert.equal(view.presentation.appearance.skinId,'classic');
 });
+for(const skin of kioskSkins)for(const provider of ['stripe','ath_movil','in_person'])test(`${skin.name}: ${provider} uses the existing checkout, receipt and reset contract`,async()=>{
+ const f=kioskFixture();if(provider==='in_person')f.setMode('in_person');const p=await f.paired();
+ await f.admin('appearance',{appearance:{...kioskAppearance(),skinId:skin.id}});
+ const response=await f.handler(f.request({action:'checkout',saleId:p.view.saleId,items:[{id:'product',quantity:1}],customer:{name:'Fixture',email:'fixture@example.invalid'},paymentProvider:provider},p.cookie));
+ assert.equal(response.status,200);let view=await response.json();assert.equal(f.calls(),1);assert.equal(view.sale.status,provider==='in_person'?'due':'pending');
+ if(provider!=='in_person'){await f.confirm();view=await(await f.handler(f.request(null,p.cookie))).json();assert.equal(view.sale.status,'paid');assert.equal(view.sale.receipt.id,'receipt-fixture')}
+ assert.equal(view.presentation.appearance.skinId,skin.id);assert.equal(view.sale.canReset,true);
+ const reset=await f.handler(f.request({action:'reset',saleId:p.view.saleId},p.cookie));assert.equal(reset.status,200);const next=await reset.json();assert.equal(next.sale,null);assert.notEqual(next.saleId,p.view.saleId);assert.equal(next.presentation.appearance.skinId,skin.id);
+});
+test('disabled new bookings do not gain public booking links from a skin',async()=>{
+ const f=kioskFixture();f.site.features={bookings:false};const p=await f.paired();await f.admin('configure',{enabled:true,bookingModes:{newBookings:true,existingBookings:false}});
+ const view=await(await f.handler(f.request(null,p.cookie))).json();assert.equal(view.hasAppointments,false);assert.equal(view.bookingModes.newBookings,false);assert.deepEqual(view.appointmentServices,[]);
+});

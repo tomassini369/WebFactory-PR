@@ -84,7 +84,7 @@ live training leaves appearance controls disabled and its transport unchanged.
 
 ## Verification and limits
 
-Baseline existing suite: 640 passing. Expanded unit/integration suite: 647 passing.
+Baseline existing suite: 640 passing. Expanded unit/integration suite: 663 passing.
 Tests include all skin round trips, corrupt/future configuration fallback,
 authorization, cross-tenant rejection and preservation of pending sale/device data.
 TypeScript and production/preview build passed during implementation.
