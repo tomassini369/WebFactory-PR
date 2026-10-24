@@ -9,7 +9,7 @@ WebFactory brand asset was replaced. Prompts and optimized WebP files live in
 ## Lifecycle and access
 
 `scripts/seed-preview-barber.mjs` runs after a successful build. It requires all
-of `CONTEXT=deploy-preview`, `BRANCH=feat/kiosk-skin-engine`, `REVIEW_ID=125`, and
+of `CONTEXT=deploy-preview`, source `HEAD=feat/kiosk-skin-engine` (falling back to BRANCH only when HEAD is absent), `REVIEW_ID=125`, and
 the explicit build variable `WF_PREVIEW_TEST_BUSINESS=faro-norte-v1`.
 `WF_PREVIEW_TEST_OWNER_EMAIL` names the already existing account requested by
 the owner; it is not stored in the repository. The seed writes its canonical
@@ -82,11 +82,11 @@ remain. No arbitrary CSS, HTML, JavaScript or external image endpoint is allowed
 
 ## Validation
 
-Five new tests in `netlify/lib/preview-barber.test.mjs` cover deployment gates,
+Six new tests in `netlify/lib/preview-barber.test.mjs` cover deployment gates,
 canonical owner authorization and foreign rejection, assets/configuration,
 walk-in and booking capabilities, deposit balances, rerun preservation, clean
 new-deploy state, invalid configuration and conflicting records. They use only
-in-memory stores and do not charge or send email. Full suite: 683 passing;
+in-memory stores and do not charge or send email. Full suite: 684 passing;
 `npm run build` succeeds locally with seed disabled outside the selected preview.
 Confirm actual Netlify seed output and existing public site/assets endpoints
 after deployment. Browser login, mobile/desktop visual QA, actual sandbox charge,

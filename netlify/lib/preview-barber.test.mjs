@@ -5,7 +5,7 @@ import {currentIndexedSites} from './member-index.mjs';
 import {authorizeSiteUser} from './client-auth.mjs';
 import {kioskView,kioskCheckoutPayload} from './kiosk.mjs';
 import {bookingBalance} from './kiosk-bookings.mjs';
-const env={CONTEXT:'deploy-preview',BRANCH:'feat/kiosk-skin-engine',REVIEW_ID:'125',WF_PREVIEW_TEST_BUSINESS:'faro-norte-v1',WF_PREVIEW_TEST_OWNER_EMAIL:'owner@example.test',WF_PREVIEW_STRIPE_ACCOUNT:'acct_sandboxFixture'};
+const env={CONTEXT:'deploy-preview',BRANCH:'main',HEAD:'feat/kiosk-skin-engine',REVIEW_ID:'125',WF_PREVIEW_TEST_BUSINESS:'faro-norte-v1',WF_PREVIEW_TEST_OWNER_EMAIL:'owner@example.test',WF_PREVIEW_STRIPE_ACCOUNT:'acct_sandboxFixture'};
 function fixture(){
  const stores=new Map(),opened=[],writes=[];
  const store=name=>{
@@ -29,7 +29,7 @@ function fixture(){
  return {stores,opened,writes,store,loadAsset:async()=>Buffer.from('illustrative-webp-fixture')};
 }
 test('preview seed cannot run in production, branch deploys, other PRs or without explicit enablement',async()=>{
- for(const change of [{CONTEXT:'production'},{CONTEXT:'branch-deploy'},{CONTEXT:'dev'},{CONTEXT:''},{BRANCH:'main'},{REVIEW_ID:'124'},{WF_PREVIEW_TEST_BUSINESS:''}]){
+ for(const change of [{CONTEXT:'production'},{CONTEXT:'branch-deploy'},{CONTEXT:'dev'},{CONTEXT:''},{HEAD:'main'},{REVIEW_ID:'124'},{WF_PREVIEW_TEST_BUSINESS:''}]){
   const f=fixture();assert.equal((await seedPreviewBarber({env:{...env,...change},...f})).seeded,false);assert.equal(f.opened.length,0);assert.equal(f.writes.length,0);
  }
 });
@@ -68,4 +68,9 @@ test('business recipe contains no invented credentials, paid transactions or con
  assert.ok(site.catalog.every(item=>item.imageAssetKey.startsWith(`sites/${fixtureSiteId}/`)));
  assert.equal(site.members.length,1);assert.equal(site.business.email,'faro-norte@example.invalid');assert.equal(site.business.phone,'');assert.equal(site.business.mapsUrl,'');
  assert.equal(configuration.appearance.imageBlur,0);assert.equal(configuration.appearance.glassOpacity,70);
+});
+
+test('deploy preview selects source HEAD over base BRANCH and fails closed for a different source',async()=>{
+ const f=fixture();assert.equal((await seedPreviewBarber({env,...f})).seeded,true);
+ const other=fixture();assert.equal((await seedPreviewBarber({env:{...env,HEAD:'untrusted-source',BRANCH:'feat/kiosk-skin-engine'},...other})).seeded,false);assert.equal(other.opened.length,0);
 });

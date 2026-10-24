@@ -1,5 +1,5 @@
 // Recreate an owner-requested sample in this deploy's existing stores only.
-import {readFile} from 'node:fs/promises';
+import {readFile,mkdir,writeFile} from 'node:fs/promises';
 import {pathToFileURL} from 'node:url';
 import {getDeployStore} from '@netlify/blobs';
 import {memberIndexKey} from '../netlify/lib/member-index.mjs';
@@ -8,7 +8,7 @@ import {validateKioskAppearance} from '../netlify/lib/kiosk-skins.mjs';
 export const fixtureSiteId='site-preview-faro-norte';
 const fixtureRoot=new URL('../preview/fixtures/faro-norte/',import.meta.url);
 export function previewBarberEnabled(env){
-  return env.CONTEXT==='deploy-preview'&&env.BRANCH==='feat/kiosk-skin-engine'
+  return env.CONTEXT==='deploy-preview'&&(env.HEAD||env.BRANCH)==='feat/kiosk-skin-engine'
     &&env.REVIEW_ID==='125'&&env.WF_PREVIEW_TEST_BUSINESS==='faro-norte-v1';
 }
 export async function previewBarberData(ownerEmail,accountId='',now=new Date()){
@@ -77,4 +77,9 @@ export async function seedPreviewBarber({env=process.env,store=getDeployStore,lo
 if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href){
   const result=await seedPreviewBarber();
   console.log('Preview barber fixture:',JSON.stringify(result));
+  if(process.env.CONTEXT==='deploy-preview'&&process.env.REVIEW_ID==='125'){
+    const report={...result,context:process.env.CONTEXT,branch:process.env.HEAD||process.env.BRANCH||'',reviewId:process.env.REVIEW_ID,enabled:process.env.WF_PREVIEW_TEST_BUSINESS==='faro-norte-v1'};
+    await mkdir('dist/design-preview',{recursive:true});
+    await writeFile('dist/design-preview/faro-norte-status.json',JSON.stringify(report));
+  }
 }
