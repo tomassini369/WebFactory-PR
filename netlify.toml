@@ -285,3 +285,6 @@
   from = "/*"
   to = "/404.html"
   status = 404
+
+[[context.deploy-preview.plugins]]
+  package = "./plugins/preview-barber"

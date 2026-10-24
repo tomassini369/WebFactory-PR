@@ -74,7 +74,7 @@ export async function seedPreviewBarber({env=process.env,store=getDeployStore,lo
   return {seeded:!existing,siteId:fixtureSiteId,slug:site.slug,services:site.catalog.length,appearance:configuration.appearance.skinId};
 }
 
-if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href){
+export async function runPreviewBarberBuild(){
   const result=await seedPreviewBarber();
   console.log('Preview barber fixture:',JSON.stringify(result));
   if(process.env.CONTEXT==='deploy-preview'&&process.env.REVIEW_ID==='125'){
@@ -83,3 +83,4 @@ if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href){
     await writeFile('dist/design-preview/faro-norte-status.json',JSON.stringify(report));
   }
 }
+if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href)await runPreviewBarberBuild();

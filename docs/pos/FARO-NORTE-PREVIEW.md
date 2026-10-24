@@ -8,7 +8,9 @@ WebFactory brand asset was replaced. Prompts and optimized WebP files live in
 
 ## Lifecycle and access
 
-`scripts/seed-preview-barber.mjs` runs after a successful build. It requires all
+The local `plugins/preview-barber` onPostBuild hook runs
+`scripts/seed-preview-barber.mjs` after a successful preview build. Netlify supplies
+the Blobs context to plugin processes, not ordinary build-command subprocesses. It requires all
 of `CONTEXT=deploy-preview`, source `HEAD=feat/kiosk-skin-engine` (falling back to BRANCH only when HEAD is absent), `REVIEW_ID=125`, and
 the explicit build variable `WF_PREVIEW_TEST_BUSINESS=faro-norte-v1`.
 `WF_PREVIEW_TEST_OWNER_EMAIL` names the already existing account requested by
