@@ -82,6 +82,56 @@ live training leaves appearance controls disabled and its transport unchanged.
   preferences for real tenants during QA; automated tests use isolated stores or
   the local practice transport. Never run a real financial transaction for QA.
 
+## Visual customizer expansion
+
+The existing engine now includes six original ready-made compositions (Classic,
+Studio Matte, Bistro Gloss, Aurora Glass, Boutique Copper and Garden Waves), six
+color palettes and native visual color selectors alongside optional HEX inputs.
+No third-party editor, paid templates, AI generation or new package is required.
+
+Finish (original/matte/gloss/glass/metallic), background mode
+(solid/gradient/pattern/image) and layout are independent. Owners can adjust two
+gradient colors and angle, choose three patterns, customize header/card/cart
+colors with automatic foreground contrast, set typography/buttons/cards/spacing,
+and add optional banner/hero welcome text. Operational controls still depend on
+business capabilities, never on a composition. Classic defaults remain unchanged.
+
+The editor includes bounded draft undo/redo, a live preview beside the controls
+when space permits, a mobile preview jump, and up to eight named saved designs.
+Applying a recipe or a named design edits a draft; only Save appearance activates
+it on paired devices. Saved designs use the same allowlisted schema and backend
+tenant authorization as the active appearance.
+
+### Background lifecycle and resource bounds
+
+- `POST client-kiosk-background?siteId=…`: same-origin, canonical owner/settings
+  authorization before reading a bounded multipart body. The browser optimizes
+  JPG/PNG/WebP sources up to 12 MB; the server independently limits its file input
+  to 4 MB and decoding to 24 million pixels. Animated images and MIME mismatches
+  are rejected. Sharp rotates, strips metadata and re-encodes to WebP, at most
+  1920×1920 and 1 MB. Existing `sharp` dependency and Netlify externalization are
+  reused.
+- At most eight background files per business. Conditional configuration writes
+  reserve upload slots; pending files cannot be activated. Successful storage
+  marks them ready; failed uploads release the slot. Stale reservations expire
+  after ten minutes.
+- Appearance/preset writes require background keys from that business's ready
+  registry. No arbitrary URLs, CSS, HTML or scripts are accepted. The existing
+  asset endpoint serves them with the existing public/private entitlement check.
+  Unique immutable public backgrounds receive a one-year browser-cache policy;
+  other asset cache policies are unchanged. Files are processed once on upload,
+  not on each view poll.
+- `DELETE` uses the same owner authorization, rejects foreign keys, and refuses
+  deletion while the active appearance or a saved design references the file.
+  Uploading does not activate an image. Owners can crop visually using fit and
+  horizontal/vertical position, blur and overlay controls without duplicate files.
+- Text/control surfaces remain readable over photos and gradients. Background
+  layers cannot intercept touch; print and reduced-transparency fallbacks apply.
+
+The preview-only sample supports these controls and image uploads using local
+object URLs and in-memory records only. Images are revoked on deletion/unmount;
+there is no operational network fallback or real tenant upload during demo QA.
+
 ## Verification and limits
 
 Baseline existing suite: 640 passing. Expanded unit/integration suite: 663 passing.

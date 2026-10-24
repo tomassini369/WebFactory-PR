@@ -327,7 +327,9 @@ jobs:
         if: matrix.skin == 'classic'
         env:
           QA_ENGINE: ${{ matrix.engine }}
-        run: node scripts/browser-kiosk-skins-settings-smoke.mjs
+        run: |
+          node scripts/browser-kiosk-skins-settings-smoke.mjs
+          node scripts/browser-kiosk-customizer-smoke.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -335,6 +337,7 @@ jobs:
           path: |
             /tmp/webfactory-kiosk/
             /tmp/webfactory-kiosk-skins/
+            /tmp/webfactory-kiosk-customizer/
 
   kiosk-bookings:
     runs-on: ubuntu-latest

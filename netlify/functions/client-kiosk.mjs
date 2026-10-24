@@ -2,7 +2,8 @@ import {withBookingLock} from '../lib/booking-lock.mjs';
 import {availabilityForDate} from '../lib/booking-engine.mjs';
 import {kioskBookingModes,lookupKioskBooking,assertKioskBooking,kioskBookingView,bookingBalance} from '../lib/kiosk-bookings.mjs';
 import crypto from 'node:crypto';
-import {kioskAppearance,validateKioskAppearance} from '../lib/kiosk-skins.mjs';
+import {kioskAppearance,validateKioskAppearance,kioskPresets,validateKioskPresets} from '../lib/kiosk-skins.mjs';
+import {kioskBackgroundAssets,assertRegisteredBackgrounds} from '../lib/kiosk-backgrounds.mjs';
 import { assertSameOrigin, requireSiteCapability, errorResponse, membershipHasCapability } from '../lib/client-auth.mjs';
 import { clientCommerceStore, getClientSite, commerceKey } from '../lib/client-store.mjs';
 import { cleanText, validEmail } from '../lib/platform-utils.mjs';
@@ -34,15 +35,19 @@ export function createKioskHandler({ authorize = requireSiteCapability, getStore
         const raw = await req.text(); if (Buffer.byteLength(raw) > 16000) throw kioskFail('Request too large.', 413);
         input = JSON.parse(raw); if (!input || typeof input !== 'object' || Array.isArray(input)) throw kioskFail('Invalid request.');
       }
-      if (['admin', 'appearance', 'configure', 'create', 'revoke'].includes(input.action)) {
+      if (['admin', 'appearance', 'appearance_presets', 'configure', 'create', 'revoke'].includes(input.action)) {
         const { site, user, membership } = await authorize(input.siteId, 'settings');
         const actor = displayActor(user), email = String(user.email || '').toLowerCase();
         if (!['owner', 'manager'].includes(membership?.role) || !site.members?.some(x => String(x.email).toLowerCase() === email && ['owner', 'manager'].includes(x.role))) throw kioskFail('Business administrator required / Administrador del negocio requerido.', 403);
         const configKey = kioskConfigKey(site.siteId);
         let configuration = await store.get(configKey, { type: 'json' }) || { enabled: false, devices: [] };
         if(input.action==='appearance'){
-          const appearance=validateKioskAppearance(input.appearance);
-          configuration=await mutateKiosk(store,configKey,current=>({...current,appearance,updatedAt:now,updatedBy:actor}));
+          const appearance=validateKioskAppearance(input.appearance,site.siteId);
+          configuration=await mutateKiosk(store,configKey,current=>{assertRegisteredBackgrounds(current,[appearance],site.siteId);return {...current,appearance,updatedAt:now,updatedBy:actor}});
+        }
+        if(input.action==='appearance_presets'){
+          const appearancePresets=validateKioskPresets(input.presets,site.siteId);
+          configuration=await mutateKiosk(store,configKey,current=>{assertRegisteredBackgrounds(current,appearancePresets.map(p=>p.appearance),site.siteId);return {...current,appearancePresets,updatedAt:now,updatedBy:actor}});
         }
         if (input.action === 'configure') {
           if (typeof input.enabled !== 'boolean') throw kioskFail('Choose enabled or disabled.');
@@ -75,7 +80,7 @@ export function createKioskHandler({ authorize = requireSiteCapability, getStore
           });
           configuration = await mutateKiosk(store, configKey, current => ({ ...(current || {}), devices: (current?.devices || []).filter(x => x.id !== input.id) }));
         }
-        return Response.json({ ok: true, appearance:kioskAppearance(configuration.appearance), enabled: Boolean(configuration.enabled), bookingModes:kioskBookingModes(configuration), devices: (configuration.devices || []).filter(x => x.expiresAt > now) }, { headers });
+        return Response.json({ ok: true, appearance:kioskAppearance(configuration.appearance,site.siteId), presets:kioskPresets(configuration.appearancePresets,site.siteId),backgroundAssets:kioskBackgroundAssets(configuration,site.siteId), enabled: Boolean(configuration.enabled), bookingModes:kioskBookingModes(configuration), devices: (configuration.devices || []).filter(x => x.expiresAt > now) }, { headers });
       }
       const [deviceId, deviceToken] = cookieValue(req).split('.');
       const id = input.action === 'pair' ? input.id : deviceId;

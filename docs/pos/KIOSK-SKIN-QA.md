@@ -33,5 +33,35 @@ Standard Playwright browser download failed twice with corrupt/empty archives.
 Local Chromium verification uses an isolated npm-delivered Chromium executable,
 without adding a product dependency. WebKit verification remains assigned to CI.
 
+## Customizer expansion — October 24
+
+- Expanded suite: 669/669 passing. New tests verify strict theme/preset data,
+  MIME/decode/size/metadata processing, owner and tenant boundaries, registered
+  image references, active/preset deletion protection, atomic eight-file quotas,
+  pending-upload exclusion and storage-failure reservation cleanup.
+- Preview build and TypeScript pass. Impeccable stays at 20 findings, zero kiosk
+  findings. No new dependency or paid service was introduced.
+- Chromium customizer matrix: 320/375/390/430/768/1024/1440, ES/EN and Light/Dark,
+  passed recipes, palettes, color controls, finishes, gradients, patterns, custom
+  surfaces, welcome/layout changes, undo/redo, persistence and restoration.
+- At 390/1440, image upload/optimization, positioning, blur, named presets and
+  referenced-image protection/deletion were exercised using in-memory demo data.
+  Final verification also checks image activation in the actual kiosk renderer.
+- Existing Chromium kiosk checkout/print/receipt/recovery checks passed at
+  390/1440, both languages/themes. Booking regression verification is retained.
+- Full detailed training exercises passed, including kiosk pairing, unpaid
+  practice checkout, Builder state, role isolation and blocked network writes.
+  An old positional selector had selected appearance controls before the location
+  selector rendered. The location now has an explicit accessible name and the
+  test waits for that control; no practice transport or role permission changed.
+- Prior commit `3210d82` passed all ten skin/browser CI jobs and deployed-preview
+  checks. Its core CI failure came from that training selector; this expansion
+  fixes it. Expanded WebKit/deployed verification runs in the updated PR checks.
+
+`scripts/browser-kiosk-customizer-smoke.mjs` is added to both browser CI jobs.
+Screenshots are saved under `/tmp/webfactory-kiosk-customizer/` and uploaded
+alongside existing skin evidence. Actual printer/iPhone hardware and real
+financial transactions are outside isolated QA; none were executed.
+
 Evidence is emitted into `/tmp/webfactory-kiosk/<skin>/` and
 `/tmp/webfactory-kiosk-skins/`, and the GitHub Actions `kiosk-skins-*` artifacts.
