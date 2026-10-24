@@ -16,7 +16,7 @@ function Review(){
  const transport=useMemo(()=>{let appearance=kioskAppearance(),presets:KioskPreset[]=[],backgroundAssets:Array<{key:string;name:string;size:number}>=[];const images=new Map<string,string>();const fetch:WorkspaceFetch=async(input,init)=>{
   const url=new URL(typeof input==='string'?input:input instanceof URL?input.href:input.url,location.origin)
   if(url.origin!==location.origin)return Response.json({message:'Preview only'},{status:403})
-  if(url.pathname.endsWith('/client-kiosk-background')){
+  if(url.pathname.endsWith('/client-kiosk-visual-assets')){
    if(url.searchParams.get('siteId')!==runtime.siteId)return Response.json({message:'Preview business only'},{status:403})
    if(init?.method==='DELETE'){
     const {assetKey}=JSON.parse(String(init.body));if(appearance.backgroundAssetKey===assetKey||presets.some(p=>p.appearance.backgroundAssetKey===assetKey))return Response.json({message:'Este fondo está en un diseño guardado / This background is used by a saved design.'},{status:409})

@@ -65,3 +65,9 @@ financial transactions are outside isolated QA; none were executed.
 
 Evidence is emitted into `/tmp/webfactory-kiosk/<skin>/` and
 `/tmp/webfactory-kiosk-skins/`, and the GitHub Actions `kiosk-skins-*` artifacts.
+
+The deployed HTTP probe caught Netlify treating the original upload filename
+as an asynchronous background function (202 without a response body). The
+endpoint is now `client-kiosk-visual-assets`, synchronously returning the
+authorization result and upload metadata. The probe verifies its 401/403/405
+boundaries on the actual Deploy Preview; fixture tests cover valid uploads.

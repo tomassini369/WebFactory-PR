@@ -4,10 +4,10 @@ if(!/^https:\/\/(?:deploy-preview-\d+--webfactorypr\.netlify\.app|webfactorypr\.
 const endpoint=origin+'/.netlify/functions/client-kiosk';
 const cases=[
  ['unpaired screen',endpoint,{method:'GET'},401],
- ['private background upload',origin+'/.netlify/functions/client-kiosk-background?siteId=fixture-never-real',{method:'POST',headers:{Origin:origin,'Content-Type':'application/json'},body:'{}'},401],
- ['private background deletion',origin+'/.netlify/functions/client-kiosk-background?siteId=fixture-never-real',{method:'DELETE',headers:{Origin:origin,'Content-Type':'application/json'},body:'{}'},401],
- ['background foreign origin',origin+'/.netlify/functions/client-kiosk-background?siteId=fixture-never-real',{method:'POST',headers:{Origin:'https://foreign.example.invalid','Content-Type':'application/json'},body:'{}'},403],
- ['unsupported background read',origin+'/.netlify/functions/client-kiosk-background?siteId=fixture-never-real',{method:'GET'},405],
+ ['private background upload',origin+'/.netlify/functions/client-kiosk-visual-assets?siteId=fixture-never-real',{method:'POST',headers:{Origin:origin,'Content-Type':'application/json'},body:'{}'},401],
+ ['private background deletion',origin+'/.netlify/functions/client-kiosk-visual-assets?siteId=fixture-never-real',{method:'DELETE',headers:{Origin:origin,'Content-Type':'application/json'},body:'{}'},401],
+ ['background foreign origin',origin+'/.netlify/functions/client-kiosk-visual-assets?siteId=fixture-never-real',{method:'POST',headers:{Origin:'https://foreign.example.invalid','Content-Type':'application/json'},body:'{}'},403],
+ ['unsupported background read',origin+'/.netlify/functions/client-kiosk-visual-assets?siteId=fixture-never-real',{method:'GET'},405],
  ['private settings',endpoint+'?action=admin&siteId=fixture-never-real',{method:'GET'},401],
  ['invalid pairing',endpoint,{method:'POST',headers:{Origin:origin,'Content-Type':'application/json'},body:JSON.stringify({action:'pair',id:'invalid',token:'invalid'})},401],
  ['foreign origin',endpoint,{method:'POST',headers:{Origin:'https://foreign.example.invalid','Content-Type':'application/json'},body:JSON.stringify({action:'configure',siteId:'fixture-never-real',enabled:true})},403],

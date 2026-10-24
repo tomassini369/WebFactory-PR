@@ -5,13 +5,13 @@ import {kioskAppearance,validateKioskAppearance,validateKioskPresets} from './ki
 import {kioskConfigKey,kioskDeviceKey} from './kiosk.mjs';
 import {kioskBackgroundAssets} from './kiosk-backgrounds.mjs';
 import {optimizeKioskBackground} from './kiosk-background-image.mjs';
-import {createKioskBackgroundHandler} from '../functions/client-kiosk-background.mjs';
+import {createKioskBackgroundHandler} from '../functions/client-kiosk-visual-assets.mjs';
 import {kioskFixture} from '../../scripts/fixtures/kiosk-fixture.mjs';
 const image=()=>sharp({create:{width:2500,height:1200,channels:3,background:'#285fa6'}}).png().toBuffer();
 function setup(){const f=kioskFixture(),files=new Map();let role='owner';const assets={set:async(key,data,options)=>files.set(key,{data,options}),delete:async key=>files.delete(key)};
  const handler=createKioskBackgroundHandler({getStore:()=>f.store,getAssets:()=>assets,authorize:async siteId=>{if(siteId!==f.site.siteId)throw Object.assign(Error('Foreign business'),{status:403});return {site:f.site,user:{email:'owner@example.invalid'},membership:{role}}}});
- const upload=async(bytes,type='image/png',siteId=f.site.siteId)=>{const form=new FormData();form.append('file',new File([bytes],'Background.png',{type}));return handler(new Request(`${f.origin}/.netlify/functions/client-kiosk-background?siteId=${siteId}`,{method:'POST',headers:{Origin:f.origin},body:form}))};
- const remove=key=>handler(new Request(`${f.origin}/.netlify/functions/client-kiosk-background?siteId=${f.site.siteId}`,{method:'DELETE',headers:{Origin:f.origin},body:JSON.stringify({assetKey:key})}));return {f,files,assets,handler,upload,remove,setRole:value=>role=value};}
+ const upload=async(bytes,type='image/png',siteId=f.site.siteId)=>{const form=new FormData();form.append('file',new File([bytes],'Background.png',{type}));return handler(new Request(`${f.origin}/.netlify/functions/client-kiosk-visual-assets?siteId=${siteId}`,{method:'POST',headers:{Origin:f.origin},body:form}))};
+ const remove=key=>handler(new Request(`${f.origin}/.netlify/functions/client-kiosk-visual-assets?siteId=${f.site.siteId}`,{method:'DELETE',headers:{Origin:f.origin},body:JSON.stringify({assetKey:key})}));return {f,files,assets,handler,upload,remove,setRole:value=>role=value};}
 test('new appearance fields hydrate old designs; all inputs remain finite data',()=>{
  assert.equal(kioskAppearance({skinId:'classic',version:1}).finish,'original');
  for(const patch of [{finish:'javascript'},{gradientFrom:'url(https://example.invalid)'},{gradientAngle:NaN},{imageBlur:21},{overlayOpacity:-1},{imageX:Infinity},{welcomeText:'<script>'},{backgroundAssetKey:'sites/other/x.svg'},{layout:'external'}, {pattern:'url(x)'},{cardColor:'red'}])assert.throws(()=>validateKioskAppearance({...kioskAppearance(),...patch}));

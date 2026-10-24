@@ -104,7 +104,7 @@ tenant authorization as the active appearance.
 
 ### Background lifecycle and resource bounds
 
-- `POST client-kiosk-background?siteId=…`: same-origin, canonical owner/settings
+- `POST client-kiosk-visual-assets?siteId=…`: same-origin, canonical owner/settings
   authorization before reading a bounded multipart body. The browser optimizes
   JPG/PNG/WebP sources up to 12 MB; the server independently limits its file input
   to 4 MB and decoding to 24 million pixels. Animated images and MIME mismatches
