@@ -71,3 +71,10 @@ as an asynchronous background function (202 without a response body). The
 endpoint is now `client-kiosk-visual-assets`, synchronously returning the
 authorization result and upload metadata. The probe verifies its 401/403/405
 boundaries on the actual Deploy Preview; fixture tests cover valid uploads.
+
+Glass follow-up adds schema bounds/legacy hydration checks and browser
+assertions for translucent header/welcome/catalog/cart backgrounds, independent
+blur, opaque text (element opacity remains 1), nested cards without blur,
+saved controls, cart interaction, forced-color and print fallbacks. The same
+seven-width ES/EN Light/Dark matrix is retained. Impeccable reports the same
+20 existing findings, with none in the kiosk files.

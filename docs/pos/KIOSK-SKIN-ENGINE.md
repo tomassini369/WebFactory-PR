@@ -153,3 +153,14 @@ Physical printer hardware, native iPhone keyboard and live provider sandboxes ar
 not certified by isolated browser fixtures. No real charge is needed or allowed.
 Impeccable baseline: 20 existing findings, none in kiosk files; recommendations
 outside this change do not justify unrelated visual edits.
+
+### Glass panels over photographs
+
+The Glass finish (or Glass Premium with Original finish) makes the header,
+welcome, catalog, cart and footer translucent. `glassOpacity` is validated as
+an integer 70–95 (default 76); `glassBlur` is 0–12 px (default 8). Lower opacity
+reveals more of the background. Zone colors become a 15% tint in the theme's
+neutral surface to keep foreground contrast predictable over arbitrary photos.
+Fields remain opaque; nested product cards have no extra backdrop filter.
+Reduced transparency, forced colors, unsupported backdrop filters and print
+use solid surfaces. Classic with its default finish is unchanged.
