@@ -1,3 +1,4 @@
+import {verifyMerchantCapability} from '../lib/stripe-merchant-capability.mjs';
 import { errorResponse, requireSiteCapability } from "../lib/client-auth.mjs";
 
 export default async (req) => {
@@ -10,14 +11,7 @@ export default async (req) => {
     const base = { ok: true, configured: Boolean(secret), webhookConfigured, connected: Boolean(accountId), accountId };
     if (!accountId) return Response.json({ ...base, capabilityStatus: "not_started" }, { headers: { "Cache-Control": "no-store" } });
     if (!secret) throw Object.assign(new Error("Stripe is not configured for this deployment."), { status: 503 });
-    const params = new URLSearchParams();
-    params.append("include[]", "configuration.merchant");
-    const response = await fetch(`https://api.stripe.com/v2/core/accounts/${encodeURIComponent(accountId)}?${params}`, {
-      headers: { Authorization: `Bearer ${secret}`, "Stripe-Version": "2026-08-26.preview" },
-      signal: AbortSignal.timeout(15000),
-    });
-    const account = await response.json();
-    if (!response.ok) throw Object.assign(new Error("Stripe account status could not be verified. Try again or contact support."), { status: 502 });
-    return Response.json({ ...base, capabilityStatus: account.configuration?.merchant?.capabilities?.card_payments?.status || "pending" }, { headers: { "Cache-Control": "no-store" } });
+    const capabilityStatus=await verifyMerchantCapability(accountId,{secretKey:secret});
+    return Response.json({...base,capabilityStatus},{headers:{'Cache-Control':'no-store'}});
   } catch (error) { return errorResponse(error); }
 };

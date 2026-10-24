@@ -1,3 +1,4 @@
+import {verifyMerchantCapability} from '../lib/stripe-merchant-capability.mjs';
 import { bookingBalance, kioskBookingCodeKey } from '../lib/kiosk-bookings.mjs';
 import { clientCheckoutReturn } from '../lib/client-checkout-return.mjs';
 import { createCheckoutAttemptHandler } from '../lib/checkout-attempt.mjs';
@@ -26,16 +27,6 @@ function randomLetters(length = 8) {
   return Array.from(crypto.randomBytes(length), (value) => alphabet[value % alphabet.length]).join("");
 }
 
-async function verifyMerchantCapability(accountId) {
-  const params = new URLSearchParams();
-  params.append("include[]", "configuration.merchant");
-  const response = await fetch(`https://api.stripe.com/v2/core/accounts/${encodeURIComponent(accountId)}?${params}`, {
-    headers: { Authorization: `Bearer ${env("STRIPE_SECRET_KEY")}`, "Stripe-Version": "2026-08-26.preview" },
-  });
-  const account = await response.json();
-  if (!response.ok) throw new Error(account?.error?.message || "Stripe account status could not be verified.");
-  return account.configuration?.merchant?.capabilities?.card_payments?.status || "pending";
-}
 
 function localizedText(item, lang, field) {
   if (field === "name") return lang === "es" ? (item.nameEs || item.nameEn || item.name || "") : (item.nameEn || item.name || item.nameEs || "");

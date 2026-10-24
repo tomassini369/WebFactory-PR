@@ -1,3 +1,4 @@
+import {verifyMerchantCapability} from '../lib/stripe-merchant-capability.mjs';
 import {assertPosLocation} from "../lib/commercial-access.mjs";
 import { requirePosAdjustments } from '../lib/pos-permissions.mjs';
 import { requireCashierPos } from '../lib/pos-operations.mjs';
@@ -8,15 +9,6 @@ import { cleanText, publicBaseUrl, validEmail } from "../lib/platform-utils.mjs"
 import { calculateTax } from "../lib/webfactory-v3-domain.mjs";
 import { assertStripeWriteAllowed } from "../lib/stripe-runtime.mjs";
 
-function env(name){return globalThis.Netlify?.env?.get(name)||"";}
-
-async function verifyMerchantCapability(accountId){
-  const params=new URLSearchParams();params.append("include[]","configuration.merchant");
-  const response=await fetch(`https://api.stripe.com/v2/core/accounts/${encodeURIComponent(accountId)}?${params}`,{headers:{Authorization:`Bearer ${env("STRIPE_SECRET_KEY")}`,"Stripe-Version":"2026-08-26.preview"}});
-  const account=await response.json();
-  if(!response.ok)throw new Error(account?.error?.message||"Stripe account status could not be verified.");
-  return account.configuration?.merchant?.capabilities?.card_payments?.status||"pending";
-}
 
 function appendLine(params,index,item){
   params.set(`line_items[${index}][price_data][currency]`,"usd");
