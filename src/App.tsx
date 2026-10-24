@@ -14,6 +14,7 @@ const TemplatesPage = lazy(() => import('./TemplatesPage'))
 const WebFactoryBuilder = lazy(() => import('./WebFactoryBuilder'))
 const ChatgptControlPage = lazy(() => import('./ChatgptControlPage'))
 const ClientAdminPage = lazy(() => import('./ClientAdminPage'))
+const KioskMobileReceipt=lazy(()=>import('./KioskMobileReceipt'))
 const Kiosk = lazy(() => import('./Kiosk'))
 let kioskPairing=''
 if(/^\/kiosk\/?$/.test(window.location.pathname)){kioskPairing=new URLSearchParams(window.location.hash.slice(1)).get('pair')||'';if(window.location.hash||window.location.search)window.history.replaceState(window.history.state,'',window.location.pathname)}
@@ -79,6 +80,7 @@ function App(){
   const termsRoute = /^\/terms\/?$/.test(pathname)
   const refundRoute = /^\/refund-policy\/?$/.test(pathname)
 
+  if (/^\/kiosk-receipt\/?$/.test(pathname)) return <RouteView><KioskMobileReceipt lang={lang} setLang={setLang}/></RouteView>
   if (/^\/kiosk\/?$/.test(pathname)) return <RouteView><Kiosk lang={lang} setLang={setLang} pairing={kioskPairing}/></RouteView>
   if (/^\/customer-display\/?$/.test(pathname)) return <RouteView><CustomerDisplay lang={lang} setLang={setLang} pairing={displayPairing}/></RouteView>
   if (ShadcnPreview && /^\/shadcn-preview\/?$/.test(pathname)) return <RouteView><ShadcnPreview/></RouteView>

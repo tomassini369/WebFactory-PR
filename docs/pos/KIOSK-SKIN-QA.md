@@ -78,3 +78,12 @@ blur, opaque text (element opacity remains 1), nested cards without blur,
 saved controls, cart interaction, forced-color and print fallbacks. The same
 seven-width ES/EN Light/Dark matrix is retained. Impeccable reports the same
 20 existing findings, with none in the kiosk files.
+
+QR follow-up: schema/default and frozen-mode tests, pending-cash reset refusal,
+mobile return fragment/privacy, tenant/employee/branch targeted-read controls,
+authorized cancellation, repeat cash confirmation and booking receipt-failure
+recovery are covered by automated tests. The local unit/integration suite has
+676 passing tests. Preview build passes. Browser QR smoke coverage is added to
+Chromium/WebKit CI with kiosk, staff portal and cookie-free mobile receipt
+fixtures. These fixtures do not constitute a Stripe/ATH provider transaction.
+Sandbox webhook registration/runtime configuration remains an external check.

@@ -164,3 +164,29 @@ neutral surface to keep foreground contrast predictable over arbitrary photos.
 Fields remain opaque; nested product cards have no extra backdrop filter.
 Reduced transparency, forced colors, unsupported backdrop filters and print
 use solid surfaces. Classic with its default finish is unchanged.
+
+### Optional QR checkout handoff
+
+`checkoutMode: screen | qr` belongs to the existing kiosk config, defaults to
+`screen`, and is frozen per active checkout. Owners enable QR from existing
+POS settings. Online QR codes encode the original Stripe/ATH checkout URL;
+QR generation uses the already installed local qrcode library. No provider
+URL goes to a third-party QR service. A server-only header carries the frozen
+mode to the shared checkout function. Storefront and legacy kiosk returns
+remain unchanged. QR returns use `/kiosk-receipt` with the existing read-only
+buyer receipt capability in its URL fragment. That page polls the existing
+receipt endpoint without kiosk cookies and cannot confirm payments.
+
+Cash QR codes open `/client-admin` with business, sale and kind identifiers.
+Normal login/MFA remain required. A targeted read rechecks tenant, branch,
+record assignment and collection permission. Two explicit UI steps invoke the
+existing `mark_paid` action with cash audit metadata. Orders reuse the original
+inventory reservation and receipt settlement. Booking cash confirmation records
+payment before writing its deterministic receipt, allowing receipt recovery
+without collecting twice. QR sessions cannot reset while payment is due;
+authorized unpaid-cash cancellation can release the screen. Pairing is retained.
+
+Live ATH remains prohibited in preview. Stripe sandbox connected to ChatGPT
+is distinct from the app's runtime credentials/webhook signing secret. During
+this audit the connected sandbox had zero webhook endpoints; a real provider
+end-to-end checkout is not claimed until sandbox runtime/webhook setup is proven.

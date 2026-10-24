@@ -13,7 +13,7 @@ import { syncBookingCalendar, bookingCanSync } from "../lib/booking-calendar.mjs
 import { assertSameOrigin, errorResponse, requireSiteAccess, requireSiteCapability, membershipHasCapability } from "../lib/client-auth.mjs";
 import { clientCommerceStore, commerceKey } from "../lib/client-store.mjs";
 import { deleteGoogleEvent } from "../lib/google-calendar.mjs";
-import { createInventoryMovement } from "../lib/webfactory-v3-domain.mjs";
+import { createReceiptRecord, createInventoryMovement } from "../lib/webfactory-v3-domain.mjs";
 import { getV3Record, putV3Record } from "../lib/webfactory-v3-store.mjs";
 import crypto from "node:crypto";
 import { refundState } from "../lib/refund-policy.mjs";
@@ -39,6 +39,15 @@ export function createCommerceAdminHandler({authorizeAccess=requireSiteAccess,au
     if (req.method === "GET") {
       const siteId = new URL(req.url).searchParams.get("siteId") || "";
       const { site, membership } = await authorizeAccess(siteId);
+      const query=new URL(req.url).searchParams,id=query.get('kioskSale'),kind=query.get('kind');
+      if(id!==null){
+        if(!/^[a-zA-Z0-9_-]{1,160}$/.test(id)||!['order','booking'].includes(kind))throw Object.assign(new Error('Invalid kiosk sale.'),{status:400});
+        const record=await getStore().get(commerceKey(site.siteId,kind==='booking'?'bookings':'orders',id),{type:'json'});
+        if(!record||record.siteId!==site.siteId||record.kind!==kind||record.transactionId!==id||record.channel!=='kiosk')throw Object.assign(new Error('Kiosk sale unavailable.'),{status:404});
+        assertCommerceAction(site,membership,record,'mark_paid');
+        if(!membershipHasCapability(membership,'collect'))throw Object.assign(new Error('Collection permission required.'),{status:403});
+        return Response.json({ok:true,record:employeeCommerceRecord(record,membership)},{headers:{'Cache-Control':'private, no-store'}});
+      }
       const [orders, bookings, pendingPos] = await Promise.all([listRecords(siteId, "orders",getStore,record=>canAccessCommerce(site,membership,record)), listRecords(siteId, "bookings",getStore,record=>canAccessCommerce(site,membership,record)),pendingSales(siteId)]);
       const mergedOrders=[...new Map([...orders,...pendingPos].map(record=>[record.transactionId,record])).values()];
       const visible = records => records.filter(record => canAccessCommerce(site,membership,record));
@@ -71,7 +80,21 @@ export function createCommerceAdminHandler({authorizeAccess=requireSiteAccess,au
     if(balanceAction)return Response.json(await reconcileBookingBalance(site,record.transactionId,{expectedAttempt:payload.expectedBalanceAttempt,close:payload.action==='close_booking_balance',actor:displayActor(user),requestUrl:req.url,lockHeld:true}),{headers:{'Cache-Control':'no-store'}});
     if(kind==='bookings'&&record.balanceAttempt&&(payload.action==='mark_paid'||record.balancePaymentStatus!=='paid'&&['cancel','refund'].includes(payload.action)))throw Object.assign(new Error('Use Review balance checkout on this booking before changing its payment / Usa Revisar cobro de saldo en esta cita antes de cambiar su pago.'),{status:409});
     if(payload.action==='recover_pos')return Response.json(await recoverPosOrder(site.siteId,record.transactionId),{headers:{'Cache-Control':'no-store'}});
-    if(kind==='orders'&&['mark_paid','cancel_in_person'].includes(payload.action))return Response.json({ok:true,record:await manageInPersonOrder(site.siteId,record.transactionId,payload.action,{lockHeld:true})},{headers:{'Cache-Control':'no-store'}});
+    if(payload.cash===true&&(payload.action!=='mark_paid'||record.channel!=='kiosk'))throw Object.assign(new Error('Cash confirmation is only available for kiosk collections.'),{status:409});
+    if(kind==='bookings'&&payload.cash===true){
+      if(!['confirmed','completed'].includes(record.status)||!['due','paid_in_person'].includes(record.paymentStatus)||record.paymentStatus==='paid_in_person'&&record.paymentMethod!=='cash')throw Object.assign(new Error('Booking cash payment requires review.'),{status:409});
+      if(record.paymentStatus==='due'){
+        record={...record,paymentStatus:'paid_in_person',paymentMethod:'cash',cashConfirmedBy:displayActor(user),paidAt:new Date().toISOString(),cashReceiptPending:true};
+        const saved=await getStore().setJSON(key,record,recordMetadata?.etag?{onlyIfMatch:recordMetadata.etag}:{});if(!saved.modified)throw Object.assign(new Error('Booking changed. Reload.'),{status:409});
+      }
+      const receipt=createReceiptRecord({siteId:site.siteId,transaction:record,now:record.paidAt});
+      await putV3Record(site.siteId,'receipts',receipt.receiptId,receipt);
+      const current=await getStore().getWithMetadata(key,{type:'json'});if(!current?.etag||current.data.paymentStatus!=='paid_in_person')throw Object.assign(new Error('Booking requires review.'),{status:409});
+      record={...current.data,receiptId:receipt.receiptId,cashReceiptPending:false};const saved=await getStore().setJSON(key,record,{onlyIfMatch:current.etag});if(!saved.modified)throw Object.assign(new Error('Booking changed. Retry receipt recovery.'),{status:409});
+      await getStore().setJSON(commerceKey(site.siteId,'transactions',record.transactionId),record);
+      return Response.json({ok:true,record:employeeCommerceRecord(record,membership)},{headers:{'Cache-Control':'no-store'}});
+    }
+    if(kind==='orders'&&['mark_paid','cancel_in_person'].includes(payload.action))return Response.json({ok:true,record:await manageInPersonOrder(site.siteId,record.transactionId,payload.action,{lockHeld:true,...(payload.cash===true?{cashActor:displayActor(user)}:{})})},{headers:{'Cache-Control':'no-store'}});
     if(payload.action==='recover_ath'){
       const {recoverAthOrder}=await import('../lib/ath-recovery.mjs');
       const recovered=await recoverAthOrder(site,record,req.url);
@@ -96,7 +119,7 @@ export function createCommerceAdminHandler({authorizeAccess=requireSiteAccess,au
       record = await syncBookingCalendar(site, record);
     } else if (payload.action === "mark_paid" && record.paymentStatus === "due") {
       if (["cancelled", "failed", "refunded"].includes(record.status)) throw Object.assign(new Error("This transaction is no longer active."), { status: 409 });
-      record = { ...record, paymentStatus: "paid_in_person", status: "confirmed", paidAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+      record = { ...record, paymentStatus: "paid_in_person", status: "confirmed", ...(payload.cash===true?{paymentMethod:"cash",cashConfirmedBy:displayActor(user)}:{}), paidAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
       if (kind === "orders" && /restaurant|food|catering|bakery|cafe|coffee|comida|alimento|panader|cafeter|restaurante/i.test(`${site.business?.category || ""} ${site.business?.name || ""}`)) {
         record.kitchenStatus = "received";
         record.queueNumber = `Q${Date.parse(record.paidAt)}`;
@@ -219,7 +242,7 @@ export function createCommerceAdminHandler({authorizeAccess=requireSiteAccess,au
     return Response.json({ ok: true, record:employeeCommerceRecord(record,membership) }, { headers: { "Cache-Control": "no-store" } });
     };
     const bookingRow=kind==='bookings'?await getStore().get(commerceKey(site.siteId,kind,payload.transactionId),{type:'json'}):null;
-    return !balanceAction&&((kind==='bookings'&&!bookingRow?.balanceAttempt&&bookingRow?.bookingTotalCents==null)||['recover_pos','recover_ath'].includes(payload.action))?await run():await withBookingLock(getStore(),`locks/commerce/${site.siteId}`,run);
+    return payload.cash!==true&&!balanceAction&&((kind==='bookings'&&!bookingRow?.balanceAttempt&&bookingRow?.bookingTotalCents==null)||['recover_pos','recover_ath'].includes(payload.action))?await run():await withBookingLock(getStore(),`locks/commerce/${site.siteId}`,run);
   } catch (error) { return errorResponse(error); }
 };}
 export default createCommerceAdminHandler();

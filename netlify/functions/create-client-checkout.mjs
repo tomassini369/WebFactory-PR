@@ -71,7 +71,7 @@ function appendLine(params, index, item) {
   params.set(`line_items[${index}][quantity]`, String(item.quantity));
 }
 
-export async function performCheckout(req, { kiosk = false, balanceBooking = null, balanceAttempt = "" } = {}) {
+export async function performCheckout(req, { kiosk = false, kioskQr = false, balanceBooking = null, balanceAttempt = "" } = {}) {
   if (req.method !== "POST") return Response.json({ ok: false, message: "Method not allowed." }, { status: 405 });
   try {
     assertSameOrigin(req);
@@ -207,7 +207,7 @@ export async function performCheckout(req, { kiosk = false, balanceBooking = nul
     const receiptAccess = await issueBuyerReceiptAccess(site.siteId, transactionId);
     record.buyerReceiptHash = receiptAccess.hash;
     const receiptReturn = `receipt=${encodeURIComponent(receiptAccess.token)}`;
-    const returns = clientCheckoutReturn({ slug: site.slug, kiosk, requestUrl: req.url, receiptReturn, trackingToken });
+    const returns = clientCheckoutReturn({ slug: site.slug, kiosk, kioskQr, requestUrl: req.url, receiptReturn, trackingToken });
     if(payload.paymentProvider === "ath_movil") {
       const result=await createAthCheckout(site,record,{lang,requestUrl:req.url,returnUrl:returns.ath});
       return Response.json(result,{headers:{"Cache-Control":"no-store"}});

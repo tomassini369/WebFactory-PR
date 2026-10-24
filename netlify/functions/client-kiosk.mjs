@@ -23,7 +23,7 @@ export function createKioskHandler({ authorize = requireSiteCapability, getStore
       balanceBooking=await getStore().get(commerceKey(payload.siteId,"bookings",payload.balanceReference),{type:"json"});
       if(balanceBooking?.balanceAttempt?.attempt!==req.headers.get("Idempotency-Key"))throw kioskFail("Balance attempt mismatch.",409);
     }
-    return performCheckout(req,{kiosk:true,balanceBooking,balanceAttempt:req.headers.get("Idempotency-Key")||""});
+    return performCheckout(req,{kiosk:true,kioskQr:req.headers.get('X-WF-Kiosk-Checkout')==='qr',balanceBooking,balanceAttempt:req.headers.get("Idempotency-Key")||""});
   }, getSite: payload => getSite(payload.siteId), isAvailable, getStore });
   return async req => {
     try {
@@ -51,8 +51,9 @@ export function createKioskHandler({ authorize = requireSiteCapability, getStore
         }
         if (input.action === 'configure') {
           if (typeof input.enabled !== 'boolean') throw kioskFail('Choose enabled or disabled.');
+          if(input.checkoutMode!==undefined&&!['screen','qr'].includes(input.checkoutMode))throw kioskFail('Invalid checkout mode.');
           if(input.bookingModes && (typeof input.bookingModes.newBookings!=="boolean"||typeof input.bookingModes.existingBookings!=="boolean"))throw kioskFail("Invalid booking modes.");
-          configuration = await mutateKiosk(store, configKey, current => ({ ...(current || {}), enabled: input.enabled, ...(input.bookingModes?{bookingModes:input.bookingModes}:{}), devices: current?.devices || [], updatedAt: now, updatedBy: actor }));
+          configuration = await mutateKiosk(store, configKey, current => ({ ...(current || {}), enabled: input.enabled, ...(input.checkoutMode?{checkoutMode:input.checkoutMode}:{}), ...(input.bookingModes?{bookingModes:input.bookingModes}:{}), devices: current?.devices || [], updatedAt: now, updatedBy: actor }));
         }
         if (input.action === 'create') {
           if (!configuration.enabled || !isAvailable(site)) throw kioskFail('Enable kiosk first / Habilita el kiosco primero.', 409);
@@ -80,7 +81,7 @@ export function createKioskHandler({ authorize = requireSiteCapability, getStore
           });
           configuration = await mutateKiosk(store, configKey, current => ({ ...(current || {}), devices: (current?.devices || []).filter(x => x.id !== input.id) }));
         }
-        return Response.json({ ok: true, appearance:kioskAppearance(configuration.appearance,site.siteId), presets:kioskPresets(configuration.appearancePresets,site.siteId),backgroundAssets:kioskBackgroundAssets(configuration,site.siteId), enabled: Boolean(configuration.enabled), bookingModes:kioskBookingModes(configuration), devices: (configuration.devices || []).filter(x => x.expiresAt > now) }, { headers });
+        return Response.json({ ok: true, appearance:kioskAppearance(configuration.appearance,site.siteId), presets:kioskPresets(configuration.appearancePresets,site.siteId),backgroundAssets:kioskBackgroundAssets(configuration,site.siteId), enabled: Boolean(configuration.enabled), checkoutMode:configuration.checkoutMode==='qr'?'qr':'screen', bookingModes:kioskBookingModes(configuration), devices: (configuration.devices || []).filter(x => x.expiresAt > now) }, { headers });
       }
       const [deviceId, deviceToken] = cookieValue(req).split('.');
       const id = input.action === 'pair' ? input.id : deviceId;
@@ -160,12 +161,12 @@ export function createKioskHandler({ authorize = requireSiteCapability, getStore
             const windowAt = now - Number(current.checkoutWindowAt || 0) >= 60000 ? now : current.checkoutWindowAt;
             const count = windowAt === current.checkoutWindowAt ? Number(current.checkoutCount || 0) : 0;
             if (count >= 20) throw kioskFail('Too many orders; wait a minute / Demasiadas órdenes; espera un minuto.', 429);
-            return { ...current, checkoutWindowAt: windowAt, checkoutCount: count + 1, active: { kind: input.action==='booking_checkout'?'booking':'order', payload: encoded, fingerprint, attempt, startedAt: now, pricesIncludeTax: Boolean(site.taxConfig?.pricesIncludeTax) } };
+            return { ...current, checkoutWindowAt: windowAt, checkoutCount: count + 1, active: { checkoutMode:configuration.checkoutMode==='qr'?'qr':'screen', kind: input.action==='booking_checkout'?'booking':'order', payload: encoded, fingerprint, attempt, startedAt: now, pricesIncludeTax: Boolean(site.taxConfig?.pricesIncludeTax) } };
           });
         }
         if (!state.active) throw kioskFail('No checkout to resume.', 409);
         if (!state.active.response && state.active.payload) {
-          const forwarded = new Request(`${url.origin}/.netlify/functions/create-client-checkout`, { method: 'POST', headers: { Origin: url.origin, 'Content-Type': 'application/json', 'Idempotency-Key': state.active.attempt }, body: state.active.payload });
+          const forwarded = new Request(`${url.origin}/.netlify/functions/create-client-checkout`, { method: 'POST', headers: { Origin: url.origin, 'Content-Type': 'application/json', 'Idempotency-Key': state.active.attempt, 'X-WF-Kiosk-Checkout':state.active.checkoutMode||'screen' }, body: state.active.payload });
           const result = await executeCheckout(forwarded), body = await result.json();
           if (result.ok && body.ok && body.transactionId) {
             state = await mutateKiosk(store, kioskDeviceKey(id), current => {
