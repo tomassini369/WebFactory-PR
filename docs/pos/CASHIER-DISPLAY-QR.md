@@ -33,3 +33,12 @@ This stays in PR125's unified preview. A new deployment recreates the test
 business baseline and requires pairing again; old transactions remain scoped
 to their original deployment. Do not interpret this as payment cancellation,
 or pay an uncertain existing transaction a second time.
+
+A paired device independently reads canonical saved order/payment state even
+when Safari suspends the cashier tab. A valid pending Checkout remains visible
+until its server expiry. Confirmed receipt display remains available for five
+minutes from the saved paid timestamp; then the old stale view is hidden. Drafts
+still hide after 20 seconds without cashier synchronization. Membership,
+revocation and eight-hour device expiry remain enforced on every request.
+The display distinguishes an inactive cashier tab from an unavailable server.
+This is not a keep-alive workaround or a client-side payment confirmation.

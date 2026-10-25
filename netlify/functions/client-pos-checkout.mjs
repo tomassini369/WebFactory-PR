@@ -5,7 +5,7 @@ import { requireCashierPos } from '../lib/pos-operations.mjs';
 import { clientCommerceStore } from '../lib/client-store.mjs';
 import { createReservedStripeCheckout } from '../lib/reserved-stripe-checkout.mjs';
 import { assertSameOrigin, errorResponse, requireSiteCapability } from "../lib/client-auth.mjs";
-import { cleanText, publicBaseUrl, validEmail } from "../lib/platform-utils.mjs";
+import { cleanText, validEmail } from "../lib/platform-utils.mjs";
 import { calculateTax } from "../lib/webfactory-v3-domain.mjs";
 import { assertStripeWriteAllowed } from "../lib/stripe-runtime.mjs";
 
@@ -73,9 +73,6 @@ export function createPosCheckoutHandler({ authorize = requireSiteCapability, ge
     const transactionId=`txn_pos_${saleAttemptId}`;
     const params=new URLSearchParams();
     params.set("mode","payment");
-    const returnOrigin=globalThis.Netlify?.context?.deploy?.context==='deploy-preview'?new URL(req.url).origin:publicBaseUrl();
-    params.set("success_url",`${returnOrigin}/client-admin?siteId=${encodeURIComponent(site.siteId)}&pos=success&session_id={CHECKOUT_SESSION_ID}`);
-    params.set("cancel_url",`${returnOrigin}/client-admin?siteId=${encodeURIComponent(site.siteId)}&pos=cancelled`);
     params.set("customer_email",customer.email);
     params.set("client_reference_id",transactionId);
     params.set("metadata[flow]","webfactory_client_commerce");
@@ -93,7 +90,7 @@ export function createPosCheckoutHandler({ authorize = requireSiteCapability, ge
       paymentStatus:"pending",status:"payment_pending",createdAt:now,updatedAt:now,
       createdById:user.id,locationId:cleanText(payload.locationId,120),createdBy:cleanText(user.email||user.id,320),stripeAccountId:accountId,
     };
-    const checkout=await createReservedStripeCheckout(site,record,params,{requestUrl:req.url});
+    const checkout=await createReservedStripeCheckout(site,record,params,{requestUrl:req.url,store:getStore(),buyerReceiptReturn:true});
     return Response.json({ok:true,transactionId,checkoutUrl:checkout.checkoutUrl},{headers:{'Cache-Control':'no-store'}});
   }catch(error){return errorResponse(error);}
 }; }

@@ -50,5 +50,14 @@ test('paired screen exposes only pending server-owned Stripe checkout, hides pai
  for(const url of ['javascript:alert(1)','https://checkout.stripe.com.evil.invalid/c/pay/x','https://user:pass@checkout.stripe.com/c/pay/x','https://evil.invalid/pay/x']){record.checkoutUrl=url;assert.equal((await(await f.get(cookie)).json()).checkout,null)}
  record.checkoutUrl='https://checkout.stripe.com/c/pay/cs_test_fixture';record.checkoutExpiresAt=new Date(0).toISOString();assert.equal((await(await f.get(cookie)).json()).checkout,null);
  record.checkoutExpiresAt=new Date(Date.now()+600000).toISOString();for(const status of ['cancelled','expired','payment_failed']){record.status=status;assert.equal((await(await f.get(cookie)).json()).checkout,null)}
- record.status='payment_pending';record.paymentStatus='paid';assert.equal((await(await f.get(cookie)).json()).checkout,null);record.paymentStatus='pending';f.setNow(1020001);assert.equal((await(await f.get(cookie)).json()).checkout,null);
+ record.status='payment_pending';record.paymentStatus='paid';assert.equal((await(await f.get(cookie)).json()).checkout,null);record.paymentStatus='pending';f.setNow(1020001);let pending=await(await f.get(cookie)).json();assert.equal(pending.checkout.url,record.checkoutUrl);assert.equal(pending.cashierConnected,false);record.checkoutExpiresAt=new Date(0).toISOString();assert.equal((await(await f.get(cookie)).json()).checkout,null);
+});
+
+test('suspended cashier does not hide a recently confirmed receipt, but drafts and old receipts expire',async()=>{
+ const f=fixture(),s=await f.create(),{cookie}=await f.pair(s);await f.sync(s.id,1,{attemptId:'attempt-receipt'});
+ const record={siteId:f.site.siteId,source:'pos_remote',createdBy:'owner@example.invalid',paymentStatus:'paid',status:'confirmed',items:[],amountTotal:2500,receiptId:'receipt-one',paidAt:new Date(1020001).toISOString()};
+ f.rows.set('tenant-a/orders/txn_pos_attempt-receipt.json',{data:record,etag:'paid'});f.setNow(1020001);
+ let d=await(await f.get(cookie)).json();assert.equal(d.stale,false);assert.equal(d.payment,'paid');assert.equal(d.receipt.id,'receipt-one');assert.equal(d.checkout,null);assert.equal(d.cashierConnected,false);
+ f.setNow(1020001+5*60000);d=await(await f.get(cookie)).json();assert.equal(d.stale,true);assert.equal(d.receipt,null);
+ f.site.members=[];assert.equal((await f.get(cookie)).status,403);
 });

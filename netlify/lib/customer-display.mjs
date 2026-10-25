@@ -45,7 +45,7 @@ export async function displaySale(store,state){
  const marker=await store.get(commerceKey(state.siteId,'pos-attempts',state.attemptId),{type:'json'});
  if(marker&&marker.siteId!==state.siteId)throw displayFail('Sale unavailable.',404);
  const id=marker?.transactionId||`txn_pos_${state.attemptId}`;
- const record=await store.get(commerceKey(state.siteId,'transactions',id),{type:'json'});
+ const record=await store.get(commerceKey(state.siteId,'orders',id),{type:'json'})||await store.get(commerceKey(state.siteId,'transactions',id),{type:'json'});
  if(!record)return {payment:'pending'};
  if(record.siteId!==state.siteId||!['pos','pos_remote'].includes(record.source)||String(record.createdBy||'').toLowerCase()!==state.email)throw displayFail('Sale unavailable.',403);
  const paid=record.paymentStatus==='paid'||record.paymentStatus==='paid_in_person'&&record.status==='completed';
@@ -55,6 +55,11 @@ export async function displaySale(store,state){
 }
 export async function publicDisplayView(store,state,site,now){
  const sale=await displaySale(store,state);
- const stale=now-state.updatedAt>20000;
- return {business:{nameEn:site.business?.nameEn||site.business?.name||site.slug,nameEs:site.business?.nameEs||site.business?.nameEn||site.business?.name||site.slug,logoAssetKey:site.business?.logoAssetKey||'',siteId:site.siteId,accent:site.design?.secondary||''},serverNow:now,updatedAt:state.updatedAt,stale,payment:stale?'disconnected':sale?.payment||'draft',totals:stale?null:sale?.totals||state.draft,receipt:stale?null:sale?.receipt||null,checkout:stale?null:sale?.checkout||null};
+ const cashierConnected=now-state.updatedAt<=20000;
+ // A saved payment stays verifiable while mobile browsers suspend the cashier.
+ // Drafts still disappear after heartbeat loss; paid receipts have a short window.
+ const receiptTime=Date.parse(sale?.receipt?.createdAt||'');
+ const verifiedPayment=Boolean(sale?.checkout||sale?.payment==='paid'&&Number.isFinite(receiptTime)&&receiptTime<=now+5000&&now-receiptTime<5*60000);
+ const stale=!cashierConnected&&!verifiedPayment;
+ return {business:{nameEn:site.business?.nameEn||site.business?.name||site.slug,nameEs:site.business?.nameEs||site.business?.nameEn||site.business?.name||site.slug,logoAssetKey:site.business?.logoAssetKey||'',siteId:site.siteId,accent:site.design?.secondary||''},serverNow:now,cashierConnected,updatedAt:state.updatedAt,stale,payment:stale?'disconnected':sale?.payment||'draft',totals:stale?null:sale?.totals||state.draft,receipt:stale?null:sale?.receipt||null,checkout:stale?null:sale?.checkout||null};
 }
