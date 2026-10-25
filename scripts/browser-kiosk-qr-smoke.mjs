@@ -14,7 +14,8 @@ try{
   const admin=createCommerceAdminHandler({authorizeAccess:async()=>({site:f.site,membership:{role:'owner'}}),getStore:()=>f.store,pendingSales:async()=>[]});
   await ctx.addInitScript(({theme})=>localStorage.setItem('webfactory-theme-v2',theme),{theme});
   await ctx.route('**/.netlify/functions/**',async route=>{
-   const req=route.request(),url=new URL(req.url()),name=url.pathname.split('/').at(-1);let data={ok:true};
+   if(route.request().method()==='POST'&&new URL(route.request().url()).pathname.endsWith('/client-customer-display')&&route.request().postDataJSON()?.action==='keepalive')return route.fulfill({json:{ok:true}});
+  const req=route.request(),url=new URL(req.url()),name=url.pathname.split('/').at(-1);let data={ok:true};
    if(name==='client-kiosk'){
     const response=await f.handler(new Request(req.url(),{method:req.method(),headers:{Origin:root,Cookie:cookie,'Content-Type':'application/json'},...(req.method()==='POST'?{body:req.postData()}:{})}));
     const body=await response.json();if(body.sale?.transactionId){const row=await f.store.get(commerceKey(f.site.siteId,'transactions',body.sale.transactionId));if(row)await f.store.setJSON(commerceKey(f.site.siteId,'orders',body.sale.transactionId),row)}return route.fulfill({status:response.status,contentType:'application/json',body:JSON.stringify(body)})

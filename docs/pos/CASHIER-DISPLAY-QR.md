@@ -31,7 +31,8 @@ verification click. Native iPhone and actual signed sandbox webhook acceptance
 of this cashier/display flow remain manual checks.
 
 This stays in PR125's unified preview. A new deployment recreates the test
-business baseline and requires pairing again; old transactions remain scoped
+business baseline; persistent preview device bindings survive updates on the
+same preview hostname, while sale snapshots remain deployment-scoped; old transactions remain scoped
 to their original deployment. Do not interpret this as payment cancellation,
 or pay an uncertain existing transaction a second time.
 
@@ -70,3 +71,39 @@ Name, Email and Phone and ask the cashier to correct them before paying. No
 new confirmation step, payment state or editable customer-screen form is added.
 Browser QA covers all seven widths, ES/EN and light/dark, long email wrapping,
 live typing/correction across two contexts and removal on sale completion.
+
+## Persistent workstation pairing
+
+Device binding no longer expires after eight hours. The initial one-time pair
+link still expires in ten minutes. After redemption, the HttpOnly/Secure/
+SameSite=Strict device cookie is persistent and renewed on successful device
+reads; the server binding lasts until explicit revocation. Browser removal of
+cookies/site data can still require pairing again. iOS may suspend/close tabs;
+the application cannot force the operating system to keep them running.
+
+The cashier remembers only an opaque display ID in localStorage, scoped by
+business and authenticated operator. No pairing secret, customer data or login
+token is persisted there. On remount it validates ownership and resumes the
+server sequence before syncing. A pending saved sale is restored as protected,
+not silently replaced. Practice transport does not read/write live binding
+metadata. Idle draft data still hides after heartbeat loss, with an explicit
+Screen paired / Ready for the next sale state instead of implying expiration.
+
+While the live cashier POS is open, a five-minute authenticated, same-origin,
+POS-authorized heartbeat renews its already-valid primary session when needed.
+It does not revive expired/revoked/reset sessions or change verifiedAt, issuedAt,
+MFA policy, profile version or the five-minute proof for sensitive actions.
+Logout/withdrawn permissions still apply. Identity token refresh uses the
+existing portal mechanism; OAuth configuration and scopes are unchanged.
+
+Production uses its existing stable commerce store. Preview bindings use a
+site-owned Netlify Blobs namespace scoped to the preview hostname, with atomic
+conditional writes. Only device identity is shared across releases. Each
+deployment selects its own draft/attempt snapshot; at most four snapshots are
+retained, and transaction/catalog/asset access always delegates to the existing
+commerce store. No payment history is migrated and no second database or payment
+engine is created. Removing a device revokes it across retained preview releases.
+The first rollout of this format needs one pairing; later updates to the same
+preview recover it. Login may still be necessary after browser suspension,
+credential expiration or a deployment's isolated security-store reset, but that
+does not require pairing the customer screen again.

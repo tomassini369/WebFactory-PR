@@ -21,6 +21,7 @@ async function setup(){
  const authorize=async siteId=>{if(siteId!==f.site.siteId)throw Object.assign(Error('Cross-tenant denied'),{status:403});return authorizeSiteUser(user,f.site,['owner','manager','employee','cashier'])};
  const settings=createPosSettingsHandler({authorize,getStore:()=>f.store});
  await context.route('**/.netlify/functions/**',async route=>{
+  if(route.request().method()==='POST'&&new URL(route.request().url()).pathname.endsWith('/client-customer-display')&&route.request().postDataJSON()?.action==='keepalive')return route.fulfill({json:{ok:true}});
   const req=route.request(),url=new URL(req.url()),name=url.pathname.split('/').at(-1),headers={...await req.allHeaders(),origin:root,cookie};
   const request=new Request(req.url(),{method:req.method(),headers,...(req.method()!=='GET'?{body:req.postData()}:{})});
   if(['client-pos-settings','client-kiosk'].includes(name)){

@@ -23,6 +23,7 @@ try{
   let data={ok:true},status=200
   if(req.method()!=='GET'){
    if(name==='portal-session'){assert.equal(req.postDataJSON()?.action,'refresh')}
+   else if(name==='client-customer-display'){assert.equal(req.postDataJSON()?.action,'keepalive');assert.equal(req.postDataJSON()?.siteId,site.siteId)}
    else if(name==='client-pos-sale-idempotent'){directCalls.push(req.postDataJSON());await new Promise(r=>setTimeout(r,150));if(scenario==='lost'){status=503;data={ok:false,message:'Isolated lost response'}}else if(scenario==='disabled'){status=403;data={ok:false,message:'Cashier POS disabled / POS del cajero deshabilitado.'}}else data={ok:true,receiptId:'receipt-qa',record:{transactionId:'txn-qa'}}}
    else if(name==='client-pos-checkout'){cardCalls.push(req.postDataJSON());data={ok:true,transactionId:'txn_pos_'+req.postDataJSON().saleAttemptId,checkoutUrl:'https://checkout.stripe.com/isolated-qa'}}
    else throw Error('Unexpected write in isolated POS QA: '+name)

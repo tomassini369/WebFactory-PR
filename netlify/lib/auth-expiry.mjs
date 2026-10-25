@@ -26,6 +26,7 @@ export async function cleanupAuthExpiry(store,{now=Date.now(),clock=Date.now,bud
             try{
               await withBookingLock(store,`${match[1]}lock`,async()=>{
                 const record=await store.get(index.key,{type:'json'});
+                if(record&&Number.isFinite(record.expiresAt)&&record.expiresAt>index.expiresAt){await store.delete(indexKey);summary.indexesDeleted++;return;}
                 if(record&&(!Number.isFinite(record.expiresAt)||record.expiresAt>now)){summary.invalid++;return;}
                 if(record){await store.delete(index.key);summary.deleted++;}
                 await store.delete(indexKey);summary.indexesDeleted++;

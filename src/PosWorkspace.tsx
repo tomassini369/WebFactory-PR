@@ -1,4 +1,4 @@
-import {useWorkspaceFetch} from './training/workspace-services'
+import {useWorkspaceFetch,useWorkspacePaused} from './training/workspace-services'
 import {usePractice} from './training/practice-context'
 import { useEffect,useRef, useState, type CSSProperties } from 'react'
 import { Search, ShoppingBag, Scissors, LayoutGrid, Plus, Minus, Trash2, CreditCard, Receipt, ArrowRight, ShieldCheck } from 'lucide-react'
@@ -32,7 +32,7 @@ async function posRequest(fetch:ReturnType<typeof useWorkspaceFetch>,url:string,
 const money=(cents:number)=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(cents/100)
 const cents=(value:string)=>value.trim()===''?0:/^\d+(?:\.\d{0,2})?$/.test(value)?Math.round(Number(value)*100):NaN
 export default function PosWorkspace({site,lang,operator,operations=posOperations(),onSaleComplete,onNavigate,canNavigate}:Props){
- const workspaceFetch=useWorkspaceFetch(),practice=usePractice()
+ const workspaceFetch=useWorkspaceFetch(),practice=usePractice(),workspacePaused=useWorkspacePaused()
  const request=(url:string,options?:RequestInit)=>posRequest(workspaceFetch,url,options)
  const es=lang==='es',t=(a:string,b:string)=>es?a:b
  const available:PosItem[]=(site.catalog||[]).filter((item:PosItem)=>item.active!==false)
@@ -49,7 +49,8 @@ export default function PosWorkspace({site,lang,operator,operations=posOperation
  const [locationId,setLocationId]=useState(site.business?.locations?.[0]?.id||'')
  const canCollect=['owner','admin'].includes(operator.role)||operator.permissions?.collect===true
  const canAdjust=['owner','admin'].includes(operator.role)
- const locked=busy||Boolean(attempt)||Boolean(remote)||!operations.cashierEnabled
+ const [restoringDisplay,setRestoringDisplay]=useState(false)
+ const locked=restoringDisplay||busy||Boolean(attempt)||Boolean(remote)||!operations.cashierEnabled
  const capabilities=posCapabilities(site,operations),profileCopy=posProfileCopy(capabilities,lang)
  const totals=estimatePosTotals(available,cart,canAdjust?cents(discount):0,canAdjust?cents(tip):0,site.taxConfig)
  const itemName=(item:PosItem)=>posItemName(item,lang)
@@ -100,6 +101,13 @@ export default function PosWorkspace({site,lang,operator,operations=posOperation
   finally{gate.current=false;setBusy(false)}
  }
  useEffect(()=>{
+  if(practice||workspacePaused||!operations.cashierEnabled)return
+  let active=true
+  const renew=()=>{if(active)void request('/.netlify/functions/client-customer-display',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({siteId:site.siteId,action:'keepalive'})}).catch(()=>{})}
+  renew();const timer=setInterval(renew,300000);window.addEventListener('focus',renew)
+  return()=>{active=false;clearInterval(timer);window.removeEventListener('focus',renew)}
+ },[site.siteId,practice,workspacePaused,operations.cashierEnabled])
+ useEffect(()=>{
   if(!attempt||attempt.kind!=='card')return
   let stopped=false,timer:ReturnType<typeof setTimeout>
   const poll=async()=>{if(stopped)return;await verify();if(!stopped)timer=setTimeout(poll,5000)}
@@ -126,7 +134,7 @@ export default function PosWorkspace({site,lang,operator,operations=posOperation
    {!canCollect&&<p className="pos-note" role="note">{t('El Dueño debe autorizar por separado el registro de cobros presenciales. Puedes preparar la venta.','The Owner must separately authorize recording in-person payments. You can prepare the sale.')}</p>}
    <div className="pos-checkout-actions"><button data-training="pos-pay" className="pos-primary" disabled={locked||!cart.length||totals.invalid||!canCollect} onClick={()=>submit('direct')}>{busy?t('Procesando…','Processing…'):practice?t('Completar cobro de práctica','Complete practice payment'):t('Registrar pago recibido','Record received payment')}<ArrowRight aria-hidden="true"/></button>{site.paymentRules?.methods?.stripe&&(site.paymentRules?.stripeConnectedAccountId||site.paymentRules?.stripeReady)?<button disabled={locked||!cart.length||totals.invalid} onClick={()=>submit('card')}><CreditCard aria-hidden="true"/>{t('Crear checkout Stripe','Create Stripe checkout')}</button>:<p className="pos-note">{t('Conecta Stripe en Pagos para crear un checkout de tarjeta.','Connect Stripe in Payments to create a card checkout.')}</p>}</div>
    {remote&&<div className="pos-remote"><p>{t('El QR aparece automáticamente en la pantalla vinculada. El cliente paga desde su celular; esta venta consulta la confirmación del servidor.','The QR appears automatically on the paired screen. The customer pays on their phone; this sale checks server confirmation.')}</p><button disabled={busy} onClick={verify}>{t('Verificar resultado en servidor','Check server result')}</button><strong>{status?.paymentStatus==='paid'?t('Pago confirmado','Payment confirmed'):t('Esperando verificación del servidor','Awaiting server verification')}</strong>{status&&<p>{status.paymentStatus==='paid'?t('Pagado','Paid'):t('Pendiente de verificación','Pending verification')} · {money(status.amountTotal)}</p>}{status?.paymentStatus!=='paid'&&<><a href={remote.checkoutUrl} target="_blank" rel="noopener noreferrer">{t('Abrir checkout','Open checkout')}</a><CopyButton value={remote.checkoutUrl} lang={lang}/><button onClick={()=>setShowQr(value=>!value)} aria-expanded={showQr}>{t('Mostrar QR','Show QR')}</button>{showQr&&<KioskCheckoutQR url={remote.checkoutUrl} lang={lang}/>}</>}{status?.paymentStatus==='paid'&&<button onClick={()=>{setRemote(null);setStatus(null);setReceiptId('');setShowQr(false)}}>{t('Nueva venta','New sale')}</button>}</div>}
-   {operations.displayEnabled&&<PosCustomerDisplay siteId={site.siteId} lang={lang} items={cart} customer={customer} discountCents={totals.discount} tipCents={totals.tip} attemptId={attempt?.id||displayAttempt} invalid={totals.invalid}/>}
+   {operations.displayEnabled&&<PosCustomerDisplay key={site.siteId+':'+operator.id} operatorId={operator.id} onRestoring={setRestoringDisplay} onRestoreAttempt={value=>{if(!value||attempt&&attempt.id!==value.id)return;saveAttempt({id:value.id,kind:value.kind,transactionId:value.transactionId});setDisplayAttempt(value.id);if(value.checkoutUrl)setRemote({transactionId:value.transactionId,checkoutUrl:value.checkoutUrl})}} siteId={site.siteId} lang={lang} items={cart} customer={customer} discountCents={totals.discount} tipCents={totals.tip} attemptId={attempt?.id||displayAttempt} invalid={totals.invalid}/>}
    <p className="pos-note">{t('IVU y total definitivo calculados en servidor. Solo el proveedor y el backend confirman pagos con tarjeta.','Final tax and total are calculated on the server. Card payments are confirmed only by the provider and backend.')}</p><details className="pos-device-note"><summary>Tap to Pay / Stripe Terminal</summary><p>{t('Safari no puede cobrar NFC. Tap to Pay requiere dispositivo, SDK y aplicación nativa compatibles; no está disponible en este POS web. ATH Móvil manual registra un pago que el cajero ya verificó, no consulta ATH Business.','Safari cannot collect NFC payments. Tap to Pay requires a supported device, SDK and native app; it is unavailable in this web POS. Manual ATH Móvil records a payment already verified by the cashier; it does not query ATH Business.')}</p></details>
   </aside></div>
  </PortalPanel>

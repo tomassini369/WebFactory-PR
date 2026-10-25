@@ -34,7 +34,8 @@ try{
   const context=await browser.newContext({viewport:{width,height:950},reducedMotion:'reduce',serviceWorkers:process.env.QA_OPAQUE_REVIEW==='1'?'allow':'block',...(isWebKit?{hasTouch:true}: {})}),page=await context.newPage();const errors=[];page.setDefaultNavigationTimeout(pageLoadTimeout);page.on('pageerror',e=>errors.push(e.message))
   await page.addInitScript(theme=>{if(window!==window.top)return;localStorage.setItem('webfactory-theme-v2',theme);sessionStorage.clear()},theme)
   await page.route('**/.netlify/functions/**',async route=>{
-   const req=route.request(),url=new URL(req.url()),name=url.pathname.split('/').at(-1)
+   if(route.request().method()==='POST'&&new URL(route.request().url()).pathname.endsWith('/client-customer-display')&&route.request().postDataJSON()?.action==='keepalive')return route.fulfill({json:{ok:true}});
+  const req=route.request(),url=new URL(req.url()),name=url.pathname.split('/').at(-1)
    if(name==='client-commerce-admin'&&req.method()==='POST'&&balanceMode){
     const payload=req.postDataJSON();assert.equal(payload.transactionId,'fixture-balance');assert.equal(payload.siteId,site.siteId);assert.equal(payload.kind,'booking');balanceActions.push(payload.action)
     if(payload.action==='review_booking_balance'){assert.equal(payload.expectedBalanceAttempt,'a'.repeat(64));balanceReviewed=true}

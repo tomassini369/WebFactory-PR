@@ -8,7 +8,7 @@ function fixture(){
  const site={siteId:'tenant-a',slug:'fixture',business:{name:'Isolated business'},members:[{email:'owner@example.invalid',role:'owner'}],catalog:[{id:'p',name:'Product',nameEs:'Producto',price:12.34,type:'product'},{id:'s',name:'Service',price:9,taxable:false,type:'service'}],taxConfig:{enabled:true,stateRate:10.5,municipalRate:1}};
  const user=()=>({id:actor,email:'owner@example.invalid'});
  const store={get:async key=>structuredClone(rows.get(key)?.data||null),getWithMetadata:async key=>structuredClone(rows.get(key)||null),setJSON:async(key,data,options)=>{const row=rows.get(key);if(options.onlyIfNew&&row||options.onlyIfMatch&&row?.etag!==options.onlyIfMatch)return {modified:false};rows.set(key,{data:structuredClone(data),etag:String(++revision)});return {modified:true}}};
- const handler=createCustomerDisplayHandler({getStore:()=>store,getSite:async id=>id===site.siteId?site:null,authorize:async id=>{if(id!==site.siteId)throw Object.assign(Error('Wrong tenant'),{status:403});return {site,user:user(),membership:{role}}},clock:()=>now});
+ const handler=createCustomerDisplayHandler({renewSession:async()=>{},getStore:()=>store,getSite:async id=>id===site.siteId?site:null,authorize:async id=>{if(id!==site.siteId)throw Object.assign(Error('Wrong tenant'),{status:403});return {site,user:user(),membership:{role}}},clock:()=>now});
  const post=(input,cookie='',origin='https://example.invalid')=>handler(new Request('https://example.invalid/.netlify/functions/client-customer-display',{method:'POST',headers:{Origin:origin,Cookie:cookie,'Content-Type':'application/json'},body:JSON.stringify(input)}));
  const get=cookie=>handler(new Request('https://example.invalid/.netlify/functions/client-customer-display',{headers:{Cookie:cookie}}));
  const create=async()=>{const r=await post({action:'create',siteId:site.siteId});assert.equal(r.status,200);const data=await r.json(),[id,token]=new URL(data.pairUrl).hash.slice(6).split('.');return {id,token}};
@@ -26,7 +26,7 @@ test('synchronization validates trusted role, tenant, operator and sequence; cat
 });
 test('public display hides stale sales, rejects expired links, revoked devices and cashier membership removal',async()=>{
  const f=fixture(),s=await f.create(),{cookie}=await f.pair(s);await f.sync(s.id,1);f.setNow(1020001);const stale=await(await f.get(cookie)).json();assert.equal(stale.payment,'disconnected');assert.equal(stale.totals,null);f.setNow(1000001);f.site.members=[];assert.equal((await f.get(cookie)).status,403);f.site.members=[{email:'owner@example.invalid',role:'owner'}];await f.post({action:'revoke',siteId:f.site.siteId,id:s.id});assert.equal((await f.get(cookie)).status,401);
- const g=fixture(),u=await g.create();g.setNow(1600001);assert.equal((await g.post({action:'pair',...u})).status,401);const h=fixture(),v=await h.create(),p=await h.pair(v);h.setNow(29800001);assert.equal((await h.get(p.cookie)).status,401);
+ const g=fixture(),u=await g.create();g.setNow(1600001);assert.equal((await g.post({action:'pair',...u})).status,401);const h=fixture(),v=await h.create(),p=await h.pair(v);h.setNow(29800001);assert.equal((await h.get(p.cookie)).status,200);
 });
 test('payment and receipt come only from stored transactions and redact personal/payment secrets',async()=>{
  const f=fixture(),s=await f.create(),{cookie}=await f.pair(s);await f.sync(s.id,1,{attemptId:'attempt-123'});let d=await(await f.get(cookie)).json();assert.equal(d.payment,'pending');assert.equal(d.receipt,null);
@@ -75,4 +75,25 @@ test('pending Client Info comes from the frozen sale and is redacted on payment 
  const record={siteId:f.site.siteId,source:'pos_remote',createdBy:'owner@example.invalid',paymentStatus:'pending',status:'payment_pending',items:[],amountTotal:100,customer:{name:'Saved buyer',email:'saved@example.invalid',phone:'7870000000',secret:'hidden'},createdAt:new Date(1000000).toISOString()};f.rows.set('tenant-a/transactions/txn_pos_attempt-client.json',{data:record,etag:'client'});
  let d=await(await f.get(cookie)).json();assert.equal(d.totals.customer.name,'Saved buyer');assert(!JSON.stringify(d).includes('Changed draft'));assert(!JSON.stringify(d).includes('hidden'));
  record.paymentStatus='paid';record.receiptId='receipt-client';record.paidAt=new Date(1000000).toISOString();d=await(await f.get(cookie)).json();assert.deepEqual(d.totals.customer,{name:'',email:'',phone:''});f.setNow(1003000);d=await(await f.get(cookie)).json();assert.equal(d.totals.total,0);assert(!JSON.stringify(d).includes('saved@example.invalid'));
+});
+
+test('paired devices survive long inactivity and renew only their HttpOnly cookie; resume is scoped and revocation still wins',async()=>{
+ const f=fixture(),s=await f.create(),{cookie}=await f.pair(s);f.setNow(1000000+365*86400000);
+ const response=await f.get(cookie);assert.equal(response.status,200);assert.match(response.headers.get('set-cookie'),/Max-Age=34560000/);assert.match(response.headers.get('set-cookie'),/HttpOnly; Secure; SameSite=Strict/);
+ const resumed=await f.post({siteId:f.site.siteId,action:'resume',id:s.id});assert.equal(resumed.status,200);assert.equal((await resumed.json()).paired,true);
+ f.setActor('other');assert.equal((await f.post({siteId:f.site.siteId,action:'resume',id:s.id})).status,403);f.setActor('owner');
+ await f.post({siteId:f.site.siteId,action:'revoke',id:s.id});assert.equal((await f.get(cookie)).status,401);assert.equal((await f.post({siteId:f.site.siteId,action:'resume',id:s.id})).status,403);
+});
+test('resume returns a protected pending sale rather than silently starting a different charge',async()=>{
+ const f=fixture(),s=await f.create();await f.pair(s);await f.sync(s.id,5,{attemptId:'restore-attempt'});
+ f.rows.set('tenant-a/transactions/txn_pos_restore-attempt.json',{data:{siteId:f.site.siteId,source:'pos_remote',createdBy:'owner@example.invalid',paymentStatus:'pending',status:'payment_pending',amountTotal:100,items:[]},etag:'restore'});
+ const d=await(await f.post({siteId:f.site.siteId,action:'resume',id:s.id})).json();assert.equal(d.sequence,5);assert.equal(d.activeAttempt.id,'restore-attempt');assert.equal(d.activeAttempt.kind,'card');assert.equal(d.activeAttempt.transactionId,'txn_pos_restore-attempt');
+});
+
+test('POS keepalive requires authenticated POS capability and cannot renew on cross-origin or denied requests',async()=>{
+ const f=fixture();let calls=0;
+ const request=origin=>new Request('https://example.invalid/.netlify/functions/client-customer-display',{method:'POST',headers:{Origin:origin,'Content-Type':'application/json'},body:JSON.stringify({action:'keepalive',siteId:f.site.siteId})});
+ const authorized=createCustomerDisplayHandler({getStore:()=>f.store,authorize:async(id,cap)=>{assert.equal(id,f.site.siteId);assert.equal(cap,'pos');return {site:f.site,user:{id:'owner'}}},renewSession:async user=>{assert.equal(user.id,'owner');calls++}});
+ assert.equal((await authorized(request('https://foreign.invalid'))).status,403);assert.equal(calls,0);assert.equal((await authorized(request('https://example.invalid'))).status,200);assert.equal(calls,1);
+ const denied=createCustomerDisplayHandler({getStore:()=>f.store,authorize:async()=>{throw Object.assign(Error('Denied'),{status:401})},renewSession:async()=>{throw Error('Must not renew')}});assert.equal((await denied(request('https://example.invalid'))).status,401);
 });

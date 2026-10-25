@@ -3,6 +3,7 @@ import {calculateTax} from './webfactory-v3-domain.mjs';
 import {requirePosAdjustments} from './pos-permissions.mjs';
 import {commerceKey} from './client-store.mjs';
 export const displayFail=(message,status=400)=>Object.assign(new Error(message),{status});
+export const displayExpired=(state,now)=>!state||state.persistent!==true&&(!Number.isFinite(state.expiresAt)||now>=state.expiresAt);
 export const displayKey=id=>`pos-displays/${id}.json`;
 export const validDisplayId=id=>/^[a-f0-9]{32}$/.test(id||'');
 export const hashDisplayToken=token=>crypto.createHash('sha256').update(token).digest('hex');
@@ -55,7 +56,7 @@ export async function displaySale(store,state){
  const paid=record.paymentStatus==='paid'||record.paymentStatus==='paid_in_person'&&record.status==='completed';
  const items=(record.items||[]).map(x=>({id:x.id,nameEn:String(x.name||x.id).slice(0,220),nameEs:String(x.name||x.id).slice(0,220),quantity:x.quantity,unitAmount:x.unitAmount}));
  const totals={customer:displayCustomer(paid?null:record.customer),items,subtotal:Number(record.subtotal||0),discount:Number(record.discounts||0),tip:Number(record.tip||0),tax:Number(record.tax||0),total:Number(record.amountTotal||0),taxIncluded:Boolean(record.pricesIncludeTax)};
- return {payment:paid?'paid':['expired','cancelled','payment_failed','failed'].includes(record.status)?'failed':'pending',totals,checkout:displayCheckout(record,paid),completedAt:record.v3ArtifactsCreatedAt||record.paidAt||record.createdAt,receipt:paid&&record.receiptId?{id:record.receiptId,createdAt:record.paidAt||record.createdAt}:null};
+ return {payment:paid?'paid':['expired','cancelled','payment_failed','failed'].includes(record.status)?'failed':'pending',source:record.source,transactionId:record.transactionId||id,totals,checkout:displayCheckout(record,paid),completedAt:record.v3ArtifactsCreatedAt||record.paidAt||record.createdAt,receipt:paid&&record.receiptId?{id:record.receiptId,createdAt:record.paidAt||record.createdAt}:null};
 }
 export async function publicDisplayView(store,state,site,now){
  let sale=await displaySale(store,state);
