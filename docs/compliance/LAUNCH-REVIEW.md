@@ -57,3 +57,7 @@ Primary sources checked: DACO consumer guidance https://www.daco.pr.gov/consumid
 ## Operational launch decision
 
 Technical corrections do not equal unconditional launch approval. Keep Preview until owner/counsel complete the external blockers and review the evidence. Claims administration/counter-notices currently have authenticated APIs and written operating instructions; they do not yet have a dedicated case-management console. No official claim handling or statutory deadline determination is automated. Pairing persists independently of screen customer data; expired privileged sessions remain protected. Google OAuth configuration and Google Limited Use paragraphs are unchanged.
+
+## Preview inspection and additional regressions
+
+Implementation commit1e704a512f5b34cbc87d167e231c6e4781d15189 deployed READY at6ade37da6ec54e367656137d with preview-barber plugin success. Actual preview /copyright,/privacy,/terms,/refund-policy returned200; anonymous claim/profile reads returned401. Existing protected admin/payment/export probes9/9 passed. Marketplace browser regression390/1440 ES/EN light/dark passed, including history, original landing video, image recovery and accessibility;390px Spanish dark screenshot visually inspected with original logo and copyright footer visible. Additional390px workspace regressions cover permissions, navigation and retained Builder state. Bilingual consumer/business instructions are in USER-GUIDE.es-en.md. Live network details and final revision are recorded separately in NETWORK-AUDIT.md and the PR delivery report.

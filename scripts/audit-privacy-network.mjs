@@ -3,7 +3,9 @@
 import {chromium} from 'playwright';
 const origin=process.argv[2];
 if(!/^https:\/\/[^/]+$/.test(origin||''))throw Error('Pass one HTTPS origin');
-const paths=['/','/crear','/cuenta','/privacy','/terms','/refund-policy','/client-admin/','/webfactory-admin/','/builder','/kiosk','/customer-display','/sites/faro-norte-preview'];
+const defaultPaths=['/','/crear','/cuenta','/privacy','/terms','/refund-policy','/copyright','/client-admin/','/webfactory-admin/','/builder','/kiosk','/customer-display','/sites/faro-norte-preview'];
+const paths=process.argv.slice(3).length?process.argv.slice(3):defaultPaths;
+if(paths.some(path=>!/^\/[a-z0-9/-]*$/i.test(path)))throw Error('Pass public route paths without query strings');
 const proxyUrl=process.env.HTTPS_PROXY||process.env.https_proxy;
 const proxy=proxyUrl?new URL(proxyUrl):null;
 const browser=await chromium.launch({headless:true,executablePath:process.env.QA_CHROMIUM_PATH||undefined,args:['--no-sandbox'],...(proxy?{proxy:{server:proxy.origin,...(proxy.username?{username:decodeURIComponent(proxy.username),password:decodeURIComponent(proxy.password)}:{})}}:{})});
