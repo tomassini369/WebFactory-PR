@@ -34,6 +34,12 @@ export function displayDraft(site,membership,input){
  if(![subtotal,discount,tip,tax,total].every(Number.isSafeInteger))throw displayFail('Invalid total.');
  return {items:items.map(({taxable,taxRateOverride,...item})=>item),subtotal,discount,tip,tax,total,taxIncluded:Boolean(site.taxConfig?.pricesIncludeTax)};
 }
+function displayCheckout(record, paid) {
+ if(paid||record.source!=='pos_remote'||record.paymentStatus!=='pending'||record.status!=='payment_pending')return null;
+ if(!record.checkoutExpiresAt||!Number.isFinite(Date.parse(record.checkoutExpiresAt))||Date.parse(record.checkoutExpiresAt)<=Date.now())return null;
+ try{const url=new URL(record.checkoutUrl);if(url.protocol==='https:'&&url.hostname==='checkout.stripe.com'&&!url.port&&!url.username&&!url.password&&/^\/(?:c\/)?pay\//.test(url.pathname))return {url:url.href};}catch{}
+ return null;
+}
 export async function displaySale(store,state){
  if(!state.attemptId)return null;
  const marker=await store.get(commerceKey(state.siteId,'pos-attempts',state.attemptId),{type:'json'});
@@ -45,10 +51,10 @@ export async function displaySale(store,state){
  const paid=record.paymentStatus==='paid'||record.paymentStatus==='paid_in_person'&&record.status==='completed';
  const items=(record.items||[]).map(x=>({id:x.id,nameEn:String(x.name||x.id).slice(0,220),nameEs:String(x.name||x.id).slice(0,220),quantity:x.quantity,unitAmount:x.unitAmount}));
  const totals={items,subtotal:Number(record.subtotal||0),discount:Number(record.discounts||0),tip:Number(record.tip||0),tax:Number(record.tax||0),total:Number(record.amountTotal||0),taxIncluded:Boolean(record.pricesIncludeTax)};
- return {payment:paid?'paid':['expired','cancelled','payment_failed','failed'].includes(record.status)?'failed':'pending',totals,receipt:paid&&record.receiptId?{id:record.receiptId,createdAt:record.paidAt||record.createdAt}:null};
+ return {payment:paid?'paid':['expired','cancelled','payment_failed','failed'].includes(record.status)?'failed':'pending',totals,checkout:displayCheckout(record,paid),receipt:paid&&record.receiptId?{id:record.receiptId,createdAt:record.paidAt||record.createdAt}:null};
 }
 export async function publicDisplayView(store,state,site,now){
  const sale=await displaySale(store,state);
  const stale=now-state.updatedAt>20000;
- return {business:{nameEn:site.business?.nameEn||site.business?.name||site.slug,nameEs:site.business?.nameEs||site.business?.nameEn||site.business?.name||site.slug,logoAssetKey:site.business?.logoAssetKey||'',siteId:site.siteId,accent:site.design?.secondary||''},serverNow:now,updatedAt:state.updatedAt,stale,payment:stale?'disconnected':sale?.payment||'draft',totals:stale?null:sale?.totals||state.draft,receipt:stale?null:sale?.receipt||null};
+ return {business:{nameEn:site.business?.nameEn||site.business?.name||site.slug,nameEs:site.business?.nameEs||site.business?.nameEn||site.business?.name||site.slug,logoAssetKey:site.business?.logoAssetKey||'',siteId:site.siteId,accent:site.design?.secondary||''},serverNow:now,updatedAt:state.updatedAt,stale,payment:stale?'disconnected':sale?.payment||'draft',totals:stale?null:sale?.totals||state.draft,receipt:stale?null:sale?.receipt||null,checkout:stale?null:sale?.checkout||null};
 }

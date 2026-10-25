@@ -41,3 +41,14 @@ test('draft taxes match existing POS estimates, included tax, exemptions and dis
 test('CSRF, missing identity, malformed payload and invalid quantities are rejected',async()=>{
  const f=fixture();assert.equal((await f.post({action:'create',siteId:'tenant-a'},'','https://foreign.invalid')).status,403);assert.equal((await f.post(null)).status,400);assert.equal((await f.post([])).status,400);for(const items of [[{id:'p',quantity:1},{id:'p',quantity:2}],[{id:'p',quantity:0}],[{id:'missing',quantity:1}]])assert.throws(()=>displayDraft(f.site,{role:'owner'},{items}));f.setActor(null);assert.equal((await f.post({action:'create',siteId:'tenant-a'})).status,403);assert.equal(hashDisplayToken('secret').length,64);
 });
+
+test('paired screen exposes only pending server-owned Stripe checkout, hides paid, expired, stale and unsafe links',async()=>{
+ const f=fixture(),s=await f.create(),{cookie}=await f.pair(s);await f.sync(s.id,1,{attemptId:'attempt-qr'});
+ const record={siteId:f.site.siteId,source:'pos_remote',createdBy:'owner@example.invalid',paymentStatus:'pending',status:'payment_pending',checkoutUrl:'https://checkout.stripe.com/c/pay/cs_test_fixture#fragment',checkoutExpiresAt:new Date(Date.now()+600000).toISOString(),items:[],amountTotal:2500,customer:{email:'private@example.invalid'}};
+ f.rows.set('tenant-a/transactions/txn_pos_attempt-qr.json',{data:record,etag:'qr'});
+ let d=await(await f.get(cookie)).json();assert.equal(d.checkout.url,record.checkoutUrl);assert(!JSON.stringify(d).includes('private@example.invalid'));
+ for(const url of ['javascript:alert(1)','https://checkout.stripe.com.evil.invalid/c/pay/x','https://user:pass@checkout.stripe.com/c/pay/x','https://evil.invalid/pay/x']){record.checkoutUrl=url;assert.equal((await(await f.get(cookie)).json()).checkout,null)}
+ record.checkoutUrl='https://checkout.stripe.com/c/pay/cs_test_fixture';record.checkoutExpiresAt=new Date(0).toISOString();assert.equal((await(await f.get(cookie)).json()).checkout,null);
+ record.checkoutExpiresAt=new Date(Date.now()+600000).toISOString();for(const status of ['cancelled','expired','payment_failed']){record.status=status;assert.equal((await(await f.get(cookie)).json()).checkout,null)}
+ record.status='payment_pending';record.paymentStatus='paid';assert.equal((await(await f.get(cookie)).json()).checkout,null);record.paymentStatus='pending';f.setNow(1020001);assert.equal((await(await f.get(cookie)).json()).checkout,null);
+});

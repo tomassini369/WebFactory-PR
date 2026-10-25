@@ -73,8 +73,9 @@ export function createPosCheckoutHandler({ authorize = requireSiteCapability, ge
     const transactionId=`txn_pos_${saleAttemptId}`;
     const params=new URLSearchParams();
     params.set("mode","payment");
-    params.set("success_url",`${publicBaseUrl()}/client-admin?pos=success&session_id={CHECKOUT_SESSION_ID}`);
-    params.set("cancel_url",`${publicBaseUrl()}/client-admin?pos=cancelled`);
+    const returnOrigin=globalThis.Netlify?.context?.deploy?.context==='deploy-preview'?new URL(req.url).origin:publicBaseUrl();
+    params.set("success_url",`${returnOrigin}/client-admin?siteId=${encodeURIComponent(site.siteId)}&pos=success&session_id={CHECKOUT_SESSION_ID}`);
+    params.set("cancel_url",`${returnOrigin}/client-admin?siteId=${encodeURIComponent(site.siteId)}&pos=cancelled`);
     params.set("customer_email",customer.email);
     params.set("client_reference_id",transactionId);
     params.set("metadata[flow]","webfactory_client_commerce");
