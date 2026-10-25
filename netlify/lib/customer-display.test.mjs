@@ -30,7 +30,7 @@ test('public display hides stale sales, rejects expired links, revoked devices a
 });
 test('payment and receipt come only from stored transactions and redact personal/payment secrets',async()=>{
  const f=fixture(),s=await f.create(),{cookie}=await f.pair(s);await f.sync(s.id,1,{attemptId:'attempt-123'});let d=await(await f.get(cookie)).json();assert.equal(d.payment,'pending');assert.equal(d.receipt,null);
- const record={siteId:f.site.siteId,source:'pos_remote',createdBy:'owner@example.invalid',paymentStatus:'pending',status:'payment_pending',customer:{email:'private@example.invalid'},checkoutUrl:'secret',items:[{id:'p',name:'Stored Product',quantity:1,unitAmount:1234}],subtotal:1234,discounts:0,tip:50,tax:142,amountTotal:1426,receiptId:'server-receipt',createdAt:'2026-10-10T12:00:00Z'};
+ const record={siteId:f.site.siteId,source:'pos_remote',createdBy:'owner@example.invalid',paymentStatus:'pending',status:'payment_pending',customer:{email:'private@example.invalid'},checkoutUrl:'secret',items:[{id:'p',name:'Stored Product',quantity:1,unitAmount:1234}],subtotal:1234,discounts:0,tip:50,tax:142,amountTotal:1426,receiptId:'server-receipt',createdAt:new Date(1000000).toISOString()};
  f.rows.set('tenant-a/transactions/txn_pos_attempt-123.json',{data:record,etag:'transaction'});d=await(await f.get(cookie)).json();assert.equal(d.payment,'pending');assert.equal(d.receipt,null);record.paymentStatus='paid';record.status='confirmed';d=await(await f.get(cookie)).json();assert.equal(d.payment,'paid');assert.equal(d.totals.total,1426);assert.equal(d.receipt.id,'server-receipt');assert(!JSON.stringify(d).includes('private'));assert(!JSON.stringify(d).includes('secret'));record.siteId='tenant-b';assert.equal((await f.get(cookie)).status,403);
 });
 test('direct in-person processing stays pending until backend completion; marker scopes the confirmed sale',async()=>{
@@ -53,11 +53,11 @@ test('paired screen exposes only pending server-owned Stripe checkout, hides pai
  record.status='payment_pending';record.paymentStatus='paid';assert.equal((await(await f.get(cookie)).json()).checkout,null);record.paymentStatus='pending';f.setNow(1020001);let pending=await(await f.get(cookie)).json();assert.equal(pending.checkout.url,record.checkoutUrl);assert.equal(pending.cashierConnected,false);record.checkoutExpiresAt=new Date(0).toISOString();assert.equal((await(await f.get(cookie)).json()).checkout,null);
 });
 
-test('suspended cashier does not hide a recently confirmed receipt, but drafts and old receipts expire',async()=>{
+test('suspended cashier displays confirmation then automatically clears the completed sale',async()=>{
  const f=fixture(),s=await f.create(),{cookie}=await f.pair(s);await f.sync(s.id,1,{attemptId:'attempt-receipt'});
  const record={siteId:f.site.siteId,source:'pos_remote',createdBy:'owner@example.invalid',paymentStatus:'paid',status:'confirmed',items:[],amountTotal:2500,receiptId:'receipt-one',paidAt:new Date(1020001).toISOString()};
  f.rows.set('tenant-a/orders/txn_pos_attempt-receipt.json',{data:record,etag:'paid'});f.setNow(1020001);
  let d=await(await f.get(cookie)).json();assert.equal(d.stale,false);assert.equal(d.payment,'paid');assert.equal(d.receipt.id,'receipt-one');assert.equal(d.checkout,null);assert.equal(d.cashierConnected,false);
- f.setNow(1020001+5*60000);d=await(await f.get(cookie)).json();assert.equal(d.stale,true);assert.equal(d.receipt,null);
+ f.setNow(1020001+3000);d=await(await f.get(cookie)).json();assert.equal(d.stale,false);assert.equal(d.payment,'draft');assert.equal(d.totals.total,0);assert.deepEqual(d.totals.items,[]);assert.equal(d.receipt,null);assert.equal(d.checkout,null);
  f.site.members=[];assert.equal((await f.get(cookie)).status,403);
 });

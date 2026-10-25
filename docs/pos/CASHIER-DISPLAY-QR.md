@@ -36,9 +36,18 @@ or pay an uncertain existing transaction a second time.
 
 A paired device independently reads canonical saved order/payment state even
 when Safari suspends the cashier tab. A valid pending Checkout remains visible
-until its server expiry. Confirmed receipt display remains available for five
-minutes from the saved paid timestamp; then the old stale view is hidden. Drafts
+until its server expiry. The confirmed sale is shown briefly, then the display projects an empty sale
+after three seconds from server artifact/paid time, even if the cashier is
+suspended. It does not erase the receipt or modify the transaction. Drafts
 still hide after 20 seconds without cashier synchronization. Membership,
 revocation and eight-hour device expiry remain enforced on every request.
 The display distinguishes an inactive cashier tab from an unavailable server.
 This is not a keep-alive workaround or a client-side payment confirmation.
+
+On backend confirmation, the cashier now clears the remote Checkout, status,
+inline QR, active/display attempt, cart and customer fields together. The
+confirmation receipt reference remains visible until the next sale. There is
+no required New sale click and the previous remote Checkout cannot keep the
+catalog locked. New sales receive a new protected attempt identifier. Browser
+regressions verify automatic unlock, cleared customer fields, adding the next
+item and completing the next sale, plus paired display automatic clearing.
