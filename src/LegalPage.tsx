@@ -1,9 +1,11 @@
 import { useEffect } from 'react'
 import {usePortalLanguage} from './portal-language'
 import './legal.css'
+import {legalRevision,legalSupplement,copyrightCopy} from './legal-supplement'
+import ContentClaimForm from './ContentClaimForm'
 import { AdaptiveLogo, ThemeToggle } from './theme'
 
-type LegalKind='privacy'|'terms'|'refund'
+type LegalKind='privacy'|'terms'|'refund'|'copyright'
 
 const updated={en:'Effective: September 21, 2026 · Last updated: October 4, 2026',es:'Vigente: 21 de septiembre de 2026 · Última actualización: 4 de octubre de 2026'}
 const privacyUpdated={en:'Effective: September 21, 2026 · Last updated: October 23, 2026',es:'Vigente: 21 de septiembre de 2026 · Última actualización: 23 de octubre de 2026'}
@@ -40,7 +42,7 @@ const copy={
           'Permissions are separate: webfactory.read, webfactory.propose and webfactory.execute. Execute is never added automatically. When you explicitly authorize Execute, supported normal actions can write directly to the authorized business from ChatGPT without a separate WebFactory approval page. Sensitive, destructive, access, billing, or financial actions pause and require the exact additional confirmation shown in the same ChatGPT conversation. You can revoke Execute alone at /chatgpt. Passwords, API keys, secrets, source code, terminal and server access remain outside the connection.',
           'Business owners may authorize ChatGPT for one selected business. Platform administrators may separately authorize platform-wide access. Information returned by the connection is shared with ChatGPT and is subject to its own terms and privacy policies.',
           'WebFactory uses OAuth with scoped connections and stores hashed connection tokens. Each action rechecks the current user, business membership, permission scope and supported input. Normal configuration writes use revision controls and verification after writing. Sensitive actions store the exact pending payload so the later chat confirmation cannot substitute a different action.',
-          'Depending on the tools requested and authorized scope, shared information can include business configuration, customer contact details, bookings, orders, receipts, employee compensation, approved hours and accounting records. The business must have authority to disclose this information and should avoid unnecessary personal information in prompts.',
+          'Depending on the tools requested and authorized scope, shared information can include business configuration, customer contact details, bookings, orders, receipts and permitted business operational records. The business must have authority to disclose this information and should avoid unnecessary personal information in prompts.',
           'WebFactory records connection authorization, scope, expiry and revocation, plus MCP action identifiers, confirmation status when required, results and audit information needed to operate and secure delegated actions. Revoking a connection does not undo completed actions or automatically erase records or copies already processed by OpenAI; manage conversation data separately in ChatGPT.',
           'This connection is separate from Google Calendar and Business Email authorization. Connecting ChatGPT does not itself authorize either Google integration.'
         ]],
@@ -233,7 +235,7 @@ const copy={
           'Los permisos están separados: webfactory.read, webfactory.propose y webfactory.execute. Execute nunca se añade automáticamente. Cuando autorizas Execute explícitamente, las acciones normales compatibles pueden escribir directamente en el negocio autorizado desde ChatGPT sin una página adicional de aprobación en WebFactory. Las acciones sensibles, destructivas, de acceso, facturación o financieras se detienen y requieren la confirmación adicional exacta mostrada en la misma conversación de ChatGPT. Puedes revocar solo Execute en /chatgpt. Contraseñas, API keys, secretos, código fuente, terminal y acceso al servidor permanecen fuera de la conexión.',
           'Los dueños pueden autorizar ChatGPT para un negocio seleccionado. Los administradores de la plataforma pueden autorizar por separado acceso a toda la plataforma. La información consultada se comparte con ChatGPT y está sujeta a sus propios términos y políticas de privacidad.',
           'WebFactory utiliza OAuth con conexiones de alcance limitado y almacena hashes de los tokens. Cada acción vuelve a validar el usuario actual, membresía del negocio, alcance autorizado y datos permitidos. Los cambios normales de configuración utilizan control de revisión y verificación luego de escribir. Las acciones sensibles almacenan el payload exacto pendiente para que la confirmación posterior en el chat no pueda sustituir una acción diferente.',
-          'Según la herramienta solicitada y el alcance autorizado, la información compartida puede incluir configuración del negocio, datos de contacto de clientes, reservas, órdenes, recibos, compensación de empleados, horas aprobadas y registros contables. El negocio debe tener autoridad para divulgar estos datos y evitar información personal innecesaria en las instrucciones.',
+          'Según la herramienta solicitada y el alcance autorizado, la información compartida puede incluir configuración del negocio, datos de contacto de clientes, reservas, órdenes, recibos y registros operacionales autorizados del negocio. El negocio debe tener autoridad para divulgar estos datos y evitar información personal innecesaria en las instrucciones.',
           'WebFactory registra autorización, alcance, vencimiento y revocación de conexiones, además de identificadores de acciones MCP, estado de confirmación cuando aplique, resultados y auditoría necesaria para operar y proteger las acciones delegadas. Revocar no revierte acciones completadas ni elimina automáticamente registros o copias ya procesadas por OpenAI; administra los datos de conversaciones por separado en ChatGPT.',
           'Esta conexión es independiente de las autorizaciones de Google Calendar y Business Email. Conectar ChatGPT no autoriza por sí solo ninguna de esas integraciones.'
         ]],
@@ -399,15 +401,19 @@ const copy={
 
 export default function LegalPage({kind}:{kind:LegalKind}){
   const [lang,setLang]=usePortalLanguage()
-  const page=copy[lang][kind]
+  const page=kind==='copyright'?copyrightCopy[lang]:copy[lang][kind]
+  const supplement=kind==='copyright'?[]:legalSupplement[lang][kind]
   useEffect(()=>{document.documentElement.lang=lang;document.title=`${page.title} | WebFactory PR`},[lang,page.title])
   return <main className="legal-page">
     <header className="legal-top"><a href="/" className="legal-logo"><AdaptiveLogo alt="WebFactory PR"/></a><nav><a href="/templates">Templates</a><a href="/builder">Builder</a><a href="/client-admin">Log In</a><div className="legal-lang"><button className={lang==='en'?'active':''} onClick={()=>setLang('en')}>EN</button><button className={lang==='es'?'active':''} onClick={()=>setLang('es')}>ES</button></div><ThemeToggle/></nav></header>
-    <section className="legal-hero"><div><p>WEBFACTORY PR · LEGAL</p><h1>{page.title}</h1><span>{kind === 'privacy' ? privacyUpdated[lang] : kind === 'refund' ? updated[lang].replace('October 4', 'October 2').replace('4 de octubre', '2 de octubre') : updated[lang]}</span><p>{page.intro}</p></div></section>
+    <section className="legal-hero"><div><p>WEBFACTORY PR · LEGAL</p><h1>{page.title}</h1><span>{kind === 'copyright' ? '' : kind === 'privacy' ? privacyUpdated[lang] : kind === 'refund' ? updated[lang].replace('October 4', 'October 2').replace('4 de octubre', '2 de octubre') : updated[lang]}</span><p>{page.intro}</p></div></section>
     <article className="legal-content">
-      {page.sections.map(([title,paragraphs])=><section key={title}><h2>{title}</h2>{paragraphs.map((paragraph,index)=><p key={index}>{paragraph}</p>)}</section>)}
+      <p role="note">{legalRevision[lang]}</p>
+      {[...page.sections,...supplement].map(([title,paragraphs])=><section key={title}><h2>{title}</h2>{paragraphs.map((paragraph,index)=><p key={index}>{paragraph}</p>)}</section>)}
+      {kind==='copyright'&&<ContentClaimForm lang={lang}/>}
+      <p><a href="/copyright">{lang==='es'?'Copyright y reclamaciones de contenido':'Copyright and content complaints'}</a></p>
       <aside><strong>{lang==='es'?'¿Necesitas ayuda?':'Need help?'}</strong><p>{lang==='es'?'Contáctanos sobre estas políticas o tu cuenta.':'Contact us about these policies or your account.'}</p><a href="mailto:info@webfactorypr.com">info@webfactorypr.com</a></aside>
     </article>
-    <footer className="legal-footer"><a href="/privacy" target="_blank" rel="noreferrer">Privacy</a><a href="/terms" target="_blank" rel="noreferrer">Terms</a><a href="/refund-policy" target="_blank" rel="noreferrer">Refund Policy</a><span>© 2026 WebFactory PR</span></footer>
+    <footer className="legal-footer"><a href="/privacy" target="_blank" rel="noreferrer">Privacy</a><a href="/terms" target="_blank" rel="noreferrer">Terms</a><a href="/refund-policy" target="_blank" rel="noreferrer">Refund Policy</a><a href="/copyright">Copyright</a><span>© 2026 WebFactory PR</span></footer>
   </main>
 }

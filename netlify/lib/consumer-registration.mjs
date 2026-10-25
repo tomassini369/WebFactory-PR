@@ -1,3 +1,4 @@
+import {consumerConsent} from './consumer-policy.mjs';
 import {assertSameOrigin} from './client-auth.mjs';
 import {authJson,readAuthPayload} from './auth-gateway.mjs';
 import {validEmail} from './platform-utils.mjs';
@@ -11,14 +12,15 @@ export function consumerRegistration(identity){return async(req,context)=>{
    await identity.confirm(p.token,context);
    return authJson({ok:true});
   }
+  const consent=consumerConsent(p);
   const email=typeof p.email==='string'?p.email.trim().toLowerCase():'';
   if(!validEmail(email)||email.length>320||typeof p.password!=='string'||Array.from(p.password).length<15||p.password.length>1024||typeof p.name!=='string'||!p.name.trim()||p.name.length>100||p.acceptedTerms!==true)return authJson({ok:false,message:'Check the registration fields.'},400);
   const settings=await identity.settings();
   if(settings.disableSignup)return authJson({ok:false,message:'Registration is currently unavailable.'},503);
-  try{await identity.signup(email,p.password,{full_name:p.name.trim()},context)}
+  try{const user=await identity.signup(email,p.password,{full_name:p.name.trim()},context);if(user?.id&&identity.recordConsent)await identity.recordConsent(user,consent)}
   catch(error){if(Number(error?.status)!==422)throw error}
   // Same result for existing accounts and pending confirmations. No roles or
   // business membership are accepted from the browser or granted by signup.
   return authJson({ok:true,confirmationRequired:true},202);
- }catch(error){return authJson({ok:false,message:'Unable to complete registration.'},[403,413,415,429].includes(error?.status)?error.status:503)}
+ }catch(error){return authJson({ok:false,message:'Unable to complete registration.'},[400,403,413,415,429].includes(error?.status)?error.status:503)}
 }}

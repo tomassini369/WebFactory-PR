@@ -85,7 +85,7 @@ try{
    await noOverflow(page,`builder ${config.slug}/${width}`)
    assert.ok(await frame.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'iframe overflow')
    assert.equal(await frame.locator('.template-highlights article').count(),Math.min(3,config.items.length))
-   assert.equal(await frame.locator('.template-location-map iframe').count(),1,'Builder displays configured map')
+   assert.equal(await frame.locator('.template-location-map iframe').count(),0,'No Google iframe before an explicit choice');await frame.locator('.template-map-consent button').click();assert.equal(await frame.locator('.template-location-map iframe').count(),1,'Builder displays configured map')
    for(const selector of ['.template-feature-strip','.template-catalog-gateway','.template-booking-showcase'])assert.equal(await frame.locator(selector).count(),0)
    const purchasable=config.items.find(item=>!item.appointment&&item.purchasable!==false)
    if(config.cartEnabled&&purchasable){

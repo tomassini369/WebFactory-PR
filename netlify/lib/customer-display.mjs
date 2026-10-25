@@ -69,5 +69,7 @@ export async function publicDisplayView(store,state,site,now){
  const receiptTime=Date.parse(sale?.receipt?.createdAt||'');
  const verifiedPayment=Boolean(sale?.checkout||sale?.payment==='paid'&&Number.isFinite(receiptTime)&&receiptTime<=now+5000&&now-receiptTime<5*60000);
  const stale=!cashierConnected&&!verifiedPayment&&!completed;
+ // Keep the payment QR usable without leaving customer contact data on an idle display.
+ if(!cashierConnected&&sale?.totals)sale={...sale,totals:{...sale.totals,customer:displayCustomer(null)}};
  return {business:{nameEn:site.business?.nameEn||site.business?.name||site.slug,nameEs:site.business?.nameEs||site.business?.nameEn||site.business?.name||site.slug,logoAssetKey:site.business?.logoAssetKey||'',siteId:site.siteId,accent:site.design?.secondary||''},serverNow:now,cashierConnected,updatedAt:state.updatedAt,stale,payment:stale?'disconnected':sale?.payment||'draft',totals:stale?null:sale?.totals||state.draft,receipt:stale?null:sale?.receipt||null,checkout:stale?null:sale?.checkout||null};
 }

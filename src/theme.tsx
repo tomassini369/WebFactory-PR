@@ -30,7 +30,7 @@ function platformSurfaceForPath(pathname: string) {
 }
 
 function legalPlatformPath(pathname: string) {
-  return /^\/(?:privacy|terms|refund-policy)\/?$/.test(pathname)
+  return /^\/(?:privacy|terms|refund-policy|copyright)\/?$/.test(pathname)
 }
 
 function applyDocumentTheme(theme: Theme, isPlatformSurface: boolean) {

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { billingStateFor, createComplimentaryServicePlan, createSubscriptionRequiredServicePlan, createTrialServicePlan, siteEntitlement } from "./subscription-billing.mjs";
+import { billingEventIgnoreReason, billingStateFor, createComplimentaryServicePlan, createSubscriptionRequiredServicePlan, createTrialServicePlan, siteEntitlement } from "./subscription-billing.mjs";
 
 test("new trials last exactly 7 days", () => {
   const started = new Date("2026-09-21T12:00:00.000Z");
@@ -90,4 +90,18 @@ test("invoice events preserve cancellation scheduling metadata", () => {
   assert.equal(failed.subscriptionStatus, "past_due");
   assert.equal(failed.cancelAtPeriodEnd, true);
   assert.equal(failed.currentPeriodEnd, current.currentPeriodEnd);
+});
+
+
+test("delayed subscription events cannot revive canceled service or replace another subscription", () => {
+ const plan={billingModel:'subscription',stripeCustomerId:'cus_a',stripeSubscriptionId:'sub_new',lastBillingEventCreated:200};
+ const event={type:'invoice.paid',created:100,data:{object:{customer:'cus_a',subscription:'sub_new'}}};
+ assert.equal(billingEventIgnoreReason(event,plan),'older_event');
+ assert.equal(billingEventIgnoreReason({...event,created:201,data:{object:{customer:'cus_b',subscription:'sub_new'}}},plan),'customer_mismatch');
+ assert.equal(billingEventIgnoreReason({...event,created:201,data:{object:{customer:'cus_a',subscription:'sub_old'}}},plan),'subscription_mismatch');
+ assert.equal(billingEventIgnoreReason({...event,created:201},plan),'');
+ assert.equal(billingStateFor({...event,created:201},plan).lastBillingEventCreated,201);
+});
+test("billing webhooks never convert courtesy or legacy sites to paid subscriptions", () => {
+ for(const billingModel of ['complimentary','legacy',undefined])assert.equal(billingEventIgnoreReason({type:'invoice.paid'}, {billingModel}),'not_subscription_model');
 });

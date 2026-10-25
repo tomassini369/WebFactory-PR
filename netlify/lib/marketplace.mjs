@@ -1,3 +1,4 @@
+import {consumerConsent,CONSUMER_POLICY_VERSION} from './consumer-policy.mjs';
 import crypto from 'node:crypto';
 import {publicClientSite} from './client-store.mjs';
 import {siteEntitlement} from './subscription-billing.mjs';
@@ -42,14 +43,25 @@ export async function readDirectory(store,{maxSites=250,budgetMs=6000,clock=Date
  return {entries:entries.sort((a,b)=>a.name.localeCompare(b.name)),truncated};
 }
 export function publicConsumer(profile,user){
- return {name:text(profile?.name||user.name,100),municipality:municipalities.includes(profile?.municipality)?profile.municipality:'',favorites:Array.isArray(profile?.favorites)?profile.favorites.filter(v=>typeof v==='string'&&v.length<=64&&slugPattern.test(v)).slice(0,100):[],revision:Number(profile?.revision||0)};
+ const restricted=profile?.status==='minor_review',deleted=profile?.status==='deleted';
+ const needsAcceptance=profile?.consent?.version!==CONSUMER_POLICY_VERSION||deleted;
+ if(restricted||needsAcceptance)return {name:'',municipality:'',favorites:[],revision:Number(profile?.revision||0),needsAcceptance,restricted};
+ return {needsAcceptance:false,restricted:false,name:text(profile?.name||user.name,100),municipality:municipalities.includes(profile?.municipality)?profile.municipality:'',favorites:Array.isArray(profile?.favorites)?profile.favorites.filter(v=>typeof v==='string'&&v.length<=64&&slugPattern.test(v)).slice(0,100):[],revision:Number(profile?.revision||0)};
 }
 export async function updateConsumer(store,user,payload,loadBySlug){
  const key=consumerKey(user.id),record=await store.getWithMetadata(key,{type:'json'});
  const current=publicConsumer(record?.data,user);
  if(!Number.isInteger(payload.revision)||payload.revision!==current.revision)throw Object.assign(new Error('Profile changed. Reload before saving.'),{status:409});
  let next;
- if(payload.action==='profile'){
+ if(payload.action==='minor_review'||payload.action==='delete_profile'){
+  if(payload.confirmation!==(payload.action==='minor_review'?'REVIEW MINOR':'DELETE PROFILE'))throw Object.assign(new Error('Confirmation required.'),{status:400});
+  next={name:'',municipality:'',favorites:[],status:payload.action==='minor_review'||record?.data?.status==='minor_review'?'minor_review':'deleted',requestedAt:new Date().toISOString()};
+ }else if(payload.action==='accept_policy'){
+  if(record?.data?.status==='minor_review')throw Object.assign(new Error('Eligibility review required.'),{status:403});
+  const consent=consumerConsent(payload);
+  next={...publicConsumer({...record?.data,consent,status:'active'},user),consent,status:'active'};
+ }else if(current.restricted||current.needsAcceptance)throw Object.assign(new Error('Consumer eligibility and policy acceptance required.'),{status:403});
+ else if(payload.action==='profile'){
   const name=text(payload.name,100),municipality=text(payload.municipality);
   if(!name||municipality&&!municipalities.includes(municipality))throw Object.assign(new Error('Invalid profile.'),{status:400});
   next={...current,name,municipality};
@@ -61,9 +73,15 @@ export async function updateConsumer(store,user,payload,loadBySlug){
   if(payload.saved){if(favorites.length>=100)throw Object.assign(new Error('Favorite limit reached.'),{status:400});favorites.push(slug)}
   next={...current,favorites};
  }else throw Object.assign(new Error('Invalid profile action.'),{status:400});
- next.revision=current.revision+1;
+ next={...(record?.data||{}),...next,revision:current.revision+1};
+ if(['minor_review','delete_profile'].includes(payload.action))next={name:'',municipality:'',favorites:[],status:next.status,requestedAt:next.requestedAt,revision:next.revision};
  if(record&&!record.etag)throw Object.assign(new Error('Profile unavailable.'),{status:503});
  const result=await store.setJSON(key,next,record?{onlyIfMatch:record.etag}:{onlyIfNew:true});
  if(!result.modified)throw Object.assign(new Error('Profile changed. Reload before saving.'),{status:409});
- return next;
+ return publicConsumer(next,user);
+}
+export async function recordConsumerConsent(store,user,consent){
+ const key=consumerKey(user.id);
+ // Signup never overwrites an existing profile, restriction or acceptance.
+ await store.setJSON(key,{name:'',municipality:'',favorites:[],revision:0,status:'active',consent},{onlyIfNew:true});
 }

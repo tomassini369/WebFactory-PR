@@ -99,6 +99,7 @@ function App(){
   if(marketplaceBusiness)return <RouteView><MarketplaceBusinessPage slug={marketplaceBusiness[1]} lang={lang} setLang={setLang}/></RouteView>
   if (privacyRoute) return <RouteView><LegalPage kind="privacy" /></RouteView>
   if (termsRoute) return <RouteView><LegalPage kind="terms" /></RouteView>
+  if (/^\/copyright\/?$/.test(pathname)) return <RouteView><LegalPage kind="copyright" /></RouteView>
   if (refundRoute) return <RouteView><LegalPage kind="refund" /></RouteView>
   if (webFactoryAdminRoute || identityInviteRoute) return <RouteView portal><MfaGate><WebFactoryAdminPage /></MfaGate></RouteView>
   if (clientAdminRoute) return <RouteView portal><MfaGate><ClientAdminPage /></MfaGate></RouteView>

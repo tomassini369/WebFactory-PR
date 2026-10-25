@@ -1,9 +1,12 @@
+import {recordConsumerConsent} from '../lib/marketplace.mjs';
+import {clientSiteStore} from '../lib/client-store.mjs';
 import {signup,getIdentityConfig,getSettings} from '@netlify/identity';
 import {consumerRegistration} from '../lib/consumer-registration.mjs';
 import {withHttpOnlyIdentityCookies} from '../lib/http-only-auth.mjs';
 import {issuePrimarySession} from '../lib/mfa-security.mjs';
 export default consumerRegistration({
  settings:getSettings,
+ recordConsent:(user,consent)=>recordConsumerConsent(clientSiteStore(),user,consent),
  signup:(email,password,data,context)=>withHttpOnlyIdentityCookies(context,async()=>{const user=await signup(email,password,data);if(user.confirmedAt)await issuePrimarySession(user,context);return user}),
  // As with portal-complete-access, do not use the SDK's browser-style shared
  // confirmation user on a server. Verify, discard tokens, then require login.

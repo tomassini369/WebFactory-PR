@@ -1,4 +1,5 @@
-import { getClientSite, patchClientSite } from "./client-store.mjs";
+import { withBookingLock } from "./booking-lock.mjs";
+import { getClientSite, patchClientSite, clientEventStore } from "./client-store.mjs";
 
 const SUBSCRIPTION_EVENTS = new Set([
   "customer.subscription.created",
@@ -135,6 +136,18 @@ function subscriptionIdFor(event) {
   return object.parent?.subscription_details?.subscription || object.subscription || "";
 }
 
+// Signed events may arrive late or refer to an earlier subscription for a tenant.
+export function billingEventIgnoreReason(event, plan = {}) {
+  if (plan.billingModel !== "subscription") return "not_subscription_model";
+  if (Number.isSafeInteger(plan.lastBillingEventCreated) && Number.isSafeInteger(event.created) && event.created < plan.lastBillingEventCreated) return "older_event";
+  const object = event?.data?.object || {};
+  const customer = typeof object.customer === "string" ? object.customer : object.customer?.id;
+  if (event.type !== "checkout.session.completed" && plan.stripeCustomerId && customer && customer !== plan.stripeCustomerId) return "customer_mismatch";
+  const subscription = subscriptionIdFor(event);
+  if (event.type !== "checkout.session.completed" && plan.stripeSubscriptionId && subscription && subscription !== plan.stripeSubscriptionId) return "subscription_mismatch";
+  return "";
+}
+
 export function billingStateFor(event, current = {}) {
   const object = event?.data?.object || {};
   let subscriptionStatus = current.subscriptionStatus || "not_started";
@@ -172,6 +185,7 @@ export function billingStateFor(event, current = {}) {
       ? object.cancel_at_period_end
       : Boolean(current.cancelAtPeriodEnd),
     lastBillingEvent: event.type,
+    ...(Number.isSafeInteger(event.created) ? {lastBillingEventCreated:event.created} : {}),
     lastBillingEventAt: new Date().toISOString(),
   };
 }
@@ -180,8 +194,11 @@ export async function processSubscriptionBillingEvent(event) {
   if (!subscriptionBillingEnabled()) return { enabled: false, ignored: true };
   const siteId = String(metadataFor(event).webfactory_site_id || "").trim();
   if (!siteId) return { enabled: true, ignored: true, reason: "missing_site_id" };
+  return withBookingLock(clientEventStore(), `locks/subscription-checkout/${siteId}`, async () => {
   const site = await getClientSite(siteId);
   if (!site) return { enabled: true, ignored: true, reason: "site_not_found", siteId };
+  const reason = billingEventIgnoreReason(event, site.servicePlan || {});
+  if (reason) return {enabled:true, ignored:true, reason, siteId};
   const servicePlan = billingStateFor(event, site.servicePlan || {});
   const entitlement = siteEntitlement({ ...site, servicePlan });
   const updated = await patchClientSite(siteId, {
@@ -195,4 +212,5 @@ export async function processSubscriptionBillingEvent(event) {
     billingStatus: updated.servicePlan.billingStatus,
     subscriptionStatus: updated.servicePlan.subscriptionStatus,
   };
+  });
 }

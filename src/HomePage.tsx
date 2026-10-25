@@ -499,7 +499,7 @@ export default function HomePage({ lang, setLang }: { lang: Language, setLang: (
 
     <footer className="wf-footer wf-shell">
       <div><a className="wf-h-logo" href="/"><AdaptiveLogo alt="WebFactory PR" /></a><p>{t.footer}</p><small>© 2026 WebFactory PR</small></div>
-      <nav aria-label={t.legalNav}><a href="mailto:info@webfactorypr.com">info@webfactorypr.com</a>{t.legal.map((s, i) => <a key={s} href={['/privacy', '/terms', '/refund-policy'][i]}>{s}</a>)}<FeedbackPreferences lang={lang} /></nav>
+      <nav aria-label={t.legalNav}><a href="mailto:info@webfactorypr.com">info@webfactorypr.com</a>{t.legal.map((s, i) => <a key={s} href={['/privacy', '/terms', '/refund-policy'][i]}>{s}</a>)}<a href="/copyright">{lang==='es'?'Reclamaciones de copyright':'Copyright complaints'}</a><FeedbackPreferences lang={lang} /></nav>
     </footer>
   </div>
 }
