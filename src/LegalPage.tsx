@@ -3,6 +3,7 @@ import {usePortalLanguage} from './portal-language'
 import './legal.css'
 import {legalRevision,legalSupplement,copyrightCopy} from './legal-supplement'
 import ContentClaimForm from './ContentClaimForm'
+import DmcaPublicContact from './DmcaPublicContact'
 import { AdaptiveLogo, ThemeToggle } from './theme'
 
 type LegalKind='privacy'|'terms'|'refund'|'copyright'
@@ -410,7 +411,7 @@ export default function LegalPage({kind}:{kind:LegalKind}){
     <article className="legal-content">
       <p role="note">{legalRevision[lang]}</p>
       {[...page.sections,...supplement].map(([title,paragraphs])=><section key={title}><h2>{title}</h2>{paragraphs.map((paragraph,index)=><p key={index}>{paragraph}</p>)}</section>)}
-      {kind==='copyright'&&<ContentClaimForm lang={lang}/>}
+      {kind==='copyright'&&<><DmcaPublicContact lang={lang}/><ContentClaimForm lang={lang}/></>}
       <p><a href="/copyright">{lang==='es'?'Copyright y reclamaciones de contenido':'Copyright and content complaints'}</a></p>
       <aside><strong>{lang==='es'?'¿Necesitas ayuda?':'Need help?'}</strong><p>{lang==='es'?'Contáctanos sobre estas políticas o tu cuenta.':'Contact us about these policies or your account.'}</p><a href="mailto:info@webfactorypr.com">info@webfactorypr.com</a></aside>
     </article>
