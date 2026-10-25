@@ -46,7 +46,7 @@ test('paired screen exposes only pending server-owned Stripe checkout, hides pai
  const f=fixture(),s=await f.create(),{cookie}=await f.pair(s);await f.sync(s.id,1,{attemptId:'attempt-qr'});
  const record={siteId:f.site.siteId,source:'pos_remote',createdBy:'owner@example.invalid',paymentStatus:'pending',status:'payment_pending',checkoutUrl:'https://checkout.stripe.com/c/pay/cs_test_fixture#fragment',checkoutExpiresAt:new Date(Date.now()+600000).toISOString(),items:[],amountTotal:2500,customer:{email:'private@example.invalid'}};
  f.rows.set('tenant-a/transactions/txn_pos_attempt-qr.json',{data:record,etag:'qr'});
- let d=await(await f.get(cookie)).json();assert.equal(d.checkout.url,record.checkoutUrl);assert(!JSON.stringify(d).includes('private@example.invalid'));
+ let d=await(await f.get(cookie)).json();assert.equal(d.checkout.url,record.checkoutUrl);assert.equal(d.totals.customer.email,'private@example.invalid');assert.deepEqual(Object.keys(d.totals.customer).sort(),['email','name','phone']);
  for(const url of ['javascript:alert(1)','https://checkout.stripe.com.evil.invalid/c/pay/x','https://user:pass@checkout.stripe.com/c/pay/x','https://evil.invalid/pay/x']){record.checkoutUrl=url;assert.equal((await(await f.get(cookie)).json()).checkout,null)}
  record.checkoutUrl='https://checkout.stripe.com/c/pay/cs_test_fixture';record.checkoutExpiresAt=new Date(0).toISOString();assert.equal((await(await f.get(cookie)).json()).checkout,null);
  record.checkoutExpiresAt=new Date(Date.now()+600000).toISOString();for(const status of ['cancelled','expired','payment_failed']){record.status=status;assert.equal((await(await f.get(cookie)).json()).checkout,null)}
@@ -60,4 +60,19 @@ test('suspended cashier displays confirmation then automatically clears the comp
  let d=await(await f.get(cookie)).json();assert.equal(d.stale,false);assert.equal(d.payment,'paid');assert.equal(d.receipt.id,'receipt-one');assert.equal(d.checkout,null);assert.equal(d.cashierConnected,false);
  f.setNow(1020001+3000);d=await(await f.get(cookie)).json();assert.equal(d.stale,false);assert.equal(d.payment,'draft');assert.equal(d.totals.total,0);assert.deepEqual(d.totals.items,[]);assert.equal(d.receipt,null);assert.equal(d.checkout,null);
  f.site.members=[];assert.equal((await f.get(cookie)).status,403);
+});
+
+test('Client Info synchronizes only bounded name/email/phone to the authorized paired device and clears with the draft',async()=>{
+ const f=fixture(),s=await f.create(),{cookie}=await f.pair(s);
+ await f.sync(s.id,1,{customer:{name:'  Cliente QA  ',email:'buyer@example.invalid',phone:'7870000000',role:'admin',secret:'never-expose'}});
+ let d=await(await f.get(cookie)).json();assert.deepEqual(d.totals.customer,{name:'Cliente QA',email:'buyer@example.invalid',phone:'7870000000'});assert(!JSON.stringify(d).includes('never-expose'));assert.equal((await f.get('')).status,401);
+ await f.sync(s.id,2,{customer:{name:'Corregido',email:'x'.repeat(400),phone:'0'.repeat(100)}});d=await(await f.get(cookie)).json();assert.equal(d.totals.customer.name,'Corregido');assert.equal(d.totals.customer.email.length,320);assert.equal(d.totals.customer.phone.length,80);
+ await f.sync(s.id,3,{customer:{}});assert.deepEqual((await(await f.get(cookie)).json()).totals.customer,{name:'',email:'',phone:''});
+ f.setNow(1020001);assert.equal((await(await f.get(cookie)).json()).totals,null);f.site.members=[];assert.equal((await f.get(cookie)).status,403);
+});
+test('pending Client Info comes from the frozen sale and is redacted on payment confirmation',async()=>{
+ const f=fixture(),s=await f.create(),{cookie}=await f.pair(s);await f.sync(s.id,1,{attemptId:'attempt-client',customer:{name:'Changed draft'}});
+ const record={siteId:f.site.siteId,source:'pos_remote',createdBy:'owner@example.invalid',paymentStatus:'pending',status:'payment_pending',items:[],amountTotal:100,customer:{name:'Saved buyer',email:'saved@example.invalid',phone:'7870000000',secret:'hidden'},createdAt:new Date(1000000).toISOString()};f.rows.set('tenant-a/transactions/txn_pos_attempt-client.json',{data:record,etag:'client'});
+ let d=await(await f.get(cookie)).json();assert.equal(d.totals.customer.name,'Saved buyer');assert(!JSON.stringify(d).includes('Changed draft'));assert(!JSON.stringify(d).includes('hidden'));
+ record.paymentStatus='paid';record.receiptId='receipt-client';record.paidAt=new Date(1000000).toISOString();d=await(await f.get(cookie)).json();assert.deepEqual(d.totals.customer,{name:'',email:'',phone:''});f.setNow(1003000);d=await(await f.get(cookie)).json();assert.equal(d.totals.total,0);assert(!JSON.stringify(d).includes('saved@example.invalid'));
 });

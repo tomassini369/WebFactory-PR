@@ -5,3 +5,5 @@ html[data-wf-theme=dark] .wf-customer-display{background:#0d1522;color:#f2f6fc}h
 @media print{html[data-wf-theme=dark] .wf-customer-display,html[data-wf-theme=dark] .display-sale>section,html[data-wf-theme=dark] .display-sale>aside,html[data-wf-theme=dark] .display-status{background:#fff;color:#000}}
 
 .wf-customer-display .kiosk-checkout-qr{margin:20px 0;padding:16px;border:1px solid currentColor;border-radius:16px;text-align:center}.wf-customer-display .kiosk-checkout-qr img{display:block;width:min(100%,320px);height:auto;margin:16px auto;background:white}.wf-customer-display .kiosk-checkout-qr p{overflow-wrap:anywhere}
+
+.display-client-info{grid-column:1/-1}.display-client-info dl{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}.display-client-info dl>div{display:block;min-width:0;margin:0}.display-client-info dt{font-weight:600;margin-bottom:6px}.display-client-info dd{white-space:normal;overflow-wrap:anywhere}@media(max-width:767px){.display-client-info dl{grid-template-columns:minmax(0,1fr)}}

@@ -19,6 +19,10 @@ export async function mutateDisplay(store,id,change){
  }
  throw displayFail('Display changed; retry synchronization.',409);
 }
+export function displayCustomer(value){
+ const fields={name:180,email:320,phone:80};
+ return Object.fromEntries(Object.entries(fields).map(([key,max])=>[key,typeof value?.[key]==='string'?value[key].trim().slice(0,max):'']));
+}
 export function displayDraft(site,membership,input){
  if(!Array.isArray(input.items)||input.items.length>50)throw displayFail('Invalid display items.');
  requirePosAdjustments(membership,input);
@@ -32,7 +36,7 @@ export function displayDraft(site,membership,input){
  const tax=items.reduce((s,x)=>s+calculateTax({amountCents:subtotal?Math.round(base*x.quantity*x.unitAmount/subtotal):0,taxable:x.taxable,taxRateOverride:x.taxRateOverride,config:site.taxConfig||{}}).taxCents,0);
  const total=base+(site.taxConfig?.pricesIncludeTax?0:tax)+tip;
  if(![subtotal,discount,tip,tax,total].every(Number.isSafeInteger))throw displayFail('Invalid total.');
- return {items:items.map(({taxable,taxRateOverride,...item})=>item),subtotal,discount,tip,tax,total,taxIncluded:Boolean(site.taxConfig?.pricesIncludeTax)};
+ return {customer:displayCustomer(input.customer),items:items.map(({taxable,taxRateOverride,...item})=>item),subtotal,discount,tip,tax,total,taxIncluded:Boolean(site.taxConfig?.pricesIncludeTax)};
 }
 function displayCheckout(record, paid) {
  if(paid||record.source!=='pos_remote'||record.paymentStatus!=='pending'||record.status!=='payment_pending')return null;
@@ -50,7 +54,7 @@ export async function displaySale(store,state){
  if(record.siteId!==state.siteId||!['pos','pos_remote'].includes(record.source)||String(record.createdBy||'').toLowerCase()!==state.email)throw displayFail('Sale unavailable.',403);
  const paid=record.paymentStatus==='paid'||record.paymentStatus==='paid_in_person'&&record.status==='completed';
  const items=(record.items||[]).map(x=>({id:x.id,nameEn:String(x.name||x.id).slice(0,220),nameEs:String(x.name||x.id).slice(0,220),quantity:x.quantity,unitAmount:x.unitAmount}));
- const totals={items,subtotal:Number(record.subtotal||0),discount:Number(record.discounts||0),tip:Number(record.tip||0),tax:Number(record.tax||0),total:Number(record.amountTotal||0),taxIncluded:Boolean(record.pricesIncludeTax)};
+ const totals={customer:displayCustomer(paid?null:record.customer),items,subtotal:Number(record.subtotal||0),discount:Number(record.discounts||0),tip:Number(record.tip||0),tax:Number(record.tax||0),total:Number(record.amountTotal||0),taxIncluded:Boolean(record.pricesIncludeTax)};
  return {payment:paid?'paid':['expired','cancelled','payment_failed','failed'].includes(record.status)?'failed':'pending',totals,checkout:displayCheckout(record,paid),completedAt:record.v3ArtifactsCreatedAt||record.paidAt||record.createdAt,receipt:paid&&record.receiptId?{id:record.receiptId,createdAt:record.paidAt||record.createdAt}:null};
 }
 export async function publicDisplayView(store,state,site,now){

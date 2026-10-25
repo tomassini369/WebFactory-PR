@@ -10,8 +10,9 @@ checkout remains an explicit fallback link on the cashier device.
 Only pending pos_remote records belonging to the paired tenant/operator are
 eligible. Require HTTPS checkout.stripe.com, a Checkout pay path, no embedded
 credentials or custom port, and a valid future server expiry. Paid, failed,
-expired or stale views expose no Checkout URL. Customer contact details,
-provider keys and unrelated sales remain excluded. Device pairing, access
+expired or stale views expose no Checkout URL. Only the owner-requested buyer name/email/phone are shared with the paired
+device for review before payment. Provider keys, other customer fields and
+unrelated sales remain excluded. Device pairing, access
 checks and server settlement contracts are preserved.
 
 The cashier checks the saved payment status every five seconds, on focus and
@@ -51,3 +52,21 @@ no required New sale click and the previous remote Checkout cannot keep the
 catalog locked. New sales receive a new protected attempt identifier. Browser
 regressions verify automatic unlock, cleared customer fields, adding the next
 item and completing the next sale, plus paired display automatic clearing.
+
+## Client Info review on the paired display
+
+The cashier syncs the current name, email and phone through the existing
+scoped display session. Values are bounded to 180/320/80 characters and only
+these three string fields are projected. Corrections and cleared fields sync
+without a new checkout. Once a payment attempt exists, the display uses the
+frozen server transaction customer, not a mutable browser draft. Personal
+fields are empty on confirmed payment, stale drafts are hidden, and completed
+sale reset removes the information panel. Anonymous requests, wrong tenant,
+revoked device or removed membership cannot retrieve the data. Buyer receipt
+capabilities and Marketplace projections retain their previous redaction.
+
+The read-only Client Info / Información del cliente panel lets customers review
+Name, Email and Phone and ask the cashier to correct them before paying. No
+new confirmation step, payment state or editable customer-screen form is added.
+Browser QA covers all seven widths, ES/EN and light/dark, long email wrapping,
+live typing/correction across two contexts and removal on sale completion.
