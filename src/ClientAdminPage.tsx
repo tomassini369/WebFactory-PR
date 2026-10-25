@@ -1,3 +1,5 @@
+import SubscriptionReconciliation from './SubscriptionReconciliation'
+import ContentClaimsConsole from './ContentClaimsConsole'
 import KioskCashConfirmation from './KioskCashConfirmation'
 import {lazy,Suspense} from 'react'
 import {useWorkspaceApi,WorkspaceActivityProvider} from './training/workspace-services'
@@ -216,7 +218,7 @@ export default function ClientAdminPage({practiceStartTab}:{practiceStartTab?:st
       {tab==='analytics'&&<>{['owner','admin'].includes(membership?.role)&&<BusinessAccountingPanel siteId={site.siteId} employees={site.employees} catalog={site.catalog} lang={lang} initialMode="expense"/>}<AnalyticsPanel commerce={commerce} lang={lang} siteId={site.siteId} stripeConnected={Boolean(site.paymentRules?.methods?.stripe&&site.paymentRules?.stripeConnectedAccountId)}/></>}
       {tab==='integrations'&&(practice?<PracticeSensitivePanel kind="integrations" lang={lang}/>:<><section className="ca-panel"><h2>ChatGPT</h2><p>{lang==='es'?'Consulta tu negocio y prepara cambios para aprobarlos en WebFactory.':'Read business information and prepare changes for approval in WebFactory.'}</p><a className="btn secondary" href="/chatgpt">{lang==='es'?'Administrar conexión':'Manage connection'}</a></section><CalendarPanel site={site} setSite={setSite} lang={lang} calendars={calendars} configured={googleConfigured} onSave={()=>save('employees',site.employees)} busy={busy}/><IntegrationManagementPanel site={site} setSite={setSite} lang={lang} membership={membership}/></>)}
       {tab==='security'&&(practice?<PracticeSensitivePanel kind="security" lang={lang}/>:<MfaSettings lang={lang} allowDisable/>)}
-      {tab==='settings'&&<><PosOperationsSettings key={'pos-settings-'+site.siteId} site={site} lang={lang} onChange={setOperations}/><KioskSettings key={'kiosk-'+site.siteId} site={site} lang={lang}/><SettingsPanel site={site} lang={lang} onSave={save} busy={busy}/>{!practice&&<AccountLifecyclePanel site={site} lang={lang} membership={membership} onPageDeleted={async()=>{setSite(null);setSites([]);await loadSites()}} onAccountDeleted={async()=>{await logout();setUser(null);setSite(null);setSites([])}}/>}</>}
+      {tab==='settings'&&<>{!practice&&membership?.role==='owner'&&<ContentClaimsConsole key={'claims-'+site.siteId} siteId={site.siteId} lang={lang}/>}<PosOperationsSettings key={'pos-settings-'+site.siteId} site={site} lang={lang} onChange={setOperations}/><KioskSettings key={'kiosk-'+site.siteId} site={site} lang={lang}/><SettingsPanel site={site} lang={lang} onSave={save} busy={busy}/>{!practice&&<AccountLifecyclePanel site={site} lang={lang} membership={membership} onPageDeleted={async()=>{setSite(null);setSites([]);await loadSites()}} onAccountDeleted={async()=>{await logout();setUser(null);setSite(null);setSites([])}}/>}</>}
       {tab==='billing'&&(practice?<PracticeSensitivePanel kind="billing" lang={lang}/>:<BillingPanel site={site} billing={billing} lang={lang} busy={busy} setBusy={setBusy} setError={setError}/>)}
     </section>
   </main></PortalPanelProvider></WorkspaceActivityProvider></div></>
@@ -271,6 +273,7 @@ function BillingPanel({site,billing,lang,busy,setBusy,setError}:{site:ClientSite
       {(active||status==='past_due')&&<div className="ca-actions">{site.servicePlan?.cancelAtPeriodEnd||canceled?<p role="status">{es?'Renovación cancelada. El acceso continúa hasta finalizar el periodo pagado.':'Renewal canceled. Access continues through the paid period.'} {(cancellationEnd||site.servicePlan?.currentPeriodEnd)&&new Date(cancellationEnd||site.servicePlan!.currentPeriodEnd).toLocaleDateString(es?'es-PR':'en-US')}</p>:<button disabled={busy} onClick={cancelRenewal}>{es?'Cancelar futuras renovaciones':'Cancel future renewals'}</button>}</div>}
       {billing&&!billing.readiness.ready&&status!=='not_started'&&<p className="ca-note">{es?'Las ofertas todavía están en preparación y no pueden generar cargos.':'The plans are still being prepared and cannot create charges.'}</p>}
     </>}
+    <SubscriptionReconciliation siteId={site.siteId} lang={lang}/>
     <p className="ca-note">{es?'WebFactory no cobra comisión sobre las ventas del negocio. La suscripción cubre el uso continuo de la plataforma, hosting, portal y actualizaciones.':'WebFactory does not charge a commission on business sales. The subscription covers continued platform use, hosting, the portal, and updates.'}</p>
   </Panel>
 }

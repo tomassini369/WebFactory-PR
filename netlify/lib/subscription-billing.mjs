@@ -1,3 +1,5 @@
+import Stripe from 'stripe';
+import {assertSubscriptionBelongsToSite} from './subscription-consent.mjs';
 import { withBookingLock } from "./booking-lock.mjs";
 import { getClientSite, patchClientSite, clientEventStore } from "./client-store.mjs";
 
@@ -190,7 +192,22 @@ export function billingStateFor(event, current = {}) {
   };
 }
 
-export async function processSubscriptionBillingEvent(event) {
+// Stripe timestamps have second precision. A tied snapshot cannot establish order.
+export async function billingStateWithReconciliation(event, site, retrieveSubscription) {
+  const current=site.servicePlan||{};
+  const tied=Number.isSafeInteger(event.created)&&Number.isSafeInteger(current.lastBillingEventCreated)&&event.created===current.lastBillingEventCreated;
+  if(!tied&&current.billingCanonicalReconciliation!==true)return billingStateFor(event,current);
+  const id=subscriptionIdFor(event)||current.stripeSubscriptionId;
+  if(typeof id!=='string'||!id)throw Object.assign(new Error('Subscription reconciliation is required.'),{status:503});
+  const canonical=await retrieveSubscription(id);
+  const rawCustomer=event.type==='checkout.session.completed'?event.data?.object?.customer:current.stripeCustomerId;
+  const customer=typeof rawCustomer==='string'?rawCustomer:rawCustomer?.id;
+  assertSubscriptionBelongsToSite(canonical,{siteId:site.siteId,servicePlan:{stripeSubscriptionId:id,stripeCustomerId:customer}});
+  if(!['active','trialing','past_due','unpaid','paused','canceled','incomplete','incomplete_expired'].includes(canonical.status))throw Object.assign(new Error('Subscription state cannot be verified.'),{status:503});
+  return {...billingStateFor({type:'customer.subscription.updated',created:event.created,data:{object:canonical}},current),lastBillingEvent:event.type,billingCanonicalReconciliation:true,lastBillingReconciledAt:new Date().toISOString()};
+}
+
+export async function processSubscriptionBillingEvent(event, {retrieveSubscription=id=>new Stripe(env('STRIPE_SECRET_KEY'),{apiVersion:'2026-07-29.dahlia'}).subscriptions.retrieve(id)} = {}) {
   if (!subscriptionBillingEnabled()) return { enabled: false, ignored: true };
   const siteId = String(metadataFor(event).webfactory_site_id || "").trim();
   if (!siteId) return { enabled: true, ignored: true, reason: "missing_site_id" };
@@ -199,7 +216,7 @@ export async function processSubscriptionBillingEvent(event) {
   if (!site) return { enabled: true, ignored: true, reason: "site_not_found", siteId };
   const reason = billingEventIgnoreReason(event, site.servicePlan || {});
   if (reason) return {enabled:true, ignored:true, reason, siteId};
-  const servicePlan = billingStateFor(event, site.servicePlan || {});
+  const servicePlan = await billingStateWithReconciliation(event,site,retrieveSubscription);
   const entitlement = siteEntitlement({ ...site, servicePlan });
   const updated = await patchClientSite(siteId, {
     servicePlan,

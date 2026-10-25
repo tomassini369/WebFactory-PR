@@ -74,7 +74,7 @@ export async function updateConsumer(store,user,payload,loadBySlug){
   next={...current,favorites};
  }else throw Object.assign(new Error('Invalid profile action.'),{status:400});
  next={...(record?.data||{}),...next,revision:current.revision+1};
- if(['minor_review','delete_profile'].includes(payload.action))next={name:'',municipality:'',favorites:[],status:next.status,requestedAt:next.requestedAt,revision:next.revision};
+ if(['minor_review','delete_profile'].includes(payload.action))next={name:'',municipality:'',favorites:[],status:next.status,requestedAt:next.requestedAt,revision:next.revision,...(record?.data?.reviewHistory?{reviewHistory:record.data.reviewHistory}:{})};
  if(record&&!record.etag)throw Object.assign(new Error('Profile unavailable.'),{status:503});
  const result=await store.setJSON(key,next,record?{onlyIfMatch:record.etag}:{onlyIfNew:true});
  if(!result.modified)throw Object.assign(new Error('Profile changed. Reload before saving.'),{status:409});

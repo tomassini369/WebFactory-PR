@@ -5,7 +5,7 @@ This is a technical intake/review procedure, not a statement of DMCA safe-harbor
 ## Implemented
 
 - `/copyright` embeds the bilingual `ContentClaimForm`. The form accepts a same-platform `/sites/{slug}` content URL, contact name/email/phone/address, work identification, location/infringement explanation, electronic signature and the required good-faith/accuracy/authority declarations. It warns against sending identity/payment documents and explains necessary sharing.
-- `POST /.netlify/functions/content-claims`, `action: submit`, resolves the business from the URL; users cannot attach a complaint to a different tenant by providing an internal ID. Responses expose only an opaque reference. No public search or case-detail API exists.
+- `POST /.netlify/functions/content-claims-intake`, `action: submit`, resolves the business from the URL; users cannot attach a complaint to a different tenant by providing an internal ID. Responses expose only an opaque reference. No public search or case-detail API exists.
 - Bounded fields, 16,000-character request limit, same-origin checks, a honeypot and Netlify's five requests/minute/IP limit protect intake. No attachments, arbitrary HTML, external URL fetching or automated emails are accepted.
 - Private records use the existing commerce storage service and its preview/production isolation. No new database/provider. No IP/fingerprint collection was added.
 - Admin-only GET returns case summaries without contact details; `?id=<reference>` returns one full private case for authorized review.
@@ -24,9 +24,16 @@ This is a technical intake/review procedure, not a statement of DMCA safe-harbor
 ## Known boundaries / launch blockers
 
 - Intake currently handles hosted tenant storefront URLs, not custom-domain media links or platform-owned content. Public instructions provide the existing support contact for other content. No public reviews feature is activated.
-- Admin review and counter-notice are secured APIs; a dedicated operator/owner case console and automatic delivery are not implemented. Use an authenticated same-origin portal session and the documented API; do not copy tokens into logs or external tools. A future console should reuse these handlers.
+- Admin review is available in platform Resources; owners have a tenant-scoped case console under business Settings. Both reuse authenticated APIs; owner details exclude claimant contacts and staff-only deliberations. Review/counter submissions include expectedRevision and stale requests fail409; ETag protection is mandatory. Public intake has a separate five/minute/IP budget, while authenticated case operations use60/minute/IP. Automatic delivery remains unimplemented; no tokens should be copied into external tools.
 - Identity/address verification and legal merits remain human review. The form is not a representation that a registered agent already exists.
 - No scheduled automated takedown, restoration or account termination occurs. This prevents abusive notices from immediately removing legitimate material, but requires a staffed monitored process before public launch.
 - Current records follow deploy-scoped preview storage; case records do not automatically migrate across preview deployments. Do not accept real legal claims on an ephemeral preview as the official live channel.
 
 Tests: `node --test netlify/lib/content-claims.test.mjs` verifies validation, no unauthenticated read, tenant isolation, summary redaction, declarations, safe origin and audit/counter behavior using isolated fixtures. No real claim, email or takedown was created.
+
+
+## Follow-up operating controls / Controles operativos adicionales
+
+ES: El administrador consulta y registra la revisión desde Recursos. El dueño consulta únicamente los casos de su negocio desde Configuración y puede preparar una contranotificación con las declaraciones requeridas. Una actualización concurrente exige recargar antes de guardar. Las notas internas y los contactos del reclamante no se exponen al dueño. Las pantallas no envían correos ni retiran/restauran contenido. El personal sigue siendo responsable de la evaluación jurídica y las comunicaciones autorizadas.
+
+EN: Administrators inspect and record review in Resources. Owners inspect only their business cases in Settings and can prepare a counter-notice with required declarations. Concurrent changes require reloading before saving. Staff notes and claimant contacts are not exposed to owners. These screens do not send mail or remove/restore content. Staff remain responsible for legal assessment and authorized communications.
