@@ -20,6 +20,7 @@ const copy={
         ]],
         ['2. Information we collect',[
           'Account and identity information, such as name, email address, authentication identifiers, business name, account role, and portal access information.',
+          'Optional Marketplace consumer profiles store your display name, selected municipality, and saved business favorites under your authenticated account. These preferences are private to your account and do not grant access to any business administration or customer records. You can remove favorites and change your profile in My Account, or contact info@webfactorypr.com to request deletion.',
           'Business configuration information, including contact details, website content, bilingual copy, catalog items, prices, staff information, schedules, booking settings, social links, Google Maps links, payment settings, logos, photographs, and uploaded files.',
           'Commerce and booking information, including customer name, email, phone number, selected products or services, quantities, appointment time, assigned employee, payment status, transaction identifiers, refund status, and related operational records.',
           'Business policy text, publication review records, recurring-billing acceptance records, and optional review email preferences, including unsubscribe records. Review email consent is separate from purchases and transactional notices.',
@@ -212,6 +213,7 @@ const copy={
         ]],
         ['2. Información que recopilamos',[
           'Información de cuenta e identidad, como nombre, email, identificadores de autenticación, nombre del negocio, rol de cuenta e información de acceso al portal.',
+          'Los perfiles opcionales de consumidores del Marketplace guardan tu nombre, municipio seleccionado y negocios favoritos bajo tu cuenta autenticada. Estas preferencias son privadas de tu cuenta y no dan acceso a la administración ni a los clientes de ningún negocio. Puedes quitar favoritos y editar tu perfil en Mi cuenta, o solicitar eliminación a info@webfactorypr.com.',
           'Información de configuración comercial, incluyendo datos de contacto, contenido del website, contenido bilingüe, catálogo, precios, equipo, horarios, reservaciones, enlaces sociales, Google Maps, configuraciones de pago, logos, fotografías y archivos subidos.',
           'Información de comercio y reservaciones, incluyendo nombre, email y teléfono del comprador, productos o servicios seleccionados, cantidades, fecha y hora de cita, empleado asignado, estado del pago, identificadores de transacción, reembolsos y registros operacionales relacionados.',
           'Textos de políticas del negocio, registros de revisión antes de publicar, aceptación de renovaciones y preferencias opcionales de emails de reseñas, incluyendo bajas. La aceptación de estos emails se separa de las compras y de los avisos transaccionales.',
