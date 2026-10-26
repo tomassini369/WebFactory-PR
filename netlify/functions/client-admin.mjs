@@ -1,5 +1,6 @@
 import {commercialCapabilities, employeeSiteView} from "../lib/commercial-access.mjs";
 import { sanitizePolicies } from "../lib/publication-review.mjs";
+import {normalizeBookingPolicy} from '../lib/booking-policy.mjs';
 import { readPosOperations } from '../lib/pos-operations.mjs';
 import { assertSameOrigin, authorizedSites, errorResponse, requireSiteAccess } from "../lib/client-auth.mjs";
 import { patchClientSite, publicClientSite, renameClientSiteSlug } from "../lib/client-store.mjs";
@@ -208,6 +209,9 @@ export function normalizeClientSection(site, section, incoming, user, membership
 
     if (section === "settings") value = {
       ...site.settings,
+      bookingPolicy: normalizeBookingPolicy(payload.value?.bookingPolicy || {}, site.settings?.bookingPolicy),
+      waitlistEnabled: typeof payload.value?.waitlistEnabled==='boolean'?payload.value.waitlistEnabled:site.settings?.waitlistEnabled===true,
+      bookingApproval: payload.value?.bookingApproval ?? site.settings?.bookingApproval ?? 'automatic',
       locale: payload.value?.locale === "es" ? "es" : "en",
       timezone: cleanText(payload.value?.timezone || site.settings?.timezone || "America/Puerto_Rico", 120),
       currency: "usd",
@@ -216,6 +220,8 @@ export function normalizeClientSection(site, section, incoming, user, membership
       sendGoogleCalendarInvites: typeof payload.value?.sendGoogleCalendarInvites === "boolean" ? payload.value.sendGoogleCalendarInvites : (site.settings?.sendGoogleCalendarInvites === true),
     };
     if (section === "business" && value.email && !validEmail(value.email)) throw Object.assign(new Error("Business email is invalid."), { status: 400 });
+    if(section==='settings' && (!['automatic','manual'].includes(value.bookingApproval)||value.bookingApproval==='manual'&&site.paymentRules?.bookingPayment!=='in_person'))throw Object.assign(new Error('Manual approval requires in-person booking payment.'),{status:400});
+    if(section==='paymentRules'&&site.settings?.bookingApproval==='manual'&&value.bookingPayment!=='in_person')throw Object.assign(new Error('Disable manual approval before changing booking payment mode.'),{status:400});
 
     return value;
 }
@@ -255,3 +261,4 @@ export default async (req) => {
     return errorResponse(error);
   }
 };
+

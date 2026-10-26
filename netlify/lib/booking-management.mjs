@@ -7,6 +7,8 @@ import {syncBookingCalendar} from "./booking-calendar.mjs";
 import {renderBookingEmail} from "./booking-email-template.mjs";
 import {bookingIcs} from "./booking-calendar-export.mjs";
 import {sendBusinessEmail} from "./business-email.mjs";
+import {bookingPolicy} from './booking-policy.mjs';
+import {offerWaitlist} from './booking-waitlist.mjs';
 
 const failure=(message,status=409)=>Object.assign(new Error(message),{status});
 export function bookingVersion(record) {
@@ -14,9 +16,10 @@ export function bookingVersion(record) {
 }
 export function canManageBooking(site,record,action,now=Date.now()) {
   if(record.balanceAttempt&&record.balancePaymentStatus!=='paid')return false;
-  if (record.kind!=="booking" || record.status!=="confirmed" || !Number.isFinite(Date.parse(record.start)) || Date.parse(record.start)<=now) return false;
-  if (action==="cancel") return site.settings?.allowCustomerCancellation!==false;
-  if (action==="reschedule") return site.status === "active" && site.settings?.allowCustomerRescheduling!==false && !record.calendarUpdatePending && Date.parse(record.start)>now+3600000;
+  if (record.kind!=="booking" || !['confirmed',...(action==='cancel'?['pending_approval']:[])].includes(record.status) || !Number.isFinite(Date.parse(record.start)) || Date.parse(record.start)<=now) return false;
+  const policy=bookingPolicy(site);
+  if (action==="cancel") return site.settings?.allowCustomerCancellation!==false && Date.parse(record.start)>now+policy.cancellationNoticeMinutes*60000;
+  if (action==="reschedule") return site.status === "active" && site.settings?.allowCustomerRescheduling!==false && !record.calendarUpdatePending && Date.parse(record.start)>now+policy.rescheduleNoticeMinutes*60000;
   return false;
 }
 export async function findPrivateBooking(token,{metadata=false}={}) {
@@ -61,6 +64,7 @@ export async function finishBookingChange(site,record) {
       await persist({...record,[flag]:true});
     } catch { /* Successful recipients are stored separately; unsent mail is retried. */ }
   }
+  if(record.status==='cancelled') {try{await offerWaitlist(site,record)}catch{/* Owner can retry matching without repeating cancellation. */}}
   return record;
 }
 export async function changePrivateBooking(token,{action,start,version,acknowledged}) {
@@ -74,12 +78,12 @@ export async function changePrivateBooking(token,{action,start,version,acknowled
     let hold=null;
     try {
       if(action==="reschedule") {
-        if(!Number.isFinite(Date.parse(start)) || Date.parse(start)<=Date.now()+3600000 || Date.parse(start)>Date.now()+365*86400000 || Date.parse(start)===Date.parse(record.start)) throw failure("Choose a new available time. / Elige un nuevo horario disponible.",400);
+        if(!Number.isFinite(Date.parse(start)) || Date.parse(start)<=Date.now()+bookingPolicy(site).minimumNoticeMinutes*60000 || Date.parse(start)>Date.now()+365*86400000 || Date.parse(start)===Date.parse(record.start)) throw failure("Choose a new available time. / Elige un nuevo horario disponible.",400);
         hold=await createBookingHold(site,{serviceId:record.serviceId,employeeId:record.employeeId,start,locationId:record.locationId || ""},{strictGoogle:true});
       }
       const now=new Date().toISOString();
       const next={...record,managementRevision:crypto.randomUUID(),managementChange:action==="cancel"?"cancelled":"rescheduled",changeCustomerEmailSent:false,changeBusinessEmailSent:false,updatedAt:now,
-        ...(action==="cancel"?{status:"cancelled",cancelledAt:now,calendarCancellationPending:Boolean(record.googleEventId),calendarUpdatePending:false}:{start:hold.start,end:hold.end,rescheduledAt:now,previousStart:record.start,calendarUpdatePending:Boolean(record.googleEventId),calendarSyncPending:true,calendarSyncStatus:"pending"})};
+        ...(action==="cancel"?{status:"cancelled",cancelledAt:now,calendarCancellationPending:Boolean(record.googleEventId),calendarUpdatePending:false}:{start:hold.start,end:hold.end,bufferMinutes:hold.bufferMinutes,bufferBeforeMinutes:hold.bufferBeforeMinutes,rescheduledAt:now,previousStart:record.start,calendarUpdatePending:Boolean(record.googleEventId),calendarSyncPending:true,calendarSyncStatus:"pending"})};
       const result=await store.setJSON(key,next,{onlyIfMatch:etag});
       if(!result.modified) throw failure("Booking changed. Reload the page. / La reservación cambió. Actualiza la página.");
       await mirrorTransaction(site,next);
@@ -87,3 +91,4 @@ export async function changePrivateBooking(token,{action,start,version,acknowled
     } finally { if(hold) await store.delete(commerceKey(initial.site.siteId,"holds",hold.holdId)); }
   });
 }
+

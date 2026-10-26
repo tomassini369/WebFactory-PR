@@ -1,4 +1,5 @@
 import {canAccessCommerce, assertCommerceAction, employeeCommerceRecord, isBusinessOwner} from "../lib/commercial-access.mjs";
+import {bookingPolicy} from '../lib/booking-policy.mjs';
 import {bookingBalance} from '../lib/kiosk-bookings.mjs';
 import {reconcileBookingBalance} from '../lib/booking-balance-reconciliation.mjs';
 import {displayActor} from '../lib/customer-display.mjs';
@@ -105,7 +106,12 @@ export function createCommerceAdminHandler({authorizeAccess=requireSiteAccess,au
       const kitchenStatus = String(payload.kitchenStatus || "");
       if (!["received", "preparing", "ready", "completed"].includes(kitchenStatus)) throw Object.assign(new Error("Invalid kitchen status."), { status: 400 });
       record = { ...record, kitchenStatus, updatedAt: new Date().toISOString() };
+    } else if (payload.action === "no_show" && kind === "bookings") {
+      if(record.status!=='confirmed'||!Number.isFinite(Date.parse(record.start))||Date.parse(record.start)>Date.now()||record.balanceAttempt&&record.balancePaymentStatus!=='paid') throw Object.assign(new Error('Only started, confirmed appointments with no pending balance checkout may be marked absent.'),{status:409});
+      record={...record,status:'no_show',noShowAt:new Date().toISOString(),updatedAt:new Date().toISOString()};
     } else if (payload.action === "cancel" && kind === "bookings") {
+      if(!['confirmed','pending_approval'].includes(record.status)) throw Object.assign(new Error('Only active appointments may be cancelled.'),{status:409});
+      record={...record,lateCancellation:Date.parse(record.start)<Date.now()+bookingPolicy(site).cancellationNoticeMinutes*60000};
       if (record.googleEventId && !record.calendarToken) {
         try { await deleteGoogleEvent(site.siteId, record.googleCalendarId, record.googleEventId); record.calendarCancellationPending = false; }
         catch { record.calendarCancellationPending = true; }
@@ -118,7 +124,7 @@ export function createCommerceAdminHandler({authorizeAccess=requireSiteAccess,au
       if (!bookingCanSync(record)) throw Object.assign(new Error("Only confirmed appointments can sync to Google Calendar."), { status: 409 });
       record = await syncBookingCalendar(site, record);
     } else if (payload.action === "mark_paid" && record.paymentStatus === "due") {
-      if (["cancelled", "failed", "refunded"].includes(record.status)) throw Object.assign(new Error("This transaction is no longer active."), { status: 409 });
+      if (["cancelled", "failed", "refunded", "no_show", "pending_approval"].includes(record.status)) throw Object.assign(new Error("This transaction is no longer active or requires approval."), { status: 409 });
       record = { ...record, paymentStatus: "paid_in_person", status: "confirmed", ...(payload.cash===true?{paymentMethod:"cash",cashConfirmedBy:displayActor(user)}:{}), paidAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
       if (kind === "orders" && /restaurant|food|catering|bakery|cafe|coffee|comida|alimento|panader|cafeter|restaurante/i.test(`${site.business?.category || ""} ${site.business?.name || ""}`)) {
         record.kitchenStatus = "received";
@@ -246,3 +252,4 @@ export function createCommerceAdminHandler({authorizeAccess=requireSiteAccess,au
   } catch (error) { return errorResponse(error); }
 };}
 export default createCommerceAdminHandler();
+

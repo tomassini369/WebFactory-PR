@@ -23,6 +23,9 @@ import { BusinessAccountingPanel } from './BusinessAccountingPanel'
 import { MfaSettings } from './MfaAccess'
 import './business-policies.css'
 import { BookingCalendar } from './BookingCalendar'
+import BookingPolicySettings from './BookingPolicySettings'
+import {BookingWaitlistManager} from './BookingWaitlist'
+import BookingSeriesPanel from './BookingSeriesPanel'
 import { AthConnection } from './AthConnection'
 import { StripeConnection } from './StripeConnection'
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
@@ -208,8 +211,11 @@ export default function ClientAdminPage({practiceStartTab}:{practiceStartTab?:st
       {tab==='kitchen'&&<KitchenPanel records={commerce.orders} lang={lang} busy={busy} locations={site.business.locations||[]} timeZone={site.settings?.timezone||'America/Puerto_Rico'} onStatus={(record,status)=>transactionAction(record,`kitchen_status:${status}`)}/>}
       {tab==='orders'&&['owner','admin'].includes(membership?.role)&&<TransactionPanel records={commerce.orders} kind="order" lang={lang} onAction={transactionAction} busy={busy}/>}
       {tab==='orders'&&membership?.role==='employee'&&<EmployeeWorkspace site={site} membership={membership} commerce={commerce} lang={lang} onAction={transactionAction} ordersOnly/>}
-      {tab==='bookings'&&['owner','admin'].includes(membership?.role)&&<><BookingCalendar records={commerce.bookings} lang={lang} timeZone={site.settings?.timezone} employees={site.employees}/><TransactionPanel records={commerce.bookings} kind="booking" lang={lang} timeZone={site.settings?.timezone} googleConnected={site.googleCalendar?.connected} employees={site.employees} canReconcileBalance={Boolean(membership?.capabilities?.includes('payments'))} onAction={transactionAction} busy={busy}/></>}
-      {tab==='bookings'&&membership?.role==='employee'&&<EmployeeWorkspace site={site} membership={membership} commerce={commerce} lang={lang} onAction={transactionAction}/>}
+      {tab==='bookings'&&['owner','admin'].includes(membership?.role)&&<><BookingCalendar records={commerce.bookings} siteId={site.siteId} hours={site.hours} locations={site.business.locations||[]} owner onAction={transactionAction} busy={busy} lang={lang} timeZone={site.settings?.timezone} employees={site.employees}/><TransactionPanel records={commerce.bookings} kind="booking" lang={lang} timeZone={site.settings?.timezone} googleConnected={site.googleCalendar?.connected} employees={site.employees} canReconcileBalance={Boolean(membership?.capabilities?.includes('payments'))} onAction={transactionAction} busy={busy}/></>}
+      {tab==='bookings'&&membership?.role==='employee'&&<><BookingCalendar records={commerce.bookings} siteId={site.siteId} hours={site.hours} locations={site.business.locations||[]} onAction={transactionAction} busy={busy} lang={lang} timeZone={site.settings?.timezone} employees={site.employees}/><EmployeeWorkspace site={site} membership={membership} commerce={commerce} lang={lang} onAction={transactionAction}/></>}
+      {tab==='settings'&&<PortalPanel className="ca-panel"><BookingPolicySettings site={site} lang={lang} onSave={save} busy={busy}/></PortalPanel>}
+      {tab==='bookings'&&['owner','admin'].includes(membership?.role)&&<BookingWaitlistManager site={site} lang={lang} onSave={save} busy={busy}/>}
+      {tab==='bookings'&&['owner','admin'].includes(membership?.role)&&<BookingSeriesPanel site={site} lang={lang}/>}
       {tab==='customers'&&<CustomersPanel siteId={site.siteId} lang={lang}/>}
       {tab==='catalog'&&<><CatalogEditor site={site} setSite={setSite} lang={lang} onSave={()=>save('catalog',site.catalog)} busy={busy}/><InventoryStatusPanel site={site} lang={lang}/><InventoryAdjustmentPanel site={site} setSite={setSite} lang={lang}/><InventoryMovementsPanel siteId={site.siteId} lang={lang}/></>}
       {tab==='team'&&<><TeamEditor site={site} setSite={setSite} lang={lang} onSave={()=>save('employees',site.employees)} busy={busy}/><MemberRolesPanel site={site} setSite={setSite} lang={lang} membership={membership}/></>}
@@ -304,3 +310,4 @@ function Save({busy,onClick,lang='es'}:{busy:boolean;onClick:()=>void;lang?:Lang
 function siteStatusText(status:string,lang:'es'|'en') {
  return ({published:lang==='es'?'Publicado':'Published',active:lang==='es'?'Activo':'Active',draft:lang==='es'?'Borrador':'Draft',deleted:lang==='es'?'Eliminado':'Deleted'} as Record<string,string>)[status]||String(status||'').replaceAll('_',' ')
 }
+

@@ -2,6 +2,7 @@ import crypto from "node:crypto";
 import { clientCommerceStore, commerceKey } from "./client-store.mjs";
 import { googleBusy } from "./google-calendar.mjs";
 import { withBookingLock } from "./booking-lock.mjs";
+import { bookingPolicy, bookingBuffers } from './booking-policy.mjs';
 
 const DAY_NAMES = { Sun: "Domingo", Mon: "Lunes", Tue: "Martes", Wed: "Miércoles", Thu: "Jueves", Fri: "Viernes", Sat: "Sábado" };
 
@@ -13,32 +14,38 @@ function offsetAt(date, timeZone) {
   return asUtc - date.getTime();
 }
 
-function zonedToUtc(date, time, timeZone) {
+export function zonedToUtc(date, time, timeZone) {
   const [year, month, day] = date.split("-").map(Number);
   const [hour, minute] = time.split(":").map(Number);
-  let result = new Date(Date.UTC(year, month - 1, day, hour, minute));
-  result = new Date(result.getTime() - offsetAt(result, timeZone));
-  return result;
+  const wall = Date.UTC(year, month - 1, day, hour, minute);
+  const offsets = new Set([-86400000, 0, 86400000].map(delta => offsetAt(new Date(wall + delta), timeZone)));
+  const candidates = [...offsets].map(offset => wall - offset).filter(value => value + offsetAt(new Date(value), timeZone) === wall).sort((a,b)=>a-b);
+  return new Date(candidates[0] ?? NaN);
 }
 
 function overlaps(startA, endA, startB, endB) {
   return startA < endB && endA > startB;
 }
 
-async function reservationsForEmployee(siteId, employeeId, startDay, endDay, catalog = []) {
+async function reservationsForEmployee(siteId, employeeId, startDay, endDay, catalog = [], ignoreReservationId = '') {
   const store = clientCommerceStore();
   const records = [];
   for (const kind of ["bookings", "holds"]) {
     const pages = store.list({ prefix: `${siteId}/${kind}/`, paginate:true });
-    for await (const list of pages[Symbol.asyncIterator]?pages:[await pages]) for (const blob of list.blobs || []) {
-      const record = await store.get(blob.key, { type: "json" });
+    for await (const list of pages[Symbol.asyncIterator]?pages:[await pages]) {
+    for (let offset=0;offset<(list.blobs || []).length;offset+=20) {
+    const batch=await Promise.all(list.blobs.slice(offset,offset+20).map(async blob=>({blob,record:await store.get(blob.key,{type:'json'})})));
+    for (const {blob,record} of batch) {
       if (!record || record.employeeId !== employeeId) continue;
+      if(ignoreReservationId && (record.holdId===ignoreReservationId || record.transactionId===ignoreReservationId))continue;
       if (kind === "holds" && Date.parse(record.expiresAt || "") <= Date.now()) continue;
       if (["cancelled", "failed"].includes(record.status)) continue;
-      const start = Date.parse(record.start);
+      const start = Date.parse(record.start) - Math.max(0, Number(record.bufferBeforeMinutes ?? 0))*60000;
       const buffer = Math.max(0,Number(record.bufferMinutes ?? catalog.find(item=>item.id===record.serviceId)?.bufferMinutes ?? 0));
       const end = Date.parse(record.end) + buffer*60000;
       if (Number.isFinite(start) && Number.isFinite(end) && overlaps(start, end, startDay, endDay)) records.push({ start, end, reservationId:record.holdId || record.transactionId || blob.key });
+    }
+    }
     }
   }
   return [...new Map(records.map(record=>[record.reservationId,record])).values()];
@@ -77,32 +84,33 @@ function ruleSlots({date,timeZone,service,employee,site,blocks,locationId='',clo
   if (Number(employee.dailyLimit)>0 && blocks.filter(block=>block.reservationId && block.start>=dayStart && block.start<dayEnd).length>=Number(employee.dailyLimit)) return [];
   const off=(employee.timeOff || []).map(entry=>({start: /^\d{4}-\d{2}-\d{2}$/.test(entry.start)?zonedToUtc(entry.start,'00:00',timeZone).getTime():Date.parse(entry.start),end:/^\d{4}-\d{2}-\d{2}$/.test(entry.end)?localDayEnd(entry.end,timeZone):Date.parse(entry.end)}));
   const breaks=(schedule.breaks || []).map(entry=>({start:zonedToUtc(date,entry.start,timeZone).getTime(),end:zonedToUtc(date,entry.end,timeZone).getTime()}));
-  return slotsForSchedule({date,schedule,service,blocks:[...blocks,...off,...breaks],timeZone,clock});
+  return slotsForSchedule({date,schedule,service,site,blocks:[...blocks,...off,...breaks],timeZone,clock});
 }
-function slotsForSchedule({ date, schedule, service, blocks, timeZone, clock=Date.now }) {
+function slotsForSchedule({ date, schedule, service, site, blocks, timeZone, clock=Date.now }) {
   if (!schedule?.enabled) return [];
   const dayStart = zonedToUtc(date, schedule.open || '09:00', timeZone);
   const dayEnd = zonedToUtc(date, schedule.close || '17:00', timeZone);
   const duration = Math.max(5, Number(service.duration || 30));
-  const buffer = Math.max(0, Number(service.bufferMinutes || 0));
+  const {before,after:buffer} = bookingBuffers(site,service);
+  const policy=bookingPolicy(site), now=clock();
   const slots = [];
-  for (let cursor = dayStart.getTime(); cursor + (duration+buffer) * 60_000 <= dayEnd.getTime(); cursor += 15 * 60_000) {
+  for (let cursor = dayStart.getTime()+before*60000; cursor + (duration+buffer) * 60_000 <= dayEnd.getTime(); cursor += policy.slotIntervalMinutes * 60_000) {
     const end = cursor + (duration + buffer) * 60_000;
-    if (cursor < clock() + 60 * 60_000) continue;
-    if (!blocks.some((block) => overlaps(cursor, end, block.start, block.end))) {
+    if (cursor < now + policy.minimumNoticeMinutes * 60_000 || policy.maximumAdvanceDays>0 && cursor>now+policy.maximumAdvanceDays*86400000) continue;
+    if (!blocks.some((block) => overlaps(cursor-before*60000, end, block.start, block.end))) {
       slots.push({ start: new Date(cursor).toISOString(), end: new Date(cursor + duration * 60_000).toISOString() });
     }
   }
   return slots.slice(0, 96);
 }
 const validDate = date => /^\d{4}-\d{2}-\d{2}$/.test(date) && Number.isFinite(Date.parse(date)) && new Date(date).toISOString().slice(0,10)===date;
-export async function availabilityForDate(site, serviceId, employeeId, date, locationId = "", {strictGoogle=true} = {}) {
+export async function availabilityForDate(site, serviceId, employeeId, date, locationId = "", {strictGoogle=true,ignoreReservationId=''} = {}) {
   if (!validDate(date)) throw Object.assign(new Error("Invalid booking date."), { status: 400 });
   const { service, employee } = bookingServiceAndEmployee(site, serviceId, employeeId, locationId);
   const timeZone = site.settings?.timezone || "America/Puerto_Rico";
   const dayStart = zonedToUtc(date, '00:00', timeZone);
-  const dayEnd = zonedToUtc(date, '23:59', timeZone);
-  const reserved = await reservationsForEmployee(site.siteId, employeeId, dayStart.getTime(), dayEnd.getTime(),site.catalog);
+  const dayEnd = new Date(localDayEnd(date,timeZone));
+  const reserved = await reservationsForEmployee(site.siteId, employeeId, dayStart.getTime(), dayEnd.getTime(),site.catalog,ignoreReservationId);
   let googleReserved = [];
   if (site.googleCalendar?.connected && employee.calendarId) {
     try {
@@ -137,7 +145,7 @@ export async function availabilityForMonth(site, serviceId, employeeId, month, l
   const lastDate = `${month}-${String(new Date(Date.UTC(year, monthNumber, 0)).getUTCDate()).padStart(2, "0")}`;
   const timeZone = site.settings?.timezone || "America/Puerto_Rico";
   const rangeStart = zonedToUtc(firstDate, "00:00", timeZone);
-  const rangeEnd = zonedToUtc(lastDate, "23:59", timeZone);
+  const rangeEnd = new Date(localDayEnd(lastDate,timeZone));
   const reserved = await reservationsForEmployee(site.siteId, employeeId, rangeStart.getTime(), rangeEnd.getTime(),site.catalog);
   let googleReserved = [];
   if (site.googleCalendar?.connected && employee.calendarId) {
@@ -153,7 +161,8 @@ export async function availabilityForMonth(site, serviceId, employeeId, month, l
   return monthAvailabilityFromBlocks({ month, timeZone, service, employee, site, blocks, locationId });
 }
 
-export async function createBookingHold(site, { serviceId, employeeId, start, locationId = "" }, {strictGoogle=true} = {}) {
+export async function createBookingHold(site, { serviceId, employeeId, start, locationId = "" }, {strictGoogle=true,ignoreReservationId=''} = {}) {
+  if (!Number.isFinite(Date.parse(start))) throw Object.assign(new Error('Invalid booking time.'),{status:400});
   const isoStart = new Date(start).toISOString();
   const parts = new Intl.DateTimeFormat("en-US", { timeZone: site.settings?.timezone || "America/Puerto_Rico", year: "numeric", month: "2-digit", day: "2-digit" })
     .formatToParts(new Date(isoStart)).reduce((acc, part) => ({ ...acc, [part.type]: part.value }), {});
@@ -161,15 +170,17 @@ export async function createBookingHold(site, { serviceId, employeeId, start, lo
   const store=clientCommerceStore();
   const lockKey=commerceKey(site.siteId,"booking-slot-locks",crypto.createHash("sha256").update(`${employeeId}:${localDate}`).digest("hex"));
   return withBookingLock(store,lockKey,async()=>{
-  const slots = await availabilityForDate(site, serviceId, employeeId, localDate, locationId,{strictGoogle});
+  const slots = await availabilityForDate(site, serviceId, employeeId, localDate, locationId,{strictGoogle,ignoreReservationId});
   const selected = slots.find((slot) => slot.start === isoStart);
   if (!selected) throw Object.assign(new Error("That time is no longer available."), { status: 409 });
   const holdId = `hold_${crypto.randomUUID()}`;
+  const buffers=bookingBuffers(site,(site.catalog || []).find(item=>item.id===serviceId));
   const hold = {
-    holdId, bufferMinutes:Number((site.catalog || []).find(item=>item.id===serviceId)?.bufferMinutes || 0), siteId: site.siteId, serviceId, employeeId, locationId, start: selected.start, end: selected.end,
+    holdId, bufferMinutes:buffers.after, bufferBeforeMinutes:buffers.before, siteId: site.siteId, serviceId, employeeId, locationId, start: selected.start, end: selected.end,
     status: "held", createdAt: new Date().toISOString(), expiresAt: new Date(Date.now() + 15 * 60_000).toISOString(),
   };
   await clientCommerceStore().setJSON(commerceKey(site.siteId, "holds", holdId), hold);
   return hold;
   });
 }
+

@@ -62,7 +62,7 @@ function appendLine(params, index, item) {
   params.set(`line_items[${index}][quantity]`, String(item.quantity));
 }
 
-export async function performCheckout(req, { kiosk = false, kioskQr = false, balanceBooking = null, balanceAttempt = "" } = {}) {
+export async function performCheckout(req, { kiosk = false, kioskQr = false, balanceBooking = null, balanceAttempt = "", series = null } = {}) {
   if (req.method !== "POST") return Response.json({ ok: false, message: "Method not allowed." }, { status: 405 });
   try {
     assertSameOrigin(req);
@@ -79,7 +79,12 @@ export async function performCheckout(req, { kiosk = false, kioskQr = false, bal
     if (!customer.name || !validEmail(customer.email)) throw Object.assign(new Error("Customer name and a valid email are required."), { status: 400 });
 
     const lang = payload.lang === "es" ? "es" : "en";
-    const transactionId = `txn_${crypto.randomUUID()}`;
+    const transactionId = series?.transactionId || `txn_${crypto.randomUUID()}`;
+    if(series){
+      if(!payload.booking||site.paymentRules?.bookingPayment!=='in_person')throw Object.assign(new Error('Recurring bookings currently require payment in person.'),{status:409});
+      const existing=await clientCommerceStore().get(commerceKey(site.siteId,'bookings',transactionId),{type:'json'});
+      if(existing){if(existing.seriesId!==series.id)throw Object.assign(new Error('Booking identifier conflict.'),{status:409});return Response.json({ok:true,transactionId,status:existing.status,paymentRequired:false});}
+    }
     const locations = (site.business?.locations || []).filter((location) => location.active !== false);
     const locationId = cleanText(payload.locationId || payload.booking?.locationId, 120);
     if (locations.length && (!locationId || !locations.some((location) => location.id === locationId))) {
@@ -99,6 +104,7 @@ export async function performCheckout(req, { kiosk = false, kioskQr = false, bal
       items=[{id:balanceBooking.serviceId,name:lang==="es"?"Saldo de cita":"Booking balance",quantity:1,unitAmount:balance.due-(balanceBooking.pricesIncludeTax?0:balanceTaxCents)}];
     } else if (payload.booking) {
       kind = "booking";
+      if(site.settings?.bookingApproval==='manual'&&site.paymentRules?.bookingPayment!=='in_person')throw Object.assign(new Error('Manual approval requires in-person payment.'),{status:409});
       const service = (site.catalog || []).find((item) => item.id === payload.booking.serviceId && item.type === "service" && item.requiresAppointment && item.active !== false);
       const employee = (site.employees || []).find((member) => member.id === payload.booking.employeeId && member.active !== false && (member.serviceIds || []).includes(service?.id) && (!locations.length || (locationId && (member.locationIds || []).includes(locationId))));
       if (!service || !employee) throw Object.assign(new Error("The selected service or employee is unavailable."), { status: 409 });
@@ -152,13 +158,15 @@ export async function performCheckout(req, { kiosk = false, kioskQr = false, bal
     }
     let record = {
       transactionId, siteId: site.siteId, kind, customer, items, locationId, locationName: selectedLocation?.name || "", holdId: hold?.holdId || "",
+      ...(series?{seriesId:series.id,seriesOccurrence:series.occurrence}:{}),
       serviceId: balanceBooking?.serviceId || hold?.serviceId || "", employeeId: balanceBooking?.employeeId || hold?.employeeId || "", start: hold?.start || "", end: hold?.end || "",
+      ...(hold ? {bufferMinutes:hold.bufferMinutes,bufferBeforeMinutes:hold.bufferBeforeMinutes} : {}),
       ...(kind==="booking"?{bookingTotalCents,bookingTaxCents}:{}),
       ...(balanceBooking?{source:"booking_balance",bookingTransactionId:balanceBooking.transactionId,bookingBalanceAttempt:balanceAttempt}:{}),
       channel: kiosk ? "kiosk" : "storefront", pricesIncludeTax: balanceBooking?Boolean(balanceBooking.pricesIncludeTax):Boolean(site.taxConfig?.pricesIncludeTax),
       subtotal, tax: taxCents, amountTotal: subtotal + ((balanceBooking?balanceBooking.pricesIncludeTax:site.taxConfig?.pricesIncludeTax) ? 0 : taxCents), currency: "usd",
       ...(kind === "booking" ? { language:lang, bookingCode:crypto.randomBytes(4).toString("hex").toUpperCase(), customerCalendarInviteRequested: site.settings?.sendGoogleCalendarInvites === true, confirmationEmailRequested: true, calendarToken: crypto.randomBytes(32).toString("base64url") } : {}),
-      paymentStatus: inPerson ? "due" : "pending", status: inPerson ? "confirmed" : "payment_pending",
+      paymentStatus: inPerson ? "due" : "pending", status: inPerson ? (kind==='booking'&&!series&&site.settings?.bookingApproval==='manual'?'pending_approval':'confirmed') : "payment_pending",
       createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
     };
 
@@ -187,6 +195,11 @@ export async function performCheckout(req, { kiosk = false, kioskQr = false, bal
       if(kind==='order'){
         record=await createInPersonOrder(site,record);
         return Response.json({ok:true,paymentRequired:false,transactionId,status:record.status,...(trackingToken?{trackingUrl:`${publicBaseUrl()}/track/${trackingToken}`}:{})},{headers:{'Cache-Control':'no-store'}});
+      }
+      await clientCommerceStore().setJSON(commerceKey(site.siteId,'bookings',transactionId),record);
+      if(record.status==='pending_approval'){
+        await clientCommerceStore().setJSON(commerceKey(site.siteId,'transactions',transactionId),record);
+        return Response.json({ok:true,paymentRequired:false,transactionId,status:record.status,manageUrl:bookingManageUrl(record)},{headers:{'Cache-Control':'no-store'}});
       }
       record = await syncBookingCalendar(site, record);
       await clientCommerceStore().setJSON(commerceKey(site.siteId, kind === "booking" ? "bookings" : "orders", transactionId), record);
@@ -268,3 +281,4 @@ export async function performCheckout(req, { kiosk = false, kioskQr = false, bal
 export default createCheckoutAttemptHandler({ performCheckout, getSite: async (payload) => payload.siteId ? getClientSite(payload.siteId) : getClientSiteBySlug(payload.slug), isAvailable: (site) => siteEntitlement(site).public, getStore: clientCommerceStore });
 
 export const config = { rateLimit: { windowLimit: 20, windowSize: 60, aggregateBy: ["ip"] } };
+
