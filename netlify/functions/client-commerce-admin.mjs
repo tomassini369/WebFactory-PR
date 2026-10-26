@@ -248,7 +248,9 @@ export function createCommerceAdminHandler({authorizeAccess=requireSiteAccess,au
     return Response.json({ ok: true, record:employeeCommerceRecord(record,membership) }, { headers: { "Cache-Control": "no-store" } });
     };
     const bookingRow=kind==='bookings'?await getStore().get(commerceKey(site.siteId,kind,payload.transactionId),{type:'json'}):null;
-    return payload.cash!==true&&!balanceAction&&((kind==='bookings'&&!bookingRow?.balanceAttempt&&bookingRow?.bookingTotalCents==null)||['recover_pos','recover_ath'].includes(payload.action))?await run():await withBookingLock(getStore(),`locks/commerce/${site.siteId}`,run);
+    if(bookingRow)assertCommerceAction(site,membership,bookingRow,payload.action);
+    const dispatch=()=>payload.cash!==true&&!balanceAction&&((kind==='bookings'&&!bookingRow?.balanceAttempt&&bookingRow?.bookingTotalCents==null)||['recover_pos','recover_ath'].includes(payload.action))?run():withBookingLock(getStore(),`locks/commerce/${site.siteId}`,run);
+    return bookingRow?.calendarToken?await withBookingLock(getStore(),commerceKey(site.siteId,'booking-change-locks',payload.transactionId),dispatch):await dispatch();
   } catch (error) { return errorResponse(error); }
 };}
 export default createCommerceAdminHandler();

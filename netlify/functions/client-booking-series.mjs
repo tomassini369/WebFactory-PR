@@ -11,7 +11,7 @@ export default async req=>{
   const {site,membership}=await requireSiteCapability(input.siteId||query.get('siteId'),'bookings');
   if(!isBusinessOwner(membership))throw Object.assign(new Error('Owner access required.'),{status:403});
   if(req.method==='GET'){
-   const store=clientCommerceStore(),series=[];for await(const page of store.list({prefix:site.siteId+'/booking-series/',paginate:true}))for(const blob of page.blobs||[]){const row=await store.get(blob.key,{type:'json'});if(row?.siteId===site.siteId)series.push(row);if(series.length>=100)break;}
+   const store=clientCommerceStore(),series=[];pages:for await(const page of store.list({prefix:site.siteId+'/booking-series/',paginate:true}))for(const blob of page.blobs||[]){const row=await store.get(blob.key,{type:'json'});if(row?.siteId===site.siteId)series.push(row);if(series.length>=100)break pages;}
    return Response.json({ok:true,series},{headers:{'Cache-Control':'private, no-store'}});
   }
   if(!['create','continue','cancel'].includes(input.action))throw Object.assign(new Error('Invalid action.'),{status:400});
