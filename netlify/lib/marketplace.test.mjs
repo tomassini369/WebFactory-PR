@@ -81,3 +81,14 @@ test('self-service profile deletion erases consumer fields and reacceptance neve
  assert.equal(result.needsAcceptance,true);assert.equal(result.name,'');assert.deepEqual(result.favorites,[]);
  const deleted=await store.get(consumerKey(user.id));assert.equal(deleted.status,'deleted');assert(!JSON.stringify(deleted).includes('Erase this name'));assert.equal(deleted.consent,undefined);
 });
+
+test('previous preview consent requires fresh acceptance without losing saved preferences',async()=>{
+ const store=memory(),user={id:'policy-revision'};
+ await store.setJSON(consumerKey(user.id),{name:'Saved name',municipality:'Arecibo',favorites:['test-business'],status:'active',revision:4,consent:{version:'2026-10-25-preview',acceptedAt:'2026-10-24T00:00:00.000Z',adult:true,terms:true,privacy:true}},{onlyIfNew:true});
+ assert.equal(publicConsumer(await store.get(consumerKey(user.id)),user).needsAcceptance,true);
+ await assert.rejects(()=>updateConsumer(store,user,{action:'favorite',revision:4,slug:'test-business',saved:false},async()=>site()),{status:403});
+ await assert.rejects(()=>updateConsumer(store,user,{action:'accept_policy',revision:4,adult:true,acceptedTerms:true,policyVersion:'2026-10-25-preview'},async()=>site()),{status:400});
+ const accepted=await updateConsumer(store,user,{action:'accept_policy',revision:4,adult:true,acceptedTerms:true,policyVersion:CONSUMER_POLICY_VERSION},async()=>site());
+ assert.equal(accepted.needsAcceptance,false);assert.deepEqual(accepted.favorites,['test-business']);assert.equal(accepted.name,'Saved name');assert.equal(accepted.municipality,'Arecibo');assert.equal(accepted.revision,5);
+ assert.equal((await store.get(consumerKey(user.id))).consent.version,CONSUMER_POLICY_VERSION);
+});

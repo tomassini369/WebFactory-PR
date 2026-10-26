@@ -35,3 +35,9 @@ EN: Use /copyright to report business-hosted content with its URL, work identifi
 ES: Los mapas externos se cargan cuando eliges abrirlos. Para soporte y derechos sobre datos, consulta /privacy. Para condiciones del servicio, /terms; para reembolsos, /refund-policy. Las integraciones autorizadas de Google conservan su finalidad operativa y sus declaraciones Limited Use.
 
 EN: External maps load when you choose to open them. See /privacy for support/data rights, /terms for service conditions and /refund-policy for refunds. Authorized Google integrations retain their operational purpose and Limited Use statements.
+
+## Aclaración jurídica preliminar / Preliminary legal clarification
+
+ES: Tener18años cumple el umbral de cuenta del producto; no acredita por sí solo plena capacidad para contratar. En Puerto Rico la mayoría civil generalmente es21, con actos desde18 sujetos a las condiciones aplicables. La nueva versión de aceptación Preview puede pedir que revises y aceptes el texto sin borrar favoritos. Eliminar preferencias no elimina automáticamente pagos, reservas, identidad compartida ni copias del proveedor. Cancelar una cita tampoco emite un reembolso automáticamente.
+
+EN: Being18 satisfies the product account threshold; it does not itself establish full contractual capacity. Puerto Rico generally sets civil majority at21, with acts from18 subject to applicable conditions. The updated preview version may request fresh review/acceptance without deleting favorites. Preference deletion does not automatically erase payments, bookings, shared identity or provider copies. Canceling an appointment does not automatically issue a refund.

@@ -88,3 +88,7 @@ recibos ni avisos transaccionales de reservas/seguridad.
 ## Prepared operational follow-up
 
 See ../compliance/OPERATIONS-RUNBOOK.es-en.md for privacy/minor/copyright/billing handling, ../compliance/DATA-RETENTION.es-en.md for code-backed retention inventory and limitations, and ../compliance/RELEASE-HANDOFF.es-en.md for a blocked future release plan. These documents prepare procedures; they do not approve legal schedules, certify inbox monitoring or authorize production. Existing public wording/dates and Google OAuth remain unchanged.
+
+## Source-backed preliminary review
+
+See [PRELIMINARY-REVIEW-2026-10-25.es-en.md](PRELIMINARY-REVIEW-2026-10-25.es-en.md) for verified PR Civil Code arts.97/107, Law39-2012, ROSCA, FTC rulemaking status, CAN-SPAM and section512 analysis. Public preview supplements now clarify operator/capacity, retention/deletion, email providers, merchant/platform responsibility and deposits. Consumer version `2026-10-25-preview-r2` requires renewed acceptance through the existing gate, preserving saved preferences and minor restrictions. Dates and draft notices remain. No professional approval is claimed.
