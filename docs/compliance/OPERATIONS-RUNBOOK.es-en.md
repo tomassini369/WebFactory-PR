@@ -46,3 +46,9 @@ ES: Usar Billing → verificación para discrepancias; la consulta no cobra, can
 EN: Use Billing verification for discrepancies; it does not charge, cancel or refund. Query an uncertain payment using the same attempt; do not repeat a charge to fix stale UI. For an incident preserve minimal evidence, limit affected access, record scope and assess notifications with advice for actual data/jurisdictions. Do not invent a universal notification deadline or automatically send external notices.
 
 Fuentes / Sources: https://www.copyright.gov/512/ ; https://www.ftc.gov/business-guidance/resources/can-spam-act-compliance-guide-business . Revisadas / Checked: 2026-10-25 (America/Puerto_Rico).
+
+## Moderación del Marketplace / Marketplace moderation
+
+ES: Resources → Marketplace permite consultar reseñas por slug y página, publicar/rechazar con revisión neutral y consultar reportes privados. No rechazar por puntuación negativa ni favorecer anunciantes. Para anuncios, aprobar texto antes de habilitar pago; pausar no reembolsa. No habilitar la oferta sin precio, duración, impuestos y condiciones aprobados. Consultar pagos inciertos por la misma sesión Stripe, sin crear otra campaña. Ver ../MARKETPLACE-SOCIAL-ADS.md para límites y propuesta no aprobada.
+
+EN: Resources → Marketplace lists reviews by slug/page, records neutral publication/rejection and private reports. Do not reject negative scores or favor advertisers. Approve ad content before payment; pausing does not refund. Do not enable an offer without approved price, duration, tax and terms. Query uncertain payment through the same Stripe session rather than creating another campaign. See ../MARKETPLACE-SOCIAL-ADS.md for limits and the unapproved proposal.

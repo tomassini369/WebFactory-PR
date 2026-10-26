@@ -28,3 +28,7 @@ Five new isolated tests cover administrator-only access and list minimization, c
 ## Preliminary legal review revision
 
 Policy identifier is now `2026-10-25-preview-r2`. Older preview acceptances must be renewed through the existing version gate; saved preferences remain stored, minor restrictions remain binding, and acceptance is server-timestamped. The legacy `adult` boolean is an 18+ product attestation, not verification of civil majority or contractual capacity. No birth date or document collection is added.
+
+## Following/reviews preview update
+
+Current policy identifier `2026-10-25-preview-r3` covers the new private following and separately consented public review contributions. Existing acceptance version gate preserves saved lists while requiring review. Profile deletion/minor restriction clears following and increments reviewEpoch; public review projection checks authorEpoch so reacceptance cannot resurrect old published reviews. Eligibility administration preserves this counter. New review/public ad projections exclude author identity/email, follower lists and payment configuration. See ../MARKETPLACE-SOCIAL-ADS.md.

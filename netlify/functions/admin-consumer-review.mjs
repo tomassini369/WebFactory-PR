@@ -30,7 +30,7 @@ export function createConsumerReviewHandler({authorize=requirePlatformAdmin,getS
   const history=row.data.reviewHistory||[];if(!Array.isArray(history)||history.length>=25)throw fail('Review history limit requires supervised archival.',409);
   const review={decision:input.decision,at:new Date(clock()).toISOString(),actor:actor.id,reason:input.reason.trim(),reviewCompleted:true};
   // A cleared restriction requires fresh self-attestation; erased profile data is never restored.
-  const next={name:'',municipality:'',favorites:[],status:input.decision==='allow_reattest'?'eligibility_reviewed':'minor_review',revision:input.revision+1,requestedAt:row.data.requestedAt,reviewHistory:[...history,review]};
+  const next={reviewEpoch:Number(row.data.reviewEpoch||0),name:'',municipality:'',favorites:[],status:input.decision==='allow_reattest'?'eligibility_reviewed':'minor_review',revision:input.revision+1,requestedAt:row.data.requestedAt,reviewHistory:[...history,review]};
   const result=await store.setJSON(key(input.id),next,{onlyIfMatch:row.etag});if(!result.modified)throw fail('Review changed. Reload before deciding.',409);
   return authJson({ok:true,request:summary(input.id,next)});
  }catch(error){return errorResponse(error)}

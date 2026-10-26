@@ -1,3 +1,5 @@
+> Current Preview update: following, moderated public reviews and sandbox sponsored-purchase code are now implemented. Approved advertising price/duration/terms remain unconfigured. See [MARKETPLACE-SOCIAL-ADS.md](MARKETPLACE-SOCIAL-ADS.md). Earlier phase descriptions below are historical, not current feature status.
+
 # Marketplace: reference design and consumer access
 
 Branch: `feat/marketplace-phase-1`, PR #123. Based on current main including

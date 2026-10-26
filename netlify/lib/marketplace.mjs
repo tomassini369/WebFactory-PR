@@ -45,8 +45,8 @@ export async function readDirectory(store,{maxSites=250,budgetMs=6000,clock=Date
 export function publicConsumer(profile,user){
  const restricted=profile?.status==='minor_review',deleted=profile?.status==='deleted';
  const needsAcceptance=profile?.consent?.version!==CONSUMER_POLICY_VERSION||deleted;
- if(restricted||needsAcceptance)return {name:'',municipality:'',favorites:[],revision:Number(profile?.revision||0),needsAcceptance,restricted};
- return {needsAcceptance:false,restricted:false,name:text(profile?.name||user.name,100),municipality:municipalities.includes(profile?.municipality)?profile.municipality:'',favorites:Array.isArray(profile?.favorites)?profile.favorites.filter(v=>typeof v==='string'&&v.length<=64&&slugPattern.test(v)).slice(0,100):[],revision:Number(profile?.revision||0)};
+ if(restricted||needsAcceptance)return {name:'',municipality:'',favorites:[],following:[],revision:Number(profile?.revision||0),needsAcceptance,restricted};
+ return {needsAcceptance:false,restricted:false,name:text(profile?.name||user.name,100),municipality:municipalities.includes(profile?.municipality)?profile.municipality:'',following:Array.isArray(profile?.following)?profile.following.filter(v=>typeof v==='string'&&v.length<=64&&slugPattern.test(v)).slice(0,100):[],favorites:Array.isArray(profile?.favorites)?profile.favorites.filter(v=>typeof v==='string'&&v.length<=64&&slugPattern.test(v)).slice(0,100):[],revision:Number(profile?.revision||0)};
 }
 export async function updateConsumer(store,user,payload,loadBySlug){
  const key=consumerKey(user.id),record=await store.getWithMetadata(key,{type:'json'});
@@ -55,7 +55,7 @@ export async function updateConsumer(store,user,payload,loadBySlug){
  let next;
  if(payload.action==='minor_review'||payload.action==='delete_profile'){
   if(payload.confirmation!==(payload.action==='minor_review'?'REVIEW MINOR':'DELETE PROFILE'))throw Object.assign(new Error('Confirmation required.'),{status:400});
-  next={name:'',municipality:'',favorites:[],status:payload.action==='minor_review'||record?.data?.status==='minor_review'?'minor_review':'deleted',requestedAt:new Date().toISOString()};
+  next={name:'',municipality:'',favorites:[],following:[],status:payload.action==='minor_review'||record?.data?.status==='minor_review'?'minor_review':'deleted',requestedAt:new Date().toISOString()};
  }else if(payload.action==='accept_policy'){
   if(record?.data?.status==='minor_review')throw Object.assign(new Error('Eligibility review required.'),{status:403});
   const consent=consumerConsent(payload);
@@ -65,16 +65,16 @@ export async function updateConsumer(store,user,payload,loadBySlug){
   const name=text(payload.name,100),municipality=text(payload.municipality);
   if(!name||municipality&&!municipalities.includes(municipality))throw Object.assign(new Error('Invalid profile.'),{status:400});
   next={...current,name,municipality};
- }else if(payload.action==='favorite'){
+ }else if(['favorite','follow'].includes(payload.action)){
   const slug=text(payload.slug,64);
   if(!slugPattern.test(slug)||typeof payload.saved!=='boolean')throw Object.assign(new Error('Invalid favorite.'),{status:400});
   if(payload.saved&&!discoverableSite(await loadBySlug(slug)))throw Object.assign(new Error('Business unavailable.'),{status:404});
-  const favorites=current.favorites.filter(v=>v!==slug);
+  const field=payload.action==='follow'?'following':'favorites',favorites=current[field].filter(v=>v!==slug);
   if(payload.saved){if(favorites.length>=100)throw Object.assign(new Error('Favorite limit reached.'),{status:400});favorites.push(slug)}
-  next={...current,favorites};
+  next={...current,[field]:favorites};
  }else throw Object.assign(new Error('Invalid profile action.'),{status:400});
  next={...(record?.data||{}),...next,revision:current.revision+1};
- if(['minor_review','delete_profile'].includes(payload.action))next={name:'',municipality:'',favorites:[],status:next.status,requestedAt:next.requestedAt,revision:next.revision,...(record?.data?.reviewHistory?{reviewHistory:record.data.reviewHistory}:{})};
+ if(['minor_review','delete_profile'].includes(payload.action))next={name:'',municipality:'',favorites:[],following:[],status:next.status,requestedAt:next.requestedAt,revision:next.revision,reviewEpoch:Number(record?.data?.reviewEpoch||0)+1,...(record?.data?.reviewHistory?{reviewHistory:record.data.reviewHistory}:{})};
  if(record&&!record.etag)throw Object.assign(new Error('Profile unavailable.'),{status:503});
  const result=await store.setJSON(key,next,record?{onlyIfMatch:record.etag}:{onlyIfNew:true});
  if(!result.modified)throw Object.assign(new Error('Profile changed. Reload before saving.'),{status:409});
@@ -83,5 +83,5 @@ export async function updateConsumer(store,user,payload,loadBySlug){
 export async function recordConsumerConsent(store,user,consent){
  const key=consumerKey(user.id);
  // Signup never overwrites an existing profile, restriction or acceptance.
- await store.setJSON(key,{name:'',municipality:'',favorites:[],revision:0,status:'active',consent},{onlyIfNew:true});
+ await store.setJSON(key,{name:'',municipality:'',favorites:[],following:[],revision:0,status:'active',consent},{onlyIfNew:true});
 }

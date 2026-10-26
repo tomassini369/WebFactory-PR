@@ -1,3 +1,4 @@
+import {isAdEvent,settleAdEvent} from '../lib/marketplace-ads.mjs';
 import crypto from "node:crypto";
 import { platformStripeEventStore } from "../lib/platform-utils.mjs";
 import { isSubscriptionBillingEvent, processSubscriptionBillingEvent } from "../lib/subscription-billing.mjs";
@@ -52,6 +53,12 @@ export default async (req) => {
     const processed = await platformStripeEventStore().get(processedKey, { type:"json" });
     if (processed?.completed) {
       return Response.json({ received:true,duplicate:true });
+    }
+
+    if (isAdEvent(event)) {
+      const advertisement=await settleAdEvent(event);
+      await platformStripeEventStore().setJSON(processedKey,{completed:true,eventType:event.type,advertisement,processedAt:new Date().toISOString()});
+      return Response.json({received:true,advertisement});
     }
 
     if (isSubscriptionBillingEvent(event)) {
