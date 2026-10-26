@@ -1,6 +1,6 @@
 # Content claim operations — preview, 2026-10-25
 
-This is a technical intake/review procedure, not a statement of DMCA safe-harbor qualification. The owner must supply the real legal entity/contact information, designate and register a Copyright Office agent where appropriate, publish that agent's details, and have counsel approve notice, counter-notice, forwarding, restoration and repeat-infringer procedures before launch. No agent registration or external notices are submitted by this implementation.
+This is a technical intake/review procedure, not a statement of DMCA safe-harbor qualification. The owner has confirmed individual operation and completed agent registration DMCA-1084143 (Active verified); authorized contact details are configured on Preview outside Git. Production publication is excluded. Counsel review of notice, counter-notice, forwarding, restoration and repeat-infringer procedures remains open. The software does not file official notices. See ../compliance/OPERATIONS-RUNBOOK.es-en.md and ../compliance/DATA-RETENTION.es-en.md for prepared operational procedures and their limits.
 
 ## Implemented
 

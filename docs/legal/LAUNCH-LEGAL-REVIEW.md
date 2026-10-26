@@ -21,20 +21,9 @@ set the actual effective/revision date when publication is authorized.
 
 ## Owner / legal decisions required before launch
 
-1. Confirm the service provider's legal identity and publicly appropriate business
-   contact details. Existing support/billing emails are reused; this is not evidence
-   that a specific legal entity or postal address has been verified.
-2. Copyright Office DMCA agent designation: identify legal provider and aliases,
-   choose agent, provide accurate matching address/contact details, register through
-   https://www.copyright.gov/dmca-directory/ and maintain current designation. Have
-   counsel assess 17 USC 512 eligibility, repeat-infringer implementation, notices,
-   counter-notices, fair use, restoration and court-action deadlines. A public page
-   alone does not establish safe-harbor eligibility. No official filing performed.
-3. Confirm actual sales jurisdictions, not just a globally reachable website.
-   Puerto Rico consumer protection, DACO practice/advertising requirements,
-   applicable federal law, and any state/foreign privacy/renewal obligations need
-   jurisdiction-specific review. Do not assert all U.S. state laws or GDPR apply
-   automatically; likewise do not assume they cannot apply.
+1. Owner inputs confirmed: Kevin Tomassini Santiago operates individually, with a real authorized postal contact configured outside Git. This does not establish a registered business entity or verify commercial/tax registrations. Initial service market is Puerto Rico; US expansion is future scope.
+2. Official DMCA designation DMCA-1084143 is Active, verified after the owner's filing/payment. Preview /copyright presents configured contact details in ES/EN. Registration is no longer pending. Production publication remains excluded. Counsel must still assess section512 eligibility, notices, counter-notices, restoration, repeat infringement and deadlines; no absolute safe-harbor claim is made.
+3. Jurisdiction-specific review remains required for actual Puerto Rico services and future expansion: DACO, contractual capacity, privacy and renewal obligations. Global website access does not by itself establish every jurisdiction's applicability.
 4. Approve the 18+ consumer-account policy and staff process for suspected minors.
    COPPA generally concerns child-directed services and actual knowledge of under-13
    users; 18+ is a product choice, not a universal COPPA threshold. Adult attestation
@@ -95,3 +84,7 @@ revoca dispositivos fuera de control y verifica pagos pendientes antes de reinte
 ATH manual registra tu confirmación, no una prueba del proveedor. Aceptar emails
 opcionales de reseñas no autoriza cualquier campaña; respeta bajas sin cancelar
 recibos ni avisos transaccionales de reservas/seguridad.
+
+## Prepared operational follow-up
+
+See ../compliance/OPERATIONS-RUNBOOK.es-en.md for privacy/minor/copyright/billing handling, ../compliance/DATA-RETENTION.es-en.md for code-backed retention inventory and limitations, and ../compliance/RELEASE-HANDOFF.es-en.md for a blocked future release plan. These documents prepare procedures; they do not approve legal schedules, certify inbox monitoring or authorize production. Existing public wording/dates and Google OAuth remain unchanged.
