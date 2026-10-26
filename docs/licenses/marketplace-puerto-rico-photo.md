@@ -10,8 +10,8 @@ A real photograph by **Pedro Colon**, not an AI-generated scene or business list
 - Source and license checked on 2026-10-22. The original page's ImageObject identifies Pedro Colon as creator and copyright holder and links to the Pexels license.
 
 The Pexels license permits free website use and modification. Attribution is not
-required, but the Marketplace footer credits the photographer and links to the
-original. Do not imply endorsement by people or organizations in the image. Do
+required. The optional Marketplace footer credit was removed at the owner’s
+request on 2026-10-25; the source, photographer and license remain documented here. Do not imply endorsement by people or organizations in the image. Do
 not sell unaltered copies or redistribute it through a stock-photo/wallpaper
 service. This image is an exception to any repository-wide source-code license.
 
