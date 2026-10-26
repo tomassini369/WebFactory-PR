@@ -62,7 +62,8 @@ export async function kioskSaleView(store, state) {
   const record = await store.get(commerceKey(state.siteId, 'transactions', transactionId), { type: 'json' }) || booking;
   if (!record || record.siteId !== state.siteId || record.transactionId !== transactionId || record.kind !== kind || record.channel !== 'kiosk' || record.locationId !== state.locationId) return { status: 'review', saleId: state.saleId, canReset: false };
   const paid = ['paid', 'paid_in_person'].includes(record.paymentStatus) && ['confirmed', 'completed'].includes(record.status) && Boolean(record.receiptId && (kind==='booking'||record.inventoryAppliedAt)) && !record.inventoryNeedsReview && !record.athFulfillmentNeedsReview;
-  const cashClosed=active.checkoutMode==='qr'&&record.status==='cancelled'&&((record.source==='in_person_order'&&record.paymentStatus==='cancelled'&&!record.inventoryAppliedAt)||(kind==='booking'&&record.paymentStatus==='due'));
+  const checkoutCancelled=record.status==='cancelled'&&record.paymentStatus==='cancelled'&&Boolean(record.cancelledByCustomerAt)&&!record.inventoryAppliedAt;
+  const cashClosed=checkoutCancelled||active.checkoutMode==='qr'&&record.status==='cancelled'&&((record.source==='in_person_order'&&record.paymentStatus==='cancelled'&&!record.inventoryAppliedAt)||(kind==='booking'&&record.paymentStatus==='due'));
   const terminal = Boolean(record.inventoryNeedsReview || record.athFulfillmentNeedsReview) || ['paid', 'paid_in_person'].includes(record.paymentStatus) && !paid || ['failed', 'cancelled', 'expired', 'refunded', 'partially_refunded'].includes(record.paymentStatus) || ['failed', 'cancelled', 'expired', 'payment_failed'].includes(record.status);
   const due = (record.source === 'in_person_order'||kind==='booking') && record.paymentStatus === 'due' && record.status === 'confirmed' && !terminal;
   // Delivery retries update the canonical booking before its transaction mirror.
@@ -91,3 +92,4 @@ export async function kioskView(store, state, site) {
       trackInventory: Boolean(x.trackInventory), inventory: x.type === 'product' && x.trackInventory && x.inventory != null ? availableInventory(site, x) : null, allowBackorder: Boolean(x.allowBackorder) })),
     hasAppointments: site.features?.bookings !== false && (site.catalog || []).some(x => x.active !== false && x.requiresAppointment), sale: await kioskSaleView(store, state) };
 }
+

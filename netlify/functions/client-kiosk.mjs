@@ -1,3 +1,5 @@
+import {cancelPendingCheckout} from '../lib/cancel-pending-checkout.mjs';
+import {manageInPersonOrder} from '../lib/in-person-orders.mjs';
 import {withBookingLock} from '../lib/booking-lock.mjs';
 import {availabilityForDate} from '../lib/booking-engine.mjs';
 import {kioskBookingModes,lookupKioskBooking,assertKioskBooking,kioskBookingView,bookingBalance} from '../lib/kiosk-bookings.mjs';
@@ -133,6 +135,16 @@ export function createKioskHandler({ authorize = requireSiteCapability, getStore
         }
         return Response.json({ok:true,...await kioskView(store,state,site),booking:await kioskBookingView(store,state,site,now)},{headers});
       }
+      if(req.method==='POST'&&input.action==='cancel_checkout'){
+        if(input.saleId!==state.saleId||!state.active?.response?.transactionId)throw kioskFail('Sale changed.',409);
+        const transactionId=state.active.response.transactionId;
+        const authorize=row=>{if(row.channel!=='kiosk'||row.locationId!==state.locationId||row.transactionId!==transactionId||row.siteId!==site.siteId)throw kioskFail('Sale unavailable.',403)};
+        const row=await store.get(commerceKey(site.siteId,'transactions',transactionId),{type:'json'});
+        if(!row)throw kioskFail('Verify the existing payment with staff.',409);authorize(row);
+        if(row.source==='in_person_order')await manageInPersonOrder(site.siteId,transactionId,'cancel_in_person');
+        else await cancelPendingCheckout(site,transactionId,{store,requestUrl:req.url,authorize});
+        return Response.json({ok:true,...await kioskView(store,state,site)},{headers});
+      }
       if (req.method === 'POST' && ['checkout', 'booking_checkout', 'balance_checkout', 'resume'].includes(input.action)) {
         if (input.saleId !== state.saleId) throw kioskFail('Sale changed / La venta cambió.', 409);
         if (input.action !== 'resume') {
@@ -195,3 +207,4 @@ export function createKioskHandler({ authorize = requireSiteCapability, getStore
 }
 export default createKioskHandler();
 export const config = { rateLimit: { windowLimit: 600, windowSize: 60, aggregateBy: ['ip'] } };
+
