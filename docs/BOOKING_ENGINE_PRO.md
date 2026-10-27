@@ -49,3 +49,11 @@ El formulario solicita consentimiento específico para avisos de disponibilidad;
 ## Siguientes mejoras
 
 Índice derivado con reparación y comprobaciones contra el registro canónico, paginación visible de solicitudes, eliminación programada de contactos caducados, historial por cliente y pruebas de carga distribuida. Deben mantenerse dentro del mismo motor y preview antes de cualquier decisión de producción.
+
+## Actualización: ciclo de vida de lista de espera
+
+La gestión del Dueño pagina 50 solicitudes mediante cursor del último ID (orden estable), incluyendo registros posteriores al límite anterior de 500. Se listan metadatos y se leen únicamente los contactos de la página. La lista de claves todavía se recorre; esto no es el índice de disponibilidad pendiente.
+
+Las solicitudes vencidas conservan el registro operativo pero se elimina su contacto con escritura condicional. Las invitaciones entregadas que vencen vuelven a esperar dentro del plazo original de consentimiento, hasta tres invitaciones por solicitud. Los envíos inciertos no se reciclan automáticamente.
+
+`booking-waitlist-maintenance` recorre páginas de negocios de forma incremental cada 15 minutos UTC. Tiene límite de trabajo por ejecución y checkpoints; solo se ejecuta automáticamente en un deploy publicado de producción. En preview permanece inactiva y se prueba con almacenes ficticios. Las lecturas administrativas y ofertas también mantienen los registros examinados. No se ha ejecutado una limpieza sobre datos reales en esta implementación.

@@ -29,13 +29,28 @@ export async function joinWaitlist(site,input,{store=clientCommerceStore(),now=D
  await store.setJSON(commerceKey(site.siteId,'waitlist',id),record,{onlyIfNew:true});
  return {token,expiresAt:record.expiresAt};
 }
-export async function readWaitlist(site,{store=clientCommerceStore()}={}){
- const rows=[],pages=store.list({prefix:site.siteId+'/waitlist/',paginate:true});
+export async function maintainWaitlistEntry(siteId,key,{store=clientCommerceStore(),now=Date.now()}={}){
+ const saved=await store.getWithMetadata(key,{type:'json'});const row=saved?.data;
+ if(!row||row.siteId!==siteId||!saved.etag)return null;
+ let next=row;
+ if(Date.parse(row.expiresAt)<=now&&row.status!=='cancelled'&&(row.status!=='expired'||row.customer!==null))next={...row,status:'expired',customer:null,contactErasedAt:row.contactErasedAt||new Date(now).toISOString()};
+ else if(row.status==='invited'&&row.deliveryStatus==='sent'&&Date.parse(row.invitationExpiresAt)<=now&&Number(row.invitationCount||1)<3){next={...row,invitationCount:Number(row.invitationCount||1),status:'waiting',previousInvitationHash:row.invitationHash};delete next.invitationHash;delete next.deliveryStatus;delete next.invitationExpiresAt;}
+ if(next!==row&&!(await store.setJSON(key,next,{onlyIfMatch:saved.etag})).modified)return null;
+ return next;
+}
+export async function readWaitlistPage(site,{store=clientCommerceStore(),after='',limit=50,now=Date.now()}={}){
+ if(after&&!/^[a-f0-9]{64}$/.test(after)||!Number.isInteger(limit)||limit<1||limit>50)throw fail('Invalid page.');
+ const prefix=site.siteId+'/waitlist/',keys=[];const pages=store.list({prefix,paginate:true});
+ for await(const page of pages[Symbol.asyncIterator]?pages:[await pages])for(const blob of page.blobs||[]){const id=blob.key.slice(prefix.length).replace(/\.json$/,'');if(/^[a-f0-9]{64}$/.test(id)&&id>after)keys.push({id,key:blob.key});if(keys.length>100000)throw fail('Waitlist directory requires review.',503);}
+ keys.sort((a,b)=>a.id.localeCompare(b.id));const selected=keys.slice(0,limit);
+ const requests=(await Promise.all(selected.map(item=>maintainWaitlistEntry(site.siteId,item.key,{store,now})))).filter(Boolean);
+ return {requests,nextCursor:keys.length>limit?selected.at(-1).id:null};
+}
+export async function* iterateWaitlistEntries(site,{store=clientCommerceStore(),now=Date.now()}={}){
+ const pages=store.list({prefix:site.siteId+'/waitlist/',paginate:true});
  for await(const page of pages[Symbol.asyncIterator]?pages:[await pages])for(const blob of page.blobs||[]){
-  const row=await store.get(blob.key,{type:'json'});if(row?.siteId===site.siteId)rows.push(row);
-  if(rows.length>=500)return rows;
+  const row=await maintainWaitlistEntry(site.siteId,blob.key,{store,now});if(row)yield row;
  }
- return rows;
 }
 export async function cancelWaitlist(siteId,id,{store=clientCommerceStore()}={}){
  if(!/^[a-f0-9]{64}$/.test(id))throw fail('Request unavailable.',404);
@@ -50,9 +65,9 @@ export async function offerWaitlist(site,booking,{store=clientCommerceStore(),av
  const origin=baseUrl||globalThis.Netlify?.env?.get('DEPLOY_PRIME_URL')||globalThis.Netlify?.env?.get('URL');
  if(!origin||!/^https:\/\//.test(origin))return {offered:0};
  const date=new Intl.DateTimeFormat('en-CA',{timeZone:site.settings?.timezone||'America/Puerto_Rico',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(booking.start));
- const rows=await readWaitlist(site,{store});let offered=0;
- for(const row of rows){
-  if(offered>=3)break;
+ const started=Date.now();let offered=0;
+ for await(const row of iterateWaitlistEntries(site,{store,now})){
+  if(offered>=3||Date.now()-started>20000)break;
   if(row.status!=='waiting'||!row.customer?.email||Date.parse(row.expiresAt)<=now||row.from>date||row.until<date||row.locationId!==(booking.locationId||'')||row.employeeId&&row.employeeId!==booking.employeeId)continue;
   const slots=await available(site,row.serviceId,booking.employeeId,date,row.locationId);
   if(!slots.some(s=>s.start===booking.start))continue;
@@ -61,7 +76,7 @@ export async function offerWaitlist(site,booking,{store=clientCommerceStore(),av
   const token=crypto.randomBytes(32).toString('base64url'),hash=tokenHash(token),expiresAt=new Date(Math.min(now+24*3600000,Date.parse(row.expiresAt),Date.parse(booking.start))).toISOString();
   const invitation={siteId:site.siteId,requestId:row.id,expiresAt,serviceId:row.serviceId,employeeId:booking.employeeId,locationId:row.locationId,start:booking.start};
   await store.setJSON(commerceKey(site.siteId,'waitlist-invitations',hash),invitation,{onlyIfNew:true});
-  const next={...current.data,status:'invited',invitationExpiresAt:expiresAt,deliveryStatus:'sending',invitationHash:hash};
+  const next={...current.data,invitationCount:Number(current.data.invitationCount||0)+1,status:'invited',invitationExpiresAt:expiresAt,deliveryStatus:'sending',invitationHash:hash};
   const claimed=await store.setJSON(key,next,{onlyIfMatch:current.etag});if(!claimed.modified)continue;
   const link=new URL('/.netlify/functions/booking-waitlist',origin);link.searchParams.set('siteId',site.siteId);link.searchParams.set('invitation',token);
   const es=row.language==='es',name=site.business?.name||'Business';
