@@ -111,3 +111,18 @@ the save center hits the intended button; saving and subsequent navigation do
 not show a leave warning; simulated failed saves retain it. The selected expanded
 card is the only visible portal card, background remains visible, navigation is
 hidden, keyboard focus stays inside, and Escape restores the filter and cards.
+
+
+## Cashier and kiosk material revision — 2026-10-27
+
+Owner approved extending the same Glassy material to cashier POS and self-service kiosk, including editable 3D card/button treatments. `sales-material.css` reuses native typography, 30px panels, bounded glass and source-derived inset rims/shadows. No checkout, booking, payment, inventory, device pairing or authorization behavior changes.
+
+Cashier: Edit POS design offers Flat Glassy, Soft Glassy, Glassy 3D, independent card/button depths and the personal dashboard wallpaper selector. It uses the existing authenticated personal appearance API, conditional ETag save, and draft guard. Dashboard personalization exposes the same values. Preferences remain scoped by user and business; this does not publish a user's private wallpaper to a customer kiosk.
+
+Kiosk: existing owner appearance editor adds the three design treatments, separate depth selectors and bundled downloadable wallpapers. Values use the existing kiosk appearance/preset storage and paired-screen refresh; older saved designs hydrate with soft depth and the supplied room wallpaper. Existing layouts, tenant uploads, safe colors, contrast pairs, catalog and sales handlers are retained. The source visual material is applied to every bundled kiosk layout. No remote CSS or image-provider account is added.
+
+3D is restrained static elevation and optional hover/press feedback, without loops or new animation dependencies. Reduced motion disables transforms; off remains editable. Reduced transparency and forced colors retain readable controls.
+
+Save protection: the navigation dock now occupies its own CSS grid track at every viewport width. The content scrolls in a separate track; dock and form controls cannot share hit-testing space even at tablet/desktop breakpoints. Entry motion no longer scales content toward the dock. Draft registration updates during layout commit and acknowledges only successful server responses. Failed/stale saves continue to warn.
+
+Local verification for this revision includes 806 passing Node tests (including appearance validation, persistence, user/business isolation and existing checkout regressions), successful full production-target build, real pointer hit-testing of dashboard saves at 390/1024/1440 in both themes, cashier visual save and subsequent navigation, failed-save draft protection, isolated expanded cards, upload/stale-tab/delete checks and employee navigation. Kiosk layout/editor and POS regression suites exercise the same source with isolated fixtures. The detector still reports 21 existing recommendations, including the unused source spring token; no new animation engine or continuous motion was added. Browser fixtures are not evidence of an authenticated preference write on the deployed preview or a physical-device/WebKit test; those remain unclaimed. PR #125 records the final deploy and completed checks.

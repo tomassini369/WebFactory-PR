@@ -50,3 +50,10 @@ test('disabled new bookings do not gain public booking links from a skin',async(
  const f=kioskFixture();f.site.features={bookings:false};const p=await f.paired();await f.admin('configure',{enabled:true,bookingModes:{newBookings:true,existingBookings:false}});
  const view=await(await f.handler(f.request(null,p.cookie))).json();assert.equal(view.hasAppointments,false);assert.equal(view.bookingModes.newBookings,false);assert.deepEqual(view.appointmentServices,[]);
 });
+
+test('Glassy depth and bundled wallpaper persist through the existing paired kiosk view',async()=>{
+ const f=kioskFixture(),p=await f.paired();
+ const response=await f.admin('appearance',{appearance:{...kioskAppearance(),cardDepth:'raised',buttonDepth:'flat',wallpaper:'landscape'}});assert.equal(response.status,200);
+ const view=await(await f.handler(f.request(null,p.cookie))).json();assert.equal(view.presentation.appearance.cardDepth,'raised');assert.equal(view.presentation.appearance.buttonDepth,'flat');assert.equal(view.presentation.appearance.wallpaper,'landscape');
+ for(const patch of [{cardDepth:'url(x)'},{buttonDepth:'loop'},{wallpaper:'https://invalid/x'}])assert.throws(()=>validateKioskAppearance({...kioskAppearance(),...patch}));
+});

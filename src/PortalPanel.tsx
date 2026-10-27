@@ -26,7 +26,7 @@ export function PortalPanelProvider({ children, lang }: { children: ReactNode; l
   return <PortalPanelContext.Provider value={{ expandedPanel, setExpandedPanel, lang }}>{children}</PortalPanelContext.Provider>
 }
 
-export function PortalPanel({ className = '', children, style, 'data-training': trainingTarget }: { className?: string; children: ReactNode; style?: CSSProperties; 'data-training'?: string }) {
+export function PortalPanel({ className = '', children, style, 'data-training': trainingTarget, 'data-card-depth': cardDepth, 'data-button-depth': buttonDepth, 'data-motion': motion }: { className?: string; children: ReactNode; style?: CSSProperties; 'data-training'?: string; 'data-card-depth'?: string; 'data-button-depth'?: string; 'data-motion'?: string }) {
   const context = useContext(PortalPanelContext)
   if (!context) throw new Error('PortalPanel must be rendered inside PortalPanelProvider.')
   const id = useId()
@@ -68,7 +68,7 @@ export function PortalPanel({ className = '', children, style, 'data-training': 
     }
   },[expanded])
 
-  return <section data-training={trainingTarget} style={style} ref={panel} tabIndex={expanded?-1:undefined} role={expanded?'dialog':undefined} aria-modal={expanded||undefined} aria-label={expanded?(es?'Panel ampliado':'Expanded panel'):undefined} className={`${className} wf-portal-panel${expanded ? ' wf-panel-expanded' : ''}`.trim()}>
+  return <section data-card-depth={cardDepth} data-button-depth={buttonDepth} data-motion={motion} data-training={trainingTarget} style={style} ref={panel} tabIndex={expanded?-1:undefined} role={expanded?'dialog':undefined} aria-modal={expanded||undefined} aria-label={expanded?(es?'Panel ampliado':'Expanded panel'):undefined} className={`${className} wf-portal-panel${expanded ? ' wf-panel-expanded' : ''}`.trim()}>
     <div className="wf-panel-tools">
       <button type="button" className="wf-panel-expand" aria-label={expanded?(es?'Cerrar tarjeta ampliada':'Close expanded card'):(es?'Ampliar tarjeta':'Expand card')} title={expanded?(es?'Cerrar':'Close'):(es?'Ampliar':'Expand')} aria-expanded={expanded} onClick={()=>context.setExpandedPanel(expanded?null:id)}>{expanded?<Minimize2 size={20} aria-hidden="true"/>:<Maximize2 size={20} aria-hidden="true"/>}</button>
     </div>

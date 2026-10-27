@@ -127,3 +127,8 @@ expand/close control remains. Expanded mode hides and makes inert all unrelated
 workspace content while retaining the wallpaper and selected card. It restores
 visibility, focus and card state on Close/Escape and on unmount. Do not remount
 or clone the selected card or mix neighboring cards through its glass surface.
+
+
+### Owner-approved sales surfaces revision — 2026-10-27
+
+Cashier POS and all kiosk layouts inherit the Glassy material. Their existing editors expose flat, soft and raised 3D treatments with independent card/button depth. Cashier appearance is personal to the signed-in user/business; kiosk appearance is shared by that business's paired screens. Do not share private dashboard images with anonymous customer devices. Safe tenant colors and existing sale/booking/device behavior are preserved. The portal dock occupies a layout track separate from scrollable form content; it must never overlay Apply and save. See GLASSY-DASHBOARD-V5.md for provenance and validation.
