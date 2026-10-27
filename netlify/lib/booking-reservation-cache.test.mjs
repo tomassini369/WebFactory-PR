@@ -3,9 +3,9 @@ function fixture(){const rows=new Map();let version=0,reads=0;const store={list:
 const row={siteId:'a',employeeId:'alex',transactionId:'one',start:new Date(10000).toISOString(),end:new Date(20000).toISOString(),status:'confirmed'};
 test('warm availability avoids historical blob reads; changed etags invalidate it',async()=>{
  const f=fixture();for(let i=0;i<300;i++)await f.store.setJSON('a/bookings/'+i+'.json',{...row,transactionId:String(i),employeeId:i===0?'alex':'other'});
- const first=await reservationBlocks(f.options);assert.equal(first.length,1);assert.equal(f.reads(),301);
- f.reset();assert.deepEqual(await reservationBlocks(f.options),first);assert.equal(f.reads(),1);
- await f.store.setJSON('a/bookings/0.json',{...row,status:'cancelled'});f.reset();assert.deepEqual(await reservationBlocks(f.options),[]);assert.equal(f.reads(),301);
+ const first=await reservationBlocks(f.options);assert.equal(first.length,1);assert.equal(f.reads(),302);
+ f.reset();assert.deepEqual(await reservationBlocks(f.options),first);assert.equal(f.reads(),2);
+ await f.store.setJSON('a/bookings/0.json',{...row,status:'cancelled'});f.reset();assert.deepEqual(await reservationBlocks(f.options),[]);assert.equal(f.reads(),302);
 });
 test('authoritative reads bypass cache, expired holds disappear, and tenants remain separate',async()=>{
  const f=fixture();await f.store.setJSON('a/holds/one.json',{...row,holdId:'hold',expiresAt:new Date(1500).toISOString()});await f.store.setJSON('a/bookings/foreign.json',{...row,siteId:'b'});

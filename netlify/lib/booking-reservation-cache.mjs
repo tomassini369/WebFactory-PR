@@ -1,12 +1,14 @@
+import {indexedBookingEntries} from './booking-date-index.mjs';
 import crypto from 'node:crypto';
 // Derived read cache only. Hold creation always bypasses it.
 export async function reservationBlocks({store,siteId,employeeId,startDay,endDay,catalog=[],ignoreReservationId='',fresh=false,now=Date.now()}){
- const entries=[];
- for(const kind of ['bookings','holds']){
+ let indexed=null;try{indexed=await indexedBookingEntries(store,siteId,employeeId,startDay,endDay,catalog)}catch{/* Unavailable derived index falls back to canonical listing. */}
+ const entries=indexed||[];
+ if(!indexed)for(const kind of ['bookings','holds']){
   const pages=store.list({prefix:siteId+'/'+kind+'/',paginate:true});
   for await(const page of pages[Symbol.asyncIterator]?pages:[await pages])for(const blob of page.blobs||[])entries.push({...blob,kind});
  }
- const canCache=!fresh&&entries.every(x=>typeof x.etag==='string'&&x.etag.length>0)&&entries.length<=20000;
+ const canCache=!indexed&&!fresh&&entries.every(x=>typeof x.etag==='string'&&x.etag.length>0)&&entries.length<=20000;
  const range=JSON.stringify([siteId,employeeId,startDay,endDay,catalog.map(x=>[x.id,x.bufferMinutes])]);
  const key=siteId+'/derived-booking-blocks/'+crypto.createHash('sha256').update(range).digest('hex')+'.json';
  const fingerprint=canCache?crypto.createHash('sha256').update(JSON.stringify(entries.map(x=>[x.key,x.etag]).sort((a,b)=>a[0].localeCompare(b[0])))).digest('hex'):'';

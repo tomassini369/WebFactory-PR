@@ -1,3 +1,4 @@
+import {bookingSlotLockKey} from './booking-date-index.mjs';
 import {reservationBlocks} from './booking-reservation-cache.mjs';
 import crypto from "node:crypto";
 import { clientCommerceStore, commerceKey } from "./client-store.mjs";
@@ -149,7 +150,7 @@ export async function createBookingHold(site, { serviceId, employeeId, start, lo
     .formatToParts(new Date(isoStart)).reduce((acc, part) => ({ ...acc, [part.type]: part.value }), {});
   const localDate = `${parts.year}-${parts.month}-${parts.day}`;
   const store=clientCommerceStore();
-  const lockKey=commerceKey(site.siteId,"booking-slot-locks",crypto.createHash("sha256").update(`${employeeId}:${localDate}`).digest("hex"));
+  const lockKey=bookingSlotLockKey(site.siteId,employeeId);
   return withBookingLock(store,lockKey,async()=>{
   const slots = await availabilityForDate(site, serviceId, employeeId, localDate, locationId,{strictGoogle,ignoreReservationId,fresh:true});
   const selected = slots.find((slot) => slot.start === isoStart);
