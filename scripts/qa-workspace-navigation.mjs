@@ -18,6 +18,7 @@ export async function selectPortalSection(page,name){
 }
 export async function openPanelTools(panel){
  const menu=panel.locator(':scope>.wf-panel-tools');
+ if(await menu.evaluate(el=>el.tagName!=='DETAILS'))return;
  if(!await menu.evaluate(el=>el.open))await menu.locator(':scope>summary').click();
 }
 export async function showBuilderPreview(page){

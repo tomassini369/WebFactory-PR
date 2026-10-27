@@ -17,8 +17,8 @@ try {
  const page=await browser.newPage();const errors=[];page.on('pageerror',error=>errors.push(error.message));
  for(const viewport of [{width:390,height:844},{width:1280,height:800}]){
   await page.setViewportSize(viewport);await page.goto(`${origin}/${fixture}`);
-  const options=page.locator('.wf-portal-panel').first().locator(':scope>.wf-panel-tools>summary');await options.focus();await page.keyboard.press('Enter');
-  const expand=page.getByRole('button',{name:'Expand',exact:true}).first();await expand.click();
+  const options=page.locator('.wf-portal-panel').first().locator(':scope>.wf-panel-tools>.wf-panel-expand');await options.focus();
+  const expand=page.getByRole('button',{name:'Expand card',exact:true}).first();await expand.click();
   const dialog=page.getByRole('dialog');await dialog.waitFor();
   assert.equal(await page.locator('#outside').evaluate(element=>element.inert),true);
   await page.keyboard.press('Tab');assert.equal(await options.evaluate(element=>element===document.activeElement),true);

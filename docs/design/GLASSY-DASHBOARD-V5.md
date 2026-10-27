@@ -90,3 +90,24 @@ revenue/expanded-panel navigation regressions passed with isolated fixtures.
 The previous required suites retain their entry points and now target the new
 workspace roots and native navigation. The new full appearance suite is added
 to CI for Chromium and WebKit; local WebKit/physical devices are not claimed.
+
+
+## Save/expand correction
+
+The owner reported that clicking Apply and save reached the leave-draft warning.
+The screenshot also showed the dock Overview tooltip over the save area. The
+mobile dock now occupies a reserved row below the independently scrolling
+workspace, preventing pointer interception. Successful reload/save/upload/reset
+acknowledgements advance a saved revision separate from response ETag headers;
+server conditional-write authorization is unchanged. Failed saves keep drafts.
+
+Hide and Scroll are removed. The single expand button hides/inerts unrelated
+DOM siblings while explicitly retaining the wallpaper/shade; ancestor stage
+transforms are disabled during expansion. The same mounted card is used, and
+Close/Escape restores previous visibility, focus, input/filter state and scroll.
+
+Six Chromium pointer-coordinate checks passed at 390/768/1440 in both themes:
+the save center hits the intended button; saving and subsequent navigation do
+not show a leave warning; simulated failed saves retain it. The selected expanded
+card is the only visible portal card, background remains visible, navigation is
+hidden, keyboard focus stays inside, and Escape restores the filter and cards.

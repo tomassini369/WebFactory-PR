@@ -5,15 +5,15 @@ import {usePractice} from '../training/practice-context'
 import './material.css'
 import './dashboard.css'
 
-type State={prefs:DashboardAppearance;setPrefs:(p:DashboardAppearance)=>void;hasCustom:boolean;busy:boolean;ready:boolean;error:string;notice:string;save:()=>Promise<void>;upload:(file:File)=>Promise<void>;reset:()=>Promise<void>;reload:()=>Promise<void>;asset:string;etag: string}
+type State={prefs:DashboardAppearance;setPrefs:(p:DashboardAppearance)=>void;hasCustom:boolean;busy:boolean;ready:boolean;error:string;notice:string;save:()=>Promise<void>;upload:(file:File)=>Promise<void>;reset:()=>Promise<void>;reload:()=>Promise<void>;asset:string;etag: string;savedEpoch:number}
 const AppearanceContext=createContext<State|null>(null)
 export function useDashboardAppearance(){const context=useContext(AppearanceContext);if(!context)throw new Error('Missing dashboard context');return context}
 export function DashboardProvider({siteId,userId,children}:{siteId?:string;userId:string;children:ReactNode}){
  const practice=usePractice();const endpoint='/.netlify/functions/dashboard-appearance'+(siteId?'?siteId='+encodeURIComponent(siteId):'');
- const [prefs,setPrefs]=useState<DashboardAppearance>({...DEFAULT_APPEARANCE}),[hasCustom,setCustom]=useState(false),[busy,setBusy]=useState(false),[ready,setReady]=useState(false),[error,setError]=useState(''),[notice,setNotice]=useState(''),[revision,setRevision]=useState(0),[etag,setEtag]=useState('');
+ const [prefs,setPrefs]=useState<DashboardAppearance>({...DEFAULT_APPEARANCE}),[hasCustom,setCustom]=useState(false),[busy,setBusy]=useState(false),[ready,setReady]=useState(false),[error,setError]=useState(''),[notice,setNotice]=useState(''),[revision,setRevision]=useState(0),[etag,setEtag]=useState(''),[savedEpoch,setSavedEpoch]=useState(0);
  const generation=useRef(0)
  const readResponse=async(response:Response)=>{const data=await response.json();if(!response.ok)throw new Error(String(response.status));return {data,etag:response.headers.get('etag')||''}}
- const accept=(data:any,tag:string)=>{setPrefs(normalizeAppearance(data.prefs));setCustom(Boolean(data.hasCustom));setRevision(data.revision||0);setEtag(tag)}
+ const accept=(data:any,tag:string)=>{setPrefs(normalizeAppearance(data.prefs));setCustom(Boolean(data.hasCustom));setRevision(data.revision||0);setEtag(tag);setSavedEpoch(value=>value+1)}
  // Use the live same-origin transport only outside isolated training.
  const reload=async()=>{if(practice){setReady(true);return}setBusy(true);setError('');const g=++generation.current;try{const {data,etag:tag}=await readResponse(await fetch(endpoint,{credentials:'same-origin',cache:'no-store'}));if(g===generation.current){accept(data,tag);setReady(true)}}catch{if(g===generation.current)setError('load')}finally{if(g===generation.current)setBusy(false)}}
  useEffect(()=>{void reload();return()=>{generation.current++}},[endpoint,userId,Boolean(practice)])
@@ -26,10 +26,10 @@ export function DashboardProvider({siteId,userId,children}:{siteId?:string;userI
  const asset=endpoint+(siteId?'&':'?')+'asset=1&v='+revision;
  const background=prefs.background==='custom'&&hasCustom?asset:(DASHBOARD_WALLPAPERS.find(x=>x.id===prefs.background)||DASHBOARD_WALLPAPERS[0]).src;
  const style={'--glass-blur':prefs.blur+'px','--glass-alpha':prefs.alpha,'--bg-dim':prefs.dim,'--motion':prefs.motion,'--accent':prefs.accent} as CSSProperties;
- return <AppearanceContext.Provider value={{prefs,setPrefs,hasCustom,busy,ready,error,notice,etag,save:()=>mutate('PUT',JSON.stringify(prefs)),upload:file=>mutate('POST',file,file.type),reset:()=>mutate('DELETE'),reload,asset}}><div className="gd-root" style={style}><div className="gd-wallpaper" aria-hidden="true" style={{backgroundImage:`url(${JSON.stringify(background)})`}}/><div className="gd-shade" aria-hidden="true"/>{children}</div></AppearanceContext.Provider>
+ return <AppearanceContext.Provider value={{prefs,setPrefs,hasCustom,busy,ready,error,notice,etag,savedEpoch,save:()=>mutate('PUT',JSON.stringify(prefs)),upload:file=>mutate('POST',file,file.type),reset:()=>mutate('DELETE'),reload,asset}}><div className="gd-root" style={style}><div className="gd-wallpaper" aria-hidden="true" style={{backgroundImage:`url(${JSON.stringify(background)})`}}/><div className="gd-shade" aria-hidden="true"/>{children}</div></AppearanceContext.Provider>
 }
 export default function DashboardAppearance({lang}:{lang:'es'|'en'}){
- const a=useDashboardAppearance(),es=lang==='es';useUnsavedChanges(a.prefs,a.etag,a.setPrefs,lang);const file=useRef<HTMLInputElement>(null);const [localError,setLocalError]=useState('');
+ const a=useDashboardAppearance(),es=lang==='es';useUnsavedChanges(a.prefs,a.savedEpoch,a.setPrefs,lang);const file=useRef<HTMLInputElement>(null);const [localError,setLocalError]=useState('');
  const set=(patch:Partial<DashboardAppearance>)=>a.setPrefs({...a.prefs,...patch});
  const pickFile=async(f?:File)=>{if(!f)return;setLocalError('');if(!['image/jpeg','image/png','image/webp'].includes(f.type)||f.size>4*1024*1024){setLocalError(es?'Usa JPEG, PNG o WebP de hasta 4 MB.':'Use JPEG, PNG or WebP up to 4 MB.');return}await a.upload(f);if(file.current)file.current.value=''};
  return <section className="gd-appearance" aria-labelledby="gd-appearance-title"><header><small>WEBFACTORY PR</small><h2 id="gd-appearance-title">{es?'Personalizar dashboard':'Customize dashboard'}</h2><p>{es?'Tu apariencia se guarda para tu usuario en este portal y se recupera en tus dispositivos.':'Your appearance is saved for your user in this portal and restored across your devices.'}</p></header>

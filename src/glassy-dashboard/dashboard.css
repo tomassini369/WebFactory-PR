@@ -138,3 +138,11 @@ html body #root .gd-root .gd-content button.gd-wallpaper-choice{border-radius:22
 .gd-root .gd-content .wfa-sales>header{padding:18px;border-radius:22px;background:var(--glass-fill);backdrop-filter:blur(var(--glass-blur));margin-bottom:20px}
 /* Match the reference's bounded stage while materialize transforms are entering. */
 .gd-root{overflow-x:clip}
+
+html body #root .gd-root .gd-content .wf-panel-tools>.wf-panel-expand{display:grid;place-items:center;padding:0;width:44px;height:44px;min-width:44px;min-height:44px;border-radius:50%;background:var(--surface-2);color:var(--text);border:1px solid var(--pg-line)}
+html body #root .gd-root .gd-content .wf-panel-expanded{background:transparent!important;box-shadow:var(--glass-shadow)!important}
+/* Reserve a separate mobile dock row: it must never intercept a form action. */
+@media(max-width:900px){html body #root .gd-root .gd-dashboard{height:100svh;min-height:0;display:grid!important;grid-template-rows:auto minmax(0,1fr);padding-bottom:calc(88px + env(safe-area-inset-bottom))!important}.gd-root{min-height:100svh}html body #root .gd-root .gd-content{height:100%!important;min-height:0;overflow-y:auto!important;overflow-x:hidden!important;padding-bottom:32px!important;overscroll-behavior-y:contain}.gd-root .gd-dock{bottom:calc(12px + env(safe-area-inset-bottom))}}
+
+.gd-root:has(.wf-panel-expanded) :is(.gd-topbar,.gd-dock){opacity:0!important;visibility:hidden!important}
+.gd-root:has(.wf-panel-expanded) .gd-content>:not(.wf-panel-expanded):not(:has(.wf-panel-expanded)),.gd-root:has(.wf-panel-expanded) .wf-portal-panel:not(.wf-panel-expanded):not([data-wf-panel-ancestor]){opacity:0!important;visibility:hidden!important}

@@ -65,8 +65,8 @@ try{
   assert.match(await page.locator('.bcc-metrics article').first().innerText(),/55[.,]00/)
   assert.equal(await page.locator('.gd-overview-grid>.wf-portal-panel').count(),5,'Reference profile/board/revenue/calendar/activity composition');
   await page.locator('.gd-board-columns').getByRole('button',{name:lang==='es'?'Abrir Órdenes':'Open Orders',exact:true}).click();await page.locator('.ca-transactions').waitFor();await selectPortalSection(page,lang==='es'?'Resumen':'Overview');await page.locator('.bcc').waitFor()
-  const panel=page.locator('.gd-revenue').first();const options=await panel.locator(':scope>.wf-panel-tools>summary').boundingBox();assert.equal(Math.round(options.height),44,'Compact 44px panel option target');await openPanelTools(panel);await panel.getByRole('button',{name:lang==='es'?'Ampliar':'Expand',exact:true}).click();assert.equal(await panel.getAttribute('role'),'dialog')
-  await openPanelTools(panel);await page.keyboard.press('Escape');assert.equal(await panel.getAttribute('role'),'dialog','Escape closes options before leaving fullscreen');await page.keyboard.press('Escape');assert.equal(await panel.getAttribute('role'),null)
+  const panel=page.locator('.gd-revenue').first();const options=await panel.locator(':scope>.wf-panel-tools>.wf-panel-expand').boundingBox();assert.equal(Math.round(options.height),44,'Compact 44px panel option target');await openPanelTools(panel);await panel.getByRole('button',{name:lang==='es'?'Ampliar tarjeta':'Expand card',exact:true}).click();assert.equal(await panel.getAttribute('role'),'dialog')
+  assert.equal(await page.locator('.wf-portal-panel:visible').count(),1,'Expanded card hides the rest of the workspace');await page.keyboard.press('Escape');assert.equal(await panel.getAttribute('role'),null)
   await selectPortalSection(page,lang==='es'?'Editar página':'Edit website');await page.locator('.ca-website-panel').waitFor();await noOverflow(page)
   if([320,390,1440].includes(width)){
    for(const [reason,expected] of [['gmail_api_disabled',/Gmail API/],['workspace_policy',/Google Workspace/],['rate_limited',lang==='es'?/límite de envío/:/sending limit/]]){

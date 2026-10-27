@@ -114,3 +114,16 @@ forced colors, readable text and 44px controls. The compact phone navigation
 reflows without hiding destinations; the native dialog exposes all modules.
 
 See `GLASSY-DASHBOARD-V5.md` for provenance, security, verification and limits.
+
+
+### Owner correction: save actions and isolated card expansion
+
+The mobile dock has its own reserved viewport row. It must never cover or
+intercept form actions. Only a successful server acknowledgement resets the
+appearance draft baseline; failures retain the leave warning.
+
+The owner removes Hide/Show and Scroll from portal cards. One directly labeled
+expand/close control remains. Expanded mode hides and makes inert all unrelated
+workspace content while retaining the wallpaper and selected card. It restores
+visibility, focus and card state on Close/Escape and on unmount. Do not remount
+or clone the selected card or mix neighboring cards through its glass surface.

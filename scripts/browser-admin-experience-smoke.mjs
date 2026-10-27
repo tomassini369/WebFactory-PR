@@ -27,7 +27,7 @@ try{
   assert.deepEqual(await page.locator('.wfa-sales-metrics strong').allTextContents(),['$950.00','$260.00','12','$50.00'])
   await noOverflow(page);assert.equal(await page.locator('.gd-dock').count(),1);
   assert.equal(await page.locator('.wfa-sales [role=img]').count(),2,'Existing revenue and refund charts remain present')
-  const chart=page.locator('.wfa-sales-chart').first();await openPanelTools(chart);await chart.getByRole('button',{name:lang==='es'?'Ampliar':'Expand',exact:true}).click();assert.equal(await chart.getAttribute('role'),'dialog');await page.keyboard.press('Escape');assert.equal(await chart.getAttribute('role'),null)
+  const chart=page.locator('.wfa-sales-chart').first();await openPanelTools(chart);await chart.getByRole('button',{name:lang==='es'?'Ampliar tarjeta':'Expand card',exact:true}).click();assert.equal(await chart.getAttribute('role'),'dialog');await page.keyboard.press('Escape');assert.equal(await chart.getAttribute('role'),null)
   for(const name of lang==='es'?['Clientes','Operaciones','Recursos','Resumen']:['Clients','Operations','Resources','Overview']){try{await selectPortalSection(page,name)}catch(error){console.error('Admin navigation fixture diagnostic',JSON.stringify({name,locale:await page.locator('html').getAttribute('lang'),url:page.url(),headings:await page.locator('.gd-admin-work h1').allTextContents(),navigation:await page.locator('.gd-navigation').allTextContents()}));throw error}await noOverflow(page)}
   assert.equal(writes,0);assert.deepEqual(errors,[]);console.log(`PASS admin hierarchy, verified fixture revenue, contrast, chart focus and destinations ${width} ${theme} ${lang}`);await context.close()
  }

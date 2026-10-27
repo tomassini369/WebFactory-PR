@@ -137,6 +137,7 @@ jobs:
         if: matrix.suite == 'experience'
         run: |
           node scripts/browser-glassy-dashboard-smoke.mjs
+          QA_INTERACTION_ONLY=1 node scripts/browser-glassy-dashboard-smoke.mjs
           QA_ENGINE=webkit QA_WIDTHS=390,1440 node scripts/browser-glassy-dashboard-smoke.mjs
       - name: Check unified workspace hierarchy, disclosures and Builder state
         if: matrix.suite == 'experience'
