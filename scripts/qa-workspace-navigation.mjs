@@ -1,6 +1,11 @@
 /** Exercise the same disclosures and controls a portal user sees. */
 export async function selectPortalSection(page,name){
- const sidebar=page.locator('.sidebar-container');
+ if(await page.locator('.gd-root').count()){
+  if(!await page.locator('.gd-navigation').isVisible())await page.locator('.gd-menu-toggle').click();
+  const drawer=page.locator('.gd-navigation');await drawer.waitFor({state:'visible'});
+  await drawer.getByRole('button',{name,exact:true}).click();return;
+ }
+ const sidebar=page.locator('.gd-navigation');
  const toggle=page.locator('.ca-mobile-menu-toggle,.wfa-menu-toggle');
  if(!await sidebar.isVisible())await toggle.click();
  const button=sidebar.getByRole('button',{name,exact:true,includeHidden:true});

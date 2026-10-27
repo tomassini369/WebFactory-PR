@@ -39,7 +39,7 @@ export default function PosWorkspace({site,lang,operator,operations=posOperation
  const available:PosItem[]=(site.catalog||[]).filter((item:PosItem)=>item.active!==false)
  const [cart,setCart]=useState<PosLine[]>(()=>practice?.ui.pos?.cart||[]),[search,setSearch]=useState(practice?.ui.pos?.search||''),[category,setCategory]=useState('all')
  const [customer,setCustomer]=useState({name:'',email:'',phone:''}),[discount,setDiscount]=useState('0'),[tip,setTip]=useState('0')
- const [method,setMethod]=useState('stripe_qr'),[busy,setBusy]=useState(false),[error,setError]=useState(''),[receiptId,setReceiptId]=useState<string>(practice?.ui.pos?.receiptId||'')
+ const [method,setMethod]=useState(practice?'cash':'stripe_qr'),[busy,setBusy]=useState(false),[error,setError]=useState(''),[receiptId,setReceiptId]=useState<string>(practice?.ui.pos?.receiptId||'')
  const [showQr,setShowQr]=useState(false)
  const stripeAvailable=Boolean(site.paymentRules?.methods?.stripe&&(site.paymentRules?.stripeConnectedAccountId||site.paymentRules?.stripeReady))
  const [remote,setRemote]=useState<Remote|null>(null),[status,setStatus]=useState<Status|null>(null)

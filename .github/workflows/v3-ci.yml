@@ -133,6 +133,11 @@ jobs:
             /tmp/webfactory-training-qa/
             /tmp/training-*.log
           if-no-files-found: ignore
+      - name: Check Glassy dashboard, wallpaper uploads and private appearance persistence
+        if: matrix.suite == 'experience'
+        run: |
+          node scripts/browser-glassy-dashboard-smoke.mjs
+          QA_ENGINE=webkit QA_WIDTHS=390,1440 node scripts/browser-glassy-dashboard-smoke.mjs
       - name: Check unified workspace hierarchy, disclosures and Builder state
         if: matrix.suite == 'experience'
         run: |
@@ -653,3 +658,4 @@ jobs:
           fi
           test "$link_chromium_result" -eq 0
           test "$link_webkit_result" -eq 0
+

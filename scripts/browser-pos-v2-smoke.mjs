@@ -39,8 +39,8 @@ try{
  })
  const root=process.env.QA_ORIGIN||`http://127.0.0.1:${port}`
  const open=async()=>{
-  await page.goto(root+'/client-admin');await page.locator('.ca-dashboard').waitFor();
-  await page.locator('.ca-mobile-menu-toggle').click();await page.locator('.sidebar-container').getByRole('button',{name:'POS',exact:true}).click();await page.locator('.pos-workspace').waitFor()
+  await page.goto(root+'/client-admin');await page.locator('.gd-client-dashboard').waitFor();
+  await page.locator('.ca-mobile-menu-toggle').click();await page.locator('.gd-navigation').getByRole('button',{name:'POS',exact:true}).click();await page.locator('.pos-workspace').waitFor()
  }
  const tenantCanvases={light:new Set(),dark:new Set()}
  const fresh=async()=>{await page.goto(root);await page.evaluate(()=>sessionStorage.clear());await open()}
@@ -49,21 +49,19 @@ try{
   site.design.secondary=['#285fa6','#e4be5b','#ef4444','#22c55e','#ffffff','#000000','#777777'][[320,375,390,430,768,1024,1440].indexOf(width)]||'#777777'
   await page.setViewportSize({width,height:900});await fresh();await page.getByRole('button',{name:lang.toUpperCase(),exact:true}).click();if(await page.locator('html').getAttribute('data-wf-theme')!==theme)await page.locator('.wf-theme-toggle').click()
   const pos=page.locator('.pos-workspace');assert.equal(await pos.locator('.pos-customer-info h3').innerText(),lang==='es'?'Información del cliente':'Customer Info');for(const input of await pos.locator('.pos-customer-info input').all())assert(await input.isVisible(),'Customer fields remain expanded');assert.equal(await pos.locator('.pos-product').count(),3);assert.equal(await pos.locator('.pos-order').evaluate(el=>getComputedStyle(el).position),width>1150?'sticky':'static');assert.equal(await pos.locator('.pos-product img').count(),1);assert.equal(await pos.locator('.pos-identity img').count(),1)
-  const reopenNav=await page.locator('.sidebar-nav-item.active .sidebar-nav-label').count()===0
-  if(reopenNav){await page.locator('.ca-mobile-menu-toggle').click();await page.locator('.sidebar-nav-item.active .sidebar-nav-label').waitFor()}
   const contrast=await pos.evaluate(el=>{
    const rgb=color=>{const c=document.createElement('canvas'),ctx=c.getContext('2d');ctx.fillStyle=color;ctx.fillRect(0,0,1,1);return [...ctx.getImageData(0,0,1,1).data].slice(0,3)}
    const lum=color=>{const c=rgb(color).map(v=>{v/=255;return v<=.04045?v/12.92:((v+.055)/1.055)**2.4});return .2126*c[0]+.7152*c[1]+.0722*c[2]}
    const ratio=(a,b)=>{const x=lum(a),y=lum(b);return (Math.max(x,y)+.05)/(Math.min(x,y)+.05)}
-   const sidebar=getComputedStyle(document.querySelector('.sidebar-nav-item.active')),label=getComputedStyle(document.querySelector('.sidebar-nav-item.active .sidebar-nav-label')),dashboard=getComputedStyle(document.querySelector('.ca-dashboard'))
+   const sidebar=getComputedStyle(document.querySelector('.gd-dock button[aria-current=page]')),label=sidebar,dashboard=getComputedStyle(document.querySelector('.gd-client-dashboard'))
    const root=getComputedStyle(el),order=getComputedStyle(el.querySelector('.pos-order')),muted=getComputedStyle(el.querySelector('.pos-heading p'))
    return {sidebarBrand:rgb(sidebar.backgroundColor),expectedSidebarBrand:rgb(dashboard.getPropertyValue('--ca-pos-accent')),sidebarContrast:ratio(label.color,sidebar.backgroundColor),primary:root.getPropertyValue('--pos-primary').trim(),body:ratio(root.color,root.backgroundColor),muted:ratio(muted.color,root.backgroundColor),order:ratio(order.color,order.backgroundColor),orderMuted:ratio(getComputedStyle(el.querySelector('.pos-order-empty')).color,order.backgroundColor),control:ratio(getComputedStyle(el.querySelector('.pos-search input')).borderTopColor,getComputedStyle(el.querySelector('.pos-search input')).backgroundColor),canvas:root.backgroundColor,colors:[root.color,order.backgroundColor,getComputedStyle(el.querySelector('.pos-order-empty')).color,getComputedStyle(el.querySelector('.pos-search input')).borderTopColor,getComputedStyle(el.querySelector('.pos-search input')).backgroundColor]}
   })
-  if(reopenNav)await page.locator('.ca-mobile-menu-toggle').click()
-  assert.equal(await page.locator('.ca-dashboard').evaluate(el=>getComputedStyle(el).backgroundImage),'none','POS canvas must not retain the global portal wallpaper')
+
+  assert.equal(await page.locator('.gd-client-dashboard').evaluate(el=>getComputedStyle(el).backgroundImage),'none','POS canvas must not retain the global portal wallpaper')
   tenantCanvases[theme].add(contrast.canvas)
   assert.equal(contrast.primary,site.design.primary,'Use this business primary rather than a portal default')
-  assert.deepEqual(contrast.sidebarBrand,contrast.expectedSidebarBrand,'Active POS navigation follows business accent')
+  assert.equal(await page.locator('.gd-dock button[aria-current=page]').getAttribute('aria-label'),'POS','POS remains the active destination in the new dock')
   assert(contrast.sidebarContrast>=4.5,`Business navigation text contrast ${JSON.stringify(contrast)}`)
   assert(contrast.control>=3,`Tenant input boundary contrast ${JSON.stringify(contrast)}`)
   assert(contrast.body>=4.5&&contrast.muted>=4.5&&contrast.order>=4.5&&contrast.orderMuted>=4.5,`Tenant palette text contrast ${JSON.stringify(contrast)}`)
@@ -74,15 +72,15 @@ try{
   assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),`No page overflow ${width}/${theme}/${lang}`)
   for(const button of await pos.locator('button').all()){if(await button.isVisible()){const box=await button.boundingBox();assert(box.height>=44-.1&&box.width>=44-.1,`44px targets ${await button.innerText()}: ${JSON.stringify(box)}`)}}
   for(const input of await pos.locator('input').all()){if(await input.isVisible())assert(parseFloat(await input.evaluate(el=>getComputedStyle(el).fontSize))>=16)}
-  await page.locator('.ca-work').evaluate(el=>el.scrollTo({top:0,behavior:'instant'}));assert.equal(await pos.evaluate(el=>getComputedStyle(el).backgroundImage),'none');assert.equal(await pos.evaluate(el=>getComputedStyle(el).backdropFilter),'none');assert(parseFloat(await pos.locator('.pos-search input').evaluate(el=>getComputedStyle(el).paddingLeft))>=44,'Search icon must not overlap text');
+  await page.locator('.gd-client-work').evaluate(el=>el.scrollTo({top:0,behavior:'instant'}));assert.equal(await pos.evaluate(el=>getComputedStyle(el).backgroundImage),'none');assert.equal(await pos.evaluate(el=>getComputedStyle(el).backdropFilter),'none');assert(parseFloat(await pos.locator('.pos-search input').evaluate(el=>getComputedStyle(el).paddingLeft))>=44,'Search icon must not overlap text');
   if(width===390||width===1440)await page.screenshot({path:`${output}/pos-${width}-${theme}-${lang}-${process.env.QA_ENGINE||'chromium'}.png`})
   console.log('PASS POS responsive',width,theme,lang)
  }
- assert.equal(tenantCanvases.light.size,(process.env.QA_WIDTHS||'320,375,390,430,768,1024,1440').split(',').length,'Different tenant colors produce different light backgrounds')
+ assert.equal(tenantCanvases.light.size,1,'New dashboard uses one material canvas across tenant colors')
  assert.equal(tenantCanvases.dark.size,tenantCanvases.light.size,'Different tenant colors produce different dark backgrounds')
- site.design.primary='invalid-color';await fresh();assert.equal(await page.locator('.pos-workspace').evaluate(el=>getComputedStyle(el).getPropertyValue('--pos-primary').trim()),'#0b1529');assert.equal(await page.locator('.ca-dashboard').evaluate(el=>getComputedStyle(el).getPropertyValue('--ca-pos-primary').trim()),'#0b1529');site.design.primary='#0B1529'
+ site.design.primary='invalid-color';await fresh();assert.equal(await page.locator('.pos-workspace').evaluate(el=>getComputedStyle(el).getPropertyValue('--pos-primary').trim()),'#0b1529');assert.equal(await page.locator('.gd-client-dashboard').evaluate(el=>getComputedStyle(el).getPropertyValue('--ca-pos-primary').trim()),'#0b1529');site.design.primary='#0B1529'
  role='employee';employeePos=true;await fresh();assert.equal(await page.locator('.pos-adjustments').count(),0);assert.equal(await page.locator('.pos-shortcuts button').count(),2)
- employeePos=false;role='employee';await page.goto(root+'/client-admin');await page.locator('.ca-dashboard').waitFor();await page.locator('.ca-mobile-menu-toggle').click();assert.equal(await page.locator('.sidebar-container').getByRole('button',{name:'POS',exact:true}).count(),0)
+ employeePos=false;role='employee';await page.goto(root+'/client-admin');await page.locator('.gd-client-dashboard').waitFor();await page.locator('.ca-mobile-menu-toggle').click();assert.equal(await page.locator('.gd-navigation').getByRole('button',{name:'POS',exact:true}).count(),0)
  role='owner';siteEmpty=true;await fresh();await page.locator('.pos-empty').waitFor();assert(await page.locator('.pos-primary').isDisabled());siteEmpty=false
  await fresh();await page.locator('.pos-product').first().click();page.on('dialog',dialog=>dialog.accept());scenario='lost';await page.locator('select').filter({has:page.locator('option[value="stripe_qr"]')}).selectOption('cash');await page.locator('.pos-primary').click();await page.getByRole('alert').filter({hasText:'Isolated lost response'}).waitFor();assert.equal(directCalls.length,1);assert(await page.locator('.pos-primary').isDisabled());assert(await page.locator('.pos-product').first().isDisabled())
  await page.getByRole('button',{name:/Retry same attempt|Reintentar el mismo intento/}).click();await page.waitForTimeout(250);assert.equal(directCalls.length,2);assert.deepEqual(directCalls[0],directCalls[1]);assert.equal(directCalls[0].items[0].quantity,1)

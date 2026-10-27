@@ -22,7 +22,8 @@ try{
   await page.addInitScript(theme=>{if(window!==window.top)return;localStorage.setItem('webfactory-theme-v2',theme)},theme)
   await page.route('**/.netlify/functions/**',async route=>{
    const request=route.request(),url=new URL(request.url()),name=url.pathname.split('/').at(-1);let body={ok:true},status=200
-   if(name==='portal-session')body={ok:true,user}
+   if(name==='dashboard-appearance')body={ok:true,prefs:{},hasCustom:false};
+   else if(name==='portal-session')body={ok:true,user}
    else if(name==='client-admin'){
     if(request.method()==='PATCH')throw Error('Unexpected general settings mutation')
     body=url.searchParams.has('siteId')?{ok:true,site:employeeSiteView(site,member),membership:{...member,capabilities:commercialCapabilities(member)},posOperations:{cashierEnabled:true,displayEnabled:false,profile:'auto',revision:0}}:{ok:true,sites:[{siteId:site.siteId,slug:site.slug,businessName:site.business.name}]}
@@ -34,11 +35,11 @@ try{
    else throw Error('Unexpected endpoint '+name)
    await route.fulfill({status,contentType:'application/json',body:JSON.stringify(body)})
   })
-  await page.goto(root+'/client-admin');await page.locator('.ca-dashboard').waitFor().catch(async error=>{console.error('Portal failure',role,width,errors,await page.locator('body').innerText());throw error});await page.locator('.portal-language').getByRole('button',{name:lang.toUpperCase(),exact:true}).click()
+  await page.goto(root+'/client-admin');await page.locator('.gd-client-dashboard').waitFor().catch(async error=>{console.error('Portal failure',role,width,errors,await page.locator('body').innerText());throw error});await page.locator('.portal-language').getByRole('button',{name:lang.toUpperCase(),exact:true}).click()
   assert.equal(await page.locator('.wf-workforce,.wf-accounting').count(),0)
   if(role==='owner'){
    await selectPortalSection(page,lang==='es'?'Empleados':'Employees')
-   const work=page.locator('.ca-work');await work.getByRole('heading',{name:lang==='es'?'Profesionales y disponibilidad':'Professionals and availability',exact:true}).waitFor()
+   const work=page.locator('.gd-client-work');await work.getByRole('heading',{name:lang==='es'?'Profesionales y disponibilidad':'Professionals and availability',exact:true}).waitFor()
    assert.equal(await work.locator('select option[value="manager"],select option[value="cashier"],select option[value="staff"]').count(),0)
    assert.equal(await work.getByText(lang==='es'?'Acceso heredado · pendiente de revisión':'Legacy access · review required',{exact:true}).count(),1)
    await work.getByRole('button',{name:lang==='es'?'Confirmar conversión a Empleado':'Confirm conversion to Employee',exact:true}).click()
@@ -50,12 +51,12 @@ try{
    assert.equal(await page.getByText('Assigned customer',{exact:true}).count(),1)
    assert.equal(await page.getByText(lang==='es'?'Confirmada · Pago pendiente':'Confirmed · Payment due',{exact:true}).count(),1)
    assert.equal(await page.getByRole('button',{name:lang==='es'?'Registrar pago recibido':'Record received payment',exact:true}).count(),0)
-   assert.equal(await page.locator('.ca-work').getByText(/PRIVATE-DO-NOT-SEND/).count(),0)
+   assert.equal(await page.locator('.gd-client-work').getByText(/PRIVATE-DO-NOT-SEND/).count(),0)
    assert.equal(await page.locator('.ca-commercial-access').count(),0)
    assert.equal(await page.locator('.sidebar-nav-item').filter({hasText:/^(Employees|Empleados|Business settings|Ajustes del negocio|Payments|Pagos)$/}).count(),0)
   }
   assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),`No horizontal overflow ${width}/${theme}/${lang}/${role}`)
-  for(const input of await page.locator('.ca-work input:not([type=checkbox]),.ca-work select').all())if(await input.isVisible())assert(Number.parseFloat(await input.evaluate(element=>getComputedStyle(element).fontSize))>=16)
+  for(const input of await page.locator('.gd-client-work input:not([type=checkbox]),.gd-client-work select').all())if(await input.isVisible())assert(Number.parseFloat(await input.evaluate(element=>getComputedStyle(element).fontSize))>=16)
   await page.evaluate(()=>{const frame=document.createElement('iframe');frame.hidden=true;frame.title='Isolated preview review';frame.setAttribute('sandbox','allow-scripts');frame.srcdoc='<!doctype html><html><body></body></html>';document.body.appendChild(frame)});await page.waitForTimeout(60)
   assert.equal(retiredCalls,0);assert.deepEqual(errors,[])
   if([390,1440].includes(width))await page.screenshot({path:`${out}/${engine}-${width}-${theme}-${lang}-${role}.png`})

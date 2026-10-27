@@ -82,3 +82,35 @@ credentials or payroll in an exercise. Practice and reference guides must be
 distinguishable. Use the existing native typography and blue/navy help chrome;
 the practice POS retains the business colors. No mandatory first-run tour,
 decorative scenes, long modal sequence, keyboard trap or continuous animation.
+
+
+## Owner-supplied Glassy Dashboard v5 · October 27, 2026
+
+The owner explicitly replaces the operating portal appearance with the supplied
+Glassy Dashboard v5 reference, without mixing the retired portal styles.
+This revision supersedes the earlier operating-shell/sidebar direction. It does
+not change authentication surfaces, public storefronts, Marketplace, Builder,
+kiosk skins, or customer display layouts.
+
+Use the supplied room wallpaper, smoked translucent panels, floating icon dock,
+pill navigation, reference profile/board/calendar composition and materialize
+transitions. Retain the official WebFactory logo and ES/EN + Light/Dark controls.
+Each destination renders current real data and existing permission-filtered
+workflows; never copy the reference's demo projects, invoices, email, calls or
+messages into the product. Preserve panel expand/collapse/focus controls.
+
+Operating roots are `gd-client-dashboard` / `gd-admin-dashboard`; old
+`ca-dashboard`, `wfa-dashboard` and `wf-experience` classes are absent. Shared
+material tokens are scoped to `gd-root`. Existing operational components keep
+their data/handler contracts and adopt the new presentation. POS retains its
+validated tenant accents and uses the dashboard's neutral readable material.
+No global document zoom or global design token mutation.
+
+Personal appearance belongs to the authenticated user and portal. The gallery,
+upload and material controls live within the existing portal navigation.
+Use local images, bounded raster uploads, server reencoding, private no-store
+responses and conditional saves. Respect reduced motion and transparency,
+forced colors, readable text and 44px controls. The compact phone navigation
+reflows without hiding destinations; the native dialog exposes all modules.
+
+See `GLASSY-DASHBOARD-V5.md` for provenance, security, verification and limits.

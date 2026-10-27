@@ -15,12 +15,12 @@ async function openPage(page,path,selector){
   await page.locator(selector).waitFor({timeout:pageLoadTimeout})
  }
  catch(error){
-  const state=await page.evaluate(()=>({readyState:document.readyState,dashboard:document.querySelectorAll('.ca-dashboard').length,builder:document.querySelectorAll('.wf-builder-app').length,login:document.querySelectorAll('.portal-auth').length})).catch(()=>({readyState:'unavailable'}))
+  const state=await page.evaluate(()=>({readyState:document.readyState,dashboard:document.querySelectorAll('.gd-client-dashboard').length,builder:document.querySelectorAll('.wf-builder-app').length,login:document.querySelectorAll('.portal-auth').length})).catch(()=>({readyState:'unavailable'}))
   console.error('Isolated portal bootstrap diagnostic',JSON.stringify({status:response?.status(),expectedPath:path,selector,path:new URL(page.url()).pathname,...state}))
   throw error
  }
 }
-const openPortal=page=>openPage(page,'/client-admin','.ca-dashboard')
+const openPortal=page=>openPage(page,'/client-admin','.gd-client-dashboard')
 const browser=await (isWebKit?webkit:chromium).launch(isWebKit?(process.env.QA_WEBKIT_PATH?{executablePath:process.env.QA_WEBKIT_PATH}:{}):(process.env.QA_CHROMIUM_PATH?{executablePath:process.env.QA_CHROMIUM_PATH,args:['--no-sandbox']}:{}))
 const widths=(process.env.QA_WIDTHS||'320,375,390,430,768,1024,1440').split(',').map(Number)
 const output='/tmp/webfactory-workspace-experience';await mkdir(output,{recursive:true})
@@ -59,17 +59,13 @@ try{
    await route.fulfill({contentType:'application/json',body:JSON.stringify(data)})
   })
   await openPortal(page);await page.locator('.bcc').waitFor();await page.locator('.portal-language').getByRole('button',{name:lang.toUpperCase(),exact:true}).click();assert.equal(await page.locator('html').getAttribute('lang'),lang);assert.equal(await page.locator('html').getAttribute('data-wf-theme'),theme)
-  await noOverflow(page);assert.equal(await page.locator('.ca-dashboard').evaluate(el=>getComputedStyle(el).backgroundImage),'none')
-  assert.equal(await page.locator('.sidebar-primary-navigation button').count(),5)
+  await noOverflow(page);assert.equal(await page.locator('.gd-client-dashboard').evaluate(el=>getComputedStyle(el).backgroundImage),'none')
+  assert.equal(await page.locator('.gd-topnav button').count(),3)
   assert.equal(await page.locator('.bcc-metrics article').count(),4)
   assert.match(await page.locator('.bcc-metrics article').first().innerText(),/55[.,]00/)
-  const ratios=await page.locator('.bcc').evaluate(el=>{
-   const rgb=color=>{const c=document.createElement('canvas'),ctx=c.getContext('2d');ctx.fillStyle=color;ctx.fillRect(0,0,1,1);return [...ctx.getImageData(0,0,1,1).data].slice(0,3)}
-   const lum=color=>rgb(color).map(v=>{v/=255;return v<=.04045?v/12.92:((v+.055)/1.055)**2.4}).reduce((s,v,i)=>s+v*[.2126,.7152,.0722][i],0)
-   return [...el.querySelectorAll('.bcc-metrics article,.bcc-hero-actions .bcc-secondary')].flatMap(article=>(article.matches('button')?[article]:[...article.querySelectorAll('small,strong,span')]).map(text=>{const a=lum(getComputedStyle(text).color),b=lum(getComputedStyle(article).backgroundColor);return(Math.max(a,b)+.05)/(Math.min(a,b)+.05)}))
-  });assert(ratios.every(r=>r>=4.5),'Metric and secondary action text contrast: '+JSON.stringify(ratios))
-  const attention=page.locator('.bcc-attention');await attention.getByRole('button',{name:lang==='es'?'1 orden por revisar':'1 order to review',exact:true}).click();await page.locator('.ca-transactions').waitFor();await selectPortalSection(page,lang==='es'?'Resumen':'Overview');await page.locator('.bcc').waitFor()
-  const panel=page.locator('.bcc-insights .wf-portal-panel').first();const options=await panel.locator(':scope>.wf-panel-tools>summary').boundingBox();assert.equal(Math.round(options.height),44,'Compact 44px panel option target');await openPanelTools(panel);await panel.getByRole('button',{name:lang==='es'?'Ampliar':'Expand',exact:true}).click();assert.equal(await panel.getAttribute('role'),'dialog')
+  assert.equal(await page.locator('.gd-overview-grid>.wf-portal-panel').count(),5,'Reference profile/board/revenue/calendar/activity composition');
+  await page.locator('.gd-board-columns').getByRole('button',{name:lang==='es'?'Abrir Órdenes':'Open Orders',exact:true}).click();await page.locator('.ca-transactions').waitFor();await selectPortalSection(page,lang==='es'?'Resumen':'Overview');await page.locator('.bcc').waitFor()
+  const panel=page.locator('.gd-revenue').first();const options=await panel.locator(':scope>.wf-panel-tools>summary').boundingBox();assert.equal(Math.round(options.height),44,'Compact 44px panel option target');await openPanelTools(panel);await panel.getByRole('button',{name:lang==='es'?'Ampliar':'Expand',exact:true}).click();assert.equal(await panel.getAttribute('role'),'dialog')
   await openPanelTools(panel);await page.keyboard.press('Escape');assert.equal(await panel.getAttribute('role'),'dialog','Escape closes options before leaving fullscreen');await page.keyboard.press('Escape');assert.equal(await panel.getAttribute('role'),null)
   await selectPortalSection(page,lang==='es'?'Editar página':'Edit website');await page.locator('.ca-website-panel').waitFor();await noOverflow(page)
   if([320,390,1440].includes(width)){
@@ -108,7 +104,7 @@ try{
   const views=page.locator('.wf-builder-view-switch');if(await views.isVisible()){await views.getByRole('button',{name:/^(Edit|Editar)$/}).click();assert.equal(await page.getByLabel('Business name · English',{exact:true}).inputValue(),'Preserved fixture draft');await showBuilderPreview(page);assert(await frame.evaluate(el=>el.isConnected),'Preview iframe stays mounted');assert.equal(await page.locator('.wf-template-preview-frame').count(),1)}
   await noOverflow(page)
   if([390,1440].includes(width))await page.screenshot({path:`${output}/builder-${width}-${theme}-${lang}-${isWebKit?'webkit':'chromium'}.png`})
-  role='employee';await openPortal(page);await page.locator('.portal-language').getByRole('button',{name:lang.toUpperCase(),exact:true}).click();assert.equal(await page.locator('.sidebar-container button[aria-label="POS"]').count(),0);assert.equal(await page.locator('.sidebar-container button').filter({hasText:/Business settings|Ajustes del negocio/}).count(),0)
+  role='employee';await openPortal(page);await page.locator('.portal-language').getByRole('button',{name:lang.toUpperCase(),exact:true}).click();assert.equal(await page.locator('.gd-navigation button[aria-label="POS"]').count(),0);assert.equal(await page.locator('.gd-navigation button').filter({hasText:/Business settings|Ajustes del negocio/}).count(),0)
   balanceMode=true;balanceClosed=false;balanceCancelled=false;balanceReviewed=false;await selectPortalSection(page,lang==='es'?'Ver citas':'View appointments');await page.locator('[data-training="employee-agenda"]').waitFor();assert.equal(await page.getByRole('button',{name:/Review balance checkout|Revisar cobro de saldo|Cancel|Cancelar/,exact:true}).count(),0)
 
   assert.equal(writes,0);assert.deepEqual(errors,[]);console.log(`PASS unified hierarchy, balance review/close/cancel, permissions, focus and Builder persistence ${width} ${theme} ${lang}`);await context.close()

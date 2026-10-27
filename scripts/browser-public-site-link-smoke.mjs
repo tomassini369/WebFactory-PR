@@ -50,7 +50,7 @@ async function setup(){
   if(name==='client-commerce-admin')data={ok:true,orders:[],bookings:[]};
   await route.fulfill({contentType:'application/json',body:JSON.stringify(data)});
  });
- const open=async()=>{await page.goto(root+'/client-admin',{waitUntil:process.env.QA_ORIGIN?'domcontentloaded':'load'});await page.locator('.ca-dashboard').waitFor()};
+ const open=async()=>{await page.goto(root+'/client-admin',{waitUntil:process.env.QA_ORIGIN?'domcontentloaded':'load'});await page.locator('.gd-client-dashboard').waitFor()};
  const nav=name=>selectPortalSection(page,name);
  return {f,other,context,page,open,nav,calls:()=>calls,mode:value=>mode=value,release:()=>release?.(),role:value=>{role=value;f.site.members[0].role=value}};
 }
@@ -89,6 +89,6 @@ try{
   qa.mode(mode);await input.fill('fixture-'+mode);page.once('dialog',d=>d.accept());await save.click();await card.getByRole('alert').filter({hasText:'Reload to verify'}).waitFor();assert.equal(await input.inputValue(),'fixture-'+mode);qa.mode('');page.once('dialog',d=>d.accept());await card.getByRole('button',{name:'Reload address',exact:true}).click();const expected=qa.f.site.slug;await page.waitForFunction(value=>document.querySelector('#ca-public-site-slug')?.value===value,expected);assert(await save.isDisabled());assert.equal(qa.calls(),mode==='offline'?3:4);
  }
  assert.deepEqual({catalog:qa.f.site.catalog,employees:qa.f.site.employees,paymentRules:qa.f.site.paymentRules},preserved);
- qa.role('owner');await qa.open();await qa.nav('Edit website');await input.waitFor();assert.equal(await input.isDisabled(),false);qa.role('employee');await qa.open();await page.locator('.ca-mobile-menu-toggle').click();assert.equal(await page.locator('.sidebar-container').getByRole('button',{name:'Edit website',exact:true}).count(),0);
+ qa.role('owner');await qa.open();await qa.nav('Edit website');await input.waitFor();assert.equal(await input.isDisabled(),false);qa.role('employee');await qa.open();await page.locator('.ca-mobile-menu-toggle').click();assert.equal(await page.locator('.gd-navigation').getByRole('button',{name:'Edit website',exact:true}).count(),0);
  await qa.context.close();assert.deepEqual(errors,[]);console.log('PASS draft navigation, conflicts, server reload, pending tenant switch protection, lost responses, Owner/Employee permissions; zero real writes or payments');
 }finally{await browser.close();await new Promise((resolve,reject)=>server.httpServer.close(error=>error?reject(error):resolve()))}

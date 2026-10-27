@@ -1,0 +1,44 @@
+import {createContext,useContext,useEffect,useRef,useState,type CSSProperties,type ReactNode} from 'react'
+import {DEFAULT_APPEARANCE,DASHBOARD_WALLPAPERS,normalizeAppearance,type DashboardAppearance} from '../../shared/dashboard-appearance.mjs'
+import {useUnsavedChanges} from '../interaction-state'
+import {usePractice} from '../training/practice-context'
+import './material.css'
+import './dashboard.css'
+
+type State={prefs:DashboardAppearance;setPrefs:(p:DashboardAppearance)=>void;hasCustom:boolean;busy:boolean;ready:boolean;error:string;notice:string;save:()=>Promise<void>;upload:(file:File)=>Promise<void>;reset:()=>Promise<void>;reload:()=>Promise<void>;asset:string;etag: string}
+const AppearanceContext=createContext<State|null>(null)
+export function useDashboardAppearance(){const context=useContext(AppearanceContext);if(!context)throw new Error('Missing dashboard context');return context}
+export function DashboardProvider({siteId,userId,children}:{siteId?:string;userId:string;children:ReactNode}){
+ const practice=usePractice();const endpoint='/.netlify/functions/dashboard-appearance'+(siteId?'?siteId='+encodeURIComponent(siteId):'');
+ const [prefs,setPrefs]=useState<DashboardAppearance>({...DEFAULT_APPEARANCE}),[hasCustom,setCustom]=useState(false),[busy,setBusy]=useState(false),[ready,setReady]=useState(false),[error,setError]=useState(''),[notice,setNotice]=useState(''),[revision,setRevision]=useState(0),[etag,setEtag]=useState('');
+ const generation=useRef(0)
+ const readResponse=async(response:Response)=>{const data=await response.json();if(!response.ok)throw new Error(String(response.status));return {data,etag:response.headers.get('etag')||''}}
+ const accept=(data:any,tag:string)=>{setPrefs(normalizeAppearance(data.prefs));setCustom(Boolean(data.hasCustom));setRevision(data.revision||0);setEtag(tag)}
+ // Use the live same-origin transport only outside isolated training.
+ const reload=async()=>{if(practice){setReady(true);return}setBusy(true);setError('');const g=++generation.current;try{const {data,etag:tag}=await readResponse(await fetch(endpoint,{credentials:'same-origin',cache:'no-store'}));if(g===generation.current){accept(data,tag);setReady(true)}}catch{if(g===generation.current)setError('load')}finally{if(g===generation.current)setBusy(false)}}
+ useEffect(()=>{void reload();return()=>{generation.current++}},[endpoint,userId,Boolean(practice)])
+ const mutate=async(method:string,body?:BodyInit,type='application/json')=>{
+  if(practice){setNotice('practice');return}if(!ready||busy)return;setBusy(true);setError('');setNotice('');
+  try{const {data,etag:tag}=await readResponse(await fetch(endpoint,{method,credentials:'same-origin',headers:{'Content-Type':type,'If-Match':etag},body}));accept(data,tag);setNotice('saved')}
+  catch(e){setError(e instanceof Error&&e.message==='409'?'conflict':'save')}
+  finally{setBusy(false)}
+ }
+ const asset=endpoint+(siteId?'&':'?')+'asset=1&v='+revision;
+ const background=prefs.background==='custom'&&hasCustom?asset:(DASHBOARD_WALLPAPERS.find(x=>x.id===prefs.background)||DASHBOARD_WALLPAPERS[0]).src;
+ const style={'--glass-blur':prefs.blur+'px','--glass-alpha':prefs.alpha,'--bg-dim':prefs.dim,'--motion':prefs.motion,'--accent':prefs.accent} as CSSProperties;
+ return <AppearanceContext.Provider value={{prefs,setPrefs,hasCustom,busy,ready,error,notice,etag,save:()=>mutate('PUT',JSON.stringify(prefs)),upload:file=>mutate('POST',file,file.type),reset:()=>mutate('DELETE'),reload,asset}}><div className="gd-root" style={style}><div className="gd-wallpaper" aria-hidden="true" style={{backgroundImage:`url(${JSON.stringify(background)})`}}/><div className="gd-shade" aria-hidden="true"/>{children}</div></AppearanceContext.Provider>
+}
+export default function DashboardAppearance({lang}:{lang:'es'|'en'}){
+ const a=useDashboardAppearance(),es=lang==='es';useUnsavedChanges(a.prefs,a.etag,a.setPrefs,lang);const file=useRef<HTMLInputElement>(null);const [localError,setLocalError]=useState('');
+ const set=(patch:Partial<DashboardAppearance>)=>a.setPrefs({...a.prefs,...patch});
+ const pickFile=async(f?:File)=>{if(!f)return;setLocalError('');if(!['image/jpeg','image/png','image/webp'].includes(f.type)||f.size>4*1024*1024){setLocalError(es?'Usa JPEG, PNG o WebP de hasta 4 MB.':'Use JPEG, PNG or WebP up to 4 MB.');return}await a.upload(f);if(file.current)file.current.value=''};
+ return <section className="gd-appearance" aria-labelledby="gd-appearance-title"><header><small>WEBFACTORY PR</small><h2 id="gd-appearance-title">{es?'Personalizar dashboard':'Customize dashboard'}</h2><p>{es?'Tu apariencia se guarda para tu usuario en este portal y se recupera en tus dispositivos.':'Your appearance is saved for your user in this portal and restored across your devices.'}</p></header>
+ {(localError||a.error)&&<div className="gd-feedback" role="alert">{localError||(a.error==='conflict'?(es?'La configuración cambió en otro dispositivo. Recárgala antes de guardar.':'Settings changed on another device. Reload before saving.'):es?'No se pudo cargar o guardar la apariencia. Inténtalo nuevamente.':'Could not load or save appearance. Please try again.')}<button type="button" disabled={a.busy} onClick={()=>void a.reload()}>{es?'Recargar configuración':'Reload settings'}</button></div>}
+ {a.notice&&<p role="status">{a.notice==='practice'?(es?'La personalización no se guarda durante la práctica.':'Appearance is not saved during practice.'):(es?'Apariencia guardada.':'Appearance saved.')}</p>}
+ {!a.ready&&!a.error&&<p role="status">{es?'Cargando tu apariencia…':'Loading your appearance…'}</p>}
+ <fieldset disabled={!a.ready||a.busy}><legend>{es?'Fondos de pantalla':'Wallpapers'}</legend><div className="gd-wallpaper-grid">{DASHBOARD_WALLPAPERS.map(w=><article key={w.id}><button type="button" className="gd-wallpaper-choice" aria-pressed={a.prefs.background===w.id} onClick={()=>set({background:w.id})}><img src={w.src} alt="" loading="lazy"/><strong>{es?w.nameEs:w.nameEn}</strong><span>{a.prefs.background===w.id?(es?'Seleccionado':'Selected'):(es?'Vista previa':'Preview')}</span></button><a href={w.download} download>{es?'Descargar fondo':'Download wallpaper'}</a></article>)}{a.hasCustom&&<article><button type="button" className="gd-wallpaper-choice" aria-pressed={a.prefs.background==='custom'} onClick={()=>set({background:'custom'})}><img src={a.asset} alt=""/><strong>{es?'Mi imagen':'My image'}</strong><span>{a.prefs.background==='custom'?(es?'Seleccionado':'Selected'):(es?'Vista previa':'Preview')}</span></button><a href={a.asset+'&download=1'} download>{es?'Descargar mi fondo':'Download my wallpaper'}</a></article>}</div>
+ <div className="gd-appearance-actions"><label className="gd-upload">{es?'Subir y aplicar mi imagen':'Upload and apply my image'}<input ref={file} type="file" accept="image/jpeg,image/png,image/webp" onChange={e=>void pickFile(e.target.files?.[0])}/></label><p>{es?'JPEG, PNG o WebP · Hasta 4 MB. La imagen se optimiza y permanece privada.':'JPEG, PNG or WebP · Up to 4 MB. Your image is optimized and remains private.'}</p></div>
+ <div className="gd-adjustments">{([{key:'dim',label:es?'Oscurecimiento del fondo':'Wallpaper dim',min:.25,max:.85,step:.01},{key:'alpha',label:es?'Opacidad del cristal':'Glass opacity',min:.66,max:.96,step:.01},{key:'blur',label:es?'Desenfoque':'Blur',min:0,max:40,step:1},{key:'motion',label:es?'Animaciones':'Animations',min:0,max:1,step:.1}] as const).map(control=><label key={control.key}>{control.label}<output>{control.key==='blur'?a.prefs.blur+' px':Math.round(a.prefs[control.key]*100)+'%'}</output><input type="range" min={control.min} max={control.max} step={control.step} value={a.prefs[control.key]} onChange={e=>set({[control.key]:Number(e.target.value)})}/></label>)}<label>{es?'Color de acento':'Accent color'}<input type="color" value={a.prefs.accent} onChange={e=>set({accent:e.target.value})}/></label></div>
+ <p>{es?'La transparencia tiene límites para mantener el texto legible. El modo de movimiento reducido del dispositivo siempre tiene prioridad.':'Transparency is bounded to keep text readable. Your device’s reduced-motion setting always takes priority.'}</p>
+ <div className="gd-appearance-actions"><button type="button" onClick={()=>void a.save()}>{a.busy?(es?'Guardando…':'Saving…'):(es?'Aplicar y guardar':'Apply and save')}</button><button type="button" onClick={()=>void a.reset()}>{es?'Restaurar predeterminado y borrar mi imagen':'Restore default and delete my image'}</button></div></fieldset></section>
+}

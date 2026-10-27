@@ -9,7 +9,7 @@ await server.listen()
 let browser
 try {
  for(const width of [390,1280])for(const theme of ['light','dark'])for(const lang of ['es','en']) {
-  browser=await chromium.launch(process.env.QA_CHROMIUM_PATH?{executablePath:process.env.QA_CHROMIUM_PATH,args:['--single-process','--no-sandbox']}:undefined)
+  browser=await chromium.launch(process.env.QA_CHROMIUM_PATH?{executablePath:process.env.QA_CHROMIUM_PATH,args:['--no-sandbox']}:undefined)
   const page=await browser.newPage({viewport:{width,height:844}})
   const errors=[];page.on('pageerror',e=>errors.push(e.message))
   let site={siteId:'menu-fixture',slug:'menu-fixture',status:'published',revision:1,business:{name:'Menu fixture',category:'Retail',phone:'787-555-0100',locations:[]},design:{primary:'#0B1529',secondary:'#3C86F6',style:'Modern'},catalog:[],employees:[],hours:{},members:[],settings:{locale:'en',timezone:'America/Puerto_Rico',currency:'USD'},paymentRules:{},googleCalendar:{},features:{},servicePlan:{code:'complimentary',billingModel:'complimentary',subscriptionStatus:'complimentary'}}
@@ -31,19 +31,19 @@ try {
    }
    await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(payload)})
   })
-  await page.goto('http://127.0.0.1:5240/client-admin');await page.locator('.ca-dashboard').waitFor()
+  await page.goto('http://127.0.0.1:5240/client-admin');await page.locator('.gd-client-dashboard').waitFor()
   await page.locator('.portal-language').getByRole('button',{name:lang==='es'?'ES':'EN',exact:true}).click()
-  const toggle=page.locator('.ca-mobile-menu-toggle'),nav=page.locator('.wf-sidebar-frame nav')
+  const toggle=page.locator('.ca-mobile-menu-toggle'),nav=page.locator('.gd-navigation nav')
   const select=name=>selectPortalSection(page,name)
   await select(lang==='es'?'Sucursales':'Locations')
-  const work=page.locator('.ca-work')
+  const work=page.locator('.gd-client-work')
   await work.getByRole('button',{name:lang==='es'?'+ Añadir sucursal':'+ Add location',exact:true}).click()
   await work.getByLabel(lang==='es'?'Nombre':'Name',{exact:true}).fill('Branch fixture')
   await work.getByLabel(lang==='es'?'Dirección':'Address',{exact:true}).fill('Test address')
   page.once('dialog',dialog=>dialog.dismiss());await select(lang==='es'?'Cambiar diseño':'Change design')
-  assert.equal(await nav.getByRole('button',{name:lang==='es'?'Sucursales':'Locations',exact:true}).getAttribute('aria-current'),'page')
+  assert.equal(await nav.getByRole('button',{name:lang==='es'?'Sucursales':'Locations',exact:true,includeHidden:true}).getAttribute('aria-current'),'page')
   assert.equal(await work.getByLabel(lang==='es'?'Nombre':'Name',{exact:true}).inputValue(),'Branch fixture')
-  if(width<=820)await toggle.click()
+  if(await page.locator('.gd-navigation').isVisible())await page.keyboard.press('Escape')
   await work.getByRole('button',{name:lang==='es'?'Guardar cambios':'Save changes',exact:true}).click()
   await work.getByRole('status').filter({hasText:lang==='es'?'Cambios publicados':'Changes published'}).waitFor()
   assert.equal(writes,1)
@@ -55,7 +55,7 @@ try {
   await page.locator('.wf-redesign').getByRole('heading',{name:/Redesign your page|Rediseña tu página/,exact:true}).waitFor()
   assert.equal(await page.locator('.wf-redesign-grid input').first().inputValue(),'Menu fixture')
   site={...site,servicePlan:{...site.servicePlan,subscriptionStatus:'inactive'}}
-  await page.goto('http://127.0.0.1:5240/client-admin');await page.locator('.ca-dashboard').waitFor();await page.locator('.portal-language').getByRole('button',{name:lang==='es'?'ES':'EN',exact:true}).click();await select(lang==='es'?'Cambiar diseño':'Change design')
+  await page.goto('http://127.0.0.1:5240/client-admin');await page.locator('.gd-client-dashboard').waitFor();await page.locator('.portal-language').getByRole('button',{name:lang==='es'?'ES':'EN',exact:true}).click();await select(lang==='es'?'Cambiar diseño':'Change design')
   await work.getByText(lang==='es'?'Activa tu suscripción para rediseñar la página.':'Activate your subscription to redesign the website.',{exact:true}).waitFor()
   assert.equal(await work.locator('a[href^="/builder?edit="]').count(),0,'Inactive accounts retain the existing redesign plan gate')
   assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1))

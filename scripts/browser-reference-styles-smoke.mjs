@@ -36,8 +36,8 @@ try{
   })
   await page.goto(origin+'/client-admin');await page.locator('input[type=email]').waitFor()
   if(shotDir){await page.waitForTimeout(450);await page.screenshot({path:`${shotDir}/login-${width}-${theme}.png`,fullPage:true})}
-  signedIn=true;await page.reload();await page.locator('.ca-dashboard').waitFor()
-  const nav=page.locator('.wf-sidebar-frame nav')
+  signedIn=true;await page.reload();await page.locator('.gd-client-dashboard').waitFor()
+  const nav=page.locator('.gd-navigation nav')
   if(width===390)await page.locator('.ca-mobile-menu-toggle').click()
   await selectPortalSection(page,'Payments')
   const paper=page.locator('.wf-receipt-paper');await paper.waitFor()

@@ -80,7 +80,7 @@ try {
       assert.equal(await metric.evaluate(el=>getComputedStyle(el).backdropFilter),'none','Metric strips must not repeat expensive backdrop blur')
       assert.equal(await metric.evaluate(el=>getComputedStyle(el).boxShadow),'none','Metric strips must not repeat nested shadows')
       if([390,1440].includes(width)&&lang==='en'){
-        await page.locator(path==='client-admin'?'.ca-work':'.wfa-work').evaluate(el=>el.scrollTop=0)
+        await page.locator(path==='client-admin'?'.gd-client-work':'.gd-admin-work').evaluate(el=>el.scrollTop=0)
         await page.screenshot({path:`${output}/${path}-${width}-${theme}-${process.env.QA_ENGINE||'chromium'}.png`})
         await chart.scrollIntoViewIfNeeded()
         await page.screenshot({path:`${output}/${path}-chart-${width}-${theme}-${process.env.QA_ENGINE||'chromium'}.png`})
