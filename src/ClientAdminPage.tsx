@@ -1,3 +1,4 @@
+import BookingAttendance from './BookingAttendance'
 import MarketplaceAdvertising from './MarketplaceAdvertising'
 import SubscriptionReconciliation from './SubscriptionReconciliation'
 import ContentClaimsConsole from './ContentClaimsConsole'
@@ -216,6 +217,7 @@ export default function ClientAdminPage({practiceStartTab}:{practiceStartTab?:st
       {tab==='settings'&&<PortalPanel className="ca-panel"><BookingPolicySettings site={site} lang={lang} onSave={save} busy={busy}/></PortalPanel>}
       {tab==='bookings'&&['owner','admin'].includes(membership?.role)&&<BookingWaitlistManager site={site} lang={lang} onSave={save} busy={busy}/>}
       {tab==='bookings'&&['owner','admin'].includes(membership?.role)&&<BookingSeriesPanel site={site} lang={lang}/>}
+      {tab==='bookings'&&['owner','admin'].includes(membership?.role)&&<BookingAttendance key={site.siteId} siteId={site.siteId} lang={lang} timeZone={site.settings?.timezone}/>}
       {tab==='customers'&&<CustomersPanel siteId={site.siteId} lang={lang}/>}
       {tab==='catalog'&&<><CatalogEditor site={site} setSite={setSite} lang={lang} onSave={()=>save('catalog',site.catalog)} busy={busy}/><InventoryStatusPanel site={site} lang={lang}/><InventoryAdjustmentPanel site={site} setSite={setSite} lang={lang}/><InventoryMovementsPanel siteId={site.siteId} lang={lang}/></>}
       {tab==='team'&&<><TeamEditor site={site} setSite={setSite} lang={lang} onSave={()=>save('employees',site.employees)} busy={busy}/><MemberRolesPanel site={site} setSite={setSite} lang={lang} membership={membership}/></>}
