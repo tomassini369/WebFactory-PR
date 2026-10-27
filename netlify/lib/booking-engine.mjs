@@ -1,3 +1,4 @@
+import {reservationBlocks} from './booking-reservation-cache.mjs';
 import crypto from "node:crypto";
 import { clientCommerceStore, commerceKey } from "./client-store.mjs";
 import { googleBusy } from "./google-calendar.mjs";
@@ -27,28 +28,8 @@ function overlaps(startA, endA, startB, endB) {
   return startA < endB && endA > startB;
 }
 
-async function reservationsForEmployee(siteId, employeeId, startDay, endDay, catalog = [], ignoreReservationId = '') {
-  const store = clientCommerceStore();
-  const records = [];
-  for (const kind of ["bookings", "holds"]) {
-    const pages = store.list({ prefix: `${siteId}/${kind}/`, paginate:true });
-    for await (const list of pages[Symbol.asyncIterator]?pages:[await pages]) {
-    for (let offset=0;offset<(list.blobs || []).length;offset+=20) {
-    const batch=await Promise.all(list.blobs.slice(offset,offset+20).map(async blob=>({blob,record:await store.get(blob.key,{type:'json'})})));
-    for (const {blob,record} of batch) {
-      if (!record || record.employeeId !== employeeId) continue;
-      if(ignoreReservationId && (record.holdId===ignoreReservationId || record.transactionId===ignoreReservationId))continue;
-      if (kind === "holds" && Date.parse(record.expiresAt || "") <= Date.now()) continue;
-      if (["cancelled", "failed"].includes(record.status)) continue;
-      const start = Date.parse(record.start) - Math.max(0, Number(record.bufferBeforeMinutes ?? 0))*60000;
-      const buffer = Math.max(0,Number(record.bufferMinutes ?? catalog.find(item=>item.id===record.serviceId)?.bufferMinutes ?? 0));
-      const end = Date.parse(record.end) + buffer*60000;
-      if (Number.isFinite(start) && Number.isFinite(end) && overlaps(start, end, startDay, endDay)) records.push({ start, end, reservationId:record.holdId || record.transactionId || blob.key });
-    }
-    }
-    }
-  }
-  return [...new Map(records.map(record=>[record.reservationId,record])).values()];
+async function reservationsForEmployee(siteId,employeeId,startDay,endDay,catalog=[],ignoreReservationId='',fresh=false){
+ return reservationBlocks({store:clientCommerceStore(),siteId,employeeId,startDay,endDay,catalog,ignoreReservationId,fresh});
 }
 
 function bookingServiceAndEmployee(site, serviceId, employeeId, locationId = "") {
@@ -104,13 +85,13 @@ function slotsForSchedule({ date, schedule, service, site, blocks, timeZone, clo
   return slots.slice(0, 96);
 }
 const validDate = date => /^\d{4}-\d{2}-\d{2}$/.test(date) && Number.isFinite(Date.parse(date)) && new Date(date).toISOString().slice(0,10)===date;
-export async function availabilityForDate(site, serviceId, employeeId, date, locationId = "", {strictGoogle=true,ignoreReservationId=''} = {}) {
+export async function availabilityForDate(site, serviceId, employeeId, date, locationId = "", {strictGoogle=true,ignoreReservationId='',fresh=false} = {}) {
   if (!validDate(date)) throw Object.assign(new Error("Invalid booking date."), { status: 400 });
   const { service, employee } = bookingServiceAndEmployee(site, serviceId, employeeId, locationId);
   const timeZone = site.settings?.timezone || "America/Puerto_Rico";
   const dayStart = zonedToUtc(date, '00:00', timeZone);
   const dayEnd = new Date(localDayEnd(date,timeZone));
-  const reserved = await reservationsForEmployee(site.siteId, employeeId, dayStart.getTime(), dayEnd.getTime(),site.catalog,ignoreReservationId);
+  const reserved = await reservationsForEmployee(site.siteId, employeeId, dayStart.getTime(), dayEnd.getTime(),site.catalog,ignoreReservationId,fresh);
   let googleReserved = [];
   if (site.googleCalendar?.connected && employee.calendarId) {
     try {
@@ -170,7 +151,7 @@ export async function createBookingHold(site, { serviceId, employeeId, start, lo
   const store=clientCommerceStore();
   const lockKey=commerceKey(site.siteId,"booking-slot-locks",crypto.createHash("sha256").update(`${employeeId}:${localDate}`).digest("hex"));
   return withBookingLock(store,lockKey,async()=>{
-  const slots = await availabilityForDate(site, serviceId, employeeId, localDate, locationId,{strictGoogle,ignoreReservationId});
+  const slots = await availabilityForDate(site, serviceId, employeeId, localDate, locationId,{strictGoogle,ignoreReservationId,fresh:true});
   const selected = slots.find((slot) => slot.start === isoStart);
   if (!selected) throw Object.assign(new Error("That time is no longer available."), { status: 409 });
   const holdId = `hold_${crypto.randomUUID()}`;

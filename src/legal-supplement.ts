@@ -4,6 +4,10 @@ type Section=readonly [string,readonly string[]]
 export const legalSupplement:Record<'en'|'es',Record<'privacy'|'terms'|'refund',readonly Section[]>>={
  en:{
  privacy:[
+ ['Booking requests, waitlists and attendance',[
+ 'When a business enables its waitlist, it collects your name, email, preferred service, professional, location and date range with specific consent for opening notifications. An invitation does not hold or confirm an appointment. You can cancel requests and notifications through the private link. Requests expire within 30 days; expiry processing removes the contact from the request. Processing is incremental, so expiration is not a promise of instantaneous deletion from all systems or backups.',
+ 'The business Owner can consult completed appointments, no-shows and late cancellations by the email used in that business. Different email addresses are not automatically merged. Appointment and payment history can remain separately from waitlist contact information. Private booking and invitation links grant limited access: do not publish them.'
+ ]],
  ['Marketplace consumers and eligibility',[
  'Browsing public business listings does not require a consumer account. Registered consumer accounts are restricted to people aged 18 or older as a product policy. This is not a statement that COPPA universally requires an age of 18. Registration records an 18-or-older attestation, policy version and acceptance date; it does not require a full birth date or identity-document upload.',
  'Consumer profiles and saved favorites are private account preferences, not public reviews or followers. Selecting a municipality is not permission to collect precise GPS location. Marketplace search filters the loaded public directory; it does not assert a complete directory or distance ranking.',
@@ -49,6 +53,10 @@ export const legalSupplement:Record<'en'|'es',Record<'privacy'|'terms'|'refund',
  },
  es:{
  privacy:[
+ ['Solicitudes de citas, lista de espera y asistencia',[
+ 'Cuando el negocio habilita la lista de espera, recopila nombre, email, servicio, profesional, localidad y fechas preferidas con consentimiento específico para avisos de disponibilidad. Una invitación no retiene ni confirma una cita. Puedes cancelar la solicitud y los avisos desde el enlace privado. La solicitud vence en un máximo de 30 días; al procesar el vencimiento se elimina el contacto de la solicitud. El procesamiento es incremental: el vencimiento no promete eliminación instantánea de todos los sistemas ni backups.',
+ 'El Dueño puede consultar citas completadas, ausencias y cancelaciones tardías usando el email utilizado en ese negocio. No se combinan automáticamente emails diferentes. El historial de citas y pagos puede conservarse separado del contacto de la lista de espera. Los enlaces privados de citas e invitaciones conceden acceso limitado: no los publiques.'
+ ]],
  ['Consumidores del Marketplace y elegibilidad',[
  'Consultar fichas públicas de negocios no requiere una cuenta de consumidor. Las cuentas registradas se limitan a personas de 18 años o más como política del producto. Esto no significa que COPPA exija universalmente una edad de 18 años. El registro conserva una declaración de tener 18 años o más, versión y fecha de aceptación; no requiere fecha de nacimiento completa ni subir documentos de identidad.',
  'El perfil y los favoritos son preferencias privadas de la cuenta, no reseñas públicas ni seguidores. Seleccionar un municipio no autoriza recopilar GPS preciso. La búsqueda filtra el directorio público cargado; no promete un directorio completo ni orden por distancia.',
@@ -123,3 +131,4 @@ export const copyrightCopy={
  ['Estado del agente designado',['Usa los datos del agente designado más abajo para avisos formales de copyright. Consulta el directorio oficial para verificar el estado actual del registro. Este preview no certifica protección legal absoluta; la atención de avisos y las demás condiciones legales son obligaciones separadas.']]
  ]}
 } as const
+

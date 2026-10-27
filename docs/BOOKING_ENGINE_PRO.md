@@ -57,3 +57,13 @@ La gestión del Dueño pagina 50 solicitudes mediante cursor del último ID (ord
 Las solicitudes vencidas conservan el registro operativo pero se elimina su contacto con escritura condicional. Las invitaciones entregadas que vencen vuelven a esperar dentro del plazo original de consentimiento, hasta tres invitaciones por solicitud. Los envíos inciertos no se reciclan automáticamente.
 
 `booking-waitlist-maintenance` recorre páginas de negocios de forma incremental cada 15 minutos UTC. Tiene límite de trabajo por ejecución y checkpoints; solo se ejecuta automáticamente en un deploy publicado de producción. En preview permanece inactiva y se prueba con almacenes ficticios. Las lecturas administrativas y ofertas también mantienen los registros examinados. No se ha ejecutado una limpieza sobre datos reales en esta implementación.
+
+## Actualización: caché derivada de disponibilidad
+
+La consulta diaria/mensual lista las versiones de reservas y holds para construir una huella por negocio, empleado, rango y buffers de catálogo. Si esa huella coincide, reutiliza bloques derivados durante un máximo de 30 segundos y filtra holds vencidos al leer. Cualquier cambio de ETag invalida la caché. Fallos de caché vuelven a la lectura canónica; sin ETags no se activa. Google Calendar continúa consultándose por el flujo existente.
+
+Crear un hold ignora siempre esta caché y lee reservas canónicas dentro del bloqueo existente. La caché nunca autoriza una cita. No se migra el histórico ni se crea otra agenda. Prueba sintética: 300 registros, 301 lecturas de objetos en frío y 1 en caliente, además de los listados de metadatos. Prueba integrada: 25 holds simultáneos para la misma hora producen un éxito y 24 conflictos; el siguiente intento también se rechaza.
+
+Esto reduce descargas repetidas, pero no equivale a un índice transaccional completo por fecha. Los listados de claves siguen recorriendo el histórico; la creación de holds mantiene las lecturas completas para preservar la seguridad. Quedan pendientes el índice completo, carga distribuida y aceptación física/proveedores. Los avisos ES/EN de privacidad del preview describen espera, caducidad, asistencia y enlaces privados como comportamiento del producto, sin afirmar cumplimiento legal absoluto.
+
+CI: la prueba POS se actualizó para afirmar QR predeterminado y visible automáticamente, seleccionando efectivo explícitamente en el escenario de pago recibido. Se conservan las comprobaciones de reintento idempotente, respuesta perdida, permisos y confirmación del servidor. El panel de campañas tolera una lista omitida en respuestas parciales, evitando una excepción al abrir Ajustes en las pruebas aisladas.
