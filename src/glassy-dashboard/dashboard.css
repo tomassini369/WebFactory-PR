@@ -151,3 +151,17 @@ html body #root .gd-root .gd-content{grid-column:2;grid-row:2;width:100%;height:
 /* The expanded material belongs to the scrollport, so it cannot scroll away with content. */
 html body #root .gd-root .gd-content .wf-portal-panel.wf-panel-expanded{background:var(--glass-fill)!important;-webkit-backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat))!important;backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat))!important;border:1px solid #ffffff30!important}
 html body #root .gd-root .gd-content .wf-portal-panel.wf-panel-expanded::before{display:none!important}
+
+/* Legacy nested operational cards share the current material in both themes. */
+html body #root .gd-root .gd-content :is(.ca-v3-metrics article,.ca-v3-table article,.ca-v3-cards article,.ca-danger-actions article,.ca-service-plan>div,.ca-v3-links article){background:var(--surface)!important;background-image:none!important;color:var(--text);border-color:var(--stroke-2)!important;box-shadow:none;backdrop-filter:none;transform:none}
+html body #root .gd-root .gd-content :is(.ca-v3-table,.ca-v3-cards,.ca-danger-actions,.ca-tax-presets) :is(span,small){color:var(--gd-muted)}
+html body #root .gd-root .gd-content .mfa-panel{position:relative;isolation:isolate;background:var(--glass-fill)!important;background-image:none!important;border:1px solid var(--stroke-2);border-radius:var(--r-xl);color:var(--text);backdrop-filter:blur(var(--glass-blur));padding:24px;margin-bottom:20px}
+html body #root .gd-root .gd-content .business-qr{background:var(--glass-fill)!important;background-image:none!important;border-color:var(--stroke-2);color:var(--text);backdrop-filter:blur(var(--glass-blur))}
+html body #root .gd-root .gd-content .business-qr-details code{background:var(--gd-field);color:var(--text);border-color:var(--pg-line)}
+html body #root .gd-root .gd-content .business-qr-image-wrap{background:#fff!important;border-color:#d1d1d6;color:#17171c}
+html body #root .gd-root .gd-content .business-qr-image-wrap strong{color:#17171c}
+html body #root .gd-root .gd-content .business-qr-error{color:#a32631}
+@media(prefers-reduced-transparency:reduce){html body #root .gd-root .gd-content :is(.business-qr,.mfa-panel){background:var(--gd-solid)!important;backdrop-filter:none}}
+/* Locale controls must not inherit the retired navy portal theme. */
+html body #root .gd-root .gd-top-controls :is(button,summary){background:#242328d9;color:#fff;border-color:#ffffff4d}
+html body #root .gd-root .gd-top-controls .portal-language button.active{background:#fffffff0;color:#17171b;border-color:#fff}
