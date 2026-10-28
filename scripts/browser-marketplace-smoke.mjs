@@ -40,8 +40,9 @@ try{
   await context.addInitScript(({theme,lang})=>{if(window.top!==window)return;localStorage.setItem('webfactory-theme-v2',theme);localStorage.setItem('webfactory-language',lang)},{theme,lang})
   const page=await context.newPage(),errors=[],functions=[],media=[]
   page.on('pageerror',error=>errors.push(error.message))
-  page.on('request',request=>{if(request.url().includes('/.netlify/functions/'))functions.push(request.url());if(/webfactory-hero|HomePage-[^/]+\.(js|css)/.test(request.url()))media.push(request.url())})
-  await page.route('**/.netlify/functions/**',route=>route.fulfill({status:route.request().url().includes('/marketplace-directory')?200:500,contentType:'application/json',body:JSON.stringify(route.request().url().includes('/marketplace-directory')?{ok:true,entries:[],truncated:false}:{ok:false,message:'Unexpected private function request on public Marketplace'})}))
+  page.on('request',request=>{if(request.url().includes('/.netlify/functions/'))functions.push({url:()=>request.url(),method:()=>request.method()});if(/webfactory-hero|HomePage-[^/]+\.(js|css)/.test(request.url()))media.push(request.url())})
+  const publicRead=request=>{const url=new URL(request.url());return request.method()==='GET'&&(url.pathname==='/.netlify/functions/marketplace-directory'&&!url.search||url.pathname==='/.netlify/functions/marketplace-ads'&&url.search==='?scope=public')};
+  await page.route('**/.netlify/functions/**',route=>{const request=route.request(),allowed=publicRead(request);return route.fulfill({status:allowed?200:500,contentType:'application/json',body:JSON.stringify(allowed?(new URL(request.url()).pathname.endsWith('/marketplace-directory')?{ok:true,entries:[],truncated:false}:{ok:true,ads:[]}):{ok:false,message:'Unexpected private function request on public Marketplace'})})})
   await page.goto(origin+'/',{waitUntil:'domcontentloaded'});await page.locator('.mk-root').waitFor()
   await page.waitForFunction(()=>{const image=document.querySelector('.mk-hero-photo img');return image?.complete&&image.naturalWidth>0})
   assert.match(await page.locator('.mk-hero-photo img').getAttribute('src'),/^\/marketplace\//)
@@ -54,7 +55,7 @@ try{
   // Deploy Preview tooling may add its own iframe outside the application.
   assert.equal(await page.locator('.mk-root').locator('.wf-premium-home,video,iframe,.template-highlights').count(),0)
   assert.deepEqual(media,[],'Marketplace must not load the commercial landing/video')
-  assert(functions.every(url=>new URL(url).pathname==='/.netlify/functions/marketplace-directory'),'Only the public allowlisted directory is requested')
+  assert(functions.every(publicRead),'Only the public directory and public sponsored placements are requested')
   await page.locator('.mk-business-empty').waitFor()
   await noOverflow(page);await checkAccessibility(page)
   const query=page.getByRole('searchbox'),municipality=page.locator('select[name="municipio"]')
