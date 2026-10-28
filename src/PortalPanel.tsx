@@ -49,7 +49,10 @@ export function PortalPanel({ className = '', children, style, 'data-training': 
       ancestors.push({element:current,previous:current.getAttribute('data-wf-panel-ancestor')});current.setAttribute('data-wf-panel-ancestor','')
       if (current === document.body) break
     }
-    element.focus()
+    // The top layer escapes the dashboard scrollport on mobile without remounting the card.
+    if (typeof element.showPopover === 'function') element.showPopover()
+    element.scrollTop = 0
+    element.focus({preventScroll:true})
     const trap = (event: KeyboardEvent) => {
       if (event.key !== 'Tab') return
       const controls = Array.from(element.querySelectorAll<HTMLElement>('button, summary, a[href], input, select, textarea, [tabindex]')).filter(control => control.tabIndex >= 0 && !control.hasAttribute('disabled') && control.getClientRects().length > 0 && !control.closest('[inert]'))
@@ -60,6 +63,7 @@ export function PortalPanel({ className = '', children, style, 'data-training': 
     }
     element.addEventListener('keydown',trap)
     return () => {
+      if (typeof element.hidePopover === 'function' && element.matches(':popover-open')) element.hidePopover()
       element.removeEventListener('keydown',trap)
       for (const sibling of siblings) { sibling.element.inert = sibling.inert; if(sibling.visibility)sibling.element.style.setProperty('visibility',sibling.visibility,sibling.priority);else sibling.element.style.removeProperty('visibility');if(sibling.opacity)sibling.element.style.setProperty('opacity',sibling.opacity,sibling.opacityPriority);else sibling.element.style.removeProperty('opacity') }
       for(const ancestor of ancestors){if(ancestor.previous===null)ancestor.element.removeAttribute('data-wf-panel-ancestor');else ancestor.element.setAttribute('data-wf-panel-ancestor',ancestor.previous)}
@@ -68,7 +72,7 @@ export function PortalPanel({ className = '', children, style, 'data-training': 
     }
   },[expanded])
 
-  return <section data-card-depth={cardDepth} data-button-depth={buttonDepth} data-motion={motion} data-training={trainingTarget} style={style} ref={panel} tabIndex={expanded?-1:undefined} role={expanded?'dialog':undefined} aria-modal={expanded||undefined} aria-label={expanded?(es?'Panel ampliado':'Expanded panel'):undefined} className={`${className} wf-portal-panel${expanded ? ' wf-panel-expanded' : ''}`.trim()}>
+  return <section popover={expanded?'manual':undefined} data-card-depth={cardDepth} data-button-depth={buttonDepth} data-motion={motion} data-training={trainingTarget} style={style} ref={panel} tabIndex={expanded?-1:undefined} role={expanded?'dialog':undefined} aria-modal={expanded||undefined} aria-label={expanded?(es?'Panel ampliado':'Expanded panel'):undefined} className={`${className} wf-portal-panel${expanded ? ' wf-panel-expanded' : ''}`.trim()}>
     <div className="wf-panel-tools">
       <button type="button" className="wf-panel-expand" aria-label={expanded?(es?'Cerrar tarjeta ampliada':'Close expanded card'):(es?'Ampliar tarjeta':'Expand card')} title={expanded?(es?'Cerrar':'Close'):(es?'Ampliar':'Expand')} aria-expanded={expanded} onClick={()=>context.setExpandedPanel(expanded?null:id)}>{expanded?<Minimize2 size={20} aria-hidden="true"/>:<Maximize2 size={20} aria-hidden="true"/>}</button>
     </div>

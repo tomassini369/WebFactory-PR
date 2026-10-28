@@ -48,3 +48,11 @@ html body #root .gd-root .gd-content .bcc-metrics>article::before{display:none}
 html[data-wf-theme=light] .gd-root .gd-month-grid .gd-today{background:#29272f;color:#fff}
 @media(max-width:1380px){.gd-root .gd-overview-grid{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-areas:'profile revenue' 'board board' 'calendar activity'}}
 @media(max-width:760px){.gd-root .gd-overview-grid{grid-template-columns:minmax(0,1fr);grid-template-areas:'profile' 'board' 'revenue' 'calendar' 'activity'}.gd-root .bcc-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.gd-root .gd-board-columns{grid-template-columns:minmax(0,1fr)}.gd-root .gd-profile-avatar{width:64px;height:64px}}
+
+/* Charts use the active Glassy material, including their empty/selected description. */
+.gd-root .wf-data-chart{--chart-text:var(--text);--chart-muted:var(--gd-muted);--chart-soft:var(--surface);--chart-line:var(--stroke-2);--chart-accent:var(--pg-accent)}
+html body #root .gd-root .gd-content .wf-data-chart-detail{color:var(--text);background:var(--surface);border-color:var(--pg-line)}
+html body #root .gd-root .gd-content .wf-data-chart-detail>span{color:inherit}
+html body #root .gd-root .gd-content .wf-data-chart .wf-data-chart-bars>button{padding:4px 3px;border-radius:10px;border:1px solid transparent;background:transparent;min-width:0;font:inherit}
+html body #root .gd-root .gd-content .wf-data-chart .wf-data-chart-bars>button:is(:hover,[aria-pressed=true]){background:var(--surface);border-color:var(--pg-accent)}
+.gd-root .wf-data-chart-bars small{white-space:nowrap}
