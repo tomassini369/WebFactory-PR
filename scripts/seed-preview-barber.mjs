@@ -27,11 +27,11 @@ export async function previewBarberData(ownerEmail,accountId='',now=new Date()){
       locations:[{id:locationId,name:'Arecibo · PRUEBAS',active:true,address:'Arecibo, Puerto Rico · ubicación de prueba',phone:'',mapsUrl:'',hours:draft.hours}]},
     design:{...draft.design,mode:'template_base',templateCategory:'Barber',templateName:'Northline Barber Studio',templateRoute:'/templates/northline-barber',preserveTemplateStructure:true},
     features:draft.features,hours:draft.hours,
-    catalog:draft.catalog.map(item=>({...item,active:true,bufferMinutes:5,taxable:false,imageAssetKey:assetKey(item.imageName.replace('.webp',''))})),
+    catalog:draft.catalog.map(item=>({...item,active:true,bufferMinutes:5,taxable:item.taxable!==false,imageAssetKey:assetKey(item.imageName.replace('.webp',''))})),
     employees:draft.team.map(member=>({...member,active:true,calendarId:'',dailyLimit:12,schedule:draft.hours,timeOff:[],locationIds:[locationId]})),
     paymentRules:{...draft.payments,stripeConnectedAccountId:accountId,stripeCapabilityStatus:accountId?'active':'not_started'},
-    // Amounts deliberately exclude tax in this fictional fixture; no tax advice.
-    taxConfig:{enabled:false,stateRate:10.5,municipalRate:1,defaultTaxable:false,pricesIncludeTax:false},
+    // Owner-requested IVU test baseline; fictional services inherit the configured rate.
+    taxConfig:{enabled:true,stateRate:10.5,municipalRate:1,defaultTaxable:true,pricesIncludeTax:false},
     settings:{locale:'es',timezone:'America/Puerto_Rico',currency:'usd'},
     googleCalendar:{connected:false,calendarEmail:'',employeeCalendars:{}},
     businessEmail:{provider:'',connected:false,connectedEmail:''},

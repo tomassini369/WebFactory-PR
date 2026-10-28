@@ -1,3 +1,5 @@
+import {estimatePosTotals} from '../../src/pos-domain.ts';
+import {calculateTax} from './webfactory-v3-domain.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {seedPreviewBarber,previewBarberData,fixtureSiteId} from '../../scripts/seed-preview-barber.mjs';
@@ -73,4 +75,15 @@ test('business recipe contains no invented credentials, paid transactions or con
 test('deploy preview selects source HEAD over base BRANCH and fails closed for a different source',async()=>{
  const f=fixture();assert.equal((await seedPreviewBarber({env,...f})).seeded,true);
  const other=fixture();assert.equal((await seedPreviewBarber({env:{...env,HEAD:'untrusted-source',BRANCH:'feat/kiosk-skin-engine'},...other})).seeded,false);assert.equal(other.opened.length,0);
+});
+
+test('Faro Norte IVU uses its actual walk-in catalog in cashier, kiosk and server calculation',async()=>{
+ const {site}=await previewBarberData(env.WF_PREVIEW_TEST_OWNER_EMAIL,env.WF_PREVIEW_STRIPE_ACCOUNT);
+ const ids=['corte-clasico-walk-in','corte-barba-walk-in','barba-walk-in','ritual-toalla-walk-in'],cart=ids.map(id=>({id,quantity:1}));
+ const before=estimatePosTotals(site.catalog.map(item=>({...item,taxable:false})),cart,0,0,{...site.taxConfig,enabled:true});assert.equal(before.tax,0,'The former blanket exemption reproduces the report');
+ const cashier=estimatePosTotals(site.catalog,cart,0,0,site.taxConfig);assert.equal(cashier.subtotal,12000);assert.equal(cashier.tax,1382);assert.equal(cashier.total,13382);
+ const f=fixture();await seedPreviewBarber({env,...f});const view=await kioskView(f.stores.get('webfactory-client-commerce'),{siteId:site.siteId,locationId:'arecibo-preview',saleId:'tax-fixture'},site);
+ assert.deepEqual(estimatePosTotals(view.catalog,cart,0,0,view.taxConfig),cashier);
+ const serverTax=cart.reduce((sum,line)=>{const item=site.catalog.find(item=>item.id===line.id);return sum+calculateTax({amountCents:Math.round(item.price*100),taxable:item.taxable,taxRateOverride:item.taxRateOverride,config:site.taxConfig}).taxCents},0);assert.equal(serverTax,1382);
+ const exempt=site.catalog.map(item=>({...item,taxable:false}));assert.equal(estimatePosTotals(exempt,cart,0,0,site.taxConfig).tax,0,'Explicit exemptions remain honored');
 });
