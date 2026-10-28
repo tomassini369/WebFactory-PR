@@ -173,6 +173,8 @@ jobs:
         run: |
           QA_BUILT=1 node scripts/browser-login-lifecycle-smoke.mjs
           node scripts/browser-login-loading-smoke.mjs
+          node scripts/browser-commercial-loading-detail-smoke.mjs
+          QA_ENGINE=webkit QA_WIDTHS=390,980,1440 node scripts/browser-commercial-loading-detail-smoke.mjs
           QA_ENGINE=webkit QA_WIDTHS=390,1440 node scripts/browser-login-loading-smoke.mjs
           QA_BUILT=1 QA_ENGINE=webkit node scripts/browser-login-lifecycle-smoke.mjs
       - name: Check initial login visibility, locale handoff and failure states
