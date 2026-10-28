@@ -1,3 +1,4 @@
+.gd-root .gd-overview{margin-block-end:20px}
 .gd-root .gd-overview-grid{display:grid;grid-template-columns:minmax(0,1.22fr) minmax(0,1fr) minmax(0,1fr);grid-template-areas:'profile board board' 'revenue calendar activity';gap:20px}
 .gd-root .gd-overview-grid>.gd-profile{grid-area:profile;display:flex;flex-direction:column;gap:18px}
 .gd-root .gd-overview-grid>.gd-board{grid-area:board}
