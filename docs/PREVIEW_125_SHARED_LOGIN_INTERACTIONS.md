@@ -26,3 +26,9 @@ provide surrounding regression coverage. Requests use isolated fixtures only.
 This change is for draft PR #125 / Netlify preview, with no production publish.
 Browser-engine verification does not claim a physical iPhone test or delivery
 of actual recovery email/passkey prompts.
+
+The usability regression also found the internal-admin Spanish submit 9 px below
+the card at 320 × 650. Only short/narrow portal form gaps/margin are reduced by
+10 px in total, identically in loading and ready states. Logo, type, copy and
+field heights are preserved. The 900 px interaction matrix is outside this
+media query; the full usability smoke verifies the affected viewport directly.

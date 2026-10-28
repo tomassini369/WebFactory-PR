@@ -15,3 +15,8 @@ html body #root .wf-login-form .portal-password-field input:focus{outline:none;b
 html body #root .wf-login-form .input-line{display:none!important}
 @media(prefers-reduced-motion:reduce){html body #root .wf-login-form *,html body #root .wf-login-form>button::after{animation:none!important;transition:none!important;transform:none!important}html body #root .wf-login-form>button::after{display:none}}
 @media(forced-colors:active){html body #root :is(.ca-login,.wfa-login,.mk-auth-card) form.wf-login-form>button[aria-busy=true]:disabled{background:ButtonFace!important;color:ButtonText!important;border-color:ButtonText!important}html body #root .wf-login-form>button::after{display:none}}
+/* Short, narrow phones: keep submit visible without changing type or fields.
+   Apply the same spacing to the loading preview to prevent a handoff shift. */
+@media(max-width:360px) and (max-height:700px){
+ html body #root :is(.ca-login,.wfa-login) :is(form,.portal-loading-fields){gap:8px!important;margin-top:10px!important}
+}
