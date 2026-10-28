@@ -132,3 +132,13 @@ or clone the selected card or mix neighboring cards through its glass surface.
 ### Owner-approved sales surfaces revision — 2026-10-27
 
 Cashier POS and all kiosk layouts inherit the Glassy material. Their existing editors expose flat, soft and raised 3D treatments with independent card/button depth. Cashier appearance is personal to the signed-in user/business; kiosk appearance is shared by that business's paired screens. Do not share private dashboard images with anonymous customer devices. Safe tenant colors and existing sale/booking/device behavior are preserved. The portal dock occupies a layout track separate from scrollable form content; it must never overlay Apply and save. See GLASSY-DASHBOARD-V5.md for provenance and validation.
+
+### Owner login recording · October 28, 2026
+
+The owner's 14:26 recording is the current commercial login appearance reference.
+Retain the frosted card, inset pill email/password surfaces (including the inner
+password capsule), locale/theme/home controls and blue pill submit action. Keep
+stable loading/form geometry. The three bars beside Checking… / Verificando…
+animate only while an authentication request is pending; this is distinct from
+the decorative hover shine. Reduced motion retains the readable status and
+static bars. Validate using intercepted fixture requests, never real credentials.
