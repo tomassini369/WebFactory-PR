@@ -21,37 +21,10 @@ html body #root :is(.ca-login,.wfa-login)::before {
     mask-composite: exclude;
     pointer-events: none
 }
-html body #root :is(.ca-login,.wfa-login) .input-line {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 0%;
-    height: 1.5px;
-    background: linear-gradient(90deg, var(--pg-accent), var(--pg-accent));
-    transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 0 10px color-mix(in srgb,var(--pg-accent) 60%,transparent) !important
-}
-html body #root :is(.ca-login,.wfa-login) label:focus-within>.input-line {
-    width: 100%
-}
-html body #root :is(.ca-login,.wfa-login) .btn-shine {
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 50%;
-    height: 100%;
-    background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 255, 255, 0.35),
-    transparent
-  );
-    transform: skewX(-20deg);
-    transition: left 0.75s ease
-}
-html body #root :is(.ca-login,.wfa-login) form>button:hover .btn-shine {
-    left: 150%
-}
+
+
+
+
 html body #root :is(.ca-login,.wfa-login) {
     backdrop-filter: blur(28px) saturate(150%);
     -webkit-backdrop-filter: blur(28px) saturate(150%);
@@ -71,15 +44,8 @@ html body #root :is(.ca-login,.wfa-login) input:not([type=checkbox]):focus {
     box-shadow: 0 0 15px color-mix(in srgb,var(--pg-accent) 45%,transparent),
     inset 0 1px 2px rgba(255, 255, 255, 0.2) !important
 }
-html body #root :is(.ca-login,.wfa-login) form>button:hover:not(:disabled) {
-    transform: translateY(-2px);
-    box-shadow: 0 14px 30px color-mix(in srgb,var(--pg-accent) 70%,transparent),
-    inset 0 1px 1px rgba(255, 255, 255, 0.5) !important;
-    filter: brightness(1.1)
-}
-html body #root :is(.ca-login,.wfa-login) form>button:active:not(:disabled) {
-    transform: translateY(1px)
-}
+
+
 html body #root :is(.ca-dashboard,.wfa-dashboard.wfa-premium):not(.wf-experience) :is(.ca-sidebar,.wfa-sidebar) {
     backdrop-filter: blur(40px) saturate(200%) brightness(1.06);
     -webkit-backdrop-filter: blur(40px) saturate(200%) brightness(1.06);

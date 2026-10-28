@@ -1,0 +1,17 @@
+/* One interaction contract for business, internal admin and Marketplace login. */
+html body #root .wf-login-form{--login-blue:#285fa6;--login-focus:#2867b2}
+html[data-wf-theme=dark] body #root .wf-login-form{--login-focus:#91bfff}
+html body #root .wf-login-form input:not([type=checkbox]){transition:border-color .25s ease,box-shadow .25s ease}
+html body #root .wf-login-form>button{position:relative;overflow:hidden;transition:transform .15s ease,box-shadow .15s ease,filter .15s ease}
+html body #root .wf-login-form>button::after{content:'';position:absolute;inset:0 auto 0 0;width:50%;pointer-events:none;background:linear-gradient(90deg,transparent,#ffffff59,transparent);transform:translateX(-220%) skewX(-20deg);transition:transform .75s ease}
+@media(hover:hover){
+ html body #root .wf-login-form>button:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 14px 30px #2867b270,inset 0 1px 1px #ffffff80!important;filter:brightness(1.1)}
+ html body #root .wf-login-form>button:hover:not(:disabled)::after{transform:translateX(320%) skewX(-20deg)}
+}
+html body #root .wf-login-form>button:active:not(:disabled){transform:translateY(1px);filter:brightness(1.08)}
+html body #root :is(.ca-login,.wfa-login,.mk-auth-card) form.wf-login-form>button[aria-busy=true]:disabled{background:var(--login-blue)!important;border-color:var(--login-blue)!important;color:#fff!important;opacity:1!important;box-shadow:0 8px 22px #3c86f630;filter:none;cursor:progress}
+html body #root .wf-login-form input:not([type=checkbox]):focus{border-color:var(--login-focus)!important;box-shadow:0 0 15px color-mix(in srgb,var(--login-focus) 45%,transparent),inset 0 1px 2px #ffffff33!important;outline:3px solid var(--login-focus);outline-offset:3px}
+html body #root .wf-login-form .portal-password-field input:focus{outline:none;box-shadow:inset 0 2px 4px #0003!important}
+html body #root .wf-login-form .input-line{display:none!important}
+@media(prefers-reduced-motion:reduce){html body #root .wf-login-form *,html body #root .wf-login-form>button::after{animation:none!important;transition:none!important;transform:none!important}html body #root .wf-login-form>button::after{display:none}}
+@media(forced-colors:active){html body #root :is(.ca-login,.wfa-login,.mk-auth-card) form.wf-login-form>button[aria-busy=true]:disabled{background:ButtonFace!important;color:ButtonText!important;border-color:ButtonText!important}html body #root .wf-login-form>button::after{display:none}}
