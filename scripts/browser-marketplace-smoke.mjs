@@ -58,6 +58,15 @@ try{
   assert(functions.every(publicRead),'Only the public directory and public sponsored placements are requested')
   await page.locator('.mk-business-empty').waitFor()
   await noOverflow(page);await checkAccessibility(page)
+  await page.evaluate(()=>window.scrollTo(0,500));await page.waitForFunction(()=>Math.abs(document.querySelector('.mk-header').getBoundingClientRect().top)<1);assert.equal(await page.locator('.mk-header').evaluate(e=>getComputedStyle(e).position),'sticky');
+  if(width===390&&theme==='dark'&&lang==='es')await page.screenshot({path:`${artifact}/marketplace-header-scrolled.png`});
+  for(const target of ['descubrir','promociones','mk-categories-title']){
+   const headerHeight=await page.locator('.mk-header').evaluate(e=>e.getBoundingClientRect().height);
+   if(width<768){await page.locator('.mk-menu-toggle').click();assert(Math.abs((await page.locator('.mk-header').boundingBox()).height-headerHeight)<1,'Opening the mobile menu keeps the sticky header height stable');const menu=await page.locator('.mk-navigation').boundingBox();assert(menu.y+menu.height<= (await page.evaluate(()=>innerHeight))-70,'Mobile menu stays above bottom navigation')}
+   await page.locator(`.mk-navigation a[href="/#${target}"]`).click();await page.waitForFunction(id=>document.querySelector('#'+id).getBoundingClientRect().top>=document.querySelector('.mk-header').getBoundingClientRect().bottom-1,target);if(width<768)assert.equal(await page.locator('.mk-menu-toggle').getAttribute('aria-expanded'),'false');
+  }
+  if(width<768){await page.locator('.mk-menu-toggle').click();await page.keyboard.press('Escape');assert(await page.locator('.mk-menu-toggle').evaluate(e=>e===document.activeElement));}
+  await page.evaluate(()=>window.scrollTo(0,0));
   const query=page.getByRole('searchbox'),municipality=page.locator('select[name="municipio"]')
   await query.fill('café & servicio');await municipality.selectOption('Rincón');await page.locator('.mk-search-button').click()
   await page.waitForURL('**/?q=**');await page.locator('.mk-applied').waitFor()
@@ -87,6 +96,7 @@ try{
  await page.keyboard.press('Tab');assert(await page.locator('.mk-skip').evaluate(node=>node===document.activeElement));await page.keyboard.press('Enter');assert(await page.locator('#marketplace-content').evaluate(node=>node===document.activeElement))
  // Skip-link fragments intentionally use native navigation in the existing router.
  await page.evaluate(()=>history.replaceState(history.state,'','/'))
+ await page.setViewportSize({width:390,height:400});await page.locator('.mk-menu-toggle').click();await page.locator('.mk-navigation a').last().scrollIntoViewIfNeeded();assert(Math.abs((await page.locator('.mk-header').boundingBox()).y)<1);assert(await page.locator('.mk-menu-toggle').evaluate(e=>{const b=e.getBoundingClientRect();return document.elementFromPoint(b.x+b.width/2,b.y+b.height/2)?.closest('button')===e}),'The close control remains reachable with a scrolling mobile menu');await page.keyboard.press('Escape');await page.setViewportSize({width:390,height:844});
  await page.locator('.mk-create-link').click();await page.locator('.wf-premium-home').waitFor();assert.equal(new URL(page.url()).pathname,'/crear');assert.equal(documents,baseline)
  assert.equal(await page.locator('.wf-theme-toggle').count(),1)
  assert.equal(await page.locator('.wf-hero-media img').getAttribute('src'),'/media/webfactory-hero-poster.webp')
