@@ -1,3 +1,4 @@
+import ConsumerAccessLoading from './ConsumerAccessLoading'
 import {CONSUMER_POLICY_VERSION} from '../netlify/lib/consumer-policy.mjs'
 import {useEffect,useState,type FormEvent} from 'react'
 import {getSettings} from '@netlify/identity'
@@ -45,5 +46,5 @@ export default function ConsumerPage(props:Props){
  const [token]=useState(()=>new URLSearchParams(window.location.hash.slice(1)).get('confirmation_token')||''),[confirmed,setConfirmed]=useState(false),[busy,setBusy]=useState(false),[error,setError]=useState(false)
  useEffect(()=>{if(token)history.replaceState(history.state,'','/cuenta')},[token])
  if(token&&!confirmed)return <div className="mk-root mk-consumer-access"><MarketplaceHeader {...props}/><main className="mk-shell mk-account-wrap"><section className="mk-auth-card"><h1>{props.lang==='es'?'Confirma tu correo':'Confirm your email'}</h1><p>{props.lang==='es'?'Activa tu cuenta para continuar al Marketplace.':'Activate your account to continue to the Marketplace.'}</p><button className="mk-account-button" disabled={busy} onClick={()=>{setBusy(true);setError(false);void marketplaceRequest('register',{action:'confirm',token}).then(()=>{setConfirmed(true);return refreshPortalUser()}).catch(()=>setError(true)).finally(()=>setBusy(false))}}>{props.lang==='es'?'Confirmar cuenta':'Confirm account'}</button>{error&&<p role="alert">{props.lang==='es'?'El enlace no se pudo verificar. Intenta iniciar sesión o solicita otro enlace.':'The link could not be verified. Try signing in or request another link.'}</p>}<a className="mk-create-link" href="/cuenta">{props.lang==='es'?'Iniciar sesión':'Sign in'}</a></section></main></div>
- return <MfaGate><Account {...props}/></MfaGate>
+ return <MfaGate loadingView={<ConsumerAccessLoading {...props}/>}><Account {...props}/></MfaGate>
 }

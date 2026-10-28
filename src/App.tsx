@@ -1,3 +1,4 @@
+import ConsumerAccessLoading from './ConsumerAccessLoading'
 import PortalLoadingCard from './PortalLoadingCard'
 import {usePortalLanguage} from './portal-language'
 import {updatePublicPageMetadata} from './public-page-metadata'
@@ -41,9 +42,9 @@ const ShadcnPreview = __WF_PREVIEW_REVIEW__ ? lazy(() => import('./ShadcnPreview
 const TemplateParityReview = __WF_PREVIEW_REVIEW__ ? lazy(() => import('./TemplateParityReview')) : null
 
 function RouteView({children,portal=false}:{children:ReactNode;portal?:boolean}){
-  const [lang]=usePortalLanguage()
+  const [lang,setLang]=usePortalLanguage()
   const es=lang==='es'
-  const fallback=portal?<PortalLoadingCard lang={es?'es':'en'}/>:<div className="public-route-loading" aria-busy="true"><div aria-hidden="true"><span/><span/></div><p role="status">{es?'Cargando página…':'Loading page…'}</p></div>
+  const fallback=portal?(/^\/cuenta\/?$/.test(location.pathname)?<ConsumerAccessLoading lang={lang} setLang={setLang}/>:<PortalLoadingCard lang={lang}/>):<div className="public-route-loading" aria-busy="true"><div aria-hidden="true"><span/><span/></div><p role="status">{es?'Cargando página…':'Loading page…'}</p></div>
   return <Suspense fallback={fallback}>{children}</Suspense>
 }
 
