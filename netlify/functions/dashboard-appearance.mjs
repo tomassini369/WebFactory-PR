@@ -26,9 +26,11 @@ export function createDashboardAppearanceHandler({siteAccess=requireSiteAccess,p
  const actor=siteId?await siteAccess(siteId):{user:await platformAccess()};const user=actor.user;
  if(!user?.id)throw fail('Authentication required.',401);
  const key='users/'+crypto.createHash('sha256').update(JSON.stringify([siteId||'platform',user.id])).digest('hex');
- const storage=store(req.url);const current=await storage.get(key,{type:'json'})||{};
+ const storage=store(req.url);
+ // Read the value and its storage version together, so CAS protects this exact snapshot.
+ const snapshot=await storage.getWithMetadata(key,{type:'json'});const current=snapshot?.data||{};
  const etag='"'+crypto.createHash('sha256').update(JSON.stringify(current)).digest('hex')+'"';
- const respond=record=>Response.json({ok:true,prefs:normalizeAppearance(record.prefs||DEFAULT_APPEARANCE),hasCustom:Boolean(record.image),revision:record.revision||0},{headers:{...headers,ETag:'"'+crypto.createHash('sha256').update(JSON.stringify(record)).digest('hex')+'"'}});
+ const respond=record=>Response.json({ok:true,prefs:normalizeAppearance(record.prefs||DEFAULT_APPEARANCE),hasCustom:Boolean(record.image),revision:record.revision||0,version:crypto.createHash('sha256').update(JSON.stringify(record)).digest('hex')},{headers:{...headers,ETag:'"'+crypto.createHash('sha256').update(JSON.stringify(record)).digest('hex')+'"'}});
  if(req.method==='GET'){
   if(url.searchParams.get('asset')==='1'){
    if(!current.image)throw fail('Background not found.',404);
@@ -36,7 +38,10 @@ export function createDashboardAppearanceHandler({siteAccess=requireSiteAccess,p
   }return respond(current);
  }
  // Refuse stale writes from another tab/device instead of overwriting its image.
- if(req.headers.get('if-match')!==etag)throw fail('Appearance changed. Reload your settings and try again.',409);
+ // Keep the application version separate from HTTP validators: CDNs may rewrite ETag.
+ const expected=req.headers.get('x-appearance-version');
+ const matches=expected!==null?expected===etag.slice(1,-1):req.headers.get('if-match')?.replace(/^W\//,'')===etag;
+ if(!matches)throw fail('Appearance changed. Reload your settings and try again.',409);
  let next={...current,revision:(current.revision||0)+1};
  if(req.method==='DELETE'){next={prefs:{...DEFAULT_APPEARANCE},revision:next.revision};}
  else if(req.method==='POST'){
@@ -51,12 +56,8 @@ export function createDashboardAppearanceHandler({siteAccess=requireSiteAccess,p
   if(next.prefs.background==='custom'&&!current.image)throw fail('Upload a background first.',400);
  }
  // One conditional record commits image + settings together; no public asset URL.
- const options=Object.keys(current).length?{onlyIfMatch:etag.slice(1,-1)}:{onlyIfNew:true};
- // Blob ETags are storage-owned; compare the actual storage version for CAS.
- const version=await storage.getMetadata(key);
- if(Object.keys(current).length&&version?.etag)options.onlyIfMatch=version.etag;
- const recheck=await storage.get(key,{type:'json'})||{};
- if(JSON.stringify(recheck)!==JSON.stringify(current))throw fail('Appearance changed. Reload your settings.',409);
+ const options=snapshot?{onlyIfMatch:snapshot.etag}:{onlyIfNew:true};
+ if(snapshot&&!snapshot.etag)throw fail('Appearance version unavailable. Try again.',503);
  const result=await storage.setJSON(key,next,options);
  if(result?.modified===false)throw fail('Appearance changed. Reload your settings.',409);
  return respond(next);

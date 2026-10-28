@@ -7,7 +7,7 @@ import {normalizeAppearance} from '../../shared/dashboard-appearance.mjs';
 const hash=x=>'"'+crypto.createHash('sha256').update(JSON.stringify(x)).digest('hex')+'"';
 function fixture(){
  let id='user-a',denied=false,admin=false;const records=new Map(),versions=new Map();let writes=0;
- const storage={get:async key=>structuredClone(records.get(key)||null),getMetadata:async key=>records.has(key)?{etag:String(versions.get(key))}:null,setJSON:async(key,value,options)=>{if(options.onlyIfNew&&records.has(key)||options.onlyIfMatch&&options.onlyIfMatch!==String(versions.get(key)))return {modified:false};records.set(key,structuredClone(value));versions.set(key,(versions.get(key)||0)+1);writes++;return {modified:true}}};
+ const storage={get:async key=>structuredClone(records.get(key)||null),getWithMetadata:async key=>records.has(key)?{data:structuredClone(records.get(key)),etag:String(versions.get(key))}:null,getMetadata:async key=>records.has(key)?{etag:String(versions.get(key))}:null,setJSON:async(key,value,options)=>{if(options.onlyIfNew&&records.has(key)||options.onlyIfMatch&&options.onlyIfMatch!==String(versions.get(key)))return {modified:false};records.set(key,structuredClone(value));versions.set(key,(versions.get(key)||0)+1);writes++;return {modified:true}}};
  const handler=createDashboardAppearanceHandler({store:()=>storage,siteAccess:async siteId=>{if(denied||siteId==='other')throw Object.assign(Error('Forbidden'),{status:403});return {user:{id}}},platformAccess:async()=>{if(!admin)throw Object.assign(Error('Forbidden'),{status:403});return {id}}});
  const req=(method='GET',body,tag=hash({}),query='?siteId=site-a',origin='https://preview.example')=>new Request('https://preview.example/.netlify/functions/dashboard-appearance'+query,{method,headers:{Origin:origin,'Content-Type':Buffer.isBuffer(body)?'image/png':'application/json','If-Match':tag},...(body!==undefined?{body:Buffer.isBuffer(body)?body:JSON.stringify(body)}:{})});
  return {handler,req,records,get writes(){return writes},setId:v=>id=v,deny:()=>denied=true,makeAdmin:()=>admin=true};
@@ -22,3 +22,22 @@ test('corrupt raster and active SVG cannot be uploaded',async()=>{const f=fixtur
 test('upload size and JSON settings are bounded',async()=>{const f=fixture();assert.equal((await f.handler(f.req('POST',Buffer.alloc(4*1024*1024+1)))).status,413);assert.equal((await f.handler(f.req('PUT',{x:'x'.repeat(4000)}))).status,413);assert.equal((await f.handler(f.req('PUT',[]))).status,400);assert.equal((await f.handler(f.req('PUT',{background:'custom'}))).status,400);assert.equal(f.writes,0)});
 
  test('cashier depth preferences round-trip without allowing executable styles',async()=>{const f=fixture();const r=await f.handler(f.req('PUT',{cardDepth:'raised',buttonDepth:'flat'}));assert.equal(r.status,200);const saved=await r.json();assert.equal(saved.prefs.cardDepth,'raised');assert.equal(saved.prefs.buttonDepth,'flat');assert.equal(normalizeAppearance({cardDepth:'url(secret)',buttonDepth:'script'}).cardDepth,'soft')});
+
+test('application version survives rewritten or missing HTTP ETags and still rejects stale saves',async()=>{
+ const f=fixture();const loaded=await (await f.handler(f.req())).json();assert.match(loaded.version,/^[a-f0-9]{64}$/);
+ const request=(method,version,body)=>{const req=f.req(method,body);req.headers.delete('if-match');if(version!==undefined)req.headers.set('x-appearance-version',version);return req};
+ let response=await f.handler(request('PUT',loaded.version,{background:'waves'}));assert.equal(response.status,200);const saved=await response.json();assert.notEqual(saved.version,loaded.version);
+ assert.equal((await f.handler(request('PUT',loaded.version,{background:'room'}))).status,409);
+ assert.equal((await f.handler(request('PUT',undefined,{background:'room'}))).status,409);
+ response=await f.handler(request('DELETE',saved.version));assert.equal(response.status,200);assert.equal((await response.json()).prefs.background,'room');assert.equal(f.writes,2);
+});
+
+test('concurrent storage changes between snapshot and write cannot be overwritten',async()=>{
+ let record={prefs:{background:'waves'},revision:1},storageVersion='one';let writes=0;
+ const handler=createDashboardAppearanceHandler({siteAccess:async()=>({user:{id:'qa'}}),store:()=>({
+  getWithMetadata:async()=>({data:structuredClone(record),etag:storageVersion}),
+  setJSON:async(_key,_value,options)=>{record={prefs:{background:'landscape'},revision:2};storageVersion='two';if(options.onlyIfMatch!==storageVersion)return {modified:false};writes++;return {modified:true}}
+ })});
+ const response=await handler(new Request('https://preview.example/.netlify/functions/dashboard-appearance?siteId=qa',{method:'PUT',headers:{origin:'https://preview.example','content-type':'application/json','x-appearance-version':hash(record).slice(1,-1)},body:JSON.stringify({background:'room'})}));
+ assert.equal(response.status,409);assert.equal(record.prefs.background,'landscape');assert.equal(writes,0);
+});
