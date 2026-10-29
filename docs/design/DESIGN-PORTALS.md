@@ -159,3 +159,20 @@ reduced motion/transparency, forced colors or data saving apply. Large surfaces
 keep their existing material instead of multiplying filter work. No perpetual
 group-merging animation, new navigation, private image sharing, auth or commerce
 changes. ENERGY 2 / RHYTHM 2 / MOTION 2; motion responds to interaction only.
+
+### Complete liquid surface coverage · October 29, 2026
+
+The owner explicitly supersedes the selective Vaso coverage above. Every existing
+portal card, nested article, operational card and button receives the same liquid
+material, including dynamically mounted modules, menus and expanded cards.
+Buttons react independently; pressing one must not drive its parent card.
+Preserve native button colors and positioning, chart presentation, text contrast,
+handlers and the original mounted DOM. A shared scoped registry owns only inert,
+aria-hidden wallpaper decoration and cleans it up on route changes or opt-out.
+
+The material is present at rest. Vaso wakes on pointer/keyboard interaction with
+up to four concurrent bounded lenses, then releases them. Large and expanded
+cards keep a complete material and a local reaction instead of being excluded.
+Honor reduced motion/transparency, forced colors, Save-Data and the personal
+switch. This supersedes the earlier 450,000-pixel exclusion and expanded-card
+exclusion; it does not authorize standalone kiosk/storefront or auth redesigns.

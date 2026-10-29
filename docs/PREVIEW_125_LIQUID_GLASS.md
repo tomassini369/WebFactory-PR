@@ -1,5 +1,7 @@
 # Vaso liquid glass in the operating dashboards
 
+This initial selective implementation is superseded by [complete coverage](PREVIEW_125_LIQUID_COVERAGE.md).
+
 ## Scope and purpose
 
 The owner approved using Vaso to enhance the existing dashboard. The current
