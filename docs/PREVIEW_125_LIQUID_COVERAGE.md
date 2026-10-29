@@ -65,3 +65,11 @@ Scoped delivery gate: PASS for retained native layout/colors/handlers, no fake
 product content or assets, real visual engine checks, keyboard/accessibility
 controls and documented limits. Physical iPhone/battery/frame-rate acceptance
 remains unmeasured. Deploy identity and final hosted checks are recorded in PR #125.
+
+The decorative tree uses an open ShadowRoot, so backdrop discovery cannot climb
+from its wallpaper into operational ancestors. The coverage assertion inspects
+that shadow tree for controls. Lens dimensions use the decorative plane's inner
+bounds, excluding the host's border. Translucent buttons select a readable
+neutral fill from their own foreground, rather than assuming that light theme
+always implies dark button text; opaque brand/action fills remain exact. The
+opacity is chosen against both black and white background bounds at 4.5:1.

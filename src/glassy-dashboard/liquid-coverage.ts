@@ -1,4 +1,5 @@
 import type {Glass} from 'vaso/core'
+import layerStyles from './liquid-layer.css?inline'
 
 export const LIQUID_CARDS='article,.wf-portal-panel,.ca-panel,.wfa-card,.wfa-stat,.ca-help-card,.bcc-training,.gd-appearance,.mfa-panel,.business-qr,.ca-payment-status,.ca-detail-grid>div,.ca-mini-stats>div,.ca-summary-grid>article,.wfa-sales-breakdown>div,.ca-service-plan>div,.pos-sidebar,.pos-catalog,.pos-customer-info,.bcc-activity,.wfa-checks>div,dialog,.gd-content>header>div:first-child,.wfa-sales>header'
 export const LIQUID_BUTTONS='button,a.btn,a.ca-primary-link,summary,[role="button"]'
@@ -13,7 +14,20 @@ export function coverLiquidDashboard(scope:HTMLElement,options:Options){
  let disposed=false,queued=false,serial=0
  const allowed=(s:Surface)=>options.enabled&&options.motion>0&&!document.hidden&&!queries.some(q=>matchMedia(q.media).matches)&&!connection?.saveData&&s.visible&&!s.host.closest('[inert],[hidden]')&&!s.host.matches(':disabled,[aria-disabled=true]')
  const stop=(s:Surface)=>{s.ticket++;if(s.timer)clearTimeout(s.timer);s.timer=null;s.glass?.destroy();s.glass=null;s.layer.dataset.active='false';s.host.removeAttribute('data-liquid-pressed')}
- const buttonFill=(host:HTMLElement)=>{const color=getComputedStyle(host).backgroundColor;const values=color.match(/[\d.]+/g)?.map(Number);return color==='transparent'||(color.startsWith('rgba')&&(values?.[3]??1)<.66)?'var(--glass-fill)':color}
+ const buttonFill=(host:HTMLElement)=>{
+  const style=getComputedStyle(host),color=style.backgroundColor,values=color.match(/[\d.]+/g)?.map(Number)||[]
+  const alpha=color.includes('/')?Number(color.split('/')[1].replace(')','').trim()):color.startsWith('rgba')?values[3]:1
+  if(alpha>=.999)return color // Keep opaque brand and semantic action colors exactly.
+  const ink=(style.color.match(/[\d.]+/g)?.map(Number)||[0,0,0,1]),scale=style.color.startsWith('color(')?255:1
+  const rgb=ink.slice(0,3).map(v=>v*scale),inkAlpha=ink[3]??1
+  const lum=(c:number[])=>c.map(v=>{v/=255;return v<=.04045?v/12.92:((v+.055)/1.055)**2.4}).reduce((s,v,i)=>s+v*[.2126,.7152,.0722][i],0)
+  const base=lum(rgb)>.179?0:255
+  for(const a of [.82,.9,.96,1]){
+   const pass=[0,255].every(w=>{const bg=base*a+w*(1-a),b=lum([bg,bg,bg]),f=lum(rgb.map(v=>v*inkAlpha+bg*(1-inkAlpha)));return (Math.max(b,f)+.05)/(Math.min(b,f)+.05)>=4.5})
+   if(pass||a===1)return `rgba(${base},${base},${base},${a})`
+  }
+  return color
+ }
  const visible=new IntersectionObserver(entries=>{for(const entry of entries){const s=surfaces.get(entry.target as HTMLElement);if(s){s.visible=entry.isIntersecting;if(!s.visible)stop(s)}}},{threshold:0})
  const resize=new ResizeObserver(entries=>{for(const entry of entries){const s=surfaces.get(entry.target as HTMLElement);if(s?.glass){stop(s)}}})
  const finish=(s:Surface)=>{if(s.timer)clearTimeout(s.timer);s.timer=setTimeout(()=>stop(s),1800)}
@@ -21,7 +35,7 @@ export function coverLiquidDashboard(scope:HTMLElement,options:Options){
   if(!allowed(s))return
   if(s.timer)clearTimeout(s.timer)
   // At most four interacting lenses; every registered surface keeps the same liquid material at rest.
-  const rect=s.host.getBoundingClientRect(),width=Math.min(rect.width,512),height=Math.min(rect.height,384)
+  const rect=s.lens.parentElement!.getBoundingClientRect(),width=Math.min(rect.width,512),height=Math.min(rect.height,384)
   const x=Math.max(0,Math.min(rect.width-width,(event?.clientX??rect.x+rect.width/2)-rect.x-width/2)),y=Math.max(0,Math.min(rect.height-height,(event?.clientY??rect.y+rect.height/2)-rect.y-height/2))
   // Large/expanded cards get a local lens under the interaction instead of a viewport-sized raster.
   Object.assign(s.lens.style,{left:x+'px',top:y+'px',width:width+'px',height:height+'px'})
@@ -49,7 +63,7 @@ export function coverLiquidDashboard(scope:HTMLElement,options:Options){
    const kind=host.matches(LIQUID_BUTTONS)?'button':'card'
    const layer=document.createElement('wf-liquid-surface');layer.className='gd-liquid-surface gd-liquid-'+kind;layer.setAttribute('aria-hidden','true');layer.inert=true;layer.dataset.active='false'
    const backdrop=document.createElement('span');backdrop.className='gd-liquid-backdrop';backdrop.style.backgroundImage=`url(${JSON.stringify(options.backdrop)})`
-   const lens=document.createElement('span');lens.className='gd-liquid-lens';const tint=document.createElement('span');tint.className='gd-liquid-tint';backdrop.append(lens);layer.append(backdrop,tint)
+   const lens=document.createElement('span');lens.className='gd-liquid-lens';const tint=document.createElement('span');tint.className='gd-liquid-tint';backdrop.append(lens);const shadow=layer.attachShadow({mode:'open'}),style=document.createElement('style');style.textContent=layerStyles;shadow.append(style,backdrop,tint)
    if(kind==='button')host.style.setProperty('--liquid-button-fill',buttonFill(host))
    const position=host.style.getPropertyValue('position'),positionPriority=host.style.getPropertyPriority('position'),ownsPosition=getComputedStyle(host).position==='static';if(ownsPosition)host.style.setProperty('position','relative','important')
    host.dataset.liquidKind=kind;host.prepend(layer)
