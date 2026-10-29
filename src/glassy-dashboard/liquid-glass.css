@@ -1,0 +1,17 @@
+/* The wallpaper lens stays below the readable material and real controls. */
+.gd-root .gd-liquid-surface{display:none;position:absolute;inset:0;z-index:-1;border-radius:inherit;pointer-events:none;overflow:hidden;isolation:isolate}
+.gd-root .gd-liquid-surface[data-active=true]{display:block}
+.gd-root .gd-liquid-backdrop{position:absolute;inset:0;border-radius:inherit;background-size:cover;background-position:center;background-attachment:fixed;pointer-events:none}
+.gd-root .gd-liquid-backdrop::before{content:'';position:absolute;inset:0;background:rgba(12,10,9,var(--bg-dim));pointer-events:none}
+.gd-root .gd-liquid-lens{display:block;position:absolute;inset:0;border-radius:inherit;pointer-events:none}
+.gd-root .gd-liquid-tint{position:absolute;inset:0;z-index:1;border-radius:inherit;background:var(--glass-fill);pointer-events:none;box-shadow:inset 0 1px 1px #ffffff60,inset 0 -1px 1px #ffffff18}
+.gd-root :is(.gd-topnav,.gd-dock) button{position:relative;isolation:isolate}
+.gd-root .gd-dock:has(>.gd-liquid-surface[data-active=true]),.gd-root .gd-topnav button:has(>.gd-liquid-surface[data-active=true]){background:transparent;backdrop-filter:none}
+.gd-root .gd-liquid-button>.gd-liquid-tint{background:rgba(28,27,30,.78)}
+.gd-root button[aria-current=page]>.gd-liquid-surface>.gd-liquid-tint{background:rgba(248,247,250,.94)}
+.gd-root .gd-dock>.gd-liquid-surface>.gd-liquid-tint{background:rgba(21,20,23,.78)}
+html body #root .gd-root .gd-content :is(.wf-portal-panel,.gd-appearance):has(>.gd-liquid-surface[data-active=true])::before{opacity:0;backdrop-filter:none;-webkit-backdrop-filter:none}
+.gd-root .gd-liquid-lens>svg{position:absolute!important;width:0!important;height:0!important;pointer-events:none}
+.gd-root .gd-liquid-toggle{display:flex;align-items:center;gap:12px;min-height:44px;margin-top:24px}
+.gd-root .gd-liquid-toggle input{width:22px;height:22px;accent-color:var(--accent)}
+@media(prefers-reduced-motion:reduce),(prefers-reduced-transparency:reduce),(forced-colors:active){.gd-root .gd-liquid-surface{display:none!important}}

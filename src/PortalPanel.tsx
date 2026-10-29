@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useId, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import './PortalPanel.css'
+import {LiquidSurface} from './glassy-dashboard/LiquidSurface'
 import { Maximize2, Minimize2 } from 'lucide-react'
 
 type PortalPanelContextValue = { expandedPanel: string | null; setExpandedPanel: React.Dispatch<React.SetStateAction<string | null>>; lang: 'es' | 'en' }
@@ -73,6 +74,7 @@ export function PortalPanel({ className = '', children, style, 'data-training': 
   },[expanded])
 
   return <section popover={expanded?'manual':undefined} data-card-depth={cardDepth} data-button-depth={buttonDepth} data-motion={motion} data-training={trainingTarget} style={style} ref={panel} tabIndex={expanded?-1:undefined} role={expanded?'dialog':undefined} aria-modal={expanded||undefined} aria-label={expanded?(es?'Panel ampliado':'Expanded panel'):undefined} className={`${className} wf-portal-panel${expanded ? ' wf-panel-expanded' : ''}`.trim()}>
+    <LiquidSurface disabled={expanded}/>
     <div className="wf-panel-tools">
       <button type="button" className="wf-panel-expand" aria-label={expanded?(es?'Cerrar tarjeta ampliada':'Close expanded card'):(es?'Ampliar tarjeta':'Expand card')} title={expanded?(es?'Cerrar':'Close'):(es?'Ampliar':'Expand')} aria-expanded={expanded} onClick={()=>context.setExpandedPanel(expanded?null:id)}>{expanded?<Minimize2 size={20} aria-hidden="true"/>:<Maximize2 size={20} aria-hidden="true"/>}</button>
     </div>

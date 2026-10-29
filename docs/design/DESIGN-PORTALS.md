@@ -142,3 +142,20 @@ stable loading/form geometry. The three bars beside Checking… / Verificando…
 animate only while an authentication request is pending; this is distinct from
 the decorative hover shine. Reduced motion retains the readable status and
 static bars. Validate using intercepted fixture requests, never real credentials.
+
+### Owner-approved liquid glass · October 29, 2026
+
+Vaso 1.1.1 enhances the existing operating dashboards, without replacing their
+layouts, chart styling, controls or data. Use restrained refraction on visible
+portal cards, the quick-navigation dock and the three primary navigation pills.
+The same cards and business handlers stay mounted. Wallpaper-only decorative
+subtrees provide Safari's backdrop copies; never refract cloned operational DOM.
+The readable material is separate from that backdrop so Safari does not tint it
+twice. Existing opacity, wallpaper dim and blur settings remain effective.
+
+Personal appearance includes a persistent liquid-glass switch. Pause the effect
+offscreen, in background tabs, in expanded-card isolation and when motion is zero,
+reduced motion/transparency, forced colors or data saving apply. Large surfaces
+keep their existing material instead of multiplying filter work. No perpetual
+group-merging animation, new navigation, private image sharing, auth or commerce
+changes. ENERGY 2 / RHYTHM 2 / MOTION 2; motion responds to interaction only.

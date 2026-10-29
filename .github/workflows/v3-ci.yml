@@ -144,6 +144,19 @@ jobs:
           QA_INTERACTION_ONLY=1 node scripts/browser-glassy-dashboard-smoke.mjs
           QA_ENGINE=webkit QA_WIDTHS=390,1440 node scripts/browser-glassy-dashboard-smoke.mjs
           QA_ENGINE=webkit QA_INTERACTION_ONLY=1 QA_INTERACTION_WIDTHS=390,1440 node scripts/browser-glassy-dashboard-smoke.mjs
+      - name: Check Vaso reaction, preferences and safe decorative copies
+        if: matrix.suite == 'experience'
+        run: |
+          for engine in chromium webkit; do
+            QA_ENGINE="$engine" QA_WIDTHS=390,1440 QA_PORT=5338 node scripts/browser-liquid-glass-smoke.mjs
+          done
+      - name: Save liquid glass evidence
+        if: always() && matrix.suite == 'experience'
+        uses: actions/upload-artifact@v4
+        with:
+          name: liquid-glass-browser-evidence
+          path: /tmp/liquid-glass-qa/
+          if-no-files-found: ignore
       - name: Check unified workspace hierarchy, disclosures and Builder state
         if: matrix.suite == 'experience'
         run: |
