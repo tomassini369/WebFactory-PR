@@ -372,6 +372,8 @@ jobs:
         run: |
           node scripts/browser-kiosk-smoke.mjs
           node scripts/browser-kiosk-bookings-smoke.mjs
+          node scripts/browser-kiosk-keyboard-smoke.mjs
+          QA_ENGINE=webkit QA_WIDTHS=1024,1440 QA_PORT=5363 node scripts/browser-kiosk-keyboard-smoke.mjs
       - name: Verify appearance configurator and preview isolation
         if: matrix.skin == 'classic'
         env:

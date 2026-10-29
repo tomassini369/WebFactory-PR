@@ -162,3 +162,12 @@ existing 80 px desktop / 64 px mobile size; constrain and clip its frame to a
 true circle. Profile photo upload uses a temporary circular preview with drag,
 horizontal/vertical position, zoom, reset and explicit save/cancel. Match the
 saved pixels to that preview. No rotation, filters or additional image engine.
+
+### Owner-approved kiosk touch keyboard
+
+The kiosk may opt into a desktop touch keyboard through its existing settings.
+Keep native phone/tablet and date/select controls, physical typing, tenant
+backgrounds and the existing checkout/booking handlers. Use a temporary bottom
+panel with 44 px keys and a visible active input. Match letters/email, phone,
+hexadecimal booking ID and numeric private PIN to the real fields. Never echo
+PINs or auto-submit from Next. No new animation or keyboard service dependency.

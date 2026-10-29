@@ -7,7 +7,7 @@ import {useKioskRequest} from './kiosk-api'
 import {type KioskAppearance} from '../netlify/lib/kiosk-skins.mjs'
 type Language='es'|'en'
 type Sale={checkoutMode?:'screen'|'qr';confirmationEmailStatus?:'sent'|'pending'|'action_required';bookingReference?:{code:string;pin:string};kind?:'order'|'booking';status:'review'|'pending'|'paid'|'due'|'cancelled';saleId:string;canResume?:boolean;canReset:boolean;checkoutUrl?:string;transactionId?:string;total?:number;subtotal?:number;tax?:number;taxIncluded?:boolean;queueNumber?:string;receipt?:{id:string;createdAt:string}|null;items?:Array<{name:string;quantity:number;unitAmount:number}>}
-type View=BookingView & {business:{siteId:string;nameEn:string;nameEs:string;logoAssetKey:string;primary:string;secondary:string;locationName:string;bookingUrl:string};presentation?:{profile:PosProfile;appearance?:KioskAppearance};saleId:string;catalog:PosItem[];providers:string[];hasAppointments:boolean;taxConfig:PosTax;sale:Sale|null}
+type View=BookingView & {business:{siteId:string;nameEn:string;nameEs:string;logoAssetKey:string;primary:string;secondary:string;locationName:string;bookingUrl:string};presentation?:{touchKeyboard?:boolean;profile:PosProfile;appearance?:KioskAppearance};saleId:string;catalog:PosItem[];providers:string[];hasAppointments:boolean;taxConfig:PosTax;sale:Sale|null}
 const emptyCustomer={name:'',email:'',phone:''}
 export function useKioskCore({lang,setLang,pairing}:{lang:Language;setLang:(lang:Language)=>void;pairing:string}) {
  const kioskRequest=useKioskRequest()

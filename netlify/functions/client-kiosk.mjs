@@ -53,9 +53,10 @@ export function createKioskHandler({ authorize = requireSiteCapability, getStore
         }
         if (input.action === 'configure') {
           if (typeof input.enabled !== 'boolean') throw kioskFail('Choose enabled or disabled.');
+          if(input.touchKeyboard!==undefined&&typeof input.touchKeyboard!=='boolean')throw kioskFail('Invalid touch keyboard setting.');
           if(input.checkoutMode!==undefined&&!['screen','qr'].includes(input.checkoutMode))throw kioskFail('Invalid checkout mode.');
           if(input.bookingModes && (typeof input.bookingModes.newBookings!=="boolean"||typeof input.bookingModes.existingBookings!=="boolean"))throw kioskFail("Invalid booking modes.");
-          configuration = await mutateKiosk(store, configKey, current => ({ ...(current || {}), enabled: input.enabled, ...(input.checkoutMode?{checkoutMode:input.checkoutMode}:{}), ...(input.bookingModes?{bookingModes:input.bookingModes}:{}), devices: current?.devices || [], updatedAt: now, updatedBy: actor }));
+          configuration = await mutateKiosk(store, configKey, current => ({ ...(current || {}), enabled: input.enabled, ...(input.touchKeyboard!==undefined?{touchKeyboard:input.touchKeyboard}:{}), ...(input.checkoutMode?{checkoutMode:input.checkoutMode}:{}), ...(input.bookingModes?{bookingModes:input.bookingModes}:{}), devices: current?.devices || [], updatedAt: now, updatedBy: actor }));
         }
         if (input.action === 'create') {
           if (!configuration.enabled || !isAvailable(site)) throw kioskFail('Enable kiosk first / Habilita el kiosco primero.', 409);
@@ -83,7 +84,7 @@ export function createKioskHandler({ authorize = requireSiteCapability, getStore
           });
           configuration = await mutateKiosk(store, configKey, current => ({ ...(current || {}), devices: (current?.devices || []).filter(x => x.id !== input.id) }));
         }
-        return Response.json({ ok: true, appearance:kioskAppearance(configuration.appearance,site.siteId), presets:kioskPresets(configuration.appearancePresets,site.siteId),backgroundAssets:kioskBackgroundAssets(configuration,site.siteId), enabled: Boolean(configuration.enabled), checkoutMode:configuration.checkoutMode==='qr'?'qr':'screen', bookingModes:kioskBookingModes(configuration), devices: (configuration.devices || []).filter(x => x.expiresAt > now) }, { headers });
+        return Response.json({ ok: true, appearance:kioskAppearance(configuration.appearance,site.siteId), presets:kioskPresets(configuration.appearancePresets,site.siteId),backgroundAssets:kioskBackgroundAssets(configuration,site.siteId), enabled: Boolean(configuration.enabled), touchKeyboard:configuration.touchKeyboard===true, checkoutMode:configuration.checkoutMode==='qr'?'qr':'screen', bookingModes:kioskBookingModes(configuration), devices: (configuration.devices || []).filter(x => x.expiresAt > now) }, { headers });
       }
       const [deviceId, deviceToken] = cookieValue(req).split('.');
       const id = input.action === 'pair' ? input.id : deviceId;
