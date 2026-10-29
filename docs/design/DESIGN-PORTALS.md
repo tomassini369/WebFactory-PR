@@ -142,37 +142,3 @@ stable loading/form geometry. The three bars beside Checking… / Verificando…
 animate only while an authentication request is pending; this is distinct from
 the decorative hover shine. Reduced motion retains the readable status and
 static bars. Validate using intercepted fixture requests, never real credentials.
-
-### Owner-approved liquid glass · October 29, 2026
-
-Vaso 1.1.1 enhances the existing operating dashboards, without replacing their
-layouts, chart styling, controls or data. Use restrained refraction on visible
-portal cards, the quick-navigation dock and the three primary navigation pills.
-The same cards and business handlers stay mounted. Wallpaper-only decorative
-subtrees provide Safari's backdrop copies; never refract cloned operational DOM.
-The readable material is separate from that backdrop so Safari does not tint it
-twice. Existing opacity, wallpaper dim and blur settings remain effective.
-
-Personal appearance includes a persistent liquid-glass switch. Pause the effect
-offscreen, in background tabs, in expanded-card isolation and when motion is zero,
-reduced motion/transparency, forced colors or data saving apply. Large surfaces
-keep their existing material instead of multiplying filter work. No perpetual
-group-merging animation, new navigation, private image sharing, auth or commerce
-changes. ENERGY 2 / RHYTHM 2 / MOTION 2; motion responds to interaction only.
-
-### Complete liquid surface coverage · October 29, 2026
-
-The owner explicitly supersedes the selective Vaso coverage above. Every existing
-portal card, nested article, operational card and button receives the same liquid
-material, including dynamically mounted modules, menus and expanded cards.
-Buttons react independently; pressing one must not drive its parent card.
-Preserve native button colors and positioning, chart presentation, text contrast,
-handlers and the original mounted DOM. A shared scoped registry owns only inert,
-aria-hidden wallpaper decoration and cleans it up on route changes or opt-out.
-
-The material is present at rest. Vaso wakes on pointer/keyboard interaction with
-up to four concurrent bounded lenses, then releases them. Large and expanded
-cards keep a complete material and a local reaction instead of being excluded.
-Honor reduced motion/transparency, forced colors, Save-Data and the personal
-switch. This supersedes the earlier 450,000-pixel exclusion and expanded-card
-exclusion; it does not authorize standalone kiosk/storefront or auth redesigns.
