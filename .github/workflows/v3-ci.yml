@@ -173,6 +173,10 @@ jobs:
         run: |
           QA_BUILT=1 node scripts/browser-login-lifecycle-smoke.mjs
           node scripts/browser-login-loading-smoke.mjs
+          QA_ASSERT=1 QA_HOLD_IMAGES=1 node scripts/browser-login-paint-smoke.mjs
+          QA_ENGINE=webkit QA_ASSERT=1 QA_HOLD_IMAGES=1 node scripts/browser-login-paint-smoke.mjs
+          QA_WIDTHS=390,980 node scripts/browser-login-navigation-paint-smoke.mjs
+          QA_ENGINE=webkit QA_WIDTHS=390,980 node scripts/browser-login-navigation-paint-smoke.mjs
           node scripts/browser-shared-login-smoke.mjs
           QA_ENGINE=webkit QA_WIDTHS=390,1440 node scripts/browser-shared-login-smoke.mjs
           node scripts/browser-commercial-loading-detail-smoke.mjs

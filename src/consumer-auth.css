@@ -75,7 +75,7 @@ html[data-wf-theme=dark] .mk-root.mk-consumer-access {
 }
 
 /* Cold route and session loading share the consumer form's actual geometry. */
-.consumer-loading-field{display:block;width:100%;height:calc(1rem * 1.55 + 24px);min-height:48px;border:1px solid var(--mk-control);border-radius:999px;background:var(--mk-raised);box-shadow:inset 0 2px 4px #0003}
+.consumer-loading-field{display:block;width:100%;min-height:48px}
 .consumer-loading-submit{display:flex;align-items:center;justify-content:center;min-height:48px;padding:11px 16px;background:var(--mk-canvas);color:var(--mk-muted);border:1px solid var(--mk-control);border-radius:999px;font:inherit;font-weight:650}
 .consumer-loading-links>span{display:flex;align-items:center;min-height:44px;font-size:.875rem;color:var(--mk-accent);font-weight:600}
 @media(forced-colors:active){.consumer-loading-field,.consumer-loading-check,.consumer-loading-submit{background:Canvas;color:CanvasText;box-shadow:none;border-color:CanvasText}}
