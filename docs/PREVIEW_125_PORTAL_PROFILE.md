@@ -103,3 +103,13 @@ cleanup cover 390/1440 Chromium and 390 WebKit. Both portals, ES/EN, light/dark,
 actual crop pixels, circular fixed-size frame, no header avatar, pointer drag,
 cancel, reopening an existing photo and failed upload/retry pass. No real photo
 was uploaded during QA; the fixture is a locally generated three-color raster.
+
+## Summary card identity
+
+The overview card displays the authenticated user's saved personal profile name
+and the actual site-access role (localized), alongside their private photo. It
+subscribes to the existing profile provider, so a successful name save is visible
+on returning to the summary without an extra fetch. Business identity remains
+in the page header. Business metrics/actions and employee/owner visibility are
+unchanged; the label never grants authority. The profile smoke checks the saved
+name and Owner/Dueño in the summary while retaining the business header.
