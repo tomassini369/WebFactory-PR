@@ -19,6 +19,8 @@ async function intercept(page){await page.route('**/.netlify/functions/**',async
  if(name==='dashboard-appearance'){
   const response=await appearance(new Request(req.url(),{method:req.method(),headers:await req.allHeaders(),...(!['GET','HEAD'].includes(req.method())?{body:req.postDataBuffer()}: {})}));return route.fulfill({status:response.status,headers:{...Object.fromEntries(response.headers),etag:'W/"cdn-rewritten-validator"'},body:Buffer.from(await response.arrayBuffer())})
  }
+ // Personal profile persistence is exercised by browser-portal-profile-smoke.
+ if(name==='portal-profile'){assert(['GET','PUT'].includes(req.method()));return route.fulfill({json:{ok:true,profile:{name:'',phone:'',language:null,theme:null},hasPhoto:false,revision:0,version:'isolated-profile-fixture'}})}
  if(name==='client-customer-display')return route.fulfill({json:{ok:true,paired:false,sequence:0}});
  if(req.method()!=='GET'&&name!=='portal-session')throw Error('Unexpected operational mutation '+name)
  let data={ok:true,records:[],customers:[],receipts:[],movements:[],adjustments:[],analytics:{},offers:[],campaigns:[],claims:[],cases:[],reviews:[]}

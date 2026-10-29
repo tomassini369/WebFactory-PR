@@ -142,3 +142,15 @@ stable loading/form geometry. The three bars beside Checking… / Verificando…
 animate only while an authentication request is pending; this is distinct from
 the decorative hover shine. Reduced motion retains the readable status and
 static bars. Validate using intercepted fixture requests, never real credentials.
+
+### Personal portal profile · October 29, 2026
+
+The owner approves a single My profile destination for personal details/photo,
+preferences, existing account security and read-only membership. The overview
+avatar and account control open it. Keep business identity, logo, public contact,
+integrations, team grants, subscriptions and POS/kiosk editors in their existing
+business modules. Remove duplicate personal editors; Customize remains a shortcut
+to the same Preferences view. Header language/theme controls share saved user
+preferences; sound/haptics remain honest device settings. Preserve current
+wallpapers and account security handlers. Photos are private, optimized raster
+images scoped to the authenticated user, never public tenant assets. No Vaso.

@@ -1,6 +1,11 @@
 /** Exercise the same disclosures and controls a portal user sees. */
 export async function selectPortalSection(page,name){
  if(await page.locator('.gd-root').count()){
+  if(['Seguridad de mi cuenta','Account security'].includes(name)){
+   const es=name==='Seguridad de mi cuenta';await selectPortalSection(page,es?'Mi perfil':'My profile');
+   await page.locator('.gd-profile-sections').getByRole('button',{name:es?'Seguridad':'Security',exact:true}).click();return;
+  }
+
   if(!await page.locator('.gd-navigation').isVisible())await page.locator('.gd-menu-toggle').click();
   const drawer=page.locator('.gd-navigation');await drawer.waitFor({state:'visible'});
   await drawer.getByRole('button',{name,exact:true}).click();return;

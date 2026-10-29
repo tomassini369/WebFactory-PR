@@ -2,6 +2,8 @@ import {createContext,useContext,useEffect,useRef,useState,type CSSProperties,ty
 import {DEFAULT_APPEARANCE,DASHBOARD_WALLPAPERS,normalizeAppearance,type DashboardAppearance} from '../../shared/dashboard-appearance.mjs'
 import {useUnsavedChanges} from '../interaction-state'
 import {usePractice} from '../training/practice-context'
+import {PortalProfileProvider} from './ProfileContext'
+import './profile.css'
 import './material.css'
 import './dashboard.css'
 import './sales-material.css'
@@ -10,7 +12,7 @@ type State={prefs:DashboardAppearance;setPrefs:(p:DashboardAppearance)=>void;has
 const AppearanceContext=createContext<State|null>(null)
 export function useOptionalDashboardAppearance(){return useContext(AppearanceContext)}
 export function useDashboardAppearance(){const context=useContext(AppearanceContext);if(!context)throw new Error('Missing dashboard context');return context}
-export function DashboardProvider({siteId,userId,children,lang='en'}:{siteId?:string;userId:string;children:ReactNode;lang?:'es'|'en'}){
+export function DashboardProvider({siteId,userId,children,lang='en',name=''}:{siteId?:string;userId:string;children:ReactNode;lang?:'es'|'en';name?:string}){
  const practice=usePractice();const endpoint='/.netlify/functions/dashboard-appearance'+(siteId?'?siteId='+encodeURIComponent(siteId):'');
  const [prefs,setPrefs]=useState<DashboardAppearance>({...DEFAULT_APPEARANCE}),[hasCustom,setCustom]=useState(false),[busy,setBusy]=useState(false),[ready,setReady]=useState(false),[error,setError]=useState(''),[notice,setNotice]=useState(''),[revision,setRevision]=useState(0),[etag,setEtag]=useState(''),[savedEpoch,setSavedEpoch]=useState(0);
  const generation=useRef(0);useUnsavedChanges(prefs,savedEpoch,setPrefs,lang)
@@ -28,7 +30,7 @@ export function DashboardProvider({siteId,userId,children,lang='en'}:{siteId?:st
  const asset=endpoint+(siteId?'&':'?')+'asset=1&v='+revision;
  const background=prefs.background==='custom'&&hasCustom?asset:(DASHBOARD_WALLPAPERS.find(x=>x.id===prefs.background)||DASHBOARD_WALLPAPERS[0]).src;
  const style={'--glass-blur':prefs.blur+'px','--glass-alpha':prefs.alpha,'--bg-dim':prefs.dim,'--motion':prefs.motion,'--accent':prefs.accent} as CSSProperties;
- return <AppearanceContext.Provider value={{prefs,setPrefs:value=>{setPrefs(value);setNotice('')},hasCustom,busy,ready,error,notice,etag,savedEpoch,save:()=>mutate('PUT',JSON.stringify(prefs)),upload:file=>mutate('POST',file,file.type),reset:()=>mutate('DELETE'),reload,asset}}><div className="gd-root" style={style}><div className="gd-wallpaper" aria-hidden="true" style={{backgroundImage:`url(${JSON.stringify(background)})`}}/><div className="gd-shade" aria-hidden="true"/>{children}</div></AppearanceContext.Provider>
+ return <AppearanceContext.Provider value={{prefs,setPrefs:value=>{setPrefs(value);setNotice('')},hasCustom,busy,ready,error,notice,etag,savedEpoch,save:()=>mutate('PUT',JSON.stringify(prefs)),upload:file=>mutate('POST',file,file.type),reset:()=>mutate('DELETE'),reload,asset}}><PortalProfileProvider key={userId} siteId={siteId} userId={userId} name={name}><div className="gd-root" style={style}><div className="gd-wallpaper" aria-hidden="true" style={{backgroundImage:`url(${JSON.stringify(background)})`}}/><div className="gd-shade" aria-hidden="true"/>{children}</div></PortalProfileProvider></AppearanceContext.Provider>
 }
 export function SalesAppearanceControls({lang,showSave=true}:{lang:'es'|'en';showSave?:boolean}){
  const a=useOptionalDashboardAppearance(),es=lang==='es';if(!a)return null;

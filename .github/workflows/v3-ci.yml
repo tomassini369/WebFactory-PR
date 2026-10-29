@@ -144,6 +144,11 @@ jobs:
           QA_INTERACTION_ONLY=1 node scripts/browser-glassy-dashboard-smoke.mjs
           QA_ENGINE=webkit QA_WIDTHS=390,1440 node scripts/browser-glassy-dashboard-smoke.mjs
           QA_ENGINE=webkit QA_INTERACTION_ONLY=1 QA_INTERACTION_WIDTHS=390,1440 node scripts/browser-glassy-dashboard-smoke.mjs
+      - name: Check personal portal profile, photo privacy and consolidated settings
+        if: matrix.suite == 'experience'
+        run: |
+          node scripts/browser-portal-profile-smoke.mjs
+          QA_ENGINE=webkit QA_WIDTHS=390,1440 node scripts/browser-portal-profile-smoke.mjs
       - name: Check unified workspace hierarchy, disclosures and Builder state
         if: matrix.suite == 'experience'
         run: |

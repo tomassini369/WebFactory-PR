@@ -1,0 +1,76 @@
+# Personal portal profile — PR #125
+
+Owner-approved scope: the authenticated user's private photo, name, personal
+phone, saved language/theme, existing appearance editor, existing account
+security and read-only membership. This builds on the Vaso rollback; it does not
+restore liquid-glass dependencies or effects. Preview only.
+
+## One place to edit personal settings
+
+- **My profile / Mi perfil** appears in both portal menus. The existing overview
+  circle and desktop account circle open it. On mobile the overview circle and
+  All modules → My profile provide access without crowding the header.
+- **Personal details:** upload/replace/remove photo, name and personal phone.
+  Sign-in email is read-only. This does not introduce an unverified email-change
+  flow or change the authentication identity's metadata.
+- **Preferences:** the existing dashboard editor is mounted here once. Customize
+  remains a shortcut to this same view. Header language/theme and the profile
+  selectors share the existing app state and save to the private user profile.
+  Existing dashboard values/storage keys remain intact. Sound/haptics move here
+  and remain explicitly device-local preferences.
+- **Security:** reuse MfaSettings unchanged: password recovery, passkeys and
+  Authenticator. Remove the separate business-menu entry and the admin Resources
+  copy. Existing programmatic security destinations resolve to this same view,
+  including the isolated Training security reference.
+- **My access:** actual business/platform and role, plus assigned capabilities
+  in readable language. These fields are read-only; no grants are added.
+
+Business identity/logo, public contact, integrations, team administration,
+subscription, business notifications, POS/kiosk editors and the existing
+business/account lifecycle controls retain their existing locations and
+permissions. No new notification-delivery, session-management or email-change
+service is advertised as implemented.
+
+## Private storage and image handling
+
+`portal-profile` reuses current site-membership or platform-admin authorization
+on every read, write and asset request. It derives the record key only from the
+authenticated user's ID; request bodies cannot choose a user, email or role.
+The profile follows that user across authorized businesses and portals, rather
+than replacing shared business information. Its `profiles/` records are separate
+from existing appearance `users/` records, inside the environment-separated
+private store. Stable preview hostname retains data across preview releases.
+
+Raster uploads: JPEG/PNG/WebP, 4 MB request limit, 40 MP decoding limit, no
+animated images/SVG. Sharp rotates, center-crops to at most 512 × 512 and reencodes
+WebP without original metadata. Raw bytes are sent as an ArrayBuffer for reliable
+browser transport. Only photo metadata is returned in JSON; the protected asset
+has private/no-store headers. Photo removal preserves name/preferences. Account
+deletion also removes this private profile record in the current environment.
+
+Same-origin checks, application versions and storage CAS protect writes.
+Conflicts and failed saves preserve drafts; reload is explicit. Pending operations
+are serialized and results are ignored after provider unmount. Training makes
+no profile network requests or live security changes.
+
+## Verification
+
+- 816 Node tests pass, including five focused authorization, user isolation,
+  image optimization/deletion, bounded input and stale-write tests.
+- TypeScript/full production build pass.
+- Chromium: 28 width/theme/language combinations, both portals, plus final
+  390/1440 regression after explicit binary transport. Photo upload, actual image
+  decoding, circle replacement, reload, removal, own access and single existing
+  preferences/security editor checked.
+- Additional Chromium checks: employee's own profile, automatic language/theme
+  persistence, header synchronization, stale-tab conflict and failed-save retry.
+- WebKit: eight combinations at 390/1440, both portals, plus employee,
+  quick preferences, reload, stale-tab and failed-save checks pass.
+- Existing dashboard smoke: eight combinations at 390/1440, both portals,
+  private wallpaper upload/deletion, stale-tab conflict and employee navigation.
+- Deterministic design detector: 20 recommendations; no automatic redesign.
+
+All operational API calls use isolated synthetic fixtures. No real tenant data,
+account email, password, MFA, role, payment or OAuth configuration was changed.
+Physical iPhone acceptance is not claimed. Hosted preview results are reported
+in the PR after the deployment is ready.
