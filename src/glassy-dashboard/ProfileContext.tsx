@@ -6,14 +6,14 @@ import {useUnsavedChanges} from '../interaction-state'
 
 type Profile={name:string;phone:string;language:'es'|'en'|null;theme:'dark'|'light'|null}
 type RecordData={profile:Profile;hasPhoto:boolean;revision:number;version:string}
-type State={data:RecordData|null;draft:{name:string;phone:string};setDraft:(v:{name:string;phone:string})=>void;busy:boolean;error:string;notice:string;reload:()=>Promise<void>;save:()=>Promise<void>;upload:(file:File)=>Promise<void>;remove:()=>Promise<void>;asset:string;fallback:string}
+type State={data:RecordData|null;draft:{name:string;phone:string};setDraft:(v:{name:string;phone:string})=>void;busy:boolean;error:string;notice:string;reload:()=>Promise<void>;save:()=>Promise<boolean>;upload:(file:File)=>Promise<boolean>;remove:()=>Promise<boolean>;asset:string;fallback:string}
 const Context=createContext<State|null>(null)
 export const usePortalProfile=()=>useContext(Context)
 export function PortalProfileProvider({siteId,userId,name='',children}:{siteId?:string;userId:string;name?:string;children:ReactNode}){
  const practice=usePractice(),[lang,setLang]=usePortalLanguage(),{theme,setTheme}=useWebFactoryTheme();
  const endpoint='/.netlify/functions/portal-profile'+(siteId?'?siteId='+encodeURIComponent(siteId):'');
  const [data,setData]=useState<RecordData|null>(null),[draft,setDraft]=useState({name,phone:''}),[busy,setBusy]=useState(false),[error,setError]=useState(''),[notice,setNotice]=useState(''),[epoch,setEpoch]=useState(0);
- const current=useRef<RecordData|null>(null),alive=useRef(true),queue=useRef(Promise.resolve()),choices=useRef({lang,theme}),lastChoices=useRef('');choices.current={lang,theme};
+ const current=useRef<RecordData|null>(null),alive=useRef(true),queue=useRef(Promise.resolve(true)),choices=useRef({lang,theme}),lastChoices=useRef('');choices.current={lang,theme};
  useUnsavedChanges(draft,epoch,setDraft,lang)
  const accept=(next:RecordData)=>{current.current=next;setData(next)};
  const read=async(response:Response)=>{if(!response.ok)throw Error(String(response.status));const value=await response.json();if(!value.profile||typeof value.version!=='string')throw Error('load');return value as RecordData};
@@ -28,9 +28,9 @@ export function PortalProfileProvider({siteId,userId,name='',children}:{siteId?:
  };
  useEffect(()=>{alive.current=true;void reload();return()=>{alive.current=false}},[endpoint,userId,Boolean(practice)])
  const mutate=(method:string,body?:BodyInit,type='application/json',explicit=true)=>{
-  const run=async()=>{if(!alive.current)return;if(practice){setNotice('practice');return}if(!current.current)return;setBusy(true);setError('');if(explicit)setNotice('');
-   try{const next=await read(await fetch(endpoint,{method,credentials:'same-origin',headers:{'Content-Type':type,'X-Profile-Version':current.current.version},body}));if(!alive.current)return;accept(next);if(explicit){setNotice('saved');if(method==='PUT'){setDraft({name:next.profile.name,phone:next.profile.phone});setEpoch(v=>v+1)}}}
-   catch(e){if(alive.current)setError(e instanceof Error&&e.message==='409'?'conflict':'save')}
+  const run=async()=>{if(!alive.current)return false;if(practice){setNotice('practice');return false}if(!current.current)return false;setBusy(true);setError('');if(explicit)setNotice('');
+   try{const next=await read(await fetch(endpoint,{method,credentials:'same-origin',headers:{'Content-Type':type,'X-Profile-Version':current.current.version},body}));if(!alive.current)return false;accept(next);if(explicit){setNotice('saved');if(method==='PUT'){setDraft({name:next.profile.name,phone:next.profile.phone});setEpoch(v=>v+1)}}return true}
+   catch(e){if(alive.current)setError(e instanceof Error&&e.message==='409'?'conflict':'save');return false}
    finally{if(alive.current)setBusy(false)}
   };queue.current=queue.current.then(run,run);return queue.current;
  };

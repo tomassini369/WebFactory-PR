@@ -8,8 +8,8 @@ restore liquid-glass dependencies or effects. Preview only.
 ## One place to edit personal settings
 
 - **My profile / Mi perfil** appears in both portal menus. The existing overview
-  circle and desktop account circle open it. On mobile the overview circle and
-  All modules → My profile provide access without crowding the header.
+  circle opens it. All modules → My profile provides access on every screen.
+  The duplicate header photo is removed at the owner’s request.
 - **Personal details:** upload/replace/remove photo, name and personal phone.
   Sign-in email is read-only. This does not introduce an unverified email-change
   flow or change the authentication identity's metadata.
@@ -42,7 +42,7 @@ from existing appearance `users/` records, inside the environment-separated
 private store. Stable preview hostname retains data across preview releases.
 
 Raster uploads: JPEG/PNG/WebP, 4 MB request limit, 40 MP decoding limit, no
-animated images/SVG. Sharp rotates, center-crops to at most 512 × 512 and reencodes
+animated images/SVG. Sharp rotates, checks/crops to at most 512 × 512 and reencodes
 WebP without original metadata. Raw bytes are sent as an ArrayBuffer for reliable
 browser transport. Only photo metadata is returned in JSON; the protected asset
 has private/no-store headers. Photo removal preserves name/preferences. Account
@@ -74,3 +74,32 @@ All operational API calls use isolated synthetic fixtures. No real tenant data,
 account email, password, MFA, role, payment or OAuth configuration was changed.
 Physical iPhone acceptance is not claimed. Hosted preview results are reported
 in the PR after the deployment is ready.
+
+## Owner photo framing revision
+
+The owner requests removal of the duplicate oversized header photo. Keep the
+overview avatar at 80 px desktop / 64 px mobile, with a fixed square box, clipped
+circular frame and cover image. The profile editor retains its small 80 px photo.
+
+A local framing preview appears only after choosing a photo or Adjust framing.
+It supports dragging, horizontal/vertical sliders, zoom, reset, explicit Save
+photo and Cancel. The circular preview and saved 512 px square use the same
+source rectangle. The circular avatar masks that square; no transparency or
+black corners are introduced into the source photo. The preview is not another
+permanent dashboard avatar. No image is uploaded before Save photo. Failed
+uploads keep the framing controls and the previous saved photo. Cancel releases
+the local object URL without writing. Unsaved framing participates in the
+existing leave-draft guard. Existing optimized photos can be framed further;
+recovering discarded original image area requires uploading the original again.
+
+No server photo schema, authorization, tenant permissions or other images are
+changed. Browser regression checks inspect actual saved pixels from a synthetic
+striped image, avatar dimensions/clipping, header removal, drag, cancel and
+failed-upload retry, alongside the existing profile scenarios.
+
+Correction validation: build/TypeScript, 816 Node tests, 28 Chromium profile
+combinations and eight WebKit combinations; final regressions after cancellation
+cleanup cover 390/1440 Chromium and 390 WebKit. Both portals, ES/EN, light/dark,
+actual crop pixels, circular fixed-size frame, no header avatar, pointer drag,
+cancel, reopening an existing photo and failed upload/retry pass. No real photo
+was uploaded during QA; the fixture is a locally generated three-color raster.

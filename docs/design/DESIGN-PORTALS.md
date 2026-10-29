@@ -147,10 +147,18 @@ static bars. Validate using intercepted fixture requests, never real credentials
 
 The owner approves a single My profile destination for personal details/photo,
 preferences, existing account security and read-only membership. The overview
-avatar and account control open it. Keep business identity, logo, public contact,
+avatar opens it; the module menu provides access in both portals. Keep business identity, logo, public contact,
 integrations, team grants, subscriptions and POS/kiosk editors in their existing
 business modules. Remove duplicate personal editors; Customize remains a shortcut
 to the same Preferences view. Header language/theme controls share saved user
 preferences; sound/haptics remain honest device settings. Preserve current
 wallpapers and account security handlers. Photos are private, optimized raster
 images scoped to the authenticated user, never public tenant assets. No Vaso.
+
+### Owner-approved avatar framing correction
+
+Remove the duplicate header account photo. Retain the overview circle at its
+existing 80 px desktop / 64 px mobile size; constrain and clip its frame to a
+true circle. Profile photo upload uses a temporary circular preview with drag,
+horizontal/vertical position, zoom, reset and explicit save/cancel. Match the
+saved pixels to that preview. No rotation, filters or additional image engine.
