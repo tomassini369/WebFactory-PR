@@ -66,7 +66,9 @@ export function coverLiquidDashboard(scope:HTMLElement,options:Options){
    const lens=document.createElement('span');lens.className='gd-liquid-lens';const tint=document.createElement('span');tint.className='gd-liquid-tint';backdrop.append(lens);const shadow=layer.attachShadow({mode:'open'}),style=document.createElement('style');style.textContent=layerStyles;shadow.append(style,backdrop,tint)
    if(kind==='button')host.style.setProperty('--liquid-button-fill',buttonFill(host))
    const position=host.style.getPropertyValue('position'),positionPriority=host.style.getPropertyPriority('position'),ownsPosition=getComputedStyle(host).position==='static';if(ownsPosition)host.style.setProperty('position','relative','important')
-   host.dataset.liquidKind=kind;host.prepend(layer)
+   host.dataset.liquidKind=kind;
+   // Preserve native first/last-child rules (order-line layout, product info, icons).
+   if(host.children.length>1)host.insertBefore(layer,host.lastElementChild);else host.append(layer)
    const s:Surface={host,layer,lens,kind,glass:null,timer:null,ticket:++serial,visible:false,signature:signature(host),position,positionPriority,ownsPosition};surfaces.set(host,s);visible.observe(host);resize.observe(host)
   }
  }
