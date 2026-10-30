@@ -126,6 +126,16 @@ html[data-wf-theme=dark] .wf-kiosk[data-glass=true]{--glass-base:#101b2c;--glass
 .kiosk-palette-options{display:flex;flex-wrap:wrap;gap:12px;margin-block:16px}
 .kiosk-palette-options button{border:1px solid var(--skin-settings-line);border-radius:10px;display:grid;gap:8px;padding:10px;background:var(--skin-settings-surface);color:var(--skin-settings-ink);font:inherit;min-width:90px;cursor:pointer}
 .kiosk-palette-options button>span{display:flex;gap:4px}.kiosk-palette-options i{display:block;width:24px;height:24px;border:1px solid var(--skin-settings-line);border-radius:50%}
+
+/* Optional premium palettes stay in the existing editor and never modify stored appearance until Save. */
+.kiosk-premium-palette-options{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,145px),1fr));gap:10px;margin:12px 0 18px}
+.kiosk-premium-palette-options button{display:grid;gap:8px;text-align:start;font:inherit;min-width:0;min-height:70px;padding:12px;border:1px solid var(--skin-settings-line);border-radius:12px;background:var(--skin-settings-surface);color:var(--skin-settings-ink);cursor:pointer}
+.kiosk-premium-palette-options button>span{display:flex;gap:2px;overflow:hidden;border-radius:8px;min-height:28px}
+.kiosk-premium-palette-options button i{display:block;flex:1;min-width:0;border:0}
+.kiosk-premium-palette-options button strong{font-size:12px;overflow-wrap:anywhere}
+.kiosk-premium-palette-options button[aria-pressed=true]{outline:2px solid var(--kiosk-brand,#3c86f6);outline-offset:1px}
+.kiosk-premium-palette-options button:focus-visible{outline:3px solid Highlight;outline-offset:3px}
+
 .kiosk-color-field{display:grid;gap:8px;min-width:0}.kiosk-color-controls{display:flex;gap:8px;align-items:center;min-width:0}
 .kiosk-appearance-settings .kiosk-color-controls input[type=color]{flex:0 0 48px;width:48px;height:48px;padding:3px;cursor:pointer}.kiosk-color-controls input:not([type=color]){flex:1;min-width:0;width:0}
 .kiosk-background-library{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,180px),1fr));gap:12px;margin-block:16px}
