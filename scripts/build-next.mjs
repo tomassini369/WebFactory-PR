@@ -3,6 +3,7 @@ import {writeNextDeployArtifacts} from './next-deploy-artifacts.mjs'
 import {mkdirSync,writeFileSync,cpSync,existsSync} from 'node:fs'
 const id='76c0eacd-27e4-41b9-99ac-5bd5dbe82879'
 if(process.env.NETLIFY&&process.env.SITE_ID!==id)throw Error('Next may only build on its isolated experimental project. Original site build blocked before any action.')
+execFileSync(process.execPath,['scripts/restore-hero-media.mjs'],{stdio:'inherit'})
 mkdirSync('assets/next/business',{recursive:true})
 cpSync('preview/fixtures/faro-norte/images','assets/next/business',{recursive:true})
 execFileSync(process.execPath,['scripts/cache-template-images.mjs'],{stdio:'inherit'})

@@ -48,3 +48,14 @@ html body #root .nx-app .nx-admin-host .gd-root .gd-topnav{display:flex;flex-wra
 .nx-app .wf-premium-home #wf-main-nav a{min-height:44px;display:inline-flex;align-items:center;font-size:13px}
 .nx-app .wf-premium-home #wf-main-nav a:first-child{display:none}
 @media(max-width:650px){.nx-app .wf-premium-home .wf-h-header-inner{justify-content:start;padding-inline:18px}.nx-app .wf-premium-home #wf-main-nav{gap:20px}}
+/* Keep transactional details usable above the mobile navigation. */
+.nx-app .bp-detail{max-width:min(640px,calc(100vw - 24px));max-height:calc(100svh - 40px);overflow:auto;overscroll-behavior:contain}
+.nx-booking-local-actions{padding:18px 0;margin:16px 0;border-block:1px solid var(--nx-border)}
+.nx-booking-local-actions>p{font-size:13px;color:var(--nx-muted)}
+.nx-booking-local-actions form{display:grid;gap:12px;margin-top:16px}
+.nx-booking-local-actions label{display:grid;gap:8px}
+.nx-module-error{max-width:680px;margin:40px auto}
+.nx-module-error>a{display:inline-flex;align-items:center;min-height:44px;margin-inline-start:20px;text-decoration:underline}
+.nx-app .nx-content>section,.nx-app .nx-workspace{min-width:0}
+.nx-app :is(input,select,textarea){max-width:100%}
+@media(max-width:650px){.nx-app .nx-workspace-toolbar{flex-wrap:wrap;gap:16px}.nx-app .nx-workspace-toolbar>div{min-width:0;max-width:100%}.nx-app .nx-workspace-toolbar>div:last-child{width:100%;flex-wrap:wrap}.nx-app .nx-module-select{flex:1;min-width:0}.nx-app .nx-module-select select{width:100%;min-width:0}.nx-app .bp-detail{padding:20px}.nx-app .nx-module-error>a{display:flex;margin-inline-start:0}.nx-app .nx-header-tools{gap:2px}}

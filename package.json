@@ -5,9 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite --config vite.next.config.ts",
-    "build": "node scripts/restore-hero-media.mjs && npm run cache:template-images && npm run generate:pwa-icons && tsc --noEmit -p tsconfig.app.json && vite build && node scripts/build-public-entrypoints.mjs && node scripts/generate-admin-pwa-shells.mjs && node scripts/strip-preview-review.mjs && node scripts/build-design-preview.mjs && node scripts/build-email-preview.mjs && node scripts/build-shadcn-preview.mjs",
-    "test": "node --test netlify/**/*.test.mjs",
-    "preview": "vite preview",
+    "build": "npm run build:next",
+    "test": "node --test netlify/**/*.test.mjs scripts/next-explorer.test.mjs scripts/next-isolation.test.mjs",
+    "preview": "vite preview --config vite.next.config.ts",
     "preview:emails": "node scripts/preview-emails.mjs",
     "generate:pwa-icons": "node scripts/generate-pwa-icons.mjs",
     "cache:template-images": "node scripts/cache-template-images.mjs",

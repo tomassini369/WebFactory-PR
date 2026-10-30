@@ -4,7 +4,7 @@ import {DEFAULT_APPEARANCE,normalizeAppearance} from '../../shared/dashboard-app
 const key='wf-next:explore:v2'
 const response=(value,status=200)=>new Response(JSON.stringify(value),{status,headers:{'Content-Type':'application/json'}})
 const clone=value=>structuredClone(value)
-const fresh=()=>({version:2,profile:{profile:{name:'Dueño · Next',phone:'',language:null,theme:null},hasPhoto:false,revision:0,version:'0'},appearance:{prefs:{...DEFAULT_APPEARANCE,cardDepth:'raised',buttonDepth:'soft'},hasCustom:false,revision:0,version:'0'},bookings:[],kioskAppearance:kioskAppearance(),kioskPresets:[],integrations:{},notices:[],deleted:false})
+const fresh=()=>({version:2,profile:{profile:{name:'Dueño · Next',phone:'',language:null,theme:null},hasPhoto:false,revision:0,version:'0'},appearance:{prefs:{...DEFAULT_APPEARANCE,cardDepth:'raised',buttonDepth:'soft'},hasCustom:false,revision:0,version:'0'},bookings:[],waitlist:[],kioskAppearance:kioskAppearance(),kioskPresets:[],integrations:{},notices:[],deleted:false})
 const load=()=>{try{const v=JSON.parse(localStorage.getItem(key)||'null');return v?.version===2?{...fresh(),...v}:fresh()}catch{return fresh()}}
 // This entire transport stays in the experimental bundle. It never calls fetch.
 export function attachExplorer(runtime){
@@ -73,12 +73,56 @@ export function attachExplorer(runtime){
      const start=Date.parse(weeklyBookingStart(body.start,i,runtime.site.settings?.timezone||'America/Puerto_Rico')),end=start+duration*60000
      const conflict=[...existing,...created].find(b=>b.employeeId===person.id&&!['cancelled','no_show'].includes(b.status)&&start<Date.parse(b.end||new Date(Date.parse(b.start)+duration*60000).toISOString())+buffer*60000&&end+buffer*60000>Date.parse(b.start))
      if(conflict)return response({ok:false,message:'Uno de los horarios está ocupado. No se guardó ninguna cita de esta solicitud.'},409)
-     created.push({transactionId:'NEXT-'+crypto.randomUUID(),kind:'booking',status:'confirmed',start:new Date(start).toISOString(),end:new Date(end).toISOString(),employeeId:person.id,customer:{name:String(body.name).trim().slice(0,100),email:'',phone:String(body.phone||'').slice(0,40)},items:[{id:item.id,name:item.nameEs||item.name,quantity:1,unitAmount:Math.round(item.price*100)}],amountTotal:Math.round(item.price*100),paymentStatus:'due',paymentProvider:'in_person',createdAt:new Date().toISOString(),locationId:'practice-location',locationName:'Next · Ejemplo',bookingCode:'NEXT-'+String(state.bookings.length+i+1).padStart(4,'0')})
+     created.push({transactionId:'NEXT-'+crypto.randomUUID(),kind:'booking',status:'confirmed',start:new Date(start).toISOString(),end:new Date(end).toISOString(),employeeId:person.id,customer:{name:String(body.name).trim().slice(0,100),email:String(body.email||'').trim().toLowerCase().slice(0,320),phone:String(body.phone||'').slice(0,40)},items:[{id:item.id,name:item.nameEs||item.name,quantity:1,unitAmount:Math.round(item.price*100)}],amountTotal:Math.round(item.price*100),paymentStatus:'due',paymentProvider:'in_person',createdAt:new Date().toISOString(),locationId:'practice-location',locationName:'Next · Ejemplo',serviceId:item.id,bufferMinutes:buffer,bookingCode:'NEXT-'+String(state.bookings.length+i+1).padStart(4,'0')})
     }
     state.bookings.push(...created);store(state);runtime.emit('booking.updated',created[0]);return response({ok:true,booking:created[0],bookings:created})
    }
+   if(name==='booking-waitlist'||name==='client-booking-waitlist'){
+    state.waitlist||=[]
+    if(!writing)return response({ok:true,requests:state.waitlist,nextCursor:null})
+    if(body.action==='join'){
+     if(!String(body.name||'').trim()||!String(body.email||'').endsWith('@example.invalid')||!/^\d{4}-\d{2}-\d{2}$/.test(body.from||'')||!/^\d{4}-\d{2}-\d{2}$/.test(body.until||'')||body.until<body.from)return response({ok:false,message:'Usa nombre de ejemplo, email @example.invalid y un rango de fechas válido.'},400)
+     const row={id:crypto.randomUUID(),customer:{name:String(body.name).trim().slice(0,100),email:body.email},from:body.from,until:body.until,serviceId:body.serviceId,status:'waiting',createdAt:new Date().toISOString(),simulated:true}
+     state.waitlist.push(row);store(state);return response({ok:true,token:row.id,simulated:true})
+    }
+    const row=state.waitlist.find(r=>r.id===body.id||r.id===body.token)
+    if(!row)return response({ok:false,message:'Solicitud no encontrada.'},404)
+    if(body.action!=='cancel')return response({ok:false,message:'Solo se pueden cancelar solicitudes de ejemplo.'},400)
+    row.status='cancelled';store(state);return response({ok:true,simulated:true})
+   }
+   if(name==='client-booking-attendance'){
+    const bookings=[...runtime.snapshot().bookings,...state.bookings].filter(b=>b.customer?.email?.toLowerCase()===String(body.email||'').trim().toLowerCase()).map(b=>({...b,id:b.transactionId}))
+    const total=status=>bookings.filter(b=>b.status===status).length
+    return response({ok:true,bookings,summary:{total:bookings.length,completed:total('completed'),noShow:total('no_show'),cancelled:total('cancelled'),lateCancellation:0},simulated:true})
+   }
    if(name==='client-commerce-admin'){
-    if(writing){const found=state.bookings.find(b=>b.transactionId===body.transactionId);if(found){if(!['cancel','complete','confirm','check_in','no_show'].includes(body.action))return response({ok:false,message:'Unsupported action.'},400);if(found.status==='cancelled')return response({ok:false,message:'La cita está cancelada.'},409);if(body.action==='complete'&&!['paid','paid_in_person'].includes(found.paymentStatus))return response({ok:false,message:'No puedes completar una cita con pago pendiente.'},409);found.status=({cancel:'cancelled',complete:'completed',no_show:'no_show'})[body.action]||'confirmed';if(body.action==='check_in')found.checkedInAt=new Date().toISOString();store(state);return response({ok:true})}}
+    if(writing){const found=state.bookings.find(b=>b.transactionId===body.transactionId);if(found){
+     if(!['cancel','complete','confirm','check_in','no_show','mark_paid','refund','reschedule'].includes(body.action))return response({ok:false,message:'Acción no disponible en este ejemplo.'},400)
+     if(body.action==='refund'){
+      const amount=Math.round(Number(body.amount)*100),remaining=found.amountTotal-(found.refundedAmount||0)
+      if(!['paid','paid_in_person'].includes(found.paymentStatus)||!Number.isSafeInteger(amount)||amount<=0||amount>remaining)return response({ok:false,message:'El reembolso de ejemplo excede el pago disponible.'},409)
+      found.refundedAmount=(found.refundedAmount||0)+amount
+      if(found.refundedAmount===found.amountTotal)found.paymentStatus='refunded'
+     }else{
+      if(['cancelled','completed','no_show'].includes(found.status))return response({ok:false,message:'La cita está cerrada. Solo puedes gestionar su reembolso si tiene un pago.'},409)
+      if(body.action==='mark_paid'){
+       if(found.paymentStatus!=='due')return response({ok:false,message:'El pago de ejemplo ya se registró.'},409)
+       found.paymentStatus='paid';found.paidAt=new Date().toISOString();found.paymentProvider='in_person'
+      }else if(body.action==='reschedule'){
+       const start=Date.parse(body.start),duration=Date.parse(found.end)-Date.parse(found.start),end=start+duration
+       if(!Number.isFinite(start)||!Number.isFinite(end))return response({ok:false,message:'Fecha no válida.'},400)
+       const conflict=[...runtime.snapshot().bookings,...state.bookings].some(b=>b.transactionId!==found.transactionId&&b.employeeId===found.employeeId&&!['cancelled','no_show'].includes(b.status)&&start<Date.parse(b.end||new Date(Date.parse(b.start)+duration).toISOString())+(b.bufferMinutes||0)*60000&&end+(found.bufferMinutes||0)*60000>Date.parse(b.start))
+       if(conflict)return response({ok:false,message:'Ese horario está ocupado. La cita conserva su horario anterior.'},409)
+       found.start=new Date(start).toISOString();found.end=new Date(end).toISOString()
+      }else{
+       if(body.action==='complete'&&!['paid','paid_in_person'].includes(found.paymentStatus))return response({ok:false,message:'No puedes completar una cita con pago pendiente.'},409)
+       found.status=({cancel:'cancelled',complete:'completed',no_show:'no_show'})[body.action]||'confirmed'
+       if(body.action==='check_in')found.checkedInAt=new Date().toISOString()
+       if(body.action==='confirm')found.attendanceConfirmedAt=new Date().toISOString()
+      }
+     }
+     store(state);runtime.emit('booking.updated',found);return response({ok:true,booking:found,simulated:true})
+    }}
     const r=await base(input,init);if(!writing&&r.ok){const data=await r.json();return response({...data,bookings:[...(data.bookings||[]),...state.bookings]})}return r
    }
    if(name==='webfactory-admin-revenue')return response({ok:true,revenue:{available:false,reason:'not_configured',mode:'test'}})
