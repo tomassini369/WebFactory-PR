@@ -171,3 +171,17 @@ backgrounds and the existing checkout/booking handlers. Use a temporary bottom
 panel with 44 px keys and a visible active input. Match letters/email, phone,
 hexadecimal booking ID and numeric private PIN to the real fields. Never echo
 PINs or auto-submit from Next. No new animation or keyboard service dependency.
+
+### Readable touch glass and optional palette tint, October 30, 2026
+
+Keep the approved Glassy design while compacting phone navigation and preserving
+native vertical scroll/pinch zoom. Touch ranges must distinguish vertical page
+gestures from horizontal edits. On coarse pointers use the licensed glass
+library's blur mode and skip entry transforms. Readability takes precedence
+over unrestricted transparency: use white ink on bounded smoked photographic
+glass, and dark ink only on sufficiently light glass. Keep fields/options solid.
+Provide a saved Apply palette to glass option in the existing dashboard and
+kiosk editors, including the cashier's personal appearance. Neutral glass must
+retain palette actions; tint must preserve the original-background option.
+Charts, layouts, original logos and operational handlers remain unchanged.
+See [PREVIEW_125_TOUCH_GLASS.md](../PREVIEW_125_TOUCH_GLASS.md).

@@ -154,3 +154,32 @@ html body #root .gd-root[data-palette-active=true] .gd-content .gd-sales.pos-wor
   --sales-fill:#fff;--sales-ink:#000;--sales-muted:#000;--sales-line:#000;
  }
 }
+
+/* Neutral/tinted glass is independent of the palette's action colors. The dark
+   blend bounds white-text contrast even on white photos at minimum opacity. */
+html body #root .gd-root[data-readable-glass=true] .gd-content .gd-sales.pos-workspace{
+ --sales-base:#25282f;--sales-field-ink:#fff;--sales-ink:#fff;--sales-muted:#f1f3f8;
+ --sales-line:#a5adba;--sales-inner:#25282f;--sales-fill:var(--glass-fill);
+ --pos-ink:#fff;--pos-muted:#f1f3f8;
+}
+html body #root .gd-root[data-palette-active=true][data-readable-glass=true] .gd-content .gd-sales.pos-workspace .pos-product{--sales-inner:var(--wf-theme-2)}
+html body #root .gd-sales.wf-kiosk[data-readable-glass=true]{
+ --sales-fill:rgba(25,28,34,.82);--sales-ink:#fff;--sales-muted:#f1f3f8;
+ --sales-base:#25282f;--sales-field-ink:#fff;--sales-line:#a5adba;--sales-inner:#25282f;
+ --kiosk-ink:#fff;--kiosk-muted:#f1f3f8;
+}
+html body #root .gd-sales.wf-kiosk[data-palette-active=true][data-readable-glass=true] :is(.kiosk-header,.kiosk-catalog,.kiosk-cart,.kiosk-welcome,footer){
+ --sales-ink:#fff;--sales-muted:#f1f3f8;--sales-inner:#25282f;
+}
+html body #root .wf-kiosk[data-glass-style=liquid] :is(.kiosk-header,.kiosk-cart){background:var(--sales-fill)!important}
+@supports(color:rgb(from red r g b / .6)){
+ html body #root .wf-kiosk[data-readable-glass=true]{--sales-fill:rgb(25 28 34 / max(.76,var(--glass-opacity)))}
+ html body #root .wf-kiosk[data-palette-active=true][data-glass-palette=true][data-readable-glass=true]{
+  --sales-fill:rgb(from color-mix(in srgb,var(--wf-palette-3) 16%,#191c22) r g b / max(.76,var(--glass-opacity)));
+ }
+}
+html body #root .wf-kiosk :is(button,a,summary){touch-action:manipulation}
+.kiosk-appearance-settings .gd-touch-range{touch-action:pan-y pinch-zoom;min-height:48px}
+@media(prefers-reduced-transparency:reduce){html body #root .gd-sales.wf-kiosk[data-readable-glass=true]{--sales-fill:#25282f!important}}
+@media(forced-colors:active){html body #root :is(.wf-kiosk[data-readable-glass=true],.gd-root[data-readable-glass=true] .gd-content .gd-sales.pos-workspace){--sales-fill:Canvas;--sales-base:Canvas;--sales-inner:Canvas;--sales-ink:CanvasText;--sales-field-ink:CanvasText;--sales-muted:CanvasText;--sales-line:CanvasText}}
+@media print{html body #root :is(.wf-kiosk[data-readable-glass=true],.gd-root[data-readable-glass=true] .gd-content .gd-sales.pos-workspace){--sales-fill:#fff;--sales-base:#fff;--sales-inner:#fff;--sales-ink:#000;--sales-field-ink:#000;--sales-muted:#000}}

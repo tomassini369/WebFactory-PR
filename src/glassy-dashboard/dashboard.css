@@ -1,5 +1,6 @@
 /* Owner-supplied Glassy Dashboard v5: one scoped visual system for operating portals. */
 .gd-root{position:relative;isolation:isolate;min-height:100svh;font-family:ui-sans-serif,system-ui,-apple-system,sans-serif;--pg-text:var(--text);--pg-muted:#d7d6dc;--pg-surface:#303035;--pg-soft:#44444b;--pg-line:#77777e;--pg-accent:#a7ccff;--gd-field:#29292e;--gd-solid:#29292e;--gd-muted:#dedde2;color:var(--text);font-size:14px;line-height:1.5}
+.gd-root{--text-3:#dedde2;--glass-fill:rgba(var(--glass-rgb),calc(.72 + var(--glass-alpha) * .25))}
 .gd-root *{box-sizing:border-box}
 .gd-wallpaper,.gd-shade{position:fixed;inset:0;z-index:-2;pointer-events:none}
 .gd-wallpaper{background-position:center;background-size:cover;background-color:#242126}
@@ -80,13 +81,14 @@ html body #root .gd-root .gd-content .gd-wallpaper-choice[aria-pressed=true]{bor
 .gd-root .gd-upload{display:grid;gap:12px;padding:16px;background:var(--surface);border-radius:16px;max-width:100%}
 .gd-root .gd-upload input{max-width:100%}
 .gd-root .gd-adjustments{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px;margin:28px 0}
-.gd-root .gd-adjustments label{display:grid;gap:12px;position:relative}
-.gd-root .gd-adjustments output{position:absolute;right:0;top:0;font-variant-numeric:tabular-nums}
+.gd-root .gd-adjustments label{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:start;gap:12px;position:relative}
+.gd-root .gd-adjustments output{font-variant-numeric:tabular-nums;text-align:right}
+.gd-root .gd-adjustments :is(input,.gd-touch-range){grid-column:1/-1}
 .gd-root .gd-adjustments input[type=range]{width:100%;height:44px;accent-color:var(--accent)}
 .gd-root .gd-adjustments input[type=color]{min-width:64px;min-height:44px}
 .gd-root .gd-page-enter{animation:gd-materialize calc(780ms * var(--motion)) cubic-bezier(.16,1,.3,1) both;transform-origin:50% 30%}
 @keyframes gd-materialize{from{opacity:0;transform:translateY(12px) scale(1.035)}to{opacity:1;transform:none}}
-html[data-wf-theme=light] .gd-root{--text:#17171c;--text-2:#36353d;--text-3:#46444e;--gd-muted:#37343d;--glass-rgb:244,243,247;--gd-field:#fffffff0;--gd-solid:#f6f5f8;--surface:#ffffff52;--surface-2:#ffffff70;--surface-3:#ffffffa6;--pg-text:#17171c;--pg-muted:#37343d;--pg-accent:#244e86;--pg-line:#77727f;--stroke-2:#807a8b50;--glass-fill:rgba(var(--glass-rgb),calc(.2 + var(--glass-alpha) * .8))}
+html[data-wf-theme=light] .gd-root{--text:#17171c;--text-2:#36353d;--text-3:#46444e;--gd-muted:#37343d;--glass-rgb:244,243,247;--gd-field:#fffffff0;--gd-solid:#f6f5f8;--surface:#ffffff52;--surface-2:#ffffff70;--surface-3:#ffffffa6;--pg-text:#17171c;--pg-muted:#37343d;--pg-accent:#244e86;--pg-line:#77727f;--stroke-2:#807a8b50;--glass-fill:rgba(var(--glass-rgb),calc(.80 + var(--glass-alpha) * .16))}
 html[data-wf-theme=light] body #root .gd-root .gd-dashboard{--pg-line:#77727f}
 @media(max-width:1380px){.gd-root .gd-topbar{padding:16px 24px;gap:12px;grid-template-columns:1fr auto}.gd-root .gd-topnav{grid-row:2;grid-column:1/-1;justify-content:center}.gd-root .gd-dock{left:20px}html body #root .gd-root .gd-content{padding-left:116px!important;padding-right:24px!important}}
 @media(max-width:900px){html body #root .gd-root .gd-content{padding:12px 16px calc(126px + env(safe-area-inset-bottom))!important;margin:0!important}.gd-root .gd-dock{top:auto;bottom:calc(12px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);flex-direction:row;max-width:calc(100% - 16px);gap:2px;padding:8px}.gd-root .gd-dock button{width:44px;height:44px;min-width:44px}.gd-root .gd-dock button:nth-child(n+5):not(:last-child){display:none}.gd-root .gd-topbar{padding:12px 16px;grid-template-columns:1fr auto}.gd-root .gd-brand,.gd-root .gd-brand .wf-adaptive-logo-slot{width:118px}.gd-root .gd-top-controls{gap:4px}.gd-root .gd-account{display:none!important}.gd-root .gd-topnav{justify-content:center}.gd-root .gd-topnav button{font-size:12px;padding:10px 12px}.gd-root .gd-wallpaper-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.gd-root .gd-top-controls>.wf-feedback-preferences{display:none}.gd-root .gd-drawer{padding:20px}}
@@ -227,8 +229,7 @@ html body #root .gd-root .gd-content .gd-palette-choice:focus-visible{outline:3p
 }
 
 
-/* Optical glass is rendered by the MIT simple-liquid-glass React component.
-   The CSS here only reserves the surface and removes the old blur layer. */
+/* The licensed optics sit behind the readable tint, including the CSS fallback. */
 html body #root .gd-root[data-background-natural=true] .gd-shade{background:none!important;opacity:0!important}
 .gd-root .gd-glass-options{display:grid;gap:12px;margin:18px 0;padding:16px;border:1px solid var(--stroke-2);border-radius:18px;background:var(--surface)}
 .gd-root .gd-glass-options>label:not(.gd-toggle-row){display:grid;gap:8px}
@@ -237,13 +238,9 @@ html body #root .gd-root[data-background-natural=true] .gd-shade{background:none
 .gd-root .gd-glass-options p{margin:0;font-size:13px;line-height:1.5}
 html body #root .gd-root[data-glass-style=liquid] .gd-content .wf-portal-panel{isolation:isolate;position:relative}
 html body #root .gd-root[data-glass-style=liquid] .gd-content .wf-portal-panel::before{
- background:transparent!important;
- backdrop-filter:none!important;
- -webkit-backdrop-filter:none!important;
- box-shadow:none!important;
- border-color:transparent!important;
+ background:var(--glass-fill)!important;
 }
-.wf-licensed-liquid-glass{overflow:hidden;pointer-events:none!important}
+.wf-licensed-liquid-glass{overflow:hidden;pointer-events:none!important;z-index:-2!important}
 .wf-licensed-liquid-glass *{pointer-events:none!important}
 @media(prefers-reduced-transparency:reduce){
  html body #root .gd-root[data-glass-style=liquid] .gd-content .wf-portal-panel::before{
@@ -258,3 +255,55 @@ html body #root .gd-root[data-glass-style=liquid] .gd-content .wf-portal-panel::
  .wf-licensed-liquid-glass{display:none!important}
  html body #root .gd-root[data-glass-style=liquid] .gd-content .wf-portal-panel::before{background:white!important}
 }
+
+/* White ink on smoked panels keeps a natural photo readable at any brightness.
+   The floor applies to panels only; the wallpaper remains completely untouched. */
+html body #root .gd-root[data-readable-glass=true]{
+ --text:#fff;--text-2:#f1f3f8;--text-3:#f1f3f8;--gd-muted:#f1f3f8;
+ --pg-text:#fff;--pg-muted:#f1f3f8;--pg-accent:#c1dcff;
+ --gd-solid:#25282f;--gd-field:#25282f;--pg-line:#a5adba;
+ --glass-rgb:25,28,34;
+ --glass-fill:rgba(var(--glass-rgb),calc(.72 + var(--glass-alpha) * .25));
+ --surface:rgba(15,18,25,.72);--surface-2:rgba(15,18,25,.78);--surface-3:rgba(15,18,25,.9);
+}
+@supports(color:rgb(from red r g b / .6)){
+ html body #root .gd-root[data-palette-active=true][data-glass-palette=true][data-readable-glass=true]{
+  --glass-fill:rgb(from color-mix(in srgb,var(--wf-theme-3) 16%,#191c22) r g b / calc(.72 + var(--glass-alpha) * .25));
+ }
+}
+html body #root .gd-root[data-readable-glass=true] .gd-content>header{
+ background:var(--glass-fill)!important;border-radius:18px;padding:16px;margin-bottom:16px;
+}
+html body #root .gd-root[data-readable-glass=true] .gd-content :is(input,select,textarea)::placeholder{color:#d8dee9;opacity:1}
+html body #root .gd-root .gd-content select option{background:var(--gd-field);color:var(--text)}
+html body #root .gd-root[data-readable-glass=true] .gd-content :is(h1,h2,h3,h4,p,label,small,dt,dd){text-shadow:0 1px 2px #0005}
+/* Leave palette samples and opaque sales controls with their own validated inks. */
+html body #root .gd-root .gd-content .gd-palette-layers small{color:inherit;text-shadow:none}
+html body #root .gd-root .gd-content .gd-sales :is(h1,h2,h3,h4,p,label,small,dt,dd){text-shadow:none}
+.gd-root .gd-content{scroll-padding-block:20px;-webkit-overflow-scrolling:touch}
+.gd-root .gd-touch-range{touch-action:pan-y pinch-zoom;min-height:44px}
+.gd-root :is(button,a,summary){touch-action:manipulation}
+@media(any-pointer:coarse){
+ .gd-root .gd-content{scroll-behavior:auto!important}
+ .gd-root .gd-page-enter{animation:none}
+ .gd-root .gd-dock{backdrop-filter:none}
+ .gd-root .gd-touch-range{min-height:48px}
+ .gd-root .gd-dock button:hover{background:transparent}
+}
+@media(max-width:540px){
+ .gd-root .gd-topbar{grid-template-columns:minmax(0,1fr) auto;gap:8px;padding:8px 12px;min-height:0}
+ .gd-root .gd-brand{justify-self:start}
+ .gd-root .gd-brand,.gd-root .gd-brand .wf-adaptive-logo-slot{width:96px}
+ .gd-root .gd-top-controls{grid-column:2;grid-row:1;justify-self:end;width:auto}
+ .gd-root .gd-topnav{grid-column:1/-1;grid-row:2;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));width:100%;gap:6px}
+ .gd-root .gd-topnav button{min-width:0;padding:8px;gap:6px}
+ .gd-root .gd-topnav button span{min-width:0;overflow-wrap:anywhere}
+ .gd-root .gd-topnav svg{flex-shrink:0}
+ .gd-root .gd-dock{padding:4px;margin:6px}
+ html body #root .gd-root .gd-content{padding:12px 12px 28px!important}
+}
+@media(max-width:360px){.gd-root .gd-topbar{padding-inline:8px}.gd-root .gd-brand,.gd-root .gd-brand .wf-adaptive-logo-slot{width:80px}}
+@media(prefers-reduced-transparency:reduce){html body #root .gd-root{--glass-fill:var(--gd-solid)!important;--glass-blur:0px!important}}
+@supports not(backdrop-filter:blur(1px)){html body #root .gd-root{--glass-fill:var(--gd-solid)!important}}
+@media(forced-colors:active){html body #root .gd-root[data-readable-glass=true]{--text:CanvasText;--text-2:CanvasText;--text-3:CanvasText;--gd-muted:CanvasText;--gd-solid:Canvas;--gd-field:Canvas;--pg-text:CanvasText;--pg-muted:CanvasText;--pg-accent:Highlight;--pg-line:CanvasText;--glass-fill:Canvas;--surface:Canvas;--surface-2:Canvas;--surface-3:Canvas}.gd-root .gd-content *{text-shadow:none!important}}
+@media print{html body #root .gd-root[data-readable-glass=true]{--text:#000;--gd-muted:#000;--gd-solid:#fff;--gd-field:#fff;--glass-fill:#fff}.gd-root .gd-content *{text-shadow:none!important}}

@@ -5,7 +5,6 @@ import type {KioskAppearance} from '../../netlify/lib/kiosk-skins.mjs'
 // The persisted appearance schema stays unchanged. Infer a selected palette from its
 // four canonical colors; customized surfaces continue to win over palette defaults.
 export function selectedKioskPalette(appearance:KioskAppearance):KioskPalette|undefined{
- if(appearance.colorMode!=='gradient')return undefined
  const same=(a:string,b:string)=>a.toLowerCase()===b.toLowerCase()
  return kioskPalettes.find(p=>same(appearance.primary,p.primary)&&same(appearance.secondary,p.secondary)&&same(appearance.gradientFrom,p.from)&&same(appearance.gradientTo,p.to))
 }
