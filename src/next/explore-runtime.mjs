@@ -1,3 +1,4 @@
+import {weeklyBookingStart} from './booking-time.mjs'
 import {kioskAppearance} from '../../netlify/lib/kiosk-skins.mjs'
 import {DEFAULT_APPEARANCE,normalizeAppearance} from '../../shared/dashboard-appearance.mjs'
 const key='wf-next:explore:v2'
@@ -63,16 +64,21 @@ export function attachExplorer(runtime){
    }
    if(name==='next-booking'){
     if(!writing)return response({ok:true,bookings:state.bookings})
-    const item=runtime.site.catalog.find(i=>i.id===body.serviceId&&i.type==='service'),person=runtime.site.employees.find(e=>e.id===body.employeeId&&e.active!==false)
-    if(!item||!person||!String(body.name||'').trim()||!Number.isFinite(Date.parse(body.start)))return response({ok:false,message:'Completa servicio, profesional, nombre y fecha.'},400)
-    const start=Date.parse(body.start),duration=Math.max(15,Number(item.duration)||30),end=start+duration*60000
-    const conflict=state.bookings.find(b=>b.employeeId===person.id&&b.status!=='cancelled'&&start<Date.parse(b.end)&&end>Date.parse(b.start))
-    if(conflict)return response({ok:false,message:'Ese horario ya está ocupado. Selecciona otro.'},409)
-    const booking={transactionId:'NEXT-'+crypto.randomUUID(),kind:'booking',status:'confirmed',start:new Date(start).toISOString(),end:new Date(end).toISOString(),employeeId:person.id,customer:{name:String(body.name).trim().slice(0,100),email:'',phone:String(body.phone||'').slice(0,40)},items:[{id:item.id,name:item.nameEs||item.name,quantity:1,unitAmount:Math.round(item.price*100)}],amountTotal:Math.round(item.price*100),paymentStatus:'due',paymentProvider:'in_person',createdAt:new Date().toISOString(),locationId:'practice-location',locationName:'Next · Ejemplo',bookingCode:'NEXT-'+String(state.bookings.length+1).padStart(4,'0')}
-    state.bookings.push(booking);store(state);runtime.emit('booking.updated',booking);return response({ok:true,booking})
+    const item=runtime.site.catalog.find(i=>i.id===body.serviceId&&i.type==='service'&&i.active!==false),person=runtime.site.employees.find(e=>e.id===body.employeeId&&e.active!==false)
+    const count=body.count??1
+    if(!item||!person||!String(body.name||'').trim()||!Number.isFinite(Date.parse(body.start))||!Number.isInteger(count)||count<1||count>12)return response({ok:false,message:'Completa servicio, profesional, nombre y fecha. Máximo 12 citas.'},400)
+    if(person.serviceIds?.length&&!person.serviceIds.includes(item.id))return response({ok:false,message:'Ese profesional no ofrece el servicio seleccionado.'},400)
+    const duration=Math.max(15,Number(person.serviceOverrides?.[item.id]?.duration??item.duration)||30),buffer=Math.max(0,Number(item.bufferMinutes)||0),existing=[...runtime.snapshot().bookings,...state.bookings],created=[]
+    for(let i=0;i<count;i++){
+     const start=Date.parse(weeklyBookingStart(body.start,i,runtime.site.settings?.timezone||'America/Puerto_Rico')),end=start+duration*60000
+     const conflict=[...existing,...created].find(b=>b.employeeId===person.id&&!['cancelled','no_show'].includes(b.status)&&start<Date.parse(b.end||new Date(Date.parse(b.start)+duration*60000).toISOString())+buffer*60000&&end+buffer*60000>Date.parse(b.start))
+     if(conflict)return response({ok:false,message:'Uno de los horarios está ocupado. No se guardó ninguna cita de esta solicitud.'},409)
+     created.push({transactionId:'NEXT-'+crypto.randomUUID(),kind:'booking',status:'confirmed',start:new Date(start).toISOString(),end:new Date(end).toISOString(),employeeId:person.id,customer:{name:String(body.name).trim().slice(0,100),email:'',phone:String(body.phone||'').slice(0,40)},items:[{id:item.id,name:item.nameEs||item.name,quantity:1,unitAmount:Math.round(item.price*100)}],amountTotal:Math.round(item.price*100),paymentStatus:'due',paymentProvider:'in_person',createdAt:new Date().toISOString(),locationId:'practice-location',locationName:'Next · Ejemplo',bookingCode:'NEXT-'+String(state.bookings.length+i+1).padStart(4,'0')})
+    }
+    state.bookings.push(...created);store(state);runtime.emit('booking.updated',created[0]);return response({ok:true,booking:created[0],bookings:created})
    }
    if(name==='client-commerce-admin'){
-    if(writing){const found=state.bookings.find(b=>b.transactionId===body.transactionId);if(found){if(!['cancel','complete','confirm','check_in','no_show'].includes(body.action))return response({ok:false,message:'Unsupported action.'},400);found.status=({cancel:'cancelled',complete:'completed',no_show:'no_show'})[body.action]||'confirmed';if(body.action==='check_in')found.checkedInAt=new Date().toISOString();store(state);return response({ok:true})}}
+    if(writing){const found=state.bookings.find(b=>b.transactionId===body.transactionId);if(found){if(!['cancel','complete','confirm','check_in','no_show'].includes(body.action))return response({ok:false,message:'Unsupported action.'},400);if(found.status==='cancelled')return response({ok:false,message:'La cita está cancelada.'},409);if(body.action==='complete'&&!['paid','paid_in_person'].includes(found.paymentStatus))return response({ok:false,message:'No puedes completar una cita con pago pendiente.'},409);found.status=({cancel:'cancelled',complete:'completed',no_show:'no_show'})[body.action]||'confirmed';if(body.action==='check_in')found.checkedInAt=new Date().toISOString();store(state);return response({ok:true})}}
     const r=await base(input,init);if(!writing&&r.ok){const data=await r.json();return response({...data,bookings:[...(data.bookings||[]),...state.bookings]})}return r
    }
    if(name==='webfactory-admin-revenue')return response({ok:true,revenue:{available:false,reason:'not_configured',mode:'test'}})

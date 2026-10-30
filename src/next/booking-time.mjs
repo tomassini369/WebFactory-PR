@@ -7,3 +7,8 @@ export function bookingTime(value,timeZone='America/Puerto_Rico'){
  if(!candidates.length)throw Error('Esa hora no existe en la zona horaria del negocio.')
  return new Date(candidates[0]).toISOString()
 }
+export function weeklyBookingStart(start,index,timeZone='America/Puerto_Rico'){
+ const p=Object.fromEntries(new Intl.DateTimeFormat('en-US',{timeZone,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(new Date(start)).map(p=>[p.type,p.value]))
+ const day=new Date(Date.UTC(+p.year,+p.month-1,+p.day+index*7)).toISOString().slice(0,10)
+ return bookingTime(day+'T'+p.hour+':'+p.minute,timeZone)
+}
