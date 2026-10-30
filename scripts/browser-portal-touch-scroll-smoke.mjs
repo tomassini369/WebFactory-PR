@@ -13,7 +13,7 @@ const engine=process.env.QA_ENGINE==='webkit'?webkit:chromium
 const browser=await engine.launch({executablePath:process.env[engine===webkit?'QA_WEBKIT_PATH':'QA_CHROMIUM_PATH'],...(engine===chromium?{args:['--no-sandbox','--disable-dev-shm-usage']}: {})})
 const output='/tmp/portal-touch-scroll-qa';await mkdir(output,{recursive:true})
 const user={id:'touch-qa',email:'touch@example.invalid',app_metadata:{roles:['admin']},user_metadata:{},mfa:{required:false}}
-const site={siteId:'touch-qa-site',slug:'touch-qa',status:'published',revision:1,business:{name:'Isolated touch QA',category:'Barber'},design:{primary:'#0B1529',secondary:'#3C86F6',style:'Modern'},catalog:[],employees:[],hours:{},members:[],settings:{locale:'en',timezone:'America/Puerto_Rico',currency:'USD'},features:{},servicePlan:{code:'complimentary',billingModel:'complimentary'}}
+const site={siteId:'touch-qa-site',slug:'touch-qa',status:'published',revision:1,business:{name:'Isolated touch QA',category:'Barber'},design:{primary:'#0B1529',secondary:'#3C86F6',style:'Modern'},catalog:[],employees:[],hours:{},members:[],paymentRules:{},googleCalendar:{},settings:{locale:'en',timezone:'America/Puerto_Rico',currency:'USD'},features:{},servicePlan:{code:'complimentary',billingModel:'complimentary'}}
 const summary={generatedAt:new Date().toISOString(),administrator:{name:'Isolated QA',email:user.email},summary:{clients:0,publishedSites:0,connectedStripe:0,blockers:0},capacity:{level:'healthy',activeClients:0},integrations:{configuration:[]},operations:{transactionStatuses:{},pendingTransactions:[]},clients:[],subscriptionBilling:{missing:[],ready:false},resources:{netlify:{},storage:{},runtime:{}}}
 const measurements=[]
 const luminance=rgb=>rgb.map(v=>v/255).map(v=>v<=.04045?v/12.92:((v+.055)/1.055)**2.4).reduce((s,v,i)=>s+v*[.2126,.7152,.0722][i],0)
@@ -33,8 +33,8 @@ async function swipe(page,from,to){
  await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await cdp.detach();await page.waitForTimeout(180)
 }
 try{
- for(const width of (process.env.QA_WIDTHS||'320,375,390,430,768,1024,1440').split(',').map(Number))for(const theme of ['light','dark'])for(const lang of ['es','en']){
-  const context=await browser.newContext({viewport:{width,height:width<=430?844:950},hasTouch:true,isMobile:true,serviceWorkers:'block',reducedMotion:'reduce'})
+ for(const width of (process.env.QA_WIDTHS||'320,375,390,430,768,1024,1440').split(',').map(Number))for(const theme of (process.env.QA_THEMES||'light,dark').split(','))for(const lang of (process.env.QA_LANGS||'es,en').split(',')){
+  const context=await browser.newContext({viewport:{width,height:Number(process.env.QA_HEIGHT)||(width<=430?844:950)},hasTouch:true,isMobile:true,serviceWorkers:'block',reducedMotion:'reduce'})
   const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message))
   await page.addInitScript(t=>localStorage.setItem('webfactory-theme-v2',t),theme)
   let prefs={...DEFAULT_APPEARANCE,backgroundNatural:true,glassStyle:'liquid',alpha:.20,blur:0},saved=structuredClone(prefs)
@@ -65,6 +65,29 @@ try{
    assert.equal(metrics.innerWidth,width);assert.equal(metrics.clientWidth,width);assert.equal(metrics.viewport.scale,1);assert(metrics.scrollWidth<=width+1)
    if(width<=430&&!process.env.QA_BASELINE)assert(metrics.header<=165,`Compact mobile header ${path} ${theme} ${lang}: ${JSON.stringify(metrics)}`)
    if(process.env.QA_BASELINE){await page.screenshot({path:`${output}/before-${theme}-${path.slice(1)}.png`});continue}
+   if(process.env.QA_DOCK_ONLY){
+    for(const scrolled of [false,true])for(const button of await page.locator('.gd-dock button').all()){
+     if(!await button.isVisible())continue
+     if(scrolled)await page.locator('.gd-content').evaluate(el=>el.scrollTop=el.scrollHeight)
+     const box=await button.boundingBox(),label=await button.getAttribute('aria-label'),point={x:box.x+box.width/2,y:box.y+box.height/2}
+     const hit=await page.evaluate(p=>({hit:document.elementFromPoint(p.x,p.y)?.closest('button')?.getAttribute('aria-label'),height:innerHeight,visual:visualViewport.height}),point)
+     console.log('DOCK',path,scrolled,label,JSON.stringify(hit))
+     assert.equal(hit.hit,label,'The visible dock receives the touch')
+     await page.touchscreen.tap(point.x,point.y)
+     await button.page().waitForFunction(label=>[...document.querySelectorAll('.gd-dock button')].some(b=>b.getAttribute('aria-label')===label&&b.getAttribute('aria-current')==='page'),label)
+    }
+    const personal=page.locator('.gd-dock button').last();await personal.tap()
+    if(engine===chromium){const a=await page.locator('.gd-dock button').first().boundingBox(),b=await page.locator('.gd-dock button').nth(1).boundingBox();await swipe(page,{x:a.x+a.width/2,y:a.y+a.height/2},{x:b.x+b.width/2,y:b.y+b.height/2});assert.equal(await personal.getAttribute('aria-current'),'page','Dragging across the dock does not navigate')}
+    await page.locator('.gd-palette-choice').first().tap()
+    let prompts=0;const dismiss=async dialog=>{prompts++;await dialog.dismiss()};page.on('dialog',dismiss)
+    const overview=page.locator('.gd-dock button').first(),b=await overview.boundingBox();await page.touchscreen.tap(b.x+b.width/2,b.y+b.height/2);await page.waitForTimeout(900)
+    assert.equal(prompts,1,'A touch produces a single unsaved-draft confirmation');assert.equal(await personal.getAttribute('aria-current'),'page','Cancel preserves the appearance draft')
+    page.off('dialog',dismiss);page.once('dialog',dialog=>dialog.accept());await overview.tap();await overview.page().waitForFunction(()=>document.querySelector('.gd-dock button')?.getAttribute('aria-current')==='page')
+    await personal.focus();await page.keyboard.press('Enter');assert.equal(await personal.getAttribute('aria-current'),'page','Keyboard navigation still works after a touch')
+    await overview.click();assert.equal(await overview.getAttribute('aria-current'),'page','Mouse activation is not suppressed by the preceding touch')
+    assert.deepEqual(errors,[])
+    continue
+   }
    assert.equal(await page.locator('.gd-root').getAttribute('data-readable-glass'),'true')
    await page.locator('.wf-licensed-liquid-glass').first().waitFor({state:'attached'})
    const optics=await page.locator('.wf-licensed-liquid-glass').evaluateAll(els=>els.map(el=>({strategy:el.dataset.glassStrategy,reason:el.dataset.glassReason})))
@@ -90,12 +113,13 @@ try{
     assert(Number(await range.inputValue())>.4,'Horizontal touch still adjusts opacity')
    }
    await range.focus();const prior=Number(await range.inputValue());await page.keyboard.press('ArrowRight');assert(Number(await range.inputValue())>prior,'Keyboard adjusts range')
-   if(width===390&&lang==='es'){await range.press('Home');for(const card of await page.locator('.gd-palette-choice').all()){await card.click();checkReadingContrast(await readColors(page,'.gd-appearance'))}}
+   if(width===390&&lang==='es'){await range.press('Home');await page.locator('.gd-palette-choice').first().click();await page.getByRole('checkbox',{name:'Aplicar paleta a los cristales',exact:true}).check();for(const card of await page.locator('.gd-palette-choice').all()){await card.click();const colors=await readColors(page,'.gd-appearance');checkReadingContrast(colors);const expected=await page.locator('.gd-root').evaluate(el=>getComputedStyle(el).getPropertyValue('--wf-theme-glass-color').trim());const rgb=[1,3,5].map(i=>parseInt(expected.slice(i,i+2),16));assert(colors.fill.slice(0,3).every((v,i)=>Math.abs(v-rgb[i])<=1),`Glass keeps palette RGB ${expected}: ${JSON.stringify(colors.fill)}`)}}
    await page.getByRole('button',{name:lang==='es'?'Paleta Ocean Blue':'Palette Ocean Blue',exact:true}).click()
    const tint=page.getByRole('checkbox',{name:lang==='es'?'Aplicar paleta a los cristales':'Apply palette to glass',exact:true})
    await tint.check()
    const wallpaper=await page.locator('.gd-wallpaper').evaluate(el=>getComputedStyle(el).backgroundImage)
    const tinted=await page.locator('.gd-appearance').evaluate(el=>getComputedStyle(el,'::before').backgroundColor)
+   if(width===390&&lang==='es')await page.screenshot({path:`${output}/tinted-editor-${theme}-${path.slice(1)}.png`})
    await tint.uncheck()
    const neutral=await page.locator('.gd-appearance').evaluate(el=>getComputedStyle(el,'::before').backgroundColor)
    assert.notEqual(tinted,neutral,'Glass palette switch changes the panel tint')

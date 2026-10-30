@@ -23,14 +23,15 @@ zoom, or disable pinch zoom.
   optics remain available; decorative layers never receive pointer events.
   Entry transforms are skipped for coarse pointers.
 - The optical layer no longer replaces the readable tint with an almost clear
-  white layer. Opacity/blur controls affect the material. Natural-photo and
-  palette panels use white primary text, very light secondary text, a bounded
-  smoked fill and a subtle text shadow. Standard light glass keeps dark ink on
-  a sufficiently light fill. Fields/options use solid, matching surfaces.
+  white layer. Opacity/blur controls affect the material. Neutral photographic
+  glass keeps white ink on smoked fill. Colored glass keeps the exact selected
+  palette RGB and chooses black or white ink against that color; opacity is
+  raised only as needed for contrast over a black or white photograph. There
+  is no fixed charcoal blend. Fields/options use solid, matching surfaces.
 - **Apply palette to glass / Aplicar paleta a los cristales** selects palette
   tint or neutral glass in both dashboard portals, cashier and kiosk. Defaults
   preserve the former palette-enabled behavior; an explicit false persists.
-  The tint is darkened to protect white-text contrast across all 23 palettes.
+  Contrast is evaluated independently for each of the 23 palette colors.
   Actions and product cards retain their independently calculated foregrounds.
 - Kiosk palette identity is independent of background mode. A natural/uploaded
   photo can stay in place while selecting a palette; natural images receive no
@@ -48,9 +49,11 @@ All browser operations use intercepted or isolated fixture transports. They do
 not authenticate a real account, change a business, create a charge, send email
 or modify Google settings.
 
-- `npm test`: 823 passed, zero failed. Updated the kiosk boundary test that still
+- `npm test`: 825 passed, zero failed. Updated the kiosk boundary test that still
   expected the retired 70% opacity/12 px blur limits; current limits are 25% and
   24 px. Added save/reload and strict-boolean checks for the new preference.
+  The two additional tests verify unmodified palette RGB, contrast over five
+  photo brightness levels at five opacities, and adaptive black/white ink.
 - `CONTEXT=deploy-preview npm run build`: TypeScript and application/isolated
   preview builds passed. Existing chunk-size recommendations remain.
 - New touch/contrast smoke: 320/375/390/430/768/1024/1440, ES/EN, light/dark,
@@ -87,6 +90,27 @@ Local evidence: `/tmp/mobile-review/`, `/tmp/portal-touch-scroll-qa/`,
 `/tmp/glassy-dashboard-qa/`. CI runs the new smoke with Chromium and WebKit.
 This is browser emulation and rendering validation, not physical iPhone or
 touch-monitor acceptance. Preview deployment status must be checked separately.
+
+## Follow-up: preset identity and lower dock touches
+
+The owner's screenshot exposed a regression in the previous contrast fix: a
+16% palette / 84% charcoal blend made presets almost indistinguishable. That
+blend is removed. The shared material calculation never changes palette RGB;
+it computes foreground and the smallest contrast-safe opacity instead. Palette
+changes still use Anime.js; opacity changes update immediately.
+
+The reported dock failure did not reproduce in the original code under Chromium
+or WebKit touch emulation. The dock now also handles a completed primary touch
+on pointer-up, with movement/cancellation checks and synthetic-click deduplication.
+Its existing navigation/unsaved-draft guard remains in charge. Dragging cannot
+navigate; mouse, keyboard and dialog menu keep their click behavior. English
+Bookings and Spanish Citas fit without splitting a word.
+
+`QA_DOCK_ONLY=1` tests every visible dock button by screen coordinates before and
+after scroll, in both portals. It additionally checks drag cancellation, a
+single unsaved-draft prompt, Cancel/Discard, keyboard and mouse after touch.
+The fixture now includes the normal payment rules needed to render Bookings.
+No booking rule was changed to support the fixture.
 
 ## Scoped design audit
 

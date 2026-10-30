@@ -34,12 +34,13 @@ export function DashboardProvider({siteId,userId,children,lang='en',name=''}:{si
    paletteReady.current=paletteReady.current||ready
    return
   }
-  const tokens=dashboardPaletteVariables(palette,theme)
+  const tokens=dashboardPaletteVariables(palette,theme,prefs.alpha)
   const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches||prefs.motion<=0
-  if(!paletteReady.current||!ready||reduce){
+  if(!paletteReady.current||!ready||reduce||previousPalette.current===palette.id){
    Object.entries(tokens).forEach(([key,value])=>root.style.setProperty(key,value))
   }else{
    if(!previousPalette.current){
+    root.style.setProperty('--wf-theme-glass-fill','rgba(25,28,34,.85)');root.style.setProperty('--wf-theme-glass-color','#191c22');root.style.setProperty('--wf-theme-glass-ink','#FFFFFF')
     const surface=theme==='dark'?'#29292e':'#f6f5f8'
     for(let i=1;i<=6;i++)root.style.setProperty(`--wf-theme-${i}`,surface)
     const prevInk=theme==='dark'?'#FFFFFF':'#17171c'
@@ -50,7 +51,7 @@ export function DashboardProvider({siteId,userId,children,lang='en',name=''}:{si
   previousPalette.current=palette.id
   paletteReady.current=paletteReady.current||ready
   return()=>{paletteAnimation.current?.cancel();paletteAnimation.current=null}
- },[palette?.id,theme,prefs.motion,ready])
+ },[palette?.id,theme,prefs.motion,prefs.alpha,ready])
  const readResponse=async(response:Response)=>{const data=await response.json();if(!response.ok)throw new Error(String(response.status));return {data,etag:typeof data.version==='string'?data.version:(response.headers.get('etag')||'').replace(/^W\//,'').replace(/^"|"$/g,'')}}
  const accept=(data:any,tag:string)=>{setPrefs(normalizeAppearance(data.prefs));setCustom(Boolean(data.hasCustom));setRevision(data.revision||0);setEtag(tag);setSavedEpoch(value=>value+1)}
  // Use the live same-origin transport only outside isolated training.

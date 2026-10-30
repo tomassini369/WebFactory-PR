@@ -30,7 +30,7 @@ try{
   const six=await surface.evaluate(el=>Array.from({length:6},(_,i)=>el.style.getPropertyValue(`--wf-palette-${i+1}`).toUpperCase()));
   assert.deepEqual(six,['#021024','#052659','#16498A','#5483B3','#7DA0CA','#C1E8FF'],'All six colors are materialized on the actual kiosk surface');
   const roles=await surface.evaluate(el=>({panel:getComputedStyle(el).getPropertyValue('--sales-base').trim().toUpperCase(),action:getComputedStyle(el).getPropertyValue('--kiosk-brand').trim().toUpperCase()}));
-  assert.equal(roles.panel,'#25282F');assert.equal(roles.action,'#5483B3');
+  assert.equal(roles.panel,'#16498A');assert.equal(roles.action,'#5483B3');
   await page.getByLabel(t('Acabado','Finish'),{exact:true}).selectOption('glass');
   const tint=page.getByRole('checkbox',{name:t('Aplicar paleta a los cristales','Apply palette to glass'),exact:true});
   const tinted=await surface.locator('.kiosk-catalog').evaluate(el=>getComputedStyle(el).backgroundColor);

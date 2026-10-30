@@ -266,17 +266,22 @@ html body #root .gd-root[data-readable-glass=true]{
  --glass-fill:rgba(var(--glass-rgb),calc(.72 + var(--glass-alpha) * .25));
  --surface:rgba(15,18,25,.72);--surface-2:rgba(15,18,25,.78);--surface-3:rgba(15,18,25,.9);
 }
-@supports(color:rgb(from red r g b / .6)){
- html body #root .gd-root[data-palette-active=true][data-glass-palette=true][data-readable-glass=true]{
-  --glass-fill:rgb(from color-mix(in srgb,var(--wf-theme-3) 16%,#191c22) r g b / calc(.72 + var(--glass-alpha) * .25));
- }
+html body #root .gd-root[data-palette-active=true][data-glass-palette=true][data-readable-glass=true]{
+ --glass-fill:var(--wf-theme-glass-fill);
+ --text:var(--wf-theme-glass-ink);--text-2:var(--text);--text-3:var(--text);--gd-muted:var(--text);
+ --pg-text:var(--text);--pg-muted:var(--text);--pg-accent:var(--text);
+ --gd-solid:var(--wf-theme-glass-color);--gd-field:var(--gd-solid);
+ --surface:var(--gd-solid);--surface-2:var(--gd-solid);--surface-3:var(--gd-solid);
+ color:var(--text);
 }
 html body #root .gd-root[data-readable-glass=true] .gd-content>header{
  background:var(--glass-fill)!important;border-radius:18px;padding:16px;margin-bottom:16px;
 }
 html body #root .gd-root[data-readable-glass=true] .gd-content :is(input,select,textarea)::placeholder{color:#d8dee9;opacity:1}
+html body #root .gd-root[data-palette-active=true][data-glass-palette=true] .gd-content :is(input,select,textarea)::placeholder{color:var(--text);opacity:.85}
 html body #root .gd-root .gd-content select option{background:var(--gd-field);color:var(--text)}
 html body #root .gd-root[data-readable-glass=true] .gd-content :is(h1,h2,h3,h4,p,label,small,dt,dd){text-shadow:0 1px 2px #0005}
+html body #root .gd-root[data-palette-active=true][data-glass-palette=true] .gd-content :is(h1,h2,h3,h4,p,label,small,dt,dd){text-shadow:none}
 /* Leave palette samples and opaque sales controls with their own validated inks. */
 html body #root .gd-root .gd-content .gd-palette-layers small{color:inherit;text-shadow:none}
 html body #root .gd-root .gd-content .gd-sales :is(h1,h2,h3,h4,p,label,small,dt,dd){text-shadow:none}
@@ -297,7 +302,7 @@ html body #root .gd-root .gd-content .gd-sales :is(h1,h2,h3,h4,p,label,small,dt,
  .gd-root .gd-top-controls{grid-column:2;grid-row:1;justify-self:end;width:auto}
  .gd-root .gd-topnav{grid-column:1/-1;grid-row:2;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));width:100%;gap:6px}
  .gd-root .gd-topnav button{min-width:0;padding:8px;gap:6px}
- .gd-root .gd-topnav button span{min-width:0;overflow-wrap:anywhere}
+ .gd-root .gd-topnav button span{min-width:0;overflow-wrap:normal;word-break:normal}
  .gd-root .gd-topnav svg{flex-shrink:0}
  .gd-root .gd-dock{padding:4px;margin:6px}
  html body #root .gd-root .gd-content{padding:12px 12px 28px!important}
@@ -305,5 +310,5 @@ html body #root .gd-root .gd-content .gd-sales :is(h1,h2,h3,h4,p,label,small,dt,
 @media(max-width:360px){.gd-root .gd-topbar{padding-inline:8px}.gd-root .gd-brand,.gd-root .gd-brand .wf-adaptive-logo-slot{width:80px}}
 @media(prefers-reduced-transparency:reduce){html body #root .gd-root{--glass-fill:var(--gd-solid)!important;--glass-blur:0px!important}}
 @supports not(backdrop-filter:blur(1px)){html body #root .gd-root{--glass-fill:var(--gd-solid)!important}}
-@media(forced-colors:active){html body #root .gd-root[data-readable-glass=true]{--text:CanvasText;--text-2:CanvasText;--text-3:CanvasText;--gd-muted:CanvasText;--gd-solid:Canvas;--gd-field:Canvas;--pg-text:CanvasText;--pg-muted:CanvasText;--pg-accent:Highlight;--pg-line:CanvasText;--glass-fill:Canvas;--surface:Canvas;--surface-2:Canvas;--surface-3:Canvas}.gd-root .gd-content *{text-shadow:none!important}}
+@media(forced-colors:active){html body #root .gd-root[data-readable-glass=true]:is([data-palette-active=true][data-glass-palette=true],[data-readable-glass=true]){--text:CanvasText;--text-2:CanvasText;--text-3:CanvasText;--gd-muted:CanvasText;--gd-solid:Canvas;--gd-field:Canvas;--pg-text:CanvasText;--pg-muted:CanvasText;--pg-accent:Highlight;--pg-line:CanvasText;--glass-fill:Canvas;--surface:Canvas;--surface-2:Canvas;--surface-3:Canvas}.gd-root .gd-content *{text-shadow:none!important}}
 @media print{html body #root .gd-root[data-readable-glass=true]{--text:#000;--gd-muted:#000;--gd-solid:#fff;--gd-field:#fff;--glass-fill:#fff}.gd-root .gd-content *{text-shadow:none!important}}

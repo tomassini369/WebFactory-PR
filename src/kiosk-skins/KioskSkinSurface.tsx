@@ -32,14 +32,15 @@ export function KioskSkinSurface({appearance,primary,secondary,siteId='',preview
    savedColors.current={background:css.backgroundColor||'#0b1529',surface:panel?getComputedStyle(panel).backgroundColor:'#172334',accent:button?getComputedStyle(button).backgroundColor:'#285fa6'}
    return
   }
-  const tokens=kioskPaletteVariables(palette)
+  const tokens=kioskPaletteVariables(palette,config.glassOpacity/100)
   const reduce=window.matchMedia('(prefers-reduced-motion: reduce)').matches||config.motion==='none'
-  if(!readyRef.current||reduce){
+  if(!readyRef.current||reduce||previousPalette.current===palette.id){
    Object.entries(tokens).forEach(([name,value])=>root.style.setProperty(name,value))
   }else{
    // The first selection also animates: seed palette variables with the colors
    // of the existing live kiosk, then interpolate to the selected six swatches.
    if(!previousPalette.current){
+    root.style.setProperty('--wf-palette-glass-fill','rgba(25,28,34,.85)');root.style.setProperty('--wf-palette-glass-color','#191c22');root.style.setProperty('--wf-palette-glass-ink','#FFFFFF')
     const {background,surface,accent}=savedColors.current
     const seed=[background,surface,surface,accent,surface,accent]
     for(let i=1;i<=6;i++)root.style.setProperty(`--wf-palette-${i}`,seed[i-1])
@@ -51,7 +52,7 @@ export function KioskSkinSurface({appearance,primary,secondary,siteId='',preview
   previousPalette.current=palette.id
   readyRef.current=true
   return()=>{animationRef.current?.cancel();animationRef.current=null}
- },[palette?.id,config.motion])
+ },[palette?.id,config.motion,config.glassOpacity])
  const safePrimary=config.primary||(/^#[a-f0-9]{6}$/i.test(primary||'')?primary:'#0b1529')
  const style={'--glass-opacity':`${config.glassOpacity}%`,'--glass-blur':`${config.glassBlur}px`,...(palette?{}:{'--kiosk-primary':safePrimary,'--kiosk-brand':brand.background,'--kiosk-brand-ink':brand.foreground}),'--skin-font':fonts[config.font],...Object.fromEntries((['header','card','cart'] as const).flatMap(zone=>{const color=config[`${zone}Color`];return color?[[`--zone-${zone}`,color],[`--zone-${zone}-ink`,posBrandPair(color).foreground]]:[]}))} as CSSProperties
  let backgroundImage=''
