@@ -17,12 +17,17 @@ try{
   for(const [name,skin] of [['Classic','classic'],['Studio Matte','barber-luxury'],['Bistro Gloss','restaurant-touch'],['Aurora Glass','glass-premium'],['Boutique Copper','retail-minimal'],['Garden Waves','classic']]){
    await page.getByRole('button',{name:`${t('Aplicar diseño','Apply design')} ${name}`,exact:true}).click();assert.equal(await surface.getAttribute('data-skin'),skin);
   }
-  assert.equal(await page.locator('.kiosk-premium-palette-options button').count(),17,'All premium palettes appear without replacing the six originals');
-  await page.getByRole('button',{name:t('Paleta premium Ocean Blue','Premium palette Ocean Blue'),exact:true}).click();
+  const paletteCards=page.locator('.kiosk-palette-options .kiosk-palette-card');
+  assert.equal(await paletteCards.count(),23,'One color-palette catalogue contains all original and added options');
+  assert.equal(await page.locator('.kiosk-premium-palette-options').count(),0,'No separate premium catalogue');
+  assert.equal(await page.getByText(t('17 paletas premium','17 premium palettes'),{exact:true}).count(),0,'No premium classification is shown');
+  assert.equal(await page.locator('.kiosk-palette-options .kiosk-palette-stack i').count(),23*6,'Every palette displays exactly six layered colors');
+  await page.getByRole('button',{name:t('Paleta Ocean Blue','Palette Ocean Blue'),exact:true}).click();
   assert.equal(await page.getByLabel(t('Color principal · fondo','Primary color · background'),{exact:true}).inputValue(),'#021024');
   assert.equal(await page.getByLabel(t('Tipo de fondo','Background type'),{exact:true}).inputValue(),'gradient');
-  assert.equal(await page.getByRole('button',{name:t('Paleta premium Ocean Blue','Premium palette Ocean Blue'),exact:true}).getAttribute('aria-pressed'),'true');
+  assert.equal(await page.getByRole('button',{name:t('Paleta Ocean Blue','Palette Ocean Blue'),exact:true}).getAttribute('aria-pressed'),'true');
   await page.getByRole('button',{name:t('Paleta Forest','Palette Forest'),exact:true}).click();assert.equal(await page.getByLabel(t('Color principal · fondo','Primary color · background'),{exact:true}).inputValue(),'#143d30');
+  assert.equal(await page.getByRole('button',{name:t('Paleta Forest','Palette Forest'),exact:true}).getAttribute('aria-pressed'),'true');
   assert.equal(await page.getByLabel(t('Color principal · fondo · Selector visual','Primary color · background · Visual picker'),{exact:true}).getAttribute('type'),'color');
   await page.getByLabel(t('Color principal · fondo','Primary color · background'),{exact:true}).fill('#123456');await page.getByRole('button',{name:t('Deshacer','Undo'),exact:true}).click();assert.equal(await page.getByLabel(t('Color principal · fondo','Primary color · background'),{exact:true}).inputValue(),'#143d30');await page.getByRole('button',{name:t('Rehacer','Redo'),exact:true}).click();assert.equal(await page.getByLabel(t('Color principal · fondo','Primary color · background'),{exact:true}).inputValue(),'#123456');
   await page.getByLabel(t('Acabado','Finish'),{exact:true}).selectOption('gloss');assert.equal(await surface.getAttribute('data-finish'),'gloss');
