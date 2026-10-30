@@ -63,6 +63,23 @@ try{
    if(path==='/client-admin'){const spacing=await page.locator('.gd-overview').evaluate(el=>({gap:Number.parseFloat(getComputedStyle(el.querySelector('.gd-overview-grid')).rowGap),boundary:el.nextElementSibling.getBoundingClientRect().top-el.getBoundingClientRect().bottom}));assert(Math.abs(spacing.boundary-spacing.gap)<1,'Overview-to-service separation matches the card grid gap')}
    const customize=lang==='es'?'Personalización':'Personalization';await page.locator('.gd-dock').getByRole('button',{name:customize,exact:true}).click();await page.locator('.gd-wallpaper-choice').first().waitFor();await page.locator('.gd-appearance>fieldset').waitFor({state:'visible'});await page.waitForFunction(()=>!document.querySelector('.gd-appearance>fieldset').disabled)
    await noOverflow(page);assert.equal(await page.locator('.gd-wallpaper-choice').count(),3)
+   if(path==='/client-admin'&&width===390&&theme==='dark'&&lang==='es'){
+    assert.equal(await page.locator('.gd-palette-grid .gd-palette-choice').count(),23,'Shared palette catalogue has 23 choices');
+    assert.notEqual(await page.locator('.gd-root').getAttribute('data-palette-active'),'true');
+    await page.getByRole('button',{name:'Paleta Ocean Blue',exact:true}).click();
+    assert.equal(await page.locator('.gd-root').getAttribute('data-palette-active'),'true');
+    const colors=await page.locator('.gd-root').evaluate(el=>Array.from({length:6},(_,i)=>el.style.getPropertyValue(`--wf-theme-${i+1}`).toUpperCase()));
+    assert.deepEqual(colors,['#021024','#052659','#16498A','#5483B3','#7DA0CA','#C1E8FF']);
+    await page.getByRole('button',{name:'Aplicar y guardar',exact:true}).click();
+    await page.getByRole('status').filter({hasText:'Apariencia guardada.'}).waitFor();
+    await page.reload();await page.locator('.gd-content').waitFor();
+    await page.locator('.gd-dock').getByRole('button',{name:'Personalización',exact:true}).click();
+    await page.locator('.gd-palette-grid').waitFor();await page.waitForFunction(()=>!document.querySelector('.gd-appearance>fieldset').disabled);
+    assert.equal(await page.getByRole('button',{name:'Paleta Ocean Blue',exact:true}).getAttribute('aria-pressed'),'true');
+    await page.getByRole('button',{name:'Usar mis colores actuales',exact:true}).click();
+    await page.getByRole('button',{name:'Aplicar y guardar',exact:true}).click();
+    await page.getByRole('status').filter({hasText:'Apariencia guardada.'}).waitFor();
+   }
    if(width===1440&&theme==='dark'){await page.screenshot({path:`${output}/${path.slice(1)}-appearance-${lang}.png`,fullPage:true})}
    await page.locator('.gd-wallpaper-choice').nth(1).click();await page.getByRole('button',{name:lang==='es'?'Aplicar y guardar':'Apply and save',exact:true}).click();await page.getByRole('status').filter({hasText:lang==='es'?'Apariencia guardada.':'Appearance saved.'}).waitFor();await page.reload();await page.locator('.gd-content').waitFor();await page.waitForFunction(()=>getComputedStyle(document.querySelector('.gd-wallpaper')).backgroundImage.includes('portal-violet'))
    await page.locator('.gd-dock').getByRole('button',{name:customize,exact:true}).click();await page.waitForFunction(()=>!document.querySelector('.gd-appearance>fieldset').disabled);await page.getByRole('button',{name:lang==='es'?'Restaurar predeterminado y borrar mi imagen':'Restore default and delete my image',exact:true}).click();await page.getByRole('status').filter({hasText:lang==='es'?'Apariencia guardada.':'Appearance saved.'}).waitFor()
