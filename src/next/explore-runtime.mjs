@@ -1,3 +1,4 @@
+import {consumerOperation} from './consumer-runtime.mjs'
 import {weeklyBookingStart} from './booking-time.mjs'
 import {kioskAppearance} from '../../netlify/lib/kiosk-skins.mjs'
 import {DEFAULT_APPEARANCE,normalizeAppearance} from '../../shared/dashboard-appearance.mjs'
@@ -20,6 +21,7 @@ export function attachExplorer(runtime){
    let body={};if(typeof init.body==='string')body=JSON.parse(init.body)
    if(body.siteId&&body.siteId!==runtime.siteId)return response({ok:false,message:'Unknown experimental business.'},403)
    const state=load()
+   if(['next-consumer-session','marketplace-register','marketplace-profile','marketplace-directory','marketplace-business','marketplace-reviews'].includes(name)){const result=consumerOperation({name,url,body,writing,state,runtime,store});if(result)return response(result)}
    if(name==='client-kiosk'){
     const action=body.action||url.searchParams.get('action')
     if(action==='appearance'){state.kioskAppearance=kioskAppearance(body.appearance,runtime.siteId);store(state);return response({ok:true,appearance:state.kioskAppearance})}
@@ -40,7 +42,7 @@ export function attachExplorer(runtime){
    if(!writing&&name==='content-claims')return response({ok:true,claims:[]})
    if(!writing&&name==='admin-consumer-review')return response({ok:true,requests:[]})
    if(!writing&&name==='admin-security-audit')return response({ok:true,rows:[]})
-   if(!writing&&name==='marketplace-reviews')return response({ok:true,reviews:[],nextOffset:null})
+
    if(name==='portal-session')return response({ok:true,user:runtime.user})
    if(name==='portal-logout'){runtime.emit('exit.requested');return response({ok:true})}
    if(['portal-profile','dashboard-appearance'].includes(name)){
@@ -143,7 +145,7 @@ export function attachExplorer(runtime){
    if(name==='manage-complimentary-access')return response({ok:true,simulated:true})
    if(name==='next-integrations'){if(writing){if(!['Calendar','Gmail','WhatsApp','Stripe'].includes(body.provider))return response({ok:false,message:'Unknown provider'},400);state.integrations[body.provider]=!!body.enabled;store(state)}return response({ok:true,connections:state.integrations,events:state.notices})}
    return await base(input,init)
-  }catch(e){return response({ok:false,message:e.message||'Local operation failed.'},400)}
+  }catch(e){return response({ok:false,message:e.message||'Local operation failed.'},Number.isInteger(e.status)?e.status:400)}
  }
  const dispatch=runtime.fetch
  runtime.fetch=async(input,init={})=>{
