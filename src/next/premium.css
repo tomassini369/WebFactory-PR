@@ -67,3 +67,8 @@ html body #root .nx-app .nx-admin-host .gd-root .gd-topnav{display:flex;flex-wra
 .nx-consumer-host .mk-account-message{overflow-wrap:anywhere}
 @media(max-width:650px){.nx-consumer-host .mk-account-wrap{padding:20px 0}.nx-consumer-host .mk-shell{width:100%}.nx-consumer-host .mk-account-aside{position:static}.nx-consumer-notice{font-size:12px;padding:14px}}
 @media(min-width:901px) and (max-width:1100px){.nx-header-tools .nx-account span{display:none}.nx-header-tools .nx-account{width:44px;padding:10px;justify-content:center}.nx-desktop-nav{gap:16px}}
+.nx-consumer-host .mk-account-wrap>.nx-consumer-notice{width:100%;max-width:980px;margin:0 auto 24px}
+.nx-consumer-host .mk-account-aside>p{font-size:13px;line-height:1.5}
+.nx-consumer-host .mk-account-target{display:flex;flex-wrap:wrap;align-items:center;gap:12px}
+.nx-consumer-host .mk-account-target>:is(article,h3,p){flex-basis:100%;margin:0}
+.nx-consumer-host .mk-account-target>.mk-business-card{width:100%}
