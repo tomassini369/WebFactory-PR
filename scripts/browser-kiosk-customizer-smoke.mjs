@@ -37,6 +37,15 @@ try{
   assert.equal(await page.getByLabel(t('Color principal · fondo · Selector visual','Primary color · background · Visual picker'),{exact:true}).getAttribute('type'),'color');
   await page.getByLabel(t('Color principal · fondo','Primary color · background'),{exact:true}).fill('#123456');await page.getByRole('button',{name:t('Deshacer','Undo'),exact:true}).click();assert.equal(await page.getByLabel(t('Color principal · fondo','Primary color · background'),{exact:true}).inputValue(),'#143d30');await page.getByRole('button',{name:t('Rehacer','Redo'),exact:true}).click();assert.equal(await page.getByLabel(t('Color principal · fondo','Primary color · background'),{exact:true}).inputValue(),'#123456');
   await page.getByLabel(t('Acabado','Finish'),{exact:true}).selectOption('gloss');assert.equal(await surface.getAttribute('data-finish'),'gloss');
+  await page.getByLabel(t('Tipo de fondo','Background type'),{exact:true}).selectOption('solid');
+  await page.getByRole('checkbox',{name:t('Mantener imagen original, sin oscurecimiento','Keep original image, without dimming'),exact:true}).check();
+  assert.equal(await surface.getAttribute('data-background-natural'),'true');
+  assert.equal(await surface.locator('.kiosk-backdrop-shade').count(),0,'Natural wallpaper has no overlay');
+  await page.getByLabel(t('Apariencia del cristal','Glass appearance'),{exact:true}).selectOption('liquid');
+  assert.equal(await surface.getAttribute('data-glass-style'),'liquid');
+  await surface.locator('.wf-licensed-liquid-glass').first().waitFor();
+  await page.getByLabel(t('Apariencia del cristal','Glass appearance'),{exact:true}).selectOption('classic');
+  await page.getByRole('checkbox',{name:t('Mantener imagen original, sin oscurecimiento','Keep original image, without dimming'),exact:true}).uncheck();
   await page.getByLabel(t('Tipo de fondo','Background type'),{exact:true}).selectOption('gradient');await page.getByLabel(t('Ángulo del degradado','Gradient angle'),{exact:true}).press('End');assert.match(await surface.locator('.kiosk-backdrop-art').evaluate(el=>getComputedStyle(el).backgroundImage),/360deg/);
   await page.getByLabel(t('Tipo de fondo','Background type'),{exact:true}).selectOption('pattern');await page.getByLabel(t('Patrón','Pattern'),{exact:true}).selectOption('dots');assert.equal(await surface.locator('.kiosk-backdrop-art').evaluate(el=>getComputedStyle(el).backgroundSize),'24px 24px');
   await page.getByLabel(t('Color de cabecera','Header color'),{exact:true}).fill('#ffffff');await page.getByLabel(t('Color de tarjetas','Card color'),{exact:true}).fill('#000000');await page.getByLabel(t('Color del carrito','Cart color'),{exact:true}).fill('#102038');
