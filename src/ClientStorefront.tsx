@@ -44,11 +44,13 @@ const formatHours=(hours:any,lang:'es'|'en')=>{
   return `${label(first[0])}–${label(last[0])} · ${first[1].open}–${first[1].close}`
 }
 
-export default function ClientStorefront({slug,previewSite,previewLanguage='en'}:{slug:string;previewSite?:StorefrontSite;previewLanguage?:'es'|'en'}){
+export default function ClientStorefront({slug,previewSite,previewLanguage='en',onPreviewLanguageChange}:{slug:string;previewSite?:StorefrontSite;previewLanguage?:'es'|'en';onPreviewLanguageChange?:(language:'es'|'en')=>void}){
   const flyToCart = useFlyToCart()
   const [site,setSite]=useState<StorefrontSite|null>(previewSite||null)
   const [error,setError]=useState('')
-  const [lang,setLang]=useState<'es'|'en'>(previewLanguage)
+  const [lang,setLangState]=useState<'es'|'en'>(previewLanguage)
+  const setLang=(next:'es'|'en')=>{setLangState(next);if(previewSite)onPreviewLanguageChange?.(next)}
+  useEffect(()=>{if(previewSite)setLangState(previewLanguage)},[previewLanguage])
   const [catalog,setCatalog]=useState(false)
   const [selectedItem,setSelectedItem]=useState<Item|null>(null)
   const [cart,setCart]=useState<CartLine[]>([])

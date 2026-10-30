@@ -1032,7 +1032,7 @@ function FinalStep({state,setStep,lang,complimentaryInviteToken,trialInviteToken
   )
 }
 
-export default function WebFactoryBuilder({lang}:{lang:Language}) {
+export default function WebFactoryBuilder({lang,initialTemplate}:{lang:Language;initialTemplate?:string}) {
   const practice=usePractice(),fetch=useWorkspaceFetch()
   const [state,setState] = useState<BuilderState>(() => {
     if(practice){
@@ -1079,6 +1079,14 @@ export default function WebFactoryBuilder({lang}:{lang:Language}) {
   const [complimentaryInviteToken,setComplimentaryInviteToken] = useState('')
   const [complimentaryInviteError,setComplimentaryInviteError] = useState('')
   const [trialInviteToken,setTrialInviteToken] = useState('')
+
+  useEffect(()=>{
+    if(!practice?.explore||!initialTemplate)return
+    const template=templateConfigs.find(entry=>entry.slug===initialTemplate)
+    if(!template)return
+    setState(current=>({...current,...templateDefaults(current,template),design:{...current.design,templateSlug:template.slug,primary:template.dark,secondary:template.accent,style:({modern:'Modern',luxury:'Luxury',minimal:'Minimal',bold:'Bold'} as const)[templateVisualStyle(template.category)]}}))
+    setStep(1)
+  },[initialTemplate])
 
   useEffect(()=>{
     if(practice)return

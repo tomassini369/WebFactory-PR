@@ -29,13 +29,16 @@ function TemplateNotice({ ui, slug }: { ui: TemplateUi; slug: string }) {
 }
 
 
-function TemplateSite({ slug }: { slug: string }) {
+function TemplateSite({ slug,initialLanguage,onLanguageChange }: { slug: string;initialLanguage?:TemplateLanguage;onLanguageChange?:(language:TemplateLanguage)=>void }) {
   const flyToCart = useFlyToCart()
   const baseConfig = templateBySlug(slug)
-  const [language, setLanguage] = useState<TemplateLanguage>(() => {
+  const [language, setLanguageState] = useState<TemplateLanguage>(() => {
+    if(initialLanguage)return initialLanguage
     const saved = window.localStorage.getItem('webfactory-template-language')
     return saved === 'es' ? 'es' : 'en'
   })
+  const setLanguage=(next:TemplateLanguage)=>{setLanguageState(next);onLanguageChange?.(next)}
+  useEffect(()=>{if(initialLanguage)setLanguageState(initialLanguage)},[initialLanguage])
   const config = useMemo(() => baseConfig ? localizeTemplate(baseConfig, language) : undefined, [baseConfig, language])
   const ui = templateUi[language]
   const [selectedItem, setSelectedItem] = useState<TemplateItem | null>(null)
