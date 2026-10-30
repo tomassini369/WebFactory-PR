@@ -10,6 +10,8 @@ const ink=(color:string)=>{
  return L>.179?'#111827':'#FFFFFF'
 }
 
+export {ink as swatchContrastInk}
+
 // Derive accessible light and dark roles from the same six stable palette colors.
 export function dashboardPaletteVariables(palette:ColorPalette,mode:ColorMode):Record<string,string>{
  const swatches=palette.swatches
