@@ -4,13 +4,14 @@
   "version": "3.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --config vite.next.config.ts",
     "build": "node scripts/restore-hero-media.mjs && npm run cache:template-images && npm run generate:pwa-icons && tsc --noEmit -p tsconfig.app.json && vite build && node scripts/build-public-entrypoints.mjs && node scripts/generate-admin-pwa-shells.mjs && node scripts/strip-preview-review.mjs && node scripts/build-design-preview.mjs && node scripts/build-email-preview.mjs && node scripts/build-shadcn-preview.mjs",
     "test": "node --test netlify/**/*.test.mjs",
     "preview": "vite preview",
     "preview:emails": "node scripts/preview-emails.mjs",
     "generate:pwa-icons": "node scripts/generate-pwa-icons.mjs",
-    "cache:template-images": "node scripts/cache-template-images.mjs"
+    "cache:template-images": "node scripts/cache-template-images.mjs",
+    "build:next": "node scripts/build-next.mjs"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.32.0",
@@ -19,6 +20,7 @@
     "@simplewebauthn/browser": "^14.0.0",
     "@simplewebauthn/server": "^14.0.3",
     "@tailwindcss/vite": "4.3.3",
+    "animejs": "4.2.2",
     "class-variance-authority": "0.7.1",
     "clsx": "2.1.1",
     "driver.js": "1.9.0",

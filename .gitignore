@@ -14,3 +14,6 @@ home-preview-dist/
 # Reconstructed byte-identical media; source chunks are tracked.
 assets/media/webfactory-hero-original.mov
 assets/media/webfactory-hero-original.mp4
+
+# Isolated experimental output
+dist-next/

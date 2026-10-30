@@ -1,0 +1,12 @@
+import {useEffect,type RefObject} from 'react'
+import type {NextDesign} from './design'
+// Optional module: any import failure leaves fully visible, usable static UI.
+export function useMotion(root:RefObject<HTMLElement|null>,settings:NextDesign,route:string){
+ useEffect(()=>{const node=root.current;if(!node)return;const query=matchMedia('(prefers-reduced-motion: reduce)');let disposed=false,scope:import('animejs').Scope|undefined
+ const setup=()=>{scope?.revert();scope=undefined;if(query.matches||settings.motion==='No Motion')return
+ void import('animejs').then(({animate,createScope,createSpring,stagger})=>{if(disposed||query.matches||settings.motion==='No Motion')return;const limited=(navigator as Navigator&{connection?:{saveData?:boolean}}).connection?.saveData||navigator.hardwareConcurrency<3;const dynamic=!limited&&['Dynamic','Cinematic','Depth 3D'].includes(settings.motion)
+ scope=createScope({root:node});scope.add('press',(button:HTMLButtonElement)=>{animate(button,{scale:[.985,1],duration:140,ease:'out(3)'})});scope.add(()=>{animate('[data-nx-enter]',{opacity:[.7,1],translateY:[dynamic?settings.intensity:6,0],duration:Math.min(settings.duration,limited?180:1200),delay:stagger(25),ease:settings.motion==='Spring'?createSpring({stiffness:160,damping:24}):settings.easing});const click=(event:Event)=>{const button=(event.target as Element).closest('button');if(!button||button.disabled)return;scope?.methods.press(button)};node.addEventListener('pointerdown',click);return()=>node.removeEventListener('pointerdown',click)})}).catch(()=>undefined)}
+ setup();query.addEventListener('change',setup);return()=>{disposed=true;query.removeEventListener('change',setup);scope?.revert()}
+ },[root,route,settings.motion,settings.duration,settings.intensity,settings.easing])
+}
+export function motionPreview(node:HTMLElement,s:NextDesign){let cancelled=false,scope:import('animejs').Scope|undefined;if(s.motion!=='No Motion'&&!matchMedia('(prefers-reduced-motion: reduce)').matches)void import('animejs').then(({createScope,createTimeline,svg})=>{if(cancelled)return;scope=createScope({root:node}).add(()=>{createTimeline({defaults:{duration:s.duration,ease:s.easing}}).add('[data-motion-sample]',{translateX:[0,s.intensity,0],rotateY:s.motion==='Depth 3D'?[0,8,0]:0,scale:[1,1.025,1]},0).add(svg.createDrawable('[data-motion-path]'),{draw:['0 0','0 1']},0)})}).catch(()=>undefined);return()=>{cancelled=true;scope?.revert()}}

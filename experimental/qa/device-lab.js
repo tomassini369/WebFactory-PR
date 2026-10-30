@@ -1,0 +1,1 @@
+const frame=document.querySelector('iframe'),width=document.getElementById('width'),route=document.getElementById('route');width.addEventListener('change',()=>{frame.width=width.value;document.getElementById('result').textContent=width.value+' px'});document.getElementById('load').addEventListener('click',()=>{frame.src='/#'+route.value})
