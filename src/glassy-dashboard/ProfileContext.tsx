@@ -18,7 +18,7 @@ export function PortalProfileProvider({siteId,userId,name='',children}:{siteId?:
  const accept=(next:RecordData)=>{current.current=next;setData(next)};
  const read=async(response:Response)=>{if(!response.ok)throw Error(String(response.status));const value=await response.json();if(!value.profile||typeof value.version!=='string')throw Error('load');return value as RecordData};
  const reload=async()=>{
-  if(practice){const next={profile:{name,phone:'',language:null,theme:null},hasPhoto:false,revision:0,version:''};accept(next);return}
+  if(practice&&!practice.explore){const next={profile:{name,phone:'',language:null,theme:null},hasPhoto:false,revision:0,version:''};accept(next);return}
   setBusy(true);setError('');const started={...choices.current};
   try{const next=await read(await fetch(endpoint,{credentials:'same-origin',cache:'no-store'}));if(!alive.current)return;accept(next);setDraft({name:next.profile.name||name,phone:next.profile.phone});setEpoch(v=>v+1);
    if(choices.current.lang===started.lang&&next.profile.language)setLang(next.profile.language);
@@ -28,15 +28,15 @@ export function PortalProfileProvider({siteId,userId,name='',children}:{siteId?:
  };
  useEffect(()=>{alive.current=true;void reload();return()=>{alive.current=false}},[endpoint,userId,Boolean(practice)])
  const mutate=(method:string,body?:BodyInit,type='application/json',explicit=true)=>{
-  const run=async()=>{if(!alive.current)return false;if(practice){setNotice('practice');return false}if(!current.current)return false;setBusy(true);setError('');if(explicit)setNotice('');
+  const run=async()=>{if(!alive.current)return false;if(practice&&!practice.explore){setNotice('practice');return false}if(!current.current)return false;setBusy(true);setError('');if(explicit)setNotice('');
    try{const next=await read(await fetch(endpoint,{method,credentials:'same-origin',headers:{'Content-Type':type,'X-Profile-Version':current.current.version},body}));if(!alive.current)return false;accept(next);if(explicit){setNotice('saved');if(method==='PUT'){setDraft({name:next.profile.name,phone:next.profile.phone});setEpoch(v=>v+1)}}return true}
    catch(e){if(alive.current)setError(e instanceof Error&&e.message==='409'?'conflict':'save');return false}
    finally{if(alive.current)setBusy(false)}
   };queue.current=queue.current.then(run,run);return queue.current;
  };
  const action=useRef(mutate);action.current=mutate;
- useEffect(()=>{if(!data||practice||error)return;const next=JSON.stringify({lang,theme});if(next===lastChoices.current)return;const timer=setTimeout(()=>{lastChoices.current=next;void action.current('PUT',JSON.stringify({language:lang,theme}),'application/json',false)},400);return()=>clearTimeout(timer)},[lang,theme,Boolean(data),Boolean(practice),error]);
- return <Context.Provider value={{data,draft,setDraft:v=>{setDraft(v);setNotice('')},busy,error,notice,reload,save:()=>mutate('PUT',JSON.stringify({...draft,language:lang,theme})),upload:async f=>mutate('POST',await f.arrayBuffer(),f.type),remove:()=>mutate('DELETE'),asset:endpoint+(siteId?'&':'?')+'asset=1&v='+(data?.revision||0),fallback:data?.profile.name||name}}>{children}</Context.Provider>
+ useEffect(()=>{if(!data||(practice&&!practice.explore)||error)return;const next=JSON.stringify({lang,theme});if(next===lastChoices.current)return;const timer=setTimeout(()=>{lastChoices.current=next;void action.current('PUT',JSON.stringify({language:lang,theme}),'application/json',false)},400);return()=>clearTimeout(timer)},[lang,theme,Boolean(data),Boolean(practice),error]);
+ return <Context.Provider value={{data,draft,setDraft:v=>{setDraft(v);setNotice('')},busy,error,notice,reload,save:()=>mutate('PUT',JSON.stringify({...draft,language:lang,theme})),upload:async f=>mutate('POST',await f.arrayBuffer(),f.type),remove:()=>mutate('DELETE'),asset:practice?.explore?(practice.ui.explorePhoto||''):endpoint+(siteId?'&':'?')+'asset=1&v='+(data?.revision||0),fallback:data?.profile.name||name}}>{children}</Context.Provider>
 }
 export function ProfileAvatar({fallback='',className='gd-profile-avatar'}:{fallback?:string;className?:string}){
  const profile=usePortalProfile(),[failed,setFailed]=useState('');const source=profile?.data?.hasPhoto?profile.asset:'';

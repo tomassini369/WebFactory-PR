@@ -1,6 +1,7 @@
 export type PracticeEvent = {name: string; detail?: any}
 export type PracticeOptions = {role: string; capabilities: string[]; design?: any; category?: string; operations?: any; snapshot?: any; now?: () => number}
 export type PracticeRuntime = {
+ explore?: boolean;
  siteId: string; user: any; membership: {role: string; capabilities: string[]}; operations: any; site: any;
  fetch: (input: string | URL | Request, init?: RequestInit) => Promise<Response>;
  subscribe: (listener: (event: PracticeEvent) => void) => () => void;

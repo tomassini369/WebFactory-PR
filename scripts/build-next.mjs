@@ -3,6 +3,9 @@ import {writeNextDeployArtifacts} from './next-deploy-artifacts.mjs'
 import {mkdirSync,writeFileSync,cpSync,existsSync} from 'node:fs'
 const id='76c0eacd-27e4-41b9-99ac-5bd5dbe82879'
 if(process.env.NETLIFY&&process.env.SITE_ID!==id)throw Error('Next may only build on its isolated experimental project. Original site build blocked before any action.')
+mkdirSync('assets/next/business',{recursive:true})
+cpSync('preview/fixtures/faro-norte/images','assets/next/business',{recursive:true})
+execFileSync(process.execPath,['scripts/cache-template-images.mjs'],{stdio:'inherit'})
 execFileSync(process.execPath,['node_modules/typescript/bin/tsc','--noEmit','-p','tsconfig.app.json'],{stdio:'inherit'})
 execFileSync(process.execPath,['node_modules/vite/bin/vite.js','build','--config','vite.next.config.ts'],{stdio:'inherit'})
 writeFileSync('dist-next/robots.txt','User-agent: *\nDisallow: /\n')

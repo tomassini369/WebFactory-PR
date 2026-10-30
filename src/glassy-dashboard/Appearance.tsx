@@ -19,15 +19,15 @@ export function DashboardProvider({siteId,userId,children,lang='en',name=''}:{si
  const readResponse=async(response:Response)=>{const data=await response.json();if(!response.ok)throw new Error(String(response.status));return {data,etag:typeof data.version==='string'?data.version:(response.headers.get('etag')||'').replace(/^W\//,'').replace(/^"|"$/g,'')}}
  const accept=(data:any,tag:string)=>{setPrefs(normalizeAppearance(data.prefs));setCustom(Boolean(data.hasCustom));setRevision(data.revision||0);setEtag(tag);setSavedEpoch(value=>value+1)}
  // Use the live same-origin transport only outside isolated training.
- const reload=async()=>{if(practice){setReady(true);return}setBusy(true);setError('');const g=++generation.current;try{const {data,etag:tag}=await readResponse(await fetch(endpoint,{credentials:'same-origin',cache:'no-store'}));if(g===generation.current){accept(data,tag);setReady(true)}}catch{if(g===generation.current)setError('load')}finally{if(g===generation.current)setBusy(false)}}
+ const reload=async()=>{if(practice&&!practice.explore){setReady(true);return}setBusy(true);setError('');const g=++generation.current;try{const {data,etag:tag}=await readResponse(await fetch(endpoint,{credentials:'same-origin',cache:'no-store'}));if(g===generation.current){accept(data,tag);setReady(true)}}catch{if(g===generation.current)setError('load')}finally{if(g===generation.current)setBusy(false)}}
  useEffect(()=>{void reload();return()=>{generation.current++}},[endpoint,userId,Boolean(practice)])
  const mutate=async(method:string,body?:BodyInit,type='application/json')=>{
-  if(practice){setNotice('practice');return}if(!ready||busy)return;setBusy(true);setError('');setNotice('');
+  if(practice&&!practice.explore){setNotice('practice');return}if(!ready||busy)return;setBusy(true);setError('');setNotice('');
   try{const {data,etag:tag}=await readResponse(await fetch(endpoint,{method,credentials:'same-origin',headers:{'Content-Type':type,'X-Appearance-Version':etag},body}));accept(data,tag);setNotice('saved')}
   catch(e){setError(e instanceof Error&&e.message==='409'?'conflict':'save')}
   finally{setBusy(false)}
  }
- const asset=endpoint+(siteId?'&':'?')+'asset=1&v='+revision;
+ const asset=practice?.explore?(practice.ui.exploreWallpaper||''):endpoint+(siteId?'&':'?')+'asset=1&v='+revision;
  const background=prefs.background==='custom'&&hasCustom?asset:(DASHBOARD_WALLPAPERS.find(x=>x.id===prefs.background)||DASHBOARD_WALLPAPERS[0]).src;
  const style={'--glass-blur':prefs.blur+'px','--glass-alpha':prefs.alpha,'--bg-dim':prefs.dim,'--motion':prefs.motion,'--accent':prefs.accent} as CSSProperties;
  return <AppearanceContext.Provider value={{prefs,setPrefs:value=>{setPrefs(value);setNotice('')},hasCustom,busy,ready,error,notice,etag,savedEpoch,save:()=>mutate('PUT',JSON.stringify(prefs)),upload:file=>mutate('POST',file,file.type),reset:()=>mutate('DELETE'),reload,asset}}><PortalProfileProvider key={userId} siteId={siteId} userId={userId} name={name}><div className="gd-root" style={style}><div className="gd-wallpaper" aria-hidden="true" style={{backgroundImage:`url(${JSON.stringify(background)})`}}/><div className="gd-shade" aria-hidden="true"/>{children}</div></PortalProfileProvider></AppearanceContext.Provider>

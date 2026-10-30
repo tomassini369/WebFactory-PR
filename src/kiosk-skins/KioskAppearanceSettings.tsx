@@ -13,7 +13,7 @@ import {kioskPalettes,kioskRecipes} from './kiosk-recipes'
 export type KioskAppearanceSite={siteId:string;business:{name?:string;nameEn?:string;nameEs?:string;logoAssetKey?:string;locations?:Array<{id:string;name:string;active?:boolean}>};design?:{primary:string;secondary:string};catalog?:PosItem[]}
 type Background={key:string;name:string;size:number}
 export default function KioskAppearanceSettings({site,lang}:{site:KioskAppearanceSite;lang:'es'|'en'}){
- const request=useKioskRequest(),api=useWorkspaceApi(),asset=useKioskAsset(),practice=usePractice(),t=(es:string,en:string)=>lang==='es'?es:en
+ const request=useKioskRequest(),api=useWorkspaceApi(),asset=useKioskAsset(),practiceContext=usePractice(),practice=practiceContext&&!practiceContext.explore,t=(es:string,en:string)=>lang==='es'?es:en
  const [draft,setDraft]=useState(kioskAppearance()),[saved,setSaved]=useState(kioskAppearance()),[past,setPast]=useState<KioskAppearance[]>([]),[future,setFuture]=useState<KioskAppearance[]>([]),draftRef=useRef(draft)
  const previewPanel=useRef<HTMLDivElement|null>(null),previewToggle=useRef<HTMLButtonElement|null>(null)
  const [presets,setPresets]=useState<KioskPreset[]>([]),[presetName,setPresetName]=useState(''),[backgrounds,setBackgrounds]=useState<Background[]>([]),[loading,setLoading]=useState(true),[busy,setBusy]=useState(false),[uploading,setUploading]=useState(false),[error,setError]=useState(''),[message,setMessage]=useState(''),[preview,setPreview]=useState(false)
