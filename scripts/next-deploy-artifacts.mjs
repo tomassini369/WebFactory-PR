@@ -1,6 +1,7 @@
 import {readFileSync, writeFileSync, mkdirSync, cpSync} from 'node:fs'
 import {join} from 'node:path'
 
+// Hash navigation needs no SPA fallback; unknown paths return a static 404.
 // Derive manual-upload files from the same policy used by Git-connected builds.
 // Unsupported configuration fails closed instead of silently dropping protection.
 export function writeNextDeployArtifacts(outDir) {
@@ -19,7 +20,7 @@ export function writeNextDeployArtifacts(outDir) {
     if (!from || !to || !status) throw Error('Unsupported Next redirect')
     return `${from} ${to} ${status}${/force = true/.test(block) ? '!' : ''}`
   })
-  if (redirects.length !== 2 || !lines.some(line => line.includes("connect-src 'none'"))) throw Error('Incomplete Next deployment policy')
+  if (redirects.length !== 1 || redirects[0] !== '/* /blocked.json 404' || !lines.some(line => line.includes("connect-src 'none'"))) throw Error('Incomplete Next deployment policy')
   mkdirSync(outDir, {recursive:true})
   writeFileSync(join(outDir, '_headers'), '/*\n' + lines.join('\n') + '\n')
   writeFileSync(join(outDir, '_redirects'), redirects.join('\n') + '\n')

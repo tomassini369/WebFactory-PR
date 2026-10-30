@@ -2,7 +2,7 @@
 
 **IN PROGRESS. This is an isolated first implementation, not the completed master brief.**
 
-Source SHA: 234dd9361f413277b438e754b479e7e5681b036d. Original PR125/main unchanged by this work. Main readback79d82cf286efcac1fa69dbb567054a4215542ffb. New Netlify project76c0eacd-27e4-41b9-99ac-5bd5dbe82879, webfactory-pr-next-experiment. Native tool readback confirms team-login protection for all deploys, Forms not enabled. No deployment created yet.
+Source SHA: 234dd9361f413277b438e754b479e7e5681b036d. Original PR125/main unchanged by this work. Main readback79d82cf286efcac1fa69dbb567054a4215542ffb. New Netlify project76c0eacd-27e4-41b9-99ac-5bd5dbe82879, webfactory-pr-next-experiment. Native tool readback confirms team-login protection for all deploys, Forms not enabled. Initial private deployment created; corrected deployment acceptance recorded below.
 
 ## Implemented
 
@@ -19,7 +19,7 @@ Source SHA: 234dd9361f413277b438e754b479e7e5681b036d. Original PR125/main unchan
 
 - Production netlify/functions and preview-barber seed plugin **excluded** from the experimental deploy. Empty function directory, no provider SDK in a deployed backend, no Netlify Identity session, no copied secrets or data.
 - Build fails before invoking compiler if Netlify SITE_ID differs from the new experimental ID. Branch root configuration is experimental only; no original project settings edited.
-- HTTP backend routes reject403; CSP connect-src none, form-action none, same-origin-only assets/media/fonts. Experiment-only fetch facade has no native fallback and blocks foreign origins and unsupported requests; browser beacon and native submission disabled. Existing finite practice transport rejects foreign business IDs/unknown operations.
+- Unknown HTTP routes return a static404; CSP connect-src none, form-action none, same-origin-only assets/media/fonts. Experiment-only fetch facade has no native fallback and blocks foreign origins and unsupported requests; browser beacon and native submission disabled. Existing finite practice transport rejects foreign business IDs/unknown operations.
 - A browser fixture identity is **not** server authentication. This edition must not be used for real consumers, real roles or actual transactions. Full backend tenant isolation tests remain required before connecting an isolated server.
 - State is scoped to this origin's Next keys. No production cookies, consumer accounts, storage tokens or cloud databases imported.
 - Existing original source remains available for later isolated backend integration. No OAuth changes, real charges, outgoing messages, migrations, new subscriptions or paid visual assets.
@@ -35,7 +35,7 @@ Source SHA: 234dd9361f413277b438e754b479e7e5681b036d. Original PR125/main unchan
 
 ## Outstanding acceptance requirements
 
-1. Draft PR #127 exists. Deploy the exact experimental commit, verify protected URL and repeat HTTP/browser QA on deployed build. The available Netlify connector has no upload/build-trigger operation; CLI is not installed or authenticated in this executor. Browser fallback requires user approval under the browser tool policy.
+1. Draft PR #127 exists. Browser deployment authorized by the owner; protected initial deploy verified. Corrected deployment and browser acceptance recorded below.
 2. Full module-specific redesign (especially original Builder inner preview, POS/kiosk/display, original administrative portal and auth). Existing reused modules are functional only within the finite practice action set; an administrative reference card is explicitly not the original admin implementation.
 3. Isolated server authentication, tenant/role authorization, durable transactions and server concurrency protection for new bookings. No real double-booking guarantee is claimed for local fixtures.
 4. Stripe Test QR/ATH simulator, paired multi-tab display sync/reconnect, reminders and Calendar/Gmail/WhatsApp simulators. No provider connection permitted until isolation is independently verified.
@@ -51,7 +51,13 @@ Close only the experimental Draft PR. Delete only experiment/webfactory-next and
 
 ## Continuation: deployment packaging
 
-- Experimental build now derives `_headers` and `_redirects` from `netlify.toml`, so manual directory/ZIP uploads retain CSP, blocked backend routes, no-index headers and SPA navigation. SSO team protection remains a project setting and must be verified independently; static headers cannot enforce it.
+- Experimental build now derives `_headers` and `_redirects` from `netlify.toml`, so manual directory/ZIP uploads retain CSP, no-index headers and hash navigation. Unknown paths return a static404 instead of rendering the application. SSO team protection remains a project setting and must be verified independently; static headers cannot enforce it.
 - Published output now includes all 15 OFL notices, font provenance/hashes and the Anime.js MIT notice under `/next/licenses/`.
 - Corrected two recorded notice hashes to match the repository's LF-normalized copies. Original provider notice hashes are retained separately as `upstreamLicenseSha256`; license wording is unchanged.
 - New packaging regression passes along with the 9 existing Next checks. TypeScript and experimental build pass. This does not verify the CDN's deployed behavior or complete the master redesign.
+
+## Netlify acceptance correction
+
+The first private manual deploy (`6ae3f3c5aaa0201a1e391a32`) rendered Next after the team-auth gate, but Netlify rejected the reserved `/.netlify/*` source rule. Unknown backend URLs fell through to the SPA document, not the claimed403. Corrected the single catch-all to return `/blocked.json` with404; existing files remain served normally, and all Next module navigation uses hashes. No functions, rewrites to external services or backend providers are deployed. Removing the invalid rule does not grant network access or weaken CSP.
+
+Local packaging regression requires exactly the static404 catch-all. Browser checks on the corrected deployment are required before claiming deployed404 behavior. The earlier initial audit's403 claim is superseded by this observation.

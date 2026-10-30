@@ -16,11 +16,6 @@
     Permissions-Policy = "camera=(), microphone=(), geolocation=(), payment=()"
     Cache-Control = "no-store"
 [[redirects]]
-  from = "/.netlify/*"
-  to = "/blocked.json"
-  status = 403
-  force = true
-[[redirects]]
   from = "/*"
-  to = "/index.html"
-  status = 200
+  to = "/blocked.json"
+  status = 404

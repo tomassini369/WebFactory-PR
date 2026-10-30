@@ -15,8 +15,8 @@ test('deployment cannot include production functions, previews seeding or provid
 test('15 concrete font binaries and preserved OFL notices match recorded hashes',async()=>{const {createHash}=await import('node:crypto');const rows=JSON.parse(readFileSync('docs/next/fonts.json','utf8'));assert.equal(rows.length,15);for(const r of rows){assert.equal(r.license,'OFL-1.1');assert(r.spanishEnglishGlyphsVerified);assert.equal(createHash('sha256').update(readFileSync('assets'+r.file)).digest('hex'),r.woff2Sha256);const notice=readFileSync('docs/next/font-licenses/'+r.slug+'-OFL.txt');assert(notice.includes('SIL OPEN FONT LICENSE Version 1.1'));assert.equal(createHash('sha256').update(notice).digest('hex'),r.licenseSha256)}})
 
 // A manual directory/ZIP deploy does not read netlify.toml. Its output needs
-// the same CDN policy and navigation rules as a Git-connected build.
-test('manual deploy retains security rules, blocked APIs, SPA routing and notices', async()=>{
+// the same CDN policy and hash-navigation contract as a Git-connected build.
+test('manual deploy retains security rules, blocked APIs, unknown-path rejection and notices', async()=>{
  const {mkdtempSync,rmSync}=await import('node:fs')
  const {tmpdir}=await import('node:os')
  const {join}=await import('node:path')
@@ -28,7 +28,7 @@ test('manual deploy retains security rules, blocked APIs, SPA routing and notice
   assert(headers.includes("connect-src 'none'"))
   assert(headers.includes("form-action 'none'"))
   assert(headers.includes('X-Robots-Tag: noindex, nofollow, noarchive'))
-  assert.equal(readFileSync(join(out,'_redirects'),'utf8'),'/.netlify/* /blocked.json 403!\n/* /index.html 200\n')
+  assert.equal(readFileSync(join(out,'_redirects'),'utf8'),'/* /blocked.json 404\n')
   const rows=JSON.parse(readFileSync(join(out,'next/licenses/fonts.json'),'utf8'))
   assert.equal(rows.length,15)
   for(const row of rows)assert.equal(readFileSync(join(out,'next/licenses',row.slug+'-OFL.txt'),'utf8'),readFileSync('docs/next/font-licenses/'+row.slug+'-OFL.txt','utf8'))
