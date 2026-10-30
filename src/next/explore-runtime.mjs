@@ -96,6 +96,14 @@ export function attachExplorer(runtime){
     return response({ok:true,bookings,summary:{total:bookings.length,completed:total('completed'),noShow:total('no_show'),cancelled:total('cancelled'),lateCancellation:0},simulated:true})
    }
    if(name==='client-commerce-admin'){
+    if(writing&&body.action==='preview_confirmation'){
+     const row=[...runtime.snapshot().bookings,...state.bookings].find(b=>b.transactionId===body.transactionId)
+     if(!row)return response({ok:false,message:'Cita no encontrada.'},404)
+     const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))
+     const date=new Date(row.start).toLocaleString('es-PR',{timeZone:runtime.site.settings?.timezone||'America/Puerto_Rico'})
+     const html=`<!doctype html><html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Confirmación de ejemplo</title><body style="margin:0;background:#eef4fb;color:#102237;font:16px/1.6 system-ui,sans-serif"><main style="max-width:560px;margin:32px auto;padding:32px;background:#fff;border-radius:20px"><p style="color:#285fa6">WEBFACTORY PR NEXT · EJEMPLO LOCAL</p><h1>Detalle de tu cita</h1><p>Esta vista no se envía por correo.</p><h2>${esc(row.customer?.name)}</h2><p>${esc(runtime.site.business.nameEs||runtime.site.business.name)}</p><p>${esc(date)}</p><p>${esc(row.items?.map(i=>i.name).join(' · '))}</p><p>Referencia: ${esc(row.bookingCode||row.transactionId)}</p><p>Estado: ${esc(row.status)} · ${esc(row.paymentStatus)}</p><p>Total de ejemplo: $${(Number(row.amountTotal||0)/100).toFixed(2)}</p></main></body></html>`
+     return response({ok:true,html,simulated:true})
+    }
     if(writing){const found=state.bookings.find(b=>b.transactionId===body.transactionId);if(found){
      if(!['cancel','complete','confirm','check_in','no_show','mark_paid','refund','reschedule'].includes(body.action))return response({ok:false,message:'Acción no disponible en este ejemplo.'},400)
      if(body.action==='refund'){
