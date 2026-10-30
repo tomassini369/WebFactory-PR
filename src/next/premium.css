@@ -39,3 +39,12 @@ html body #root .nx-app .nx-admin-host .gd-root .gd-topbar{display:flex!importan
 html body #root .nx-app .nx-admin-host .gd-root .gd-brand{display:none}
 html body #root .nx-app .nx-admin-host .gd-root .gd-top-controls{margin-left:auto}
 html body #root .nx-app .nx-admin-host .gd-root .gd-topnav{display:flex;flex-wrap:wrap}
+
+/* Keep the commercial tour's section navigation without duplicating account controls. */
+.nx-app .wf-premium-home>.wf-h-header{position:relative;inset:auto;z-index:10;background:var(--nx-glass-fill);border-bottom:1px solid var(--nx-hairline)}
+.nx-app .wf-premium-home .wf-h-header-inner{display:flex;justify-content:center;min-height:58px;padding:8px 24px}
+.nx-app .wf-premium-home .wf-h-header :is(.wf-h-logo,.wf-h-actions){display:none}
+.nx-app .wf-premium-home #wf-main-nav{display:flex;position:static;gap:24px;width:auto;padding:0;background:transparent;border:0;overflow-x:auto;max-width:100%;white-space:nowrap}
+.nx-app .wf-premium-home #wf-main-nav a{min-height:44px;display:inline-flex;align-items:center;font-size:13px}
+.nx-app .wf-premium-home #wf-main-nav a:first-child{display:none}
+@media(max-width:650px){.nx-app .wf-premium-home .wf-h-header-inner{justify-content:start;padding-inline:18px}.nx-app .wf-premium-home #wf-main-nav{gap:20px}}
