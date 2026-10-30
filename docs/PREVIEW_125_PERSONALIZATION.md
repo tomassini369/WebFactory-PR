@@ -26,3 +26,16 @@ La vista previa *real en una pestaña nueva, sincronizada y de solo lectura* req
 - Confirmar que el botón de guardado respeta la configuración seleccionada y que salir con un borrador conserva su protección de cambios sin guardar cuando corresponda.
 - Confirmar que no se generan solicitudes de cobro/orden desde vistas previas ni se alteran configuraciones de negocios reales durante QA.
 - Comprobar el preview #125 generado y su commit SHA, y que el deploy productivo continúe en el commit anterior.
+
+## Integración de Anime.js V4 y roles de las seis muestras
+
+- Se añadió `animejs@4.5.0` (MIT) como dependencia fijada en `package.json` y `package-lock.json`. La API empleada es `animate()` de V4; no se introdujeron scripts externos/CDN.
+- Existe **un catálogo canónico** de 23 paletas, en `shared/color-palettes.mjs`, reutilizado en el Dashboard/Pos y el kiosco. No hay división básica/premium.
+- Cada paleta aporta seis tonos: (1) fondo, (2) tarjetas, (3) paneles, (4) acciones, (5) detalles y realces, (6) contornos e iluminación. Los colores de texto se calculan por contraste a partir de los fondos en vez de forzar un tono del catálogo potencialmente ilegible.
+- El Dashboard y el POS comparten una selección personal validada y guardada a través del endpoint de apariencia existente; el kiosco mantiene su esquema de apariencia por negocio y reconoce las paletas por los colores ya persistidos. Las preferencias previas sin paleta siguen utilizando sus estilos originales.
+- La transición de paletas es de 420 ms, usa los tokens CSS de cada superficie y evita que Anime.js y Framer Motion intenten animar el mismo elemento. Al activar movimiento reducido o desactivar animaciones, los valores se aplican directamente.
+- Seleccionar una paleta en el editor **no** ejecuta ninguna escritura de configuración; se requiere la acción explícita de guardar. Las vistas del kiosco existentes permanecen como muestra visual sin funciones de cobro.
+- El selector admite las 23 paletas tanto en Dashboard/Pos como en kiosco. En el Dashboard el modo claro deriva superficies claras de la misma paleta; el modo oscuro mantiene sus tonos de base. No se modificaron los archivos de identidad visual.
+- El website público continúa utilizando el Builder existente y sus estilos guardados: este cambio **no crea una migración del diseño de los sitios públicos existentes**.
+
+Pruebas añadidas: contrato de 23×6 colores, validación de IDs en el backend y aislamiento por usuario, inspección de seis variables CSS en el kiosco, y ciclo de guardar/recargar de un tema del Dashboard. Deben completarse las pruebas CI y QA en navegador antes de declarar que el preview está listo.
