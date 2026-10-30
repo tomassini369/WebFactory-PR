@@ -60,4 +60,15 @@ Close only the experimental Draft PR. Delete only experiment/webfactory-next and
 
 The first private manual deploy (`6ae3f3c5aaa0201a1e391a32`) rendered Next after the team-auth gate, but Netlify rejected the reserved `/.netlify/*` source rule. Unknown backend URLs fell through to the SPA document, not the claimed403. Corrected the single catch-all to return `/blocked.json` with404; existing files remain served normally, and all Next module navigation uses hashes. No functions, rewrites to external services or backend providers are deployed. Removing the invalid rule does not grant network access or weaken CSP.
 
-Local packaging regression requires exactly the static404 catch-all. Browser checks on the corrected deployment are required before claiming deployed404 behavior. The earlier initial audit's403 claim is superseded by this observation.
+Local packaging regression requires exactly the static404 catch-all. Corrected deployment `6ae3f43ab92155a0cb1235db` is ready, with all header and redirect rules processed without errors. Browser navigation to the reserved backend URL renders the static isolation JSON (no app or tenant data); the browser tooling did not expose a separate HTTP status measurement. The earlier initial audit's403 claim is superseded by this observation.
+
+## Protected deployment verified
+
+- URL: https://webfactory-pr-next-experiment.netlify.app/
+- Netlify deploy: `6ae3f43ab92155a0cb1235db` (ready); artifact commit `659dcf8fbb018896c6c159fbcc33b75a2c5726b8` read back from deployed `/experiment.json`. This is a manual deploy on the dedicated experimental project; Netlify labels that project's primary deployment “Production”. It is unrelated to production WebFactory PR.
+- Owner authorized browser fallback; Netlify sign-in completed through secure browser authentication. Team-login protection observed before entry and confirmed through the Netlify connector for all deploys. Project remains private; no protection settings changed.
+- Dashboard deploy details confirm one valid redirect and one header rule, both processed without errors. The first invalid-rule deployment was superseded; no rollback used.
+- Chromium deployed checks: Marketplace loads; municipality Arecibo removes San Juan; Studio Aurora save/readback survives reload; typography preview computes Space Grotesk; Cancel leaves the editor; dashboard practice data renders; Motion Studio exposes controls and its playback button responds; ES/EN and light/dark toggles render both variants. Animation timing/performance and physical mobile behavior are not established by these checks.
+- Original production site still has deploy `6adb4386324a7b400c696775`, ready. No original project deployment, main merge, PR125 modification, OAuth change or real provider operation performed.
+- Known limitation observed: inherited dashboard's `/builder?edit=...` link is not adapted to Next hash navigation; use the experimental Website Builder module navigation. Module-specific integration remains pending, along with the isolated backend and full acceptance matrix above.
+- Local tests after routing correction:10/10 Next regressions, TypeScript and build pass. Inherited817-test suite passed in preceding continuation; it was not rerun for the static routing-only correction.
