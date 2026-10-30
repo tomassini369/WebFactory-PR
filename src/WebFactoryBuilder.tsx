@@ -1037,7 +1037,7 @@ export default function WebFactoryBuilder({lang}:{lang:Language}) {
   const [state,setState] = useState<BuilderState>(() => {
     if(practice){
       const saved=practice.ui.builder
-      return saved ? {...structuredClone(initialState),...saved} : {...structuredClone(initialState),business:{...structuredClone(initialState.business),name:'Practice business',nameEn:'Practice business',nameEs:'Negocio de práctica',slug:'practice-business',contactName:'Practice / Práctica',email:'practice@example.invalid',logo:'',hero:'',gallery:[],logoAssetKey:'',heroAssetKey:'',galleryAssets:[]},design:{...initialState.design,primary:practice.site.design.primary,secondary:practice.site.design.secondary},catalog:practice.site.catalog,team:practice.site.employees}
+      return saved ? {...structuredClone(initialState),...saved} : {...structuredClone(initialState),business:{...structuredClone(initialState.business),...(practice.explore?{category:practice.site.business.category}:{}),name:'Practice business',nameEn:'Practice business',nameEs:'Negocio de práctica',slug:'practice-business',contactName:'Practice / Práctica',email:'practice@example.invalid',logo:'',hero:'',gallery:[],logoAssetKey:'',heroAssetKey:'',galleryAssets:[]},design:{...initialState.design,primary:practice.site.design.primary,secondary:practice.site.design.secondary},catalog:practice.site.catalog,team:practice.site.employees}
     }
     try {
       const saved = localStorage.getItem(STORAGE_KEY)
@@ -1108,7 +1108,7 @@ export default function WebFactoryBuilder({lang}:{lang:Language}) {
   },[])
 
   useEffect(()=>{
-    if(practice){practice.setUi('builder',state);setSaved(true);return}
+    if(practice){practice.setUi('builder',state);if(practice.explore){practice.draft({...practice.site,business:{...practice.site.business,...state.business,name:state.business.nameEn||state.business.name,heroUrl:state.business.hero||practice.site.business.heroUrl},design:{...practice.site.design,...state.design},catalog:state.catalog,employees:state.team,hours:state.hours});practice.emit('saved.builder')}setSaved(true);return}
     try {
       const persistentState = {
         ...state,
