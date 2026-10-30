@@ -19,6 +19,7 @@
     "@simplewebauthn/browser": "^14.0.0",
     "@simplewebauthn/server": "^14.0.3",
     "@tailwindcss/vite": "4.3.3",
+    "animejs": "4.5.0",
     "class-variance-authority": "0.7.1",
     "clsx": "2.1.1",
     "driver.js": "1.9.0",
