@@ -26,6 +26,12 @@ try{
   assert.equal(await page.getByLabel(t('Color principal · fondo','Primary color · background'),{exact:true}).inputValue(),'#021024');
   assert.equal(await page.getByLabel(t('Tipo de fondo','Background type'),{exact:true}).inputValue(),'gradient');
   assert.equal(await page.getByRole('button',{name:t('Paleta Ocean Blue','Palette Ocean Blue'),exact:true}).getAttribute('aria-pressed'),'true');
+  assert.equal(await surface.getAttribute('data-palette-active'),'true');
+  const six=await surface.evaluate(el=>Array.from({length:6},(_,i)=>el.style.getPropertyValue(`--wf-palette-${i+1}`).toUpperCase()));
+  assert.deepEqual(six,['#021024','#052659','#16498A','#5483B3','#7DA0CA','#C1E8FF'],'All six colors are materialized on the actual kiosk surface');
+  const roles=await surface.evaluate(el=>({panel:getComputedStyle(el).getPropertyValue('--sales-base').trim().toUpperCase(),action:getComputedStyle(el).getPropertyValue('--kiosk-brand').trim().toUpperCase()}));
+  assert.equal(roles.panel,'#16498A');assert.equal(roles.action,'#5483B3');
+
   await page.getByRole('button',{name:t('Paleta Forest','Palette Forest'),exact:true}).click();assert.equal(await page.getByLabel(t('Color principal · fondo','Primary color · background'),{exact:true}).inputValue(),'#143d30');
   assert.equal(await page.getByRole('button',{name:t('Paleta Forest','Palette Forest'),exact:true}).getAttribute('aria-pressed'),'true');
   assert.equal(await page.getByLabel(t('Color principal · fondo · Selector visual','Primary color · background · Visual picker'),{exact:true}).getAttribute('type'),'color');
