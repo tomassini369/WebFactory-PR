@@ -225,3 +225,36 @@ html body #root .gd-root .gd-content .gd-palette-choice:focus-visible{outline:3p
  html body #root .gd-root[data-palette-active=true]{--text:#000;--gd-muted:#000;--gd-solid:#fff;--glass-fill:#fff}
  html body #root .gd-root[data-palette-active=true] .gd-shade{display:none}
 }
+
+
+/* Optical glass is rendered by the MIT simple-liquid-glass React component.
+   The CSS here only reserves the surface and removes the old blur layer. */
+html body #root .gd-root[data-background-natural=true] .gd-shade{background:none!important;opacity:0!important}
+.gd-root .gd-glass-options{display:grid;gap:12px;margin:18px 0;padding:16px;border:1px solid var(--stroke-2);border-radius:18px;background:var(--surface)}
+.gd-root .gd-glass-options>label:not(.gd-toggle-row){display:grid;gap:8px}
+.gd-root .gd-glass-options .gd-toggle-row{display:flex;flex-direction:row;align-items:center;gap:12px;min-height:44px}
+.gd-root .gd-glass-options .gd-toggle-row input{width:20px;height:20px;flex:none;accent-color:var(--accent)}
+.gd-root .gd-glass-options p{margin:0;font-size:13px;line-height:1.5}
+html body #root .gd-root[data-glass-style=liquid] .gd-content .wf-portal-panel{isolation:isolate;position:relative}
+html body #root .gd-root[data-glass-style=liquid] .gd-content .wf-portal-panel::before{
+ background:transparent!important;
+ backdrop-filter:none!important;
+ -webkit-backdrop-filter:none!important;
+ box-shadow:none!important;
+ border-color:transparent!important;
+}
+.wf-licensed-liquid-glass{overflow:hidden;pointer-events:none!important}
+.wf-licensed-liquid-glass *{pointer-events:none!important}
+@media(prefers-reduced-transparency:reduce){
+ html body #root .gd-root[data-glass-style=liquid] .gd-content .wf-portal-panel::before{
+  background:var(--gd-solid)!important;
+  border-color:var(--pg-line)!important;
+ }
+}
+@media(forced-colors:active){
+ html body #root .gd-root[data-glass-style=liquid] .gd-content .wf-portal-panel::before{background:Canvas!important;border:1px solid CanvasText!important}
+}
+@media print{
+ .wf-licensed-liquid-glass{display:none!important}
+ html body #root .gd-root[data-glass-style=liquid] .gd-content .wf-portal-panel::before{background:white!important}
+}
