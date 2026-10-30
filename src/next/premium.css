@@ -72,3 +72,5 @@ html body #root .nx-app .nx-admin-host .gd-root .gd-topnav{display:flex;flex-wra
 .nx-consumer-host .mk-account-target{display:flex;flex-wrap:wrap;align-items:center;gap:12px}
 .nx-consumer-host .mk-account-target>:is(article,h3,p){flex-basis:100%;margin:0}
 .nx-consumer-host .mk-account-target>.mk-business-card{width:100%}
+
+@media(max-width:900px){.nx-rail:not(.nx-rail-open){visibility:hidden}.nx-rail.nx-rail-open{visibility:visible}}
