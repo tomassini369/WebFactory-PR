@@ -39,3 +39,13 @@ La vista previa *real en una pestaña nueva, sincronizada y de solo lectura* req
 - El website público continúa utilizando el Builder existente y sus estilos guardados: este cambio **no crea una migración del diseño de los sitios públicos existentes**.
 
 Pruebas añadidas: contrato de 23×6 colores, validación de IDs en el backend y aislamiento por usuario, inspección de seis variables CSS en el kiosco, y ciclo de guardar/recargar de un tema del Dashboard. Deben completarse las pruebas CI y QA en navegador antes de declarar que el preview está listo.
+
+## Fondo original y efecto de refracción de código abierto
+
+- **Mantener imagen de fondo original:** casilla en Dashboard y kiosco que elimina el oscurecimiento de la fotografía, sin sobrescribir su posición, archivo o configuración de paleta. El control se mantiene como borrador hasta Guardar.
+- **Mayor transparencia del cristal:** Dashboard: 20–96%; kiosco: 25–95%. El mínimo anterior y sus valores guardados siguen siendo válidos.
+- **Cristal fluido con código existente:** `simple-liquid-glass@5.4.0`, repositorio https://github.com/lucaperullo/simple-liquid-glass, licencia MIT, compatible con React 19. Se utiliza el componente de refracción del paquete; no se desarrolló un shader propio ni se copió código o componentes de Apple. Conservar los avisos de licencia del paquete.
+- La opción `Cristal fluido` activa la biblioteca en las tarjetas `PortalPanel` del Dashboard y en el encabezado y carrito del kiosco. La fuente óptica es la imagen de fondo dentro del mismo documento, mediante `backdropSelector` y referencia aislada por kiosco. Se mantiene la apariencia clásica como opción.
+- La librería utiliza WebGL cuando el navegador y la fuente del fondo lo permiten, particularmente Safari/iOS. Si el contexto gráfico o la captura no son compatibles, ofrece un fallback definido por la biblioteca; no afirmar equivalencia píxel por píxel con iOS nativo.
+- Con `prefers-reduced-transparency`, impresión o colores forzados, el efecto se desactiva para mantener legibilidad. Comprobar la experiencia en iPhone Safari real, escritorio y Android, y medir memoria, GPU y FPS antes de ampliar el efecto a más superficies o activar por defecto.
+- No se modifican el logo, funciones de negocio, contratos de pagos, credenciales, OAuth, main ni producción.
