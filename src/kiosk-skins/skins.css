@@ -153,3 +153,66 @@ html[data-wf-theme=dark] .wf-kiosk[data-glass=true]{--glass-base:#101b2c;--glass
 .kiosk-appearance-settings :is(.ca-grid,.kiosk-color-field,.kiosk-recipe-options)>*{min-width:0}
 .wf-kiosk[data-cards=square] :is(.kiosk-product,.kiosk-cart,.kiosk-connect,.kiosk-result){border-radius:4px}
 .wf-kiosk[data-cards=soft] :is(.kiosk-product,.kiosk-cart,.kiosk-connect,.kiosk-result){border-radius:24px}
+
+
+/* Unified six-tone theme roles. Existing zone-specific overrides and saved
+   appearances without an exact palette match retain their original styling. */
+.wf-kiosk[data-palette-active=true],
+html[data-wf-theme=dark] .wf-kiosk[data-palette-active=true]{
+ --kiosk-canvas:var(--wf-palette-1);
+ --kiosk-surface:var(--wf-palette-3);
+ --kiosk-ink:var(--wf-palette-panel-ink);
+ --kiosk-muted:var(--wf-palette-panel-ink);
+ --kiosk-line:var(--wf-palette-5);
+ --kiosk-primary:var(--wf-palette-1);
+ --kiosk-brand:var(--wf-palette-4);
+ --kiosk-brand-ink:var(--wf-palette-action-ink);
+ --glass-base:var(--wf-palette-3);
+ --glass-ink:var(--wf-palette-panel-ink);
+ --glass-line:var(--wf-palette-5);
+ background:var(--wf-palette-1);
+ color:var(--wf-palette-panel-ink);
+}
+.wf-kiosk[data-palette-active=true] .kiosk-backdrop-art{
+ box-shadow:inset 0 0 90px color-mix(in srgb,var(--wf-palette-6) 22%,transparent);
+}
+.wf-kiosk[data-palette-active=true]:not([data-header-custom=true]) .kiosk-header{
+ border-color:color-mix(in srgb,var(--wf-palette-5) 68%,var(--wf-palette-3));
+ box-shadow:inset 0 1px 0 color-mix(in srgb,var(--wf-palette-5) 40%,transparent),0 8px 24px color-mix(in srgb,var(--wf-palette-6) 17%,transparent);
+}
+.wf-kiosk[data-palette-active=true]:not([data-card-custom=true]) .kiosk-product{
+ --glass-base:var(--wf-palette-2);
+ --glass-ink:var(--wf-palette-card-ink);
+ --kiosk-surface:var(--wf-palette-2);
+ --kiosk-ink:var(--wf-palette-card-ink);
+ --kiosk-muted:var(--wf-palette-card-ink);
+ --kiosk-line:var(--wf-palette-5);
+ background:var(--wf-palette-2);
+ color:var(--wf-palette-card-ink);
+ border-color:color-mix(in srgb,var(--wf-palette-5) 54%,var(--wf-palette-2));
+}
+.wf-kiosk[data-palette-active=true]:not([data-cart-custom=true]) .kiosk-cart{
+ box-shadow:0 16px 34px color-mix(in srgb,var(--wf-palette-6) 22%,transparent),inset 0 1px 0 color-mix(in srgb,var(--wf-palette-5) 36%,transparent);
+}
+.wf-kiosk[data-palette-active=true] .kiosk-primary,
+.wf-kiosk[data-palette-active=true] .kiosk-add,
+.wf-kiosk[data-palette-active=true] button[aria-pressed=true]{
+ background:var(--wf-palette-4);
+ color:var(--wf-palette-action-ink);
+ border-color:color-mix(in srgb,var(--wf-palette-6) 50%,var(--wf-palette-4));
+}
+.wf-kiosk[data-palette-active=true] :is(button,input,select,a):focus-visible{
+ outline-color:var(--wf-palette-5);
+ outline-offset:3px;
+}
+@media(prefers-reduced-transparency:reduce){
+ .wf-kiosk[data-palette-active=true][data-glass=true] :is(.kiosk-header,.kiosk-catalog,.kiosk-welcome,.kiosk-cart,footer){background:var(--wf-palette-3)}
+}
+@media(forced-colors:active){
+ .wf-kiosk[data-palette-active=true]{background:Canvas;color:CanvasText;--kiosk-ink:CanvasText;--kiosk-muted:CanvasText;--kiosk-line:CanvasText;--glass-ink:CanvasText;--glass-line:CanvasText}
+ .wf-kiosk[data-palette-active=true] :is(.kiosk-header,.kiosk-product,.kiosk-cart,.kiosk-primary,.kiosk-add){background:Canvas;color:CanvasText;border-color:CanvasText;box-shadow:none}
+}
+@media print{
+ .wf-kiosk[data-palette-active=true]{background:#fff!important;color:#000!important;--kiosk-ink:#000;--kiosk-muted:#000;--glass-ink:#000;--kiosk-line:#000}
+ .wf-kiosk[data-palette-active=true] :is(.kiosk-header,.kiosk-product,.kiosk-cart,.kiosk-primary,.kiosk-add){background:#fff!important;color:#000!important;box-shadow:none}
+}
