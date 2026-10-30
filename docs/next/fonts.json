@@ -33,10 +33,11 @@
     "sourceSha256": "acad6de1fc93436f5c0f1f4137751ef04f1aea3063e7036535970ffcfbd79f72",
     "woff2Sha256": "19249f0a13860f8ebc22d421272c280fefbd72752824fbd6dfa547fcb0f85483",
     "licenseSource": "https://raw.githubusercontent.com/google/fonts/main/ofl/spacegrotesk/OFL.txt",
-    "licenseSha256": "564ce565c371c5e5bbf286006565a7c9aa55a9f56e7ca58d56e05d649dd61a72",
+    "licenseSha256": "c6dec685825f73b18c20926fddc65e8315642e12986f15db0699170940a09efc",
     "license": "OFL-1.1",
     "spanishEnglishGlyphsVerified": true,
-    "file": "/next/fonts/spacegrotesk.woff2"
+    "file": "/next/fonts/spacegrotesk.woff2",
+    "upstreamLicenseSha256": "564ce565c371c5e5bbf286006565a7c9aa55a9f56e7ca58d56e05d649dd61a72"
   },
   {
     "family": "Bricolage Grotesque",
@@ -111,10 +112,11 @@
     "sourceSha256": "8cd08d97e89c24d0aa92edd2f0f4c8ee6195eee9b7c9f154865a58b02f0c1c0d",
     "woff2Sha256": "f108bab02ebbe8d74a919341b2cac4ef69c0de271949bd66672493ba52d74f96",
     "licenseSource": "https://raw.githubusercontent.com/google/fonts/main/ofl/dmsans/OFL.txt",
-    "licenseSha256": "9af36190332437f5ecd09974de43c1f7c77a310a996cdd8ceb25628b458840e1",
+    "licenseSha256": "2af94f4fb533be8fa23282eb33e08ca311ddf47c2f32777e2040b282deeec65c",
     "license": "OFL-1.1",
     "spanishEnglishGlyphsVerified": true,
-    "file": "/next/fonts/dmsans.woff2"
+    "file": "/next/fonts/dmsans.woff2",
+    "upstreamLicenseSha256": "9af36190332437f5ecd09974de43c1f7c77a310a996cdd8ceb25628b458840e1"
   },
   {
     "family": "Figtree",

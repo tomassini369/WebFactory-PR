@@ -35,7 +35,7 @@ Source SHA: 234dd9361f413277b438e754b479e7e5681b036d. Original PR125/main unchan
 
 ## Outstanding acceptance requirements
 
-1. Create Draft PR, deploy exact experimental commit, verify protected URL and repeat HTTP/browser QA on deployed build.
+1. Draft PR #127 exists. Deploy the exact experimental commit, verify protected URL and repeat HTTP/browser QA on deployed build. The available Netlify connector has no upload/build-trigger operation; CLI is not installed or authenticated in this executor. Browser fallback requires user approval under the browser tool policy.
 2. Full module-specific redesign (especially original Builder inner preview, POS/kiosk/display, original administrative portal and auth). Existing reused modules are functional only within the finite practice action set; an administrative reference card is explicitly not the original admin implementation.
 3. Isolated server authentication, tenant/role authorization, durable transactions and server concurrency protection for new bookings. No real double-booking guarantee is claimed for local fixtures.
 4. Stripe Test QR/ATH simulator, paired multi-tab display sync/reconnect, reminders and Calendar/Gmail/WhatsApp simulators. No provider connection permitted until isolation is independently verified.
@@ -48,3 +48,10 @@ Source SHA: 234dd9361f413277b438e754b479e7e5681b036d. Original PR125/main unchan
 ## Safe discard (instructions only; nothing deleted)
 
 Close only the experimental Draft PR. Delete only experiment/webfactory-next and Netlify site76c0eacd-27e4-41b9-99ac-5bd5dbe82879. Do not touch PR125, feat/kiosk-skin-engine, main, original site1fa77856-faad-4f0f-8f7c-2671e772513f, domain, OAuth, storage or production integrations. Clear only wf-next:* local keys on the experimental origin if needed. Retain source/QA commits for review until discarded explicitly.
+
+## Continuation: deployment packaging
+
+- Experimental build now derives `_headers` and `_redirects` from `netlify.toml`, so manual directory/ZIP uploads retain CSP, blocked backend routes, no-index headers and SPA navigation. SSO team protection remains a project setting and must be verified independently; static headers cannot enforce it.
+- Published output now includes all 15 OFL notices, font provenance/hashes and the Anime.js MIT notice under `/next/licenses/`.
+- Corrected two recorded notice hashes to match the repository's LF-normalized copies. Original provider notice hashes are retained separately as `upstreamLicenseSha256`; license wording is unchanged.
+- New packaging regression passes along with the 9 existing Next checks. TypeScript and experimental build pass. This does not verify the CDN's deployed behavior or complete the master redesign.
