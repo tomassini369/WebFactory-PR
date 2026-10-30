@@ -9,7 +9,7 @@ export function FluidGlassProvider({enabled,children}:{enabled:boolean;children:
  return <FluidGlassContext.Provider value={enabled}>{children}</FluidGlassContext.Provider>
 }
 export function useFluidGlass(){return useContext(FluidGlassContext)}
-export function FluidGlassSurface({radius=28}:{radius?:number}){
+export function FluidGlassSurface({radius=28,backdropSelector='.gd-wallpaper'}:{radius?:number;backdropSelector?:string}){
  const [reduceTransparency,setReduceTransparency]=useState(false)
  useEffect(()=>{
   const m=window.matchMedia('(prefers-reduced-transparency: reduce)')
@@ -23,7 +23,7 @@ export function FluidGlassSurface({radius=28}:{radius?:number}){
   className="wf-licensed-liquid-glass"
   material="clear"
   renderer="auto"
-  backdropSelector=".gd-wallpaper"
+  backdropSelector={backdropSelector}
   lensProfile="material"
   lensOptions={{strength:0.10}}
   blur={2}
