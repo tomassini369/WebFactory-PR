@@ -216,3 +216,24 @@ html[data-wf-theme=dark] .wf-kiosk[data-palette-active=true]{
  .wf-kiosk[data-palette-active=true]{background:#fff!important;color:#000!important;--kiosk-ink:#000;--kiosk-muted:#000;--glass-ink:#000;--kiosk-line:#000}
  .wf-kiosk[data-palette-active=true] :is(.kiosk-header,.kiosk-product,.kiosk-cart,.kiosk-primary,.kiosk-add){background:#fff!important;color:#000!important;box-shadow:none}
 }
+
+
+/* The actual optical surface comes from simple-liquid-glass (MIT), not CSS.
+   This rule only reserves space for its React-rendered refraction layer. */
+.kiosk-appearance-settings .kiosk-natural-background{display:flex;align-items:center;flex-direction:row;gap:12px;margin:14px 0;padding:12px;border:1px solid var(--skin-settings-line);border-radius:12px;min-height:44px}
+.kiosk-appearance-settings .kiosk-natural-background input{flex:none;width:20px;height:20px;min-height:20px;accent-color:#285fa6}
+.wf-kiosk[data-glass-style=liquid] :is(.kiosk-header,.kiosk-cart){position:relative;isolation:isolate}
+html body #root .wf-kiosk[data-glass-style=liquid] :is(.kiosk-header,.kiosk-cart){background:transparent!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+.wf-kiosk[data-glass-style=liquid] .wf-licensed-liquid-glass{pointer-events:none!important;overflow:hidden}
+@media(prefers-reduced-transparency:reduce){
+ html body #root .wf-kiosk[data-glass-style=liquid] :is(.kiosk-header,.kiosk-cart){background:var(--kiosk-surface)!important}
+ .wf-kiosk[data-glass-style=liquid] .wf-licensed-liquid-glass{display:none!important}
+}
+@media(forced-colors:active){
+ html body #root .wf-kiosk[data-glass-style=liquid] :is(.kiosk-header,.kiosk-cart){background:Canvas!important;border:1px solid CanvasText!important}
+ .wf-kiosk[data-glass-style=liquid] .wf-licensed-liquid-glass{display:none!important}
+}
+@media print{
+ html body #root .wf-kiosk[data-glass-style=liquid] :is(.kiosk-header,.kiosk-cart){background:#fff!important}
+ .wf-kiosk[data-glass-style=liquid] .wf-licensed-liquid-glass{display:none!important}
+}
