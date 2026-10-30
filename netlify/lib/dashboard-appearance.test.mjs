@@ -16,7 +16,7 @@ test('preferences are private, scoped by authenticated user and business',async(
 test('writes require same origin and current ETag; stale device cannot overwrite',async()=>{const f=fixture();assert.equal((await f.handler(f.req('PUT',{},undefined,undefined,'https://attacker.invalid'))).status,403);const r=await f.handler(f.req('PUT',{background:'waves'}));assert.equal(r.status,200);assert.equal((await f.handler(f.req('PUT',{background:'room'}))).status,409);assert.equal(f.writes,1)});
 test('revoked membership denies preferences AND private image',async()=>{const f=fixture();f.deny();for(const query of ['?siteId=site-a','?siteId=site-a&asset=1'])assert.equal((await f.handler(f.req('GET',undefined,undefined,query))).status,403);assert.equal(f.writes,0)});
 test('platform personalization requires existing platform authorization',async()=>{const f=fixture();assert.equal((await f.handler(f.req('GET',undefined,undefined,''))).status,403);f.makeAdmin();assert.equal((await f.handler(f.req('GET',undefined,undefined,''))).status,200)});
-test('remote URLs, unsafe accent and extreme transparency never enter CSS prefs',()=>{assert.deepEqual(normalizeAppearance({background:'https://tracker.invalid/x',alpha:0,dim:-1,blur:900,motion:NaN,accent:'url(secret)'}),{paletteId:'',background:'room',alpha:.66,dim:.25,blur:40,motion:1,accent:'#6aa8ff',cardDepth:'soft',buttonDepth:'soft'})});
+test('remote URLs, unsafe accent and extreme transparency never enter CSS prefs',()=>{assert.deepEqual(normalizeAppearance({background:'https://tracker.invalid/x',alpha:0,dim:-1,blur:900,motion:NaN,accent:'url(secret)'}),{backgroundNatural:false,glassStyle:'classic',paletteId:'',background:'room',alpha:.2,dim:.25,blur:40,motion:1,accent:'#6aa8ff',cardDepth:'soft',buttonDepth:'soft'})});
 test('custom image is reencoded, private, stripped from settings JSON, replaceable and deletable',async()=>{const f=fixture();const bytes=await sharp({create:{width:4,height:4,channels:3,background:'#89abcd'}}).png().toBuffer();let r=await f.handler(f.req('POST',bytes));assert.equal(r.status,200);let data=await r.json();assert.equal(data.prefs.background,'custom');assert.equal(data.hasCustom,true);assert.equal(data.image,undefined);let tag=r.headers.get('etag');r=await f.handler(f.req('GET',undefined,undefined,'?siteId=site-a&asset=1'));assert.equal(r.headers.get('content-type'),'image/webp');assert.equal((await sharp(Buffer.from(await r.arrayBuffer())).metadata()).format,'webp');r=await f.handler(f.req('PUT',{background:'landscape'},tag));assert.equal(r.status,200);tag=r.headers.get('etag');r=await f.handler(f.req('DELETE',undefined,tag));assert.equal((await r.json()).hasCustom,false);assert.equal((await f.handler(f.req('GET',undefined,undefined,'?siteId=site-a&asset=1'))).status,404)});
 test('corrupt raster and active SVG cannot be uploaded',async()=>{const f=fixture();assert.equal((await f.handler(f.req('POST',Buffer.from('<svg onload="alert(1)"/>')))).status,400);assert.equal(f.writes,0)});
 test('upload size and JSON settings are bounded',async()=>{const f=fixture();assert.equal((await f.handler(f.req('POST',Buffer.alloc(4*1024*1024+1)))).status,413);assert.equal((await f.handler(f.req('PUT',{x:'x'.repeat(4000)}))).status,413);assert.equal((await f.handler(f.req('PUT',[]))).status,400);assert.equal((await f.handler(f.req('PUT',{background:'custom'}))).status,400);assert.equal(f.writes,0)});
@@ -48,4 +48,13 @@ test('only the canonical palette catalog can be saved in private dashboard appea
  assert.equal(normalizeAppearance({paletteId:'url(https://bad.invalid/a)'}).paletteId,'');
  assert.equal(normalizeAppearance({paletteId:'not-a-palette'}).paletteId,'');
  f.setId('another-user');r=await f.handler(f.req());assert.equal((await r.json()).prefs.paletteId,'');
+});
+
+test('natural wallpaper and MIT-refraction setting are whitelisted without changing stored background',async()=>{
+ const f=fixture();const r=await f.handler(f.req('PUT',{background:'waves',backgroundNatural:true,glassStyle:'liquid',alpha:.24}));
+ assert.equal(r.status,200);const data=await r.json();
+ assert.equal(data.prefs.background,'waves');assert.equal(data.prefs.backgroundNatural,true);assert.equal(data.prefs.glassStyle,'liquid');assert.equal(data.prefs.alpha,.24);
+ assert.equal(normalizeAppearance({glassStyle:'malicious',backgroundNatural:'true'}).glassStyle,'classic');
+ assert.equal(normalizeAppearance({glassStyle:'malicious',backgroundNatural:'true'}).backgroundNatural,false);
+ assert.equal(normalizeAppearance({alpha:-2}).alpha,.2);
 });
