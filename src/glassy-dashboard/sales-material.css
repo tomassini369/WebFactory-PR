@@ -52,3 +52,60 @@ html body #root :is(.gd-sales,.gd-root .gd-dashboard .gd-content .gd-sales.pos-w
 
 html body #root .gd-root .gd-content .gd-sales.pos-workspace :is(.pos-customer-display,.pos-device-note){background:var(--sales-inner)!important;background-image:none!important;color:var(--sales-ink)!important;border:1px solid var(--sales-line)!important;border-radius:18px;padding:14px;box-shadow:none}
 html body #root .gd-root .gd-content .gd-sales.pos-workspace :is(.pos-customer-display,.pos-device-note) summary{color:var(--sales-ink);min-height:44px;display:flex;align-items:center;cursor:pointer}
+
+
+/* Kiosk's six-color palette contract wins over the shared sales-material defaults,
+   without changing the POS or user-specific dashboard styling. */
+html body #root .gd-sales.wf-kiosk[data-palette-active=true]{
+ --sales-base:var(--wf-palette-3);
+ --sales-field-ink:var(--wf-palette-panel-ink);
+ --sales-ink:var(--wf-palette-panel-ink);
+ --sales-muted:var(--wf-palette-panel-ink);
+ --sales-line:var(--wf-palette-5);
+ --sales-inner:var(--wf-palette-2);
+ --sales-fill:color-mix(in srgb,var(--wf-palette-3) var(--glass-opacity,76%),transparent);
+ --sales-shadow:0 22px 44px -18px color-mix(in srgb,var(--wf-palette-6) 35%,transparent);
+ --kiosk-brand:var(--wf-palette-4);
+ --kiosk-brand-ink:var(--wf-palette-action-ink);
+ --kiosk-ink:var(--wf-palette-panel-ink);
+ --kiosk-muted:var(--wf-palette-panel-ink);
+ --kiosk-line:var(--wf-palette-5);
+ background:var(--wf-palette-1)!important;
+ color:var(--wf-palette-panel-ink)!important;
+}
+html body #root .gd-sales.wf-kiosk[data-palette-active=true] :is(.kiosk-header,.kiosk-catalog,.kiosk-cart,.kiosk-connect,.kiosk-result,.kiosk-welcome,footer){
+ --sales-ink:var(--wf-palette-panel-ink);
+ --sales-muted:var(--wf-palette-panel-ink);
+ --sales-line:var(--wf-palette-5);
+ --sales-inner:var(--wf-palette-3);
+}
+html body #root .gd-sales.wf-kiosk[data-palette-active=true]:not([data-card-custom=true]) .kiosk-product{
+ --sales-inner:var(--wf-palette-2);
+ --sales-ink:var(--wf-palette-card-ink);
+ --kiosk-ink:var(--wf-palette-card-ink);
+ --kiosk-muted:var(--wf-palette-card-ink);
+}
+html body #root .gd-sales.wf-kiosk[data-palette-active=true] .kiosk-product>div:last-child{
+ color:var(--wf-palette-card-ink)!important;
+}
+html body #root .gd-sales.wf-kiosk[data-palette-active=true] :is(.kiosk-primary,.kiosk-add,button[aria-pressed=true]){
+ --sales-ink:var(--wf-palette-action-ink);
+ background:var(--wf-palette-4)!important;
+ color:var(--wf-palette-action-ink)!important;
+ border-color:color-mix(in srgb,var(--wf-palette-6) 56%,var(--wf-palette-4));
+}
+html body #root .gd-sales.wf-kiosk[data-palette-active=true] :is(.kiosk-header,.kiosk-cart){
+ box-shadow:var(--sales-shadow),inset 0 1px 0 color-mix(in srgb,var(--wf-palette-5) 32%,transparent)!important;
+}
+@media(forced-colors:active){
+ html body #root .gd-sales.wf-kiosk[data-palette-active=true],
+ html body #root .gd-sales.wf-kiosk[data-palette-active=true] :is(.kiosk-header,.kiosk-product,.kiosk-cart,.kiosk-primary,.kiosk-add){
+  background:Canvas!important;color:CanvasText!important;border-color:CanvasText!important;box-shadow:none!important;
+ }
+}
+@media print{
+ html body #root .gd-sales.wf-kiosk[data-palette-active=true],
+ html body #root .gd-sales.wf-kiosk[data-palette-active=true] :is(.kiosk-header,.kiosk-product,.kiosk-cart,.kiosk-primary,.kiosk-add){
+  background:#fff!important;color:#000!important;box-shadow:none!important;
+ }
+}
