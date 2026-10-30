@@ -109,3 +109,48 @@ html body #root .gd-sales.wf-kiosk[data-palette-active=true] :is(.kiosk-header,.
   background:#fff!important;color:#000!important;box-shadow:none!important;
  }
 }
+
+
+/* Dashboard-owned palette also flows into the existing cashier POS without
+   touching the tenant payment methods, business branding data or transactions. */
+html body #root .gd-root[data-palette-active=true] .gd-content .gd-sales.pos-workspace{
+ --sales-base:var(--wf-theme-3);
+ --sales-field-ink:var(--wf-theme-ink);
+ --sales-ink:var(--wf-theme-ink);
+ --sales-muted:var(--wf-theme-ink);
+ --sales-line:var(--wf-theme-5);
+ --sales-inner:var(--wf-theme-2);
+ --sales-fill:color-mix(in srgb,var(--wf-theme-3) 90%,transparent);
+ --sales-shadow:0 20px 46px -20px color-mix(in srgb,var(--wf-theme-6) 35%,transparent);
+ --pos-ink:var(--wf-theme-ink);
+ --pos-muted:var(--wf-theme-ink);
+ --pos-line:var(--wf-theme-5);
+ color:var(--wf-theme-ink)!important;
+}
+html body #root .gd-root[data-palette-active=true] .gd-content .gd-sales.pos-workspace .pos-product{
+ --sales-ink:var(--wf-theme-card-ink);
+ color:var(--wf-theme-card-ink)!important;
+}
+html body #root .gd-root[data-palette-active=true] .gd-content .gd-sales.pos-workspace .pos-product-info{
+ color:var(--wf-theme-card-ink)!important;
+}
+html body #root .gd-root[data-palette-active=true] .gd-content .gd-sales.pos-workspace .pos-primary{
+ background:var(--wf-theme-4)!important;
+ color:var(--wf-theme-action-ink)!important;
+ border-color:var(--wf-theme-6)!important;
+}
+@supports(color:rgb(from red r g b / .6)){
+ html body #root .gd-root[data-palette-active=true] .gd-content .gd-sales.pos-workspace{
+  --sales-fill:rgb(from var(--wf-theme-3) r g b / var(--glass-alpha));
+ }
+}
+@media(forced-colors:active){
+ html body #root .gd-root[data-palette-active=true] .gd-content .gd-sales.pos-workspace{
+  --sales-fill:Canvas;--sales-ink:CanvasText;--sales-muted:CanvasText;--sales-line:CanvasText;
+ }
+}
+@media print{
+ html body #root .gd-root[data-palette-active=true] .gd-content .gd-sales.pos-workspace{
+  --sales-fill:#fff;--sales-ink:#000;--sales-muted:#000;--sales-line:#000;
+ }
+}
