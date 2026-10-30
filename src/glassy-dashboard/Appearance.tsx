@@ -4,6 +4,7 @@ import {colorPalettes,findColorPalette} from '../../shared/color-palettes.mjs'
 import {dashboardPaletteVariables,dashboardPaletteKeys,swatchContrastInk} from '../color-theme-motion'
 import {useWebFactoryTheme} from '../theme'
 import {animate} from 'animejs'
+import {FluidGlassProvider} from './FluidGlassSurface'
 import {useUnsavedChanges} from '../interaction-state'
 import {usePractice} from '../training/practice-context'
 import {PortalProfileProvider} from './ProfileContext'
@@ -63,7 +64,7 @@ export function DashboardProvider({siteId,userId,children,lang='en',name=''}:{si
  const asset=endpoint+(siteId?'&':'?')+'asset=1&v='+revision;
  const background=prefs.background==='custom'&&hasCustom?asset:(DASHBOARD_WALLPAPERS.find(x=>x.id===prefs.background)||DASHBOARD_WALLPAPERS[0]).src;
  const style={'--glass-blur':prefs.blur+'px','--glass-alpha':prefs.alpha,'--bg-dim':prefs.backgroundNatural?0:prefs.dim,'--motion':prefs.motion,...(palette?{}:{'--accent':prefs.accent})} as CSSProperties;
- return <AppearanceContext.Provider value={{prefs,setPrefs:value=>{setPrefs(value);setNotice('')},hasCustom,busy,ready,error,notice,etag,savedEpoch,save:()=>mutate('PUT',JSON.stringify(prefs)),upload:file=>mutate('POST',file,file.type),reset:()=>mutate('DELETE'),reload,asset}}><PortalProfileProvider key={userId} siteId={siteId} userId={userId} name={name}><div className="gd-root" ref={rootRef} data-palette-active={Boolean(palette)} data-background-natural={prefs.backgroundNatural} data-glass-style={prefs.glassStyle} style={style}><div className="gd-wallpaper" aria-hidden="true" style={{backgroundImage:`url(${JSON.stringify(background)})`}}/><div className="gd-shade" aria-hidden="true"/>{children}</div></PortalProfileProvider></AppearanceContext.Provider>
+ return <AppearanceContext.Provider value={{prefs,setPrefs:value=>{setPrefs(value);setNotice('')},hasCustom,busy,ready,error,notice,etag,savedEpoch,save:()=>mutate('PUT',JSON.stringify(prefs)),upload:file=>mutate('POST',file,file.type),reset:()=>mutate('DELETE'),reload,asset}}><FluidGlassProvider enabled={prefs.glassStyle==='liquid'}><PortalProfileProvider key={userId} siteId={siteId} userId={userId} name={name}><div className="gd-root" ref={rootRef} data-palette-active={Boolean(palette)} data-background-natural={prefs.backgroundNatural} data-glass-style={prefs.glassStyle} style={style}><div className="gd-wallpaper" aria-hidden="true" style={{backgroundImage:`url(${JSON.stringify(background)})`}}/><div className="gd-shade" aria-hidden="true"/>{children}</div></PortalProfileProvider></FluidGlassProvider></AppearanceContext.Provider>
 }
 export function SalesAppearanceControls({lang,showSave=true}:{lang:'es'|'en';showSave?:boolean}){
  const a=useOptionalDashboardAppearance(),es=lang==='es';if(!a)return null;
