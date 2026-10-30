@@ -16,7 +16,7 @@ Updated October 30, 2026. Isolated experimental edition; **the full production r
 - 849 tests pass: 817 inherited tests and 32 Next tests. TypeScript and Next compilation pass.
 - Impeccable 4.1.0: 25 advisory findings. Next findings remain five font-face recommendations for the owner's requested font choices. Existing unrelated findings are not silently auto-fixed.
 - Logo SHA-256: light `1e92a89ec7e3771875bd1e30326478e6f4fdcd9aee2400bb0305d56ae7dd6f8a`; dark `2ae86e259775cb27f71757479a8e0fa620901aa6bc3cf837d785bbdec8ac270b` (unchanged).
-- Earlier deployed Chromium checks cover Marketplace, studios, dashboard, admin, profile reload, Builder/storefront/template selection, cash sample checkout, appointment persistence and four-appointment series. The current revision must also be reviewed after deployment; source tests alone do not establish browser acceptance.
+- Earlier deployed Chromium checks cover Marketplace, studios, dashboard, admin, profile reload, Builder/storefront/template selection, cash sample checkout, appointment persistence and four-appointment series. Deployed Chromium additionally verifies sample payment, rescheduling from 10:00 to 12:00 business time, check-in, completion, a partial $5 sample refund, waitlist join/cancel, attendance lookup and the sandboxed confirmation preview. Source tests alone do not establish device/browser acceptance.
 
 ## Requirements that remain open
 
