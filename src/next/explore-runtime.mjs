@@ -87,5 +87,14 @@ export function attachExplorer(runtime){
    return await base(input,init)
   }catch(e){return response({ok:false,message:e.message||'Local operation failed.'},400)}
  }
+ const dispatch=runtime.fetch
+ runtime.fetch=async(input,init={})=>{
+  const result=await dispatch(input,init)
+  if(result.ok&&String(init.method||'GET').toUpperCase()!=='GET'){
+   try{const serialized=JSON.stringify(runtime.snapshot());localStorage.setItem('wf-next:fixture:v1',serialized);if(localStorage.getItem('wf-next:fixture:v1')!==serialized)throw Error('Readback failed')}
+   catch{return response({ok:false,message:'No se pudo guardar en este navegador. Conserva la página abierta y vuelve a intentar.'},400)}
+  }
+  return result
+ }
  return runtime
 }

@@ -1108,7 +1108,7 @@ export default function WebFactoryBuilder({lang}:{lang:Language}) {
   },[])
 
   useEffect(()=>{
-    if(practice){practice.setUi('builder',state);if(practice.explore){practice.draft({...practice.site,business:{...practice.site.business,...state.business,name:state.business.nameEn||state.business.name,heroUrl:state.business.hero||practice.site.business.heroUrl},design:{...practice.site.design,...state.design},catalog:state.catalog,employees:state.team,hours:state.hours});practice.emit('saved.builder')}setSaved(true);return}
+    if(practice){try{practice.setUi('builder',state);if(practice.explore){practice.draft({...practice.site,business:{...practice.site.business,...state.business,name:state.business.nameEn||state.business.name,heroUrl:state.business.hero||practice.site.business.heroUrl},design:{...practice.site.design,...state.design},catalog:state.catalog,employees:state.team,hours:state.hours});practice.emit('saved.builder')}setSaved(true);setDraftError(false)}catch{setSaved(false);setDraftError(true)}return}
     try {
       const persistentState = {
         ...state,
