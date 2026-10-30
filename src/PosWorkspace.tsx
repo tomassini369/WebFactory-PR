@@ -8,7 +8,7 @@ import { PortalPanel } from './PortalPanel'
 import CopyButton from './CopyButton'
 import KioskCheckoutQR from './KioskCheckoutQR'
 import { estimatePosTotals, posBrandPair, posItemName, posQuantityLimit, type PosItem, type PosLine } from './pos-domain'
-import {SalesAppearanceControls,useOptionalDashboardAppearance} from './glassy-dashboard/Appearance'
+import {useOptionalDashboardAppearance} from './glassy-dashboard/Appearance'
 import './pos-workspace.css'
 import './glassy-dashboard/sales-material.css'
 import './customer-display.css'
@@ -17,7 +17,7 @@ import {posCapabilities,posOperations,type PosOperations} from '../netlify/lib/p
 import {posProfileCopy} from './pos-profile'
 
 type Language='es'|'en'
-type Destination='orders'|'payments'|'catalog'|'bookings'|'kitchen'|'team'|'settings'
+type Destination='orders'|'payments'|'catalog'|'bookings'|'kitchen'|'team'|'settings'|'appearance'
 type Attempt={id:string;kind:'direct'|'card';transactionId?:string}
 type Remote={transactionId:string;checkoutUrl:string}
 type Status={paymentStatus:string;status:string;receiptId:string;amountTotal:number}
@@ -130,7 +130,7 @@ export default function PosWorkspace({site,lang,operator,operations=posOperation
   <header className="pos-heading"><div className="pos-identity">{site.business?.logoAssetKey&&<img src={asset(site.business.logoAssetKey)} alt=""/>}<div><small>WEBFACTORY POS 2.0 · {profileCopy.name}</small><h2>{businessName||site.slug}</h2><p>{profileCopy.hint}</p></div></div><div className="pos-operator"><ShieldCheck aria-hidden="true"/><div><small>{t('Sesión activa','Active session')}</small><strong>{operator.name||operator.email}</strong><span>{practice?t('Identidad de práctica · sin sesión de empleado real','Practice identity · no real employee session'):t('Identidad del portal verificada en servidor','Portal identity verified on server')}</span></div></div></header>
   {!operations.cashierEnabled&&<div className="pos-pending" role="status"><strong>{t('POS del cajero deshabilitado','Cashier POS disabled')}</strong><p>{t('El historial y la verificación de pagos pendientes siguen disponibles. Un administrador puede habilitar nuevas ventas desde Ajustes del negocio.','History and pending-payment verification remain available. The Owner can enable new sales in Business settings.')}</p>{canNavigate?.('settings')&&onNavigate&&<button onClick={()=>onNavigate('settings')}>{t('Abrir ajustes del POS','Open POS settings')}</button>}</div>}
   {(capabilities.kitchen||capabilities.professionals)&&<nav className="pos-context-actions" aria-label={t('Operación del negocio','Business operations')}>{capabilities.kitchen&&canNavigate?.('kitchen')&&onNavigate&&<button onClick={()=>onNavigate('kitchen')}><Receipt aria-hidden="true"/>{t('Preparar órdenes en Cocina','Prepare orders in Kitchen')}</button>}{capabilities.professionals&&canNavigate?.('team')&&onNavigate&&<button onClick={()=>onNavigate('team')}><Scissors aria-hidden="true"/>{t('Ver profesionales','View professionals')}</button>}</nav>}
-  {appearance&&<details className="pos-appearance-options"><summary>{t('Editar diseño del POS','Edit POS design')}</summary><SalesAppearanceControls lang={lang}/></details>}
+  {appearance&&onNavigate&&canNavigate?.('appearance')&&<div className="pos-appearance-options"><button type="button" onClick={()=>onNavigate('appearance')}>{t('Personalizar apariencia del POS','Customize POS appearance')} <ArrowRight aria-hidden="true"/></button></div>}
   <details className="pos-workspace-options"><summary>{t("Historial y herramientas","History and tools")}</summary><nav className="pos-shortcuts" aria-label={t('Operaciones del POS','POS operations')}>{(['orders','payments','catalog','bookings'] as Array<'orders'|'payments'|'catalog'|'bookings'>).filter(id=>onNavigate&&canNavigate?.(id)).map(id=><button key={id} onClick={()=>onNavigate?.(id)}><Receipt aria-hidden="true"/>{({orders:t('Historial','History'),payments:t('Recibos y pagos','Receipts and payments'),catalog:t('Editar catálogo','Edit catalog'),bookings:t('Reservaciones','Bookings')})[id]}<ArrowRight aria-hidden="true"/></button>)}</nav></details>
   {error&&<div className="ca-error" role="alert">{error}</div>}
   {receiptId&&<div className="ca-success" role="status">{practice?t('Práctica completada. Recibo de ejemplo: ','Practice completed. Sample receipt: '):t('Venta confirmada por el servidor. Recibo: ','Sale confirmed by the server. Receipt: ')}{receiptId}</div>}
