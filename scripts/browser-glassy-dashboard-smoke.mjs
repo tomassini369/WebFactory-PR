@@ -77,8 +77,19 @@ try{
     await page.locator('.gd-palette-grid').waitFor();await page.waitForFunction(()=>!document.querySelector('.gd-appearance>fieldset').disabled);
     assert.equal(await page.getByRole('button',{name:'Paleta Ocean Blue',exact:true}).getAttribute('aria-pressed'),'true');
     await page.getByRole('button',{name:'Usar mis colores actuales',exact:true}).click();
+    await page.getByRole('checkbox',{name:'Mantener imagen de fondo original (sin oscurecer)',exact:true}).check();
+    await page.getByLabel('Apariencia del cristal',{exact:true}).selectOption('liquid');
+    assert.equal(await page.locator('.gd-root').getAttribute('data-background-natural'),'true');
+    assert.equal(await page.locator('.gd-root').getAttribute('data-glass-style'),'liquid');
+    assert((await page.locator('.wf-licensed-liquid-glass').count())>0,'Real Liquid Glass package is rendered on dashboard panels');
+    assert.equal(await page.locator('.gd-shade').evaluate(el=>getComputedStyle(el).opacity),'0');
     await page.getByRole('button',{name:'Aplicar y guardar',exact:true}).click();
     await page.getByRole('status').filter({hasText:'Apariencia guardada.'}).waitFor();
+    await page.reload();await page.locator('.gd-content').waitFor();
+    assert.equal(await page.locator('.gd-root').getAttribute('data-background-natural'),'true');
+    assert.equal(await page.locator('.gd-root').getAttribute('data-glass-style'),'liquid');
+    await page.locator('.gd-dock').getByRole('button',{name:'Personalización',exact:true}).click();
+    await page.waitForFunction(()=>!document.querySelector('.gd-appearance>fieldset').disabled);
    }
    if(width===1440&&theme==='dark'){await page.screenshot({path:`${output}/${path.slice(1)}-appearance-${lang}.png`,fullPage:true})}
    await page.locator('.gd-wallpaper-choice').nth(1).click();await page.getByRole('button',{name:lang==='es'?'Aplicar y guardar':'Apply and save',exact:true}).click();await page.getByRole('status').filter({hasText:lang==='es'?'Apariencia guardada.':'Appearance saved.'}).waitFor();await page.reload();await page.locator('.gd-content').waitFor();await page.waitForFunction(()=>getComputedStyle(document.querySelector('.gd-wallpaper')).backgroundImage.includes('portal-violet'))
