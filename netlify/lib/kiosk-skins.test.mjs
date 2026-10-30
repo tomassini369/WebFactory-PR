@@ -57,3 +57,14 @@ test('Glassy depth and bundled wallpaper persist through the existing paired kio
  const view=await(await f.handler(f.request(null,p.cookie))).json();assert.equal(view.presentation.appearance.cardDepth,'raised');assert.equal(view.presentation.appearance.buttonDepth,'flat');assert.equal(view.presentation.appearance.wallpaper,'landscape');
  for(const patch of [{cardDepth:'url(x)'},{buttonDepth:'loop'},{wallpaper:'https://invalid/x'}])assert.throws(()=>validateKioskAppearance({...kioskAppearance(),...patch}));
 });
+
+test('kiosk clear glass settings preserve existing appearance and reject unsafe values',()=>{
+ const legacy=kioskAppearance({glassOpacity:70,overlayOpacity:55});
+ assert.equal(legacy.glassStyle,'classic');assert.equal(legacy.backgroundNatural,false);
+ const clear=validateKioskAppearance({...legacy,glassStyle:'liquid',backgroundNatural:true,glassOpacity:25,glassBlur:24,overlayOpacity:0});
+ assert.equal(clear.glassStyle,'liquid');assert.equal(clear.backgroundNatural,true);
+ assert.equal(clear.glassOpacity,25);assert.equal(clear.overlayOpacity,0);
+ for(const patch of [{glassStyle:'script'},{backgroundNatural:'true'},{glassOpacity:24},{glassBlur:25}]){
+  assert.throws(()=>validateKioskAppearance({...legacy,...patch}));
+ }
+});
