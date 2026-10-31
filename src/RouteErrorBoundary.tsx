@@ -51,7 +51,7 @@ export default class RouteErrorBoundary extends Component<Props, {failed: boolea
     return <main className="public-route-loading" role="alert">
       <div>
         <h1>{es ? 'No se pudo abrir esta pantalla.' : 'This page could not be opened.'}</h1>
-        <button type="button" className="btn primary" autoFocus disabled={this.state.retrying} aria-busy={this.state.retrying} onClick={this.retry}>
+        <button type="button" className="btn secondary" autoFocus disabled={this.state.retrying} aria-busy={this.state.retrying} onClick={this.retry}>
           {this.state.retrying ? (es ? 'Cargando…' : 'Loading…') : (es ? 'Reintentar cargar' : 'Retry loading')}
         </button>
       </div>

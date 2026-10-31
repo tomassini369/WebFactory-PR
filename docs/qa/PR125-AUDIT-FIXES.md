@@ -134,3 +134,14 @@ TypeScript pass; the backend suite remains 827/827. The Impeccable scan remains
 
 The original 46 template/language cases were also rerun after the photo guard:
 all passed, and no empty-src warning appeared in the output.
+
+### Recovery accessibility follow-up
+
+The new error action initially inherited the global primary gradient. Its text
+contrast was insufficient. Only this new control now uses the existing secondary
+button class; no global palette, CSS rules or existing buttons are changed.
+The recovery regression now checks both Light/Dark plus ES/EN and measures
+composited text contrast >=4.5:1 and a >=44px target. **72/72 local cases pass**.
+The preceding 36-case published recovery matrix on `6cdc457` also passed.
+The formerly failing deployed login/MFA contrast suite was repeated with isolated
+sessions on both engines and is tracked in the PR verification results.
