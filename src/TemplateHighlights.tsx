@@ -56,7 +56,7 @@ export default function TemplateHighlights({items,language}:{items:TemplateItem[
       {expanded&&<motion.div className="glass-modal-window" initial={reduced?false:{opacity:0,scale:.88,y:30}} animate={{opacity:1,scale:1,y:0}} transition={reduced?{duration:0}:{type:'spring',damping:25,stiffness:280}}>
         <div className="glass-reflection-rim"/>
         <button className="modal-close-btn" type="button" autoFocus aria-label={es?'Cerrar detalles':'Close details'} onClick={()=>dialog.current?.close()}>×</button>
-        <div className="modal-content-grid"><div className="modal-poster-col"><div className="modal-poster-frame"><img className="modal-poster-img" src={expanded.image} alt={expanded.title}/></div></div>
+        <div className="modal-content-grid"><div className="modal-poster-col"><div className="modal-poster-frame">{expanded.image&&<img className="modal-poster-img" src={expanded.image} alt={expanded.title}/>}</div></div>
           <div className="modal-info-col"><h2 className="modal-title">{expanded.title}</h2><p className="modal-description">{expanded.description}</p><strong>{expanded.location}</strong>{expanded.coordinates&&<p>{expanded.coordinates}</p>}
             <div className="modal-actions-row"><button type="button" className="modal-action-primary" aria-pressed={favorites.includes(expanded.id)} onClick={()=>toggleFavorite(expanded.id)}>{favorites.includes(expanded.id)?(es?'Guardado':'Saved'):(es?'Guardar favorito':'Bookmark')}</button></div>
           </div>

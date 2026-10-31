@@ -52,7 +52,7 @@ export function BottomControlDock({
           aria-label={currentMovie.es?'Ampliar detalles':'Expand details'}
         >
           <div className="dock-avatar-frame">
-            <motion.img
+            {currentMovie.image && <motion.img
               key={currentMovie.id}
               src={currentMovie.image}
               alt={currentMovie.title}
@@ -60,7 +60,7 @@ export function BottomControlDock({
               initial={reduced?false:{scale: 0.7, opacity: 0}}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ duration: reduced?0:0.3 }}
-            />
+            />}
           </div>
 
           <div className="dock-meta-text">

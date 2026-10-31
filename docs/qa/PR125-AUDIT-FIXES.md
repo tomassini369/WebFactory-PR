@@ -13,6 +13,7 @@ Base: `a530a9eca9b8e82f97c37bee22d4979df79add43` on
 | Blocked browser storage | ThemeProvider read failed before rendering; login forms also read storage directly, and optional preference writes could prevent login | Theme fallback and email preference memory fallback. Browser tests deny getItem/setItem/removeItem, render both portals, change theme/language, attempt fully mocked authentication and reload. No changes to identity, MFA, permissions or OAuth. |
 | Panel keyboard CI | Overlapping fixture buttons intercepted clicks; old test expected a removed Hide menu | Give isolated fixture panels normal content spacing; test the existing direct expand/close control, focus trap, Enter, Escape and focus restoration. Recovery safety/retry assertions remain. Both Chromium and WebKit run in CI. |
 | Login visibility test | Nearest-edge scroll left 1.0625px of the button beyond the viewport although its center was clickable | Center the control in the fixture before asserting full visibility. No production layout or scrolling changes. |
+| Carousel without a photo | React emitted two empty-src errors on a preserved Builder draft, and the details dialog had the same unsafe image contract | Render the card image, dock thumbnail and dialog image only when a photo exists. Source styles, frame dimensions, metadata and controls remain intact. New regression covers a photo-less card and dialog in every carousel test combination. |
 | Kiosk chunk fetch failure in earlier CI | Dynamic import failed for an asset subsequently returning HTTP 200 | Capture actual failed asset paths, HTTP status and Netlify request ID in test diagnostics. No speculative retry/catch or application change; published recheck required. |
 
 The precise storage reproduction found an earlier root cause than the initial audit's
@@ -54,9 +55,32 @@ stay within parent ranges. No forced dependency overrides.
 - A first commercial browser attempt overlapped a local rebuild and lost a CSS
   chunk. The stable-build rerun passed; it is not classified as an application defect.
 
-Broader browser matrix, kiosk regressions, published validation and CI results are
-recorded in the follow-up validation section when complete. No real charges,
-bookings, emails, MFA resets or provider connections are executed by fixtures.
+Further validation completed:
+
+- Official Anthropic webapp-testing Python route matrix: **124/124 locally and
+  124/124 on the 7fa5506 preview**, covering five routes, three viewports,
+  ES/EN, Light/Dark and both engines, plus storage-denied portal cases.
+- Complete kiosk suite: passed Chromium and WebKit locally across seven widths,
+  and on the 7fa5506 published preview across 390/768/1440px, ES/EN, Light/Dark.
+  Isolated provider return, receipt, stock, disconnect, reset and revocation passed.
+  The earlier transient asset-fetch failure was not reproduced; its original
+  network cause remains unconfirmed. Diagnostic capture remains enabled.
+- Complete template functions: **46 template/language cases passed**; the old
+  CI team-selection timeout did not reproduce. This run discovered the empty-src
+  warning subsequently covered by the new targeted regression.
+- Empty-photo reproduction: before, the preserved Builder draft emitted two
+  React errors; after the guard, the same Python Playwright reproduction emitted
+  **zero console errors**.
+- Spatial carousel regression: **32 engine/width/theme/locale cases passed**,
+  including empty-photo card/dock/dialog, 0/1/2/3 items, pointer/touch/keyboard,
+  reduced motion, favorites, menus, slideshow and business branding.
+- Final TypeScript/build with the image guard passed.
+- Impeccable 4.1.0: **20 recommendations before and after, zero new findings**.
+  These pre-existing CSS recommendations are not confirmed JavaScript defects;
+  no bulk style, palette or navigation changes were applied.
+
+No real charges, bookings, emails, MFA resets or provider connections are executed
+by fixtures. Physical devices were not used.
 
 ## Preserved visual and operational contract
 
@@ -72,3 +96,6 @@ Official logo SHA-256 (unchanged from the parent commit):
 
 Browser engines are automated/emulated; no physical iPhone claim. The official
 Anthropic `webapp-testing` skill is used via Python Playwright for the route matrix.
+
+CI on the prior tested runtime commit `7fa5506`: completed / success. https://github.com/tomassini369/WebFactory-PR/actions/runs/41176874799
+The empty-photo follow-up triggers its own CI and preview; see the PR checks for the final commit.
