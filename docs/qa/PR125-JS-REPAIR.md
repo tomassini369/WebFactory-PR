@@ -150,3 +150,24 @@ public site/deployment metadata access does not grant configuration changes.
 This external setting remains pending rather than being hidden with application
 CSS. The original Bugsense alert still cannot be correlated without its exact
 message/stack. No merge or production deployment is authorized.
+
+## Final receipt selector and Drawer follow-up
+
+The next commerce check exposed a strict-selector failure in
+`browser-reference-styles-smoke.mjs:43`: `.wf-receipt-paper` matches both the
+screen receipt and the print copy. Scope the test to the original printer's
+`.slot-paper-feed-viewport` without changing receipt data, totals, PDF, status,
+resend handling or animations. The complete390/1280 × Light/Dark receipt/cart
+script passed all four cases after this one-line test repair.
+
+The owner disabled Netlify Drawer for Deploy Previews. A fresh HTTP response
+contained no `/.netlify/scripts/cdp` injection. Fresh Chromium and WebKit390×844
+touch sessions confirmed zero Drawer iframes and real clicks through search,
+municipality selection, menu/Escape, bottom navigation to Crear and Cuenta,
+Back/Forward and reload, with no captured console errors, exceptions or promise
+rejections. This resolves the external obstruction previously documented above;
+no application CSS workaround or CSP change was used.
+
+CI status must still be read for the current head: a ready Netlify deployment
+alone does not establish that every GitHub verification passed. No merge or
+production deployment was performed.

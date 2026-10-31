@@ -40,7 +40,7 @@ try{
   const nav=page.locator('.gd-navigation nav')
   if(width===390)await page.locator('.ca-mobile-menu-toggle').click()
   await selectPortalSection(page,'Payments')
-  const paper=page.locator('.wf-receipt-paper');await paper.waitFor()
+  const paper=page.locator('.slot-paper-feed-viewport .wf-receipt-paper');await paper.waitFor()
   assert.match(await paper.innerText(),/\$25\.41/)
   assert.match(await paper.innerText(),/2 × \$11\.00/)
   assert.match(await paper.innerText(),/-\$1\.00/)
