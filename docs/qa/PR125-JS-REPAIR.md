@@ -171,3 +171,15 @@ no application CSS workaround or CSP change was used.
 CI status must still be read for the current head: a ready Netlify deployment
 alone does not establish that every GitHub verification passed. No merge or
 production deployment was performed.
+
+The remaining Experience cancellation was confirmed by GitHub's annotation:
+`The job has exceeded the maximum execution time of 35m0s`. It ran from
+05:04:33 to05:39:48UTC; every reached check passed until the spatial test was
+interrupted. Partition the existing Experience commands into two matrix jobs:
+retain the dashboard/template checks in`experience` and move eight existing
+navigation/login/accessibility/email checks to`experience-navigation`. Every
+command is unchanged, all23 Experience commands remain scheduled exactly once,
+and the existing required`verify` gate still depends on the whole matrix. This
+reduces the critical path instead of deleting coverage or increasing action
+wait limits. Receipt/cart four-case QA and buyer receipt/PDF/print eight-case QA
+also passed locally, including preserved Builder demo/theme behavior.

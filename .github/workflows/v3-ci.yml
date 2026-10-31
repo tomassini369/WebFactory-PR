@@ -17,7 +17,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        suite: [core, commerce, experience]
+        suite: [core, commerce, experience, experience-navigation]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -178,13 +178,13 @@ jobs:
             cat "$log"
           done
       - name: Check portal route transitions and template Home controls
-        if: matrix.suite == 'experience'
+        if: matrix.suite == 'experience-navigation'
         run: node scripts/browser-route-transitions-smoke.mjs
       - name: Check stable authentication cards, keyboard and mobile hero
-        if: matrix.suite == 'experience'
+        if: matrix.suite == 'experience-navigation'
         run: QA_BUILT=1 node scripts/browser-auth-stability-smoke.mjs
       - name: Check login locale persistence and single session handoff
-        if: matrix.suite == 'experience'
+        if: matrix.suite == 'experience-navigation'
         run: |
           QA_BUILT=1 node scripts/browser-login-lifecycle-smoke.mjs
           node scripts/browser-login-loading-smoke.mjs
@@ -199,7 +199,7 @@ jobs:
           QA_ENGINE=webkit QA_WIDTHS=390,1440 node scripts/browser-login-loading-smoke.mjs
           QA_BUILT=1 QA_ENGINE=webkit node scripts/browser-login-lifecycle-smoke.mjs
       - name: Check initial login visibility, locale handoff and failure states
-        if: matrix.suite == 'experience'
+        if: matrix.suite == 'experience-navigation'
         run: node scripts/browser-auth-usability-smoke.mjs
       - name: Check Home FAQ desktop/mobile, themes and languages
         if: matrix.suite == 'experience'
@@ -318,7 +318,7 @@ jobs:
         if: matrix.suite == 'experience'
         run: node scripts/browser-shadcn-smoke.mjs
       - name: Check floating portal login cards and return controls
-        if: matrix.suite == 'experience'
+        if: matrix.suite == 'experience-navigation'
         run: node scripts/browser-portal-glass-smoke.mjs
       - name: Check receipt presentation and cart flight without changing commerce
         if: matrix.suite == 'commerce'
@@ -327,13 +327,13 @@ jobs:
         if: matrix.suite == 'commerce'
         run: node scripts/browser-buyer-receipt-smoke.mjs
       - name: Check portal login fields on desktop and mobile
-        if: matrix.suite == 'experience'
+        if: matrix.suite == 'experience-navigation'
         run: node scripts/browser-login-layout-smoke.mjs
       - name: Check panel keyboard navigation
-        if: matrix.suite == 'experience'
+        if: matrix.suite == 'experience-navigation'
         run: node scripts/browser-accessibility-smoke.mjs
       - name: Check email previews on mobile and desktop
-        if: matrix.suite == 'experience'
+        if: matrix.suite == 'experience-navigation'
         run: node scripts/browser-email-smoke.mjs
       - name: Save portal navigation failure evidence
         if: failure() && matrix.suite == 'core'
