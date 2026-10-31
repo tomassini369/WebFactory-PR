@@ -17,7 +17,15 @@ let role='owner';const records=new Map(),versions=new Map();const storage={get:a
 const appearance=createDashboardAppearanceHandler({store:()=>storage,siteAccess:async()=>({user}),platformAccess:async()=>user})
 async function intercept(page){await page.route('**/.netlify/functions/**',async route=>{const req=route.request(),url=new URL(req.url()),name=url.pathname.split('/').at(-1)
  if(name==='dashboard-appearance'){
-  const response=await appearance(new Request(req.url(),{method:req.method(),headers:await req.allHeaders(),...(!['GET','HEAD'].includes(req.method())?{body:req.postDataBuffer()}: {})}));return route.fulfill({status:response.status,headers:{...Object.fromEntries(response.headers),etag:'W/"cdn-rewritten-validator"'},body:Buffer.from(await response.arrayBuffer())})
+  let body=req.postDataBuffer()
+  // WebKit routing omits File-backed POST bytes. Read that selected browser File,
+  // never a canned replacement or a real network/storage fallback.
+  if(req.method()==='POST'&&body===null){
+   assert(isWebKit,'Only WebKit may omit a File body');assert.equal(req.headers()['content-type'],'image/png')
+   body=Buffer.from(await page.locator('.gd-appearance input[type=file]').evaluate(async input=>{if(!input.files?.[0])throw Error('No selected upload fixture');return [...new Uint8Array(await input.files[0].arrayBuffer())]}))
+   assert(body.length>0,'The selected image must contain actual bytes')
+  }
+  const response=await appearance(new Request(req.url(),{method:req.method(),headers:await req.allHeaders(),...(!['GET','HEAD'].includes(req.method())?{body}: {})}));return route.fulfill({status:response.status,headers:{...Object.fromEntries(response.headers),etag:'W/"cdn-rewritten-validator"'},body:Buffer.from(await response.arrayBuffer())})
  }
  // Personal profile persistence is exercised by browser-portal-profile-smoke.
  if(name==='portal-profile'){assert(['GET','PUT'].includes(req.method()));return route.fulfill({json:{ok:true,profile:{name:'',phone:'',language:null,theme:null},hasPhoto:false,revision:0,version:'isolated-profile-fixture'}})}

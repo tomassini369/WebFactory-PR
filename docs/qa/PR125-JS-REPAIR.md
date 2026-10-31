@@ -95,3 +95,58 @@ host was blocked, so no speculative application fix was made. Add existing
 redacted error annotations to that step to make subsequent failures diagnosable.
 Consumer/return scripts now honor the configured proxy and retained WebKit
 path, permitting the same checks in this managed environment.
+
+## Follow-up after the 65fca4f CI run
+
+Confirmed failures and repairs:
+
+- Training's sticky session toolbar shared the instruction scroller and covered
+  the acknowledgement button after the kiosk exercise on mobile. Keep the
+  toolbar in a non-scrolling flex row and scroll the bounded instruction body.
+  The regression checks real pointer hit-testing before acknowledging; no forced
+  click, disabled overlay, global scroll change or practice network fallback.
+- Customer Display correctly shows `787-000-0000`; its assertion expected an
+  unformatted phone. Check the displayed format and preserved digits. Explicitly
+  choose cash before testing a received-payment action: the current POS starts
+  on its QR option. No checkout default/provider logic was changed.
+- WebKit's intercepted File POST exposes `null` through postDataBuffer. The
+  isolated image handler consequently received an empty body and returned400.
+  Only for this PNG fixture on WebKit, read the File actually selected in the
+  browser input. Keep the real encoder, validators, version checks and storage
+  fixture. This validates UI/handler integration, not the actual upload wire
+  format in physical Safari. Chromium continues using its intercepted body.
+- Add redacted annotations identifying which Experience sub-check fails; none
+  of its scripts or assertions were removed.
+- The Classic jobs were cancelled at their20-minute deadline and the deployed
+  suite at25minutes. Allow35/45minutes respectively to complete the existing
+  matrices/setup/deploy wait. Individual action timeouts remain unchanged.
+
+Executed:822 unit tests passed; build/application TypeScript passed. Detailed
+Training activities passed in both engines, plus32 responsive cases at
+320/390/768/1440 in both themes/languages. Customer Display390 passed both
+engines, including real-handler fixture pairing, reload, two-device sale,
+backend-confirmed receipt, stale-data hiding and revocation. No real financial
+writes. Dashboard WebKit390/1440 passed all theme/language cases plus actual
+fixture image encoding, upload, stale-tab conflict, reload and deletion.
+Regressions and Faro/IVU smokes passed Chromium320/375/390/430/768/1024 and
+WebKit390/1440. Impeccable retained20 existing findings; no automated redesign.
+
+### Separate preview tooling interference
+
+The unmodified published preview was rechecked across30 route/browser/size
+combinations:28 completed. Both390px Marketplace navigation cases were blocked
+by an iframe titled`Netlify Drawer` from app.netlify.com, not application code.
+Its script is`/.netlify/scripts/cdp`; the existing CSP also blocks that frame.
+Do not widen CSP, force-click through it, or call these two cases passed.
+
+Official configuration path:
+Project configuration → Developer settings → Continuous deployment →
+Collaboration tools → Configure → turn off the Netlify Drawer for Deploy
+Previews → Save. This is preview collaboration configuration, not production.
+Reference: https://docs.netlify.com/deploy/review-deploys/netlify-drawer-for-feedback/overview/
+
+The running environment has no authenticated Netlify administrative binding;
+public site/deployment metadata access does not grant configuration changes.
+This external setting remains pending rather than being hidden with application
+CSS. The original Bugsense alert still cannot be correlated without its exact
+message/stack. No merge or production deployment is authorized.

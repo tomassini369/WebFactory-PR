@@ -136,13 +136,23 @@ jobs:
       - name: Check Glassy dashboard, wallpaper uploads and private appearance persistence
         if: matrix.suite == 'experience'
         run: |
-          node scripts/browser-glassy-dashboard-smoke.mjs
-          node scripts/browser-glassy-regressions-smoke.mjs
-          node scripts/browser-faro-tax-smoke.mjs
-          QA_ENGINE=webkit QA_WIDTHS=390,1440 node scripts/browser-faro-tax-smoke.mjs
-          QA_ENGINE=webkit QA_WIDTHS=390,1440 node scripts/browser-glassy-regressions-smoke.mjs
-          QA_INTERACTION_ONLY=1 node scripts/browser-glassy-dashboard-smoke.mjs
-          QA_ENGINE=webkit QA_WIDTHS=390,1440 node scripts/browser-glassy-dashboard-smoke.mjs
+          check_experience() {
+            log="/tmp/experience-$1.log"
+            shift
+            if ! "$@" > "$log" 2>&1; then
+              cat "$log"
+              node scripts/report-kiosk-ci-error.mjs "$log" experience
+              exit 1
+            fi
+            cat "$log"
+          }
+          check_experience dashboard node scripts/browser-glassy-dashboard-smoke.mjs
+          check_experience regressions node scripts/browser-glassy-regressions-smoke.mjs
+          check_experience faro node scripts/browser-faro-tax-smoke.mjs
+          check_experience faro-webkit env QA_ENGINE=webkit QA_WIDTHS=390,1440 node scripts/browser-faro-tax-smoke.mjs
+          check_experience regressions-webkit env QA_ENGINE=webkit QA_WIDTHS=390,1440 node scripts/browser-glassy-regressions-smoke.mjs
+          check_experience interactions env QA_INTERACTION_ONLY=1 node scripts/browser-glassy-dashboard-smoke.mjs
+          check_experience dashboard-webkit env QA_ENGINE=webkit QA_WIDTHS=390,1440 node scripts/browser-glassy-dashboard-smoke.mjs
           QA_ENGINE=webkit QA_INTERACTION_ONLY=1 QA_INTERACTION_WIDTHS=390,1440 node scripts/browser-glassy-dashboard-smoke.mjs
       - name: Check personal portal profile, photo privacy and consolidated settings
         if: matrix.suite == 'experience'
@@ -350,7 +360,9 @@ jobs:
 
   kiosk-skins:
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    # Classic also runs the full appearance/customizer/QR matrix. The previous
+    # 20-minute job deadline cancelled those checks; per-action limits remain.
+    timeout-minutes: 35
     strategy:
       fail-fast: false
       matrix:
@@ -419,7 +431,9 @@ jobs:
     if: github.event_name == 'pull_request'
     # Keep browser dependencies reproducible during ubuntu-latest image migrations.
     runs-on: ubuntu-24.04
-    timeout-minutes: 25
+    # Includes matching-deploy wait, setup, and 25 verification steps. Preserve
+    # every assertion while allowing the complete deployed suite to finish.
+    timeout-minutes: 45
     permissions:
       contents: read
       statuses: read
