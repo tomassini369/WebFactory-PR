@@ -11,6 +11,7 @@ parser.add_argument('--out', default='/tmp/wf125-redesign-browser')
 parser.add_argument('--quick', action='store_true')
 parser.add_argument('--faults', action='store_true')
 parser.add_argument('--ai', action='store_true')
+parser.add_argument('--legacy', action='store_true')
 parser.add_argument('--widths', nargs='+', type=int, default=[320,375,390,430,768,1024,1440])
 args=parser.parse_args();base=args.base.rstrip('/');out=Path(args.out);out.mkdir(parents=True,exist_ok=True)
 PNG=base64.b64decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+j8l8AAAAASUVORK5CYII=')
@@ -24,6 +25,8 @@ SITE={'siteId':'fixture-redesign','slug':'fixture-redesign','revision':4,'status
  'paymentRules':{'methods':{'stripe':False,'ath':False,'inPerson':True},'bookingPayment':'in_person','productPayment':'in_person','bookingDepositPercent':25}}
 SITE['catalog'].append({'id':'preserved-service','type':'service','name':'Unmentioned service','price':10,'description':'Fixture','duration':30,'requiresAppointment':True,'imageAssetKey':'','active':True})
 SITE['employees'][0]['serviceIds'].append('preserved-service')
+if args.legacy:
+ SITE['features']={};SITE['paymentRules']={'methods':{'inPerson':True}};SITE['design']={'templateSlug':'northline-barber'}
 rows=[]
 with sync_playwright() as p:
  for engine in ['chromium','webkit']:
@@ -113,6 +116,10 @@ with sync_playwright() as p:
     page.get_by_text('Cambios publicados.' if lang=='es' else 'Changes published.',exact=True).wait_for();assert len(saved)==1
     assert saved[0]['value']['team'][0]['id']=='stable-professional';assert saved[0]['value']['catalog'][0]['id']=='stable-service'
     assert saved[0]['value']['catalog'][0]['imageAssetKey']==uploads[3]
+    assert saved[0]['value']['hours']['Martes']['enabled'] is False
+    assert saved[0]['value']['features']['calls'] is False
+    assert saved[0]['value']['payments']['methods']['stripe'] is False;assert saved[0]['value']['payments']['methods']['ath'] is False
+    if args.legacy:assert saved[0]['value']['payments']['bookingPayment']=='full'
     assert any(item['id']=='preserved-service' for item in saved[0]['value']['catalog']);assert 'preserved-service' in saved[0]['value']['team'][0]['serviceIds']
     assert saved[0]['value']['business']['nameEn']=='Updated fixture studio';assert saved[0]['value']['design']['style']=='Bold';assert saved[0]['value']['catalog'][0]['price']==33.5;assert saved[0]['value']['team'][0]['name']=='Updated professional';assert saved[0]['value']['hours']['Lunes']['open']=='10:00';assert saved[0]['value']['payments']['allowTips'] is True
     assert page.evaluate('localStorage.getItem("webfactory-v3-builder-draft")')=='creation-draft-sentinel'

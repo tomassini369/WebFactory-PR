@@ -1,21 +1,25 @@
 import {useEffect, useMemo, useState} from 'react'
 import WebFactoryBuilder, {initialState, type BuilderState, type BuilderAsset} from './WebFactoryBuilder'
 import {useWorkspaceFetch} from './training/workspace-services'
-import {templateConfigs} from './templateData'
+import {templateConfigs,templateVisualStyle} from './templateData'
 import {usePractice} from './training/practice-context'
 
 type Lang='es'|'en'
 export function existingBuilderState(site:any):BuilderState {
   const defaults=structuredClone(initialState)
+  const template=templateConfigs.find(template=>template.slug===site.design?.templateSlug)
+  const style=template?({modern:'Modern',luxury:'Luxury',minimal:'Minimal',bold:'Bold'} as const)[templateVisualStyle(template.category)]:defaults.design.style
+  const featureDefaults=Object.fromEntries(Object.keys(defaults.features).map(key=>[key,['products','services','cart'].includes(key)]))
+  const closedDays=Object.fromEntries(Object.entries(defaults.hours).map(([day,hours])=>[day,{...hours,enabled:false}]))
   const url=(key:string)=>key?`/.netlify/functions/client-asset?siteId=${encodeURIComponent(site.siteId)}&key=${encodeURIComponent(key)}`:''
   return {
     ...defaults,
     business:{...defaults.business,...site.business,slug:site.slug,logo:url(site.business?.logoAssetKey),hero:url(site.business?.heroAssetKey),gallery:(site.business?.galleryAssetKeys||[]).map(url),galleryAssets:(site.business?.galleryAssetKeys||[]).map((assetKey:string)=>({assetKey,fileName:'',contentType:''}))},
-    design:{...defaults.design,...site.design},features:{...defaults.features,...site.features},
+    design:{...defaults.design,style,primary:template?.dark||defaults.design.primary,secondary:template?.accent||defaults.design.secondary,...site.design},features:{...featureDefaults,...site.features},
     catalog:(site.catalog||[]).filter((item:any)=>item.active!==false).map((item:any)=>({...item,image:url(item.imageAssetKey)})),
     team:(site.employees||[]).filter((member:any)=>member.active!==false),
-    hours:{...defaults.hours,...site.hours},
-    payments:{...defaults.payments,...site.paymentRules,methods:{...defaults.payments.methods,...site.paymentRules?.methods},stripe:{...defaults.payments.stripe,accountStatus:site.paymentRules?.stripeConnectedAccountId?'existing':'new'},ath:{...defaults.payments.ath,...site.paymentRules?.ath,accountStatus:site.paymentRules?.ath?.credentialsConfigured?'active':'needs_account'},inPerson:{...defaults.payments.inPerson,...site.paymentRules?.inPerson}},
+    hours:{...closedDays,...site.hours},
+    payments:{...defaults.payments,...site.paymentRules,bookingPayment:site.paymentRules?.bookingPayment||'full',methods:{stripe:Boolean(site.paymentRules?.methods?.stripe),ath:Boolean(site.paymentRules?.methods?.ath),inPerson:Boolean(site.paymentRules?.methods?.inPerson)},stripe:{...defaults.payments.stripe,accountStatus:site.paymentRules?.stripeConnectedAccountId?'existing':'new'},ath:{...defaults.payments.ath,...site.paymentRules?.ath,accountStatus:site.paymentRules?.ath?.credentialsConfigured?'active':'needs_account'},inPerson:{instructions:site.paymentRules?.inPerson?.instructions||''}},
   }
 }
 

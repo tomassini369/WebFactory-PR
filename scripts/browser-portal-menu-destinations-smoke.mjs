@@ -11,7 +11,7 @@ try {
  for(const width of [390,1280])for(const theme of ['light','dark'])for(const lang of ['es','en']) {
   browser=await chromium.launch(process.env.QA_CHROMIUM_PATH?{executablePath:process.env.QA_CHROMIUM_PATH,args:['--no-sandbox']}:undefined)
   const page=await browser.newPage({viewport:{width,height:844}})
-  const errors=[];page.on('pageerror',e=>errors.push(e.message))
+  const errors=[];page.on('pageerror',e=>errors.push(e.message));page.on('console',message=>{if(message.type()==='error')errors.push(message.text())})
   let site={siteId:'menu-fixture',slug:'menu-fixture',status:'published',revision:1,business:{name:'Menu fixture',category:'Retail',phone:'787-555-0100',locations:[]},design:{primary:'#0B1529',secondary:'#3C86F6',style:'Modern'},catalog:[],employees:[],hours:{},members:[],settings:{locale:'en',timezone:'America/Puerto_Rico',currency:'USD'},paymentRules:{},googleCalendar:{},features:{},servicePlan:{code:'complimentary',billingModel:'complimentary',subscriptionStatus:'complimentary'}}
   let writes=0
   await page.addInitScript(theme=>localStorage.setItem('webfactory-theme-v2',theme),theme)
@@ -54,8 +54,11 @@ try {
   const builder=work.getByRole('link',{name:lang==='es'?'Abrir Builder para rediseñar ↗':'Open Builder to redesign ↗',exact:true})
   assert.equal(await builder.getAttribute('href'),'/builder?edit=menu-fixture')
   await builder.click();await page.waitForURL('**/builder?edit=menu-fixture')
-  await page.locator('.wf-redesign').getByRole('heading',{name:/Redesign your page|Rediseña tu página/,exact:true}).waitFor()
-  assert.equal(await page.locator('.wf-redesign-grid input').first().inputValue(),'Menu fixture')
+  await page.locator('.wf-builder-app').waitFor()
+  assert.equal(await page.locator('.wf-builder-nav button').count(),8,'Redesign reuses the complete Builder')
+  assert.equal(await page.getByLabel('Business name · English',{exact:true}).inputValue(),'Menu fixture')
+  assert.equal(await page.locator('.wf-template-preview-frame').count(),1,'Redesign keeps the shared storefront preview')
+  assert.equal(writes,1,'Opening the Builder cannot publish or change business settings')
   site={...site,servicePlan:{...site.servicePlan,subscriptionStatus:'inactive'}}
   await page.goto('http://127.0.0.1:5240/client-admin');await page.locator('.gd-client-dashboard').waitFor();await page.locator('.portal-language').getByRole('button',{name:lang==='es'?'ES':'EN',exact:true}).click();await select(lang==='es'?'Personalización':'Personalization')
   await work.locator('.wf-personalization-areas button').filter({hasText:lang==='es'?'Página web':'Website'}).click()

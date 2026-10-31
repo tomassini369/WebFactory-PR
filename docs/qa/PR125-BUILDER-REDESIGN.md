@@ -23,7 +23,11 @@ uploads block publication; failed uploads retain the previous selection.
 A mobile browser test also demonstrated that sticky Builder navigation covered
 the catalog editor's close button. The existing editor now uses a native modal
 dialog/top layer with its existing styles, a named close action, Escape handling
-and native modal focus. No navigation, scroll or palette redesign was applied.
+and native modal focus. The portal smoke also exposed a real duplicate React key
+between the always-mounted kiosk cash panel and active business panels. A stable,
+namespaced kiosk key removes that collision; the smoke now fails on console
+errors as well as page exceptions. No navigation, scroll or palette redesign
+was applied.
 
 ## Server contract
 
@@ -63,10 +67,16 @@ No live AI request is made by these tests.
   media types, edits controls, saves through fixtures and reloads to verify media.
   Also checks eight steps, stable IDs, the mounted preview iframe, creation draft
   isolation, document overflow and JavaScript/console/request failures.
+- `--quick --legacy`: missing business days remain disabled; absent booking,
+  contact and payment-method settings never inherit creation defaults. Existing
+  template colors/style are used when historical design fields are missing.
 - `--quick --faults --ai`: pending uploads, upload HTTP 500 and retry of the same
   file, save HTTP 409 with draft retention, and a simulated Factory AI proposal.
   The two intentionally generated HTTP diagnostics are retained separately from
   application exceptions and unexpected console errors.
+- Existing `browser-portal-menu-destinations-smoke.mjs`: eight viewport/theme/
+  language cases verify portal links, unsaved-draft cancellation, isolated saves,
+  eight-step redesign and the subscription gate, including console capture.
 - Existing `browser-template-functions-smoke.mjs`: 46 template/language cases
   passed on rerun. Its first run timed out on `.template-booking-modal h2`;
   the unchanged parent commit also passed 46 cases. Cause of the initial
