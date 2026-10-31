@@ -27,7 +27,12 @@ and native modal focus. The portal smoke also exposed a real duplicate React key
 between the always-mounted kiosk cash panel and active business panels. A stable,
 namespaced kiosk key removes that collision; the smoke now fails on console
 errors as well as page exceptions. No navigation, scroll or palette redesign
-was applied.
+was applied. A computed-style check found insufficient contrast in the new
+publication button's inherited global gradient. Only that new button now uses
+the existing Builder action/surface tokens; the browser regression requires
+4.5:1 text contrast and a 44px target in both themes. Observed contrast is
+6.41:1 in Light and 7.15:1 in Dark, compared with 2.56:1 at the
+brightest gradient stop before correction.
 
 ## Server contract
 

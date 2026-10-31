@@ -1,7 +1,7 @@
 """Owner redesign regression using isolated HTTP fixtures; never writes tenant data.
 Run against a built local Vite preview or the PR preview. Requires Python Playwright.
 """
-import argparse, base64, copy, itertools, json, os
+import argparse, base64, copy, itertools, json, os, re
 from pathlib import Path
 from playwright.sync_api import sync_playwright, expect
 
@@ -27,6 +27,18 @@ SITE['catalog'].append({'id':'preserved-service','type':'service','name':'Unment
 SITE['employees'][0]['serviceIds'].append('preserved-service')
 if args.legacy:
  SITE['features']={};SITE['paymentRules']={'methods':{'inPerson':True}};SITE['design']={'templateSlug':'northline-barber'}
+def luminance(color):
+ values=[float(value)/255 for value in re.findall(r'[0-9.]+',color)[:3]]
+ linear=[value/12.92 if value<=0.04045 else ((value+0.055)/1.055)**2.4 for value in values]
+ return sum(a*b for a,b in zip(linear,[0.2126,0.7152,0.0722]))
+def verify_save_button(button):
+ style=button.evaluate('(e)=>{const s=getComputedStyle(e),r=e.getBoundingClientRect();return {color:s.color,background:s.backgroundColor,image:s.backgroundImage,width:r.width,height:r.height}}')
+ stops=re.findall(r'rgba?\([^)]+\)',style['image']) or [style['background']]
+ foreground=luminance(style['color'])
+ ratios=[(max(foreground,luminance(stop))+0.05)/(min(foreground,luminance(stop))+0.05) for stop in stops]
+ assert min(ratios)>=4.5,{'style':style,'contrast':ratios}
+ assert style['width']>=44 and style['height']>=44,style
+ return min(ratios)
 rows=[]
 with sync_playwright() as p:
  for engine in ['chromium','webkit']:
@@ -110,7 +122,7 @@ with sync_playwright() as p:
     assert handle.evaluate('(element)=>element.isConnected')
     if args.ai:
      page.locator('.wf-ai-toggle').click();page.locator('.wf-ai-body textarea').fill('Isolated proposal to update this existing business');page.get_by_role('button',name='Generar propuesta' if lang=='es' else 'Generate proposal',exact=False).click();page.get_by_role('button',name='Aplicar al Builder' if lang=='es' else 'Apply to Builder',exact=False).click();expect(page.locator('.wf-ai-body')).to_have_count(0)
-    save=page.get_by_role('button',name='Guardar y publicar' if lang=='es' else 'Save and publish',exact=True);save.click()
+    save=page.get_by_role('button',name='Guardar y publicar' if lang=='es' else 'Save and publish',exact=True);row['save_button_contrast']=verify_save_button(save);save.click()
     if args.faults:
      page.get_by_role('alert').filter(has_text='Fixture revision conflict').wait_for();assert not saved;expect(save).to_be_enabled();save.click()
     page.get_by_text('Cambios publicados.' if lang=='es' else 'Changes published.',exact=True).wait_for();assert len(saved)==1
