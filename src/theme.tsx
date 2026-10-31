@@ -15,8 +15,12 @@ const ThemeContext = createContext<ThemeContextValue | null>(null)
 
 function getSavedTheme(): Theme | null {
   if (typeof window === 'undefined') return null
-  const value = window.localStorage.getItem(THEME_KEY)
-  return value === 'light' || value === 'dark' ? value : null
+  try {
+    const value = window.localStorage.getItem(THEME_KEY)
+    return value === 'light' || value === 'dark' ? value : null
+  } catch {
+    return null // Use the normal default when optional browser storage is unavailable.
+  }
 }
 
 function getInitialTheme(): Theme {
@@ -80,7 +84,11 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   }, [theme, isPlatformSurface])
 
   const setTheme = (nextTheme: Theme) => {
-    window.localStorage.setItem(THEME_KEY, nextTheme)
+    try { window.localStorage.setItem(THEME_KEY, nextTheme) }
+    catch {
+      setThemeState(nextTheme) // Theme selection still works for this session.
+      return
+    }
     setThemeState(nextTheme)
   }
 

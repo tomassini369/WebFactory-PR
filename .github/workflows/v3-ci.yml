@@ -328,10 +328,14 @@ jobs:
         run: node scripts/browser-buyer-receipt-smoke.mjs
       - name: Check portal login fields on desktop and mobile
         if: matrix.suite == 'experience-navigation'
-        run: node scripts/browser-login-layout-smoke.mjs
+        run: |
+          node scripts/browser-login-layout-smoke.mjs
+          QA_ENGINE=webkit node scripts/browser-login-layout-smoke.mjs
       - name: Check panel keyboard navigation
         if: matrix.suite == 'experience-navigation'
-        run: node scripts/browser-accessibility-smoke.mjs
+        run: |
+          node scripts/browser-accessibility-smoke.mjs
+          QA_ENGINE=webkit node scripts/browser-accessibility-smoke.mjs
       - name: Check email previews on mobile and desktop
         if: matrix.suite == 'experience-navigation'
         run: node scripts/browser-email-smoke.mjs
