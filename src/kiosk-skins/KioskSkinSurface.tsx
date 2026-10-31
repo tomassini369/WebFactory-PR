@@ -16,6 +16,19 @@ export function KioskSkinSurface({appearance,primary,secondary,siteId='',preview
  const palette=selectedKioskPalette(config),rootRef=useRef<HTMLElement|null>(null)
  const backdropId='wf-kiosk-backdrop-'+useId().replace(/:/g,'')
  const animationRef=useRef<ReturnType<typeof animate>|null>(null),previousPalette=useRef<string|null>(null),readyRef=useRef(false)
+ // WebKit can retain inherited custom properties on an unchanged grid subtree.
+ // Synchronize on each commit: the grid may mount after a loading/result view.
+ useLayoutEffect(()=>{
+  const grid=rootRef.current?.querySelector<HTMLElement>(':scope > .kiosk-layout')
+  grid?.style.setProperty('--glass-blur',`${config.glassBlur}px`)
+  grid?.style.setProperty('--glass-opacity',`${config.glassOpacity}%`)
+  // Resolve the custom cart fill against this grid's current saved values.
+  grid?.style.setProperty('--sales-fill','color-mix(in srgb,var(--sales-base) var(--glass-opacity,76%),transparent)')
+  for(const key of ['--zone-cart','--zone-cart-ink']){
+   const value=style[key as keyof CSSProperties]
+   if(value)grid?.style.setProperty(key,String(value));else grid?.style.removeProperty(key)
+  }
+ })
  const savedColors=useRef({background:'#0b1529',surface:'#172334',accent:'#285fa6'})
  useLayoutEffect(()=>{
   const root=rootRef.current
