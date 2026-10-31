@@ -1,3 +1,4 @@
+import RouteErrorBoundary from './RouteErrorBoundary'
 import ConsumerAccessLoading from './ConsumerAccessLoading'
 import PortalLoadingCard from './PortalLoadingCard'
 import {usePortalLanguage} from './portal-language'
@@ -45,7 +46,7 @@ function RouteView({children,portal=false}:{children:ReactNode;portal?:boolean})
   const [lang,setLang]=usePortalLanguage()
   const es=lang==='es'
   const fallback=portal?(/^\/cuenta\/?$/.test(location.pathname)?<ConsumerAccessLoading lang={lang} setLang={setLang}/>:<PortalLoadingCard lang={lang}/>):<div className="public-route-loading" aria-busy="true"><div aria-hidden="true"><span/><span/></div><p role="status">{es?'Cargando página…':'Loading page…'}</p></div>
-  return <Suspense fallback={fallback}>{children}</Suspense>
+  return <RouteErrorBoundary key={location.pathname} lang={lang}><Suspense fallback={fallback}>{children}</Suspense></RouteErrorBoundary>
 }
 
 type Language = 'es' | 'en'

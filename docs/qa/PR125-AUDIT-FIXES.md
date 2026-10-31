@@ -99,3 +99,38 @@ Anthropic `webapp-testing` skill is used via Python Playwright for the route mat
 
 CI on the prior tested runtime commit `7fa5506`: completed / success. https://github.com/tomassini369/WebFactory-PR/actions/runs/41176874799
 The empty-photo follow-up triggers its own CI and preview; see the PR checks for the final commit.
+
+## Confirmed intermittent asset failure and explicit recovery
+
+A further 124-case published run on `05b198f` recorded **123 healthy cases and
+one HTTP 500**, loading `/assets/WebFactoryAdminPage-DqQLAP5v.css` in Chromium,
+768×1024, EN/Light. React's lazy route rejected with `Unable to preload CSS` and
+left the route blank. Three subsequent GETs returned 200. The origin of the
+intermittent 500 (upstream/CDN/proxy) is not established and is not claimed fixed.
+The failed run is retained, not relabeled as a clean pass.
+
+`RouteErrorBoundary` now preserves the diagnostic in console and renders an
+ES/EN error with a deliberate retry action, using the existing loading styles.
+There are no automatic retries. On a user retry, at most four failed same-origin
+`/assets/*.js` or `*.css` resources are refreshed with GET/cache reload and a
+10-second shared timeout, then the page reloads without changing route/query/hash.
+No authentication submission, payment or business write is repeated by this code.
+Persistent failure aborts remaining reads and leaves the retry available.
+
+This targeted refresh is necessary in the tested WebKit: ordinary reload and
+fresh document URLs retained the rejected JavaScript module without another
+request. Resource timing identified the failed module with zero decoded bytes;
+refreshing that static resource before reload restored the route. The abandoned
+URL-change experiment is not part of the implementation.
+
+Regression: `scripts/browser-route-failure-smoke.mjs` deliberately fails portal
+CSS and kiosk JavaScript. **36 cases passed**, across Chromium/WebKit,
+390/768/1440px and ES/EN, including persistent-failure behavior, retained console
+diagnostics, no uncaught route errors, preserved query/fragment and no password,
+payment or other business writes. Added to the existing CI navigation suite.
+The before-fix regression failed because no recovery UI existed. Final build and
+TypeScript pass; the backend suite remains 827/827. The Impeccable scan remains
+20 pre-existing recommendations, zero additions.
+
+The original 46 template/language cases were also rerun after the photo guard:
+all passed, and no empty-src warning appeared in the output.

@@ -331,6 +331,9 @@ jobs:
         run: |
           node scripts/browser-login-layout-smoke.mjs
           QA_ENGINE=webkit node scripts/browser-login-layout-smoke.mjs
+      - name: Check explicit recovery from failed CSS and JavaScript route assets
+        if: matrix.suite == 'experience-navigation'
+        run: node scripts/browser-route-failure-smoke.mjs
       - name: Check panel keyboard navigation
         if: matrix.suite == 'experience-navigation'
         run: |
