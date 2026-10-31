@@ -1,5 +1,4 @@
 import type {ColorPalette} from '../shared/color-palettes.mjs'
-import {readableGlassMaterial} from '../shared/glass-material.mjs'
 
 type ColorMode='dark'|'light'
 const parse=(hex:string)=>[1,3,5].map(i=>Number.parseInt(hex.slice(i,i+2),16))
@@ -14,7 +13,7 @@ const ink=(color:string)=>{
 export {ink as swatchContrastInk}
 
 // Derive accessible light and dark roles from the same six stable palette colors.
-export function dashboardPaletteVariables(palette:ColorPalette,mode:ColorMode,alpha=.66):Record<string,string>{
+export function dashboardPaletteVariables(palette:ColorPalette,mode:ColorMode):Record<string,string>{
  const swatches=palette.swatches
  const colors=mode==='dark'?[...swatches]:[
   blend(swatches[4],'#FFFFFF',.66),
@@ -23,18 +22,15 @@ export function dashboardPaletteVariables(palette:ColorPalette,mode:ColorMode,al
   swatches[3],swatches[4],swatches[5],
  ]
  const [background,card,panel,action,highlight,edge]=colors
- const glass=readableGlassMaterial(swatches[2],alpha)
  return {
   '--wf-theme-1':background,'--wf-theme-2':card,'--wf-theme-3':panel,
   '--wf-theme-4':action,'--wf-theme-5':highlight,'--wf-theme-6':edge,
   '--wf-theme-ink':ink(panel),'--wf-theme-card-ink':ink(card),
   '--wf-theme-action-ink':ink(action),
-  '--wf-theme-glass-fill':glass.fill,'--wf-theme-glass-ink':glass.ink,'--wf-theme-glass-color':glass.color,
  }
 }
 export const dashboardPaletteKeys=[
  '--wf-theme-1','--wf-theme-2','--wf-theme-3',
  '--wf-theme-4','--wf-theme-5','--wf-theme-6',
  '--wf-theme-ink','--wf-theme-card-ink','--wf-theme-action-ink',
- '--wf-theme-glass-fill','--wf-theme-glass-ink','--wf-theme-glass-color',
 ] as const

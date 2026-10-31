@@ -31,20 +31,6 @@ try{
   assert.deepEqual(six,['#021024','#052659','#16498A','#5483B3','#7DA0CA','#C1E8FF'],'All six colors are materialized on the actual kiosk surface');
   const roles=await surface.evaluate(el=>({panel:getComputedStyle(el).getPropertyValue('--sales-base').trim().toUpperCase(),action:getComputedStyle(el).getPropertyValue('--kiosk-brand').trim().toUpperCase()}));
   assert.equal(roles.panel,'#16498A');assert.equal(roles.action,'#5483B3');
-  await page.getByLabel(t('Acabado','Finish'),{exact:true}).selectOption('glass');
-  const tint=page.getByRole('checkbox',{name:t('Aplicar paleta a los cristales','Apply palette to glass'),exact:true});
-  const tinted=await surface.locator('.kiosk-catalog').evaluate(el=>getComputedStyle(el).backgroundColor);
-  await tint.uncheck();assert.equal(await surface.getAttribute('data-glass-palette'),'false');
-  assert.notEqual(await surface.locator('.kiosk-catalog').evaluate(el=>getComputedStyle(el).backgroundColor),tinted);
-  await tint.check();assert.equal(await surface.getAttribute('data-glass-palette'),'true');
-  await page.locator('.gd-kiosk-wallpapers button').first().click();
-  await page.getByRole('checkbox',{name:t('Mantener imagen original, sin oscurecimiento','Keep original image, without dimming'),exact:true}).check();
-  await page.getByRole('button',{name:t('Paleta Forest','Palette Forest'),exact:true}).click();
-  assert.equal(await surface.getAttribute('data-color-mode'),'solid','A palette can tint glass without replacing a natural photo');
-  assert.equal(await surface.getAttribute('data-palette-active'),'true');
-  assert.match(await surface.locator('.kiosk-backdrop-art').evaluate(el=>getComputedStyle(el).backgroundImage),/room.webp/);
-  assert.equal(await surface.locator('.kiosk-backdrop-art').evaluate(el=>getComputedStyle(el).boxShadow),'none');
-  await page.getByRole('checkbox',{name:t('Mantener imagen original, sin oscurecimiento','Keep original image, without dimming'),exact:true}).uncheck();
 
   await page.getByRole('button',{name:t('Paleta Forest','Palette Forest'),exact:true}).click();assert.equal(await page.getByLabel(t('Color principal · fondo','Primary color · background'),{exact:true}).inputValue(),'#143d30');
   assert.equal(await page.getByRole('button',{name:t('Paleta Forest','Palette Forest'),exact:true}).getAttribute('aria-pressed'),'true');
@@ -52,13 +38,12 @@ try{
   await page.getByLabel(t('Color principal · fondo','Primary color · background'),{exact:true}).fill('#123456');await page.getByRole('button',{name:t('Deshacer','Undo'),exact:true}).click();assert.equal(await page.getByLabel(t('Color principal · fondo','Primary color · background'),{exact:true}).inputValue(),'#143d30');await page.getByRole('button',{name:t('Rehacer','Redo'),exact:true}).click();assert.equal(await page.getByLabel(t('Color principal · fondo','Primary color · background'),{exact:true}).inputValue(),'#123456');
   await page.getByLabel(t('Acabado','Finish'),{exact:true}).selectOption('gloss');assert.equal(await surface.getAttribute('data-finish'),'gloss');
   await page.getByLabel(t('Tipo de fondo','Background type'),{exact:true}).selectOption('solid');
-  await page.locator('.gd-kiosk-wallpapers button').first().click();
   await page.getByRole('checkbox',{name:t('Mantener imagen original, sin oscurecimiento','Keep original image, without dimming'),exact:true}).check();
   assert.equal(await surface.getAttribute('data-background-natural'),'true');
   assert.equal(await surface.locator('.kiosk-backdrop-shade').count(),0,'Natural wallpaper has no overlay');
   await page.getByLabel(t('Apariencia del cristal','Glass appearance'),{exact:true}).selectOption('liquid');
   assert.equal(await surface.getAttribute('data-glass-style'),'liquid');
-  await surface.locator('.wf-licensed-liquid-glass').first().waitFor({state:'attached'});
+  await surface.locator('.wf-licensed-liquid-glass').first().waitFor();
   await page.getByLabel(t('Apariencia del cristal','Glass appearance'),{exact:true}).selectOption('classic');
   await page.getByRole('checkbox',{name:t('Mantener imagen original, sin oscurecimiento','Keep original image, without dimming'),exact:true}).uncheck();
   await page.getByLabel(t('Tipo de fondo','Background type'),{exact:true}).selectOption('gradient');await page.getByLabel(t('Ángulo del degradado','Gradient angle'),{exact:true}).press('End');assert.match(await surface.locator('.kiosk-backdrop-art').evaluate(el=>getComputedStyle(el).backgroundImage),/360deg/);
@@ -87,12 +72,12 @@ try{
   await page.getByLabel(t('Opacidad de paneles','Panel opacity'),{exact:true}).press('Home');await page.getByLabel(t('Desenfoque del cristal','Glass blur'),{exact:true}).press('End');
   if([390,1440].includes(width)){await page.getByLabel(t('Desenfoque','Blur'),{exact:true}).press('Home');await page.getByLabel(t('Oscurecimiento','Overlay opacity'),{exact:true}).press('Home')}
   await page.getByRole('button',{name:t('Guardar apariencia','Save appearance'),exact:true}).click();await page.getByRole('status').filter({hasText:t('Apariencia guardada','Appearance saved')}).waitFor();await page.getByRole('button',{name:'Ver kiosco / View kiosk',exact:true}).click();await page.locator('.kiosk-products').waitFor();
-  await page.waitForFunction(()=>[...document.querySelectorAll('.wf-kiosk .kiosk-header,.wf-kiosk .kiosk-welcome,.wf-kiosk .kiosk-catalog,.wf-kiosk .kiosk-cart')].every(el=>/0\.25(?:\)|\s|$)/.test(getComputedStyle(el).backgroundColor)&&getComputedStyle(el).backdropFilter.startsWith('blur(24px)')));
-  for(const selector of ['.kiosk-header','.kiosk-welcome','.kiosk-catalog','.kiosk-cart']){const panel=page.locator(selector);assert.match(await panel.evaluate(el=>getComputedStyle(el).backgroundColor),/0\.25(?:\)|\s|$)/);assert.match(await panel.evaluate(el=>getComputedStyle(el).backdropFilter),/^blur\(24px\)/);assert.equal(await panel.evaluate(el=>getComputedStyle(el).opacity),'1')}
+  await page.waitForFunction(()=>[...document.querySelectorAll('.wf-kiosk .kiosk-header,.wf-kiosk .kiosk-welcome,.wf-kiosk .kiosk-catalog,.wf-kiosk .kiosk-cart')].every(el=>/0\.7(?:\)|\s|$)/.test(getComputedStyle(el).backgroundColor)&&getComputedStyle(el).backdropFilter.startsWith('blur(12px)')));
+  for(const selector of ['.kiosk-header','.kiosk-welcome','.kiosk-catalog','.kiosk-cart']){const panel=page.locator(selector);assert.match(await panel.evaluate(el=>getComputedStyle(el).backgroundColor),/0\.7(?:\)|\s|$)/);assert.match(await panel.evaluate(el=>getComputedStyle(el).backdropFilter),/^blur\(12px\)/);assert.equal(await panel.evaluate(el=>getComputedStyle(el).opacity),'1')}
   assert.equal(await page.locator('.kiosk-product').first().evaluate(el=>getComputedStyle(el).backdropFilter),'none');await page.getByRole('button',{name:t('Añadir Producto de práctica','Add Practice product'),exact:true}).click();assert.equal(await page.locator('.kiosk-cart li').count(),1);assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));
   if([390,1440].includes(width))await page.screenshot({path:`${output}/glass-${width}-${theme}-${lang}.png`,fullPage:true});
   await page.emulateMedia({forcedColors:'active'});await page.waitForFunction(()=>matchMedia('(forced-colors: active)').matches&&getComputedStyle(document.querySelector('.kiosk-catalog')).backdropFilter==='none');assert.equal(await page.locator('.kiosk-catalog').evaluate(el=>getComputedStyle(el).backdropFilter),'none');await page.emulateMedia({forcedColors:'none',media:'print'});await page.waitForFunction(()=>matchMedia('print').matches&&getComputedStyle(document.querySelector('.kiosk-catalog')).backdropFilter==='none');assert.equal(await page.locator('.kiosk-catalog').evaluate(el=>getComputedStyle(el).backdropFilter),'none');await page.emulateMedia({media:'screen'});
-  await page.getByRole('button',{name:'Apariencia / Appearance',exact:true}).click();await page.waitForFunction(()=>{const fieldset=document.querySelector('.kiosk-editor-controls fieldset');return fieldset&&!fieldset.disabled});assert.equal(await page.getByLabel(t('Opacidad de paneles','Panel opacity'),{exact:true}).inputValue(),'25');await page.waitForFunction(label=>[...document.querySelectorAll('input')].some(el=>el.labels?.[0]?.textContent===label&&el.value==='#000000'),t('Color de tarjetas','Card color'));assert.equal(await page.getByLabel(t('Color de tarjetas','Card color'),{exact:true}).inputValue(),'#000000');await page.getByRole('button',{name:t('Restaurar Classic original','Restore original Classic'),exact:true}).click();await page.getByRole('status').filter({hasText:t('Apariencia guardada','Appearance saved')}).waitFor();assert.equal(await page.getByLabel(t('Acabado','Finish'),{exact:true}).inputValue(),'original');
+  await page.getByRole('button',{name:'Apariencia / Appearance',exact:true}).click();await page.waitForFunction(()=>{const fieldset=document.querySelector('.kiosk-editor-controls fieldset');return fieldset&&!fieldset.disabled});assert.equal(await page.getByLabel(t('Opacidad de paneles','Panel opacity'),{exact:true}).inputValue(),'70');await page.waitForFunction(label=>[...document.querySelectorAll('input')].some(el=>el.labels?.[0]?.textContent===label&&el.value==='#000000'),t('Color de tarjetas','Card color'));assert.equal(await page.getByLabel(t('Color de tarjetas','Card color'),{exact:true}).inputValue(),'#000000');await page.getByRole('button',{name:t('Restaurar Classic original','Restore original Classic'),exact:true}).click();await page.getByRole('status').filter({hasText:t('Apariencia guardada','Appearance saved')}).waitFor();assert.equal(await page.getByLabel(t('Acabado','Finish'),{exact:true}).inputValue(),'original');
   await context.close();console.log('PASS visual recipes/palettes/color picker/finishes/gradient/pattern/zones/welcome/layout/undo/redo/presets/images/restore/commerce',width,theme,lang);
  }
  assert.deepEqual(errors,[]);

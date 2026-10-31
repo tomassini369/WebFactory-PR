@@ -14,12 +14,7 @@ function setup(){const f=kioskFixture(),files=new Map();let role='owner';const a
  const remove=key=>handler(new Request(`${f.origin}/.netlify/functions/client-kiosk-visual-assets?siteId=${f.site.siteId}`,{method:'DELETE',headers:{Origin:f.origin},body:JSON.stringify({assetKey:key})}));return {f,files,assets,handler,upload,remove,setRole:value=>role=value};}
 test('new appearance fields hydrate old designs; all inputs remain finite data',()=>{
  assert.equal(kioskAppearance({skinId:'classic',version:1}).finish,'original');assert.equal(kioskAppearance({skinId:'glass-premium',version:1}).glassOpacity,76);assert.equal(validateKioskAppearance({finish:'glass',glassOpacity:70,glassBlur:0}).glassOpacity,70);
- assert.equal(validateKioskAppearance({glassOpacity:25,glassBlur:24}).glassOpacity,25);
- assert.equal(validateKioskAppearance({glassOpacity:95,glassBlur:13}).glassBlur,13);
- assert.equal(validateKioskAppearance({glassPalette:false}).glassPalette,false);
- assert.equal(kioskAppearance({skinId:'classic',version:1}).glassPalette,true);
- assert.throws(()=>validateKioskAppearance({glassPalette:'false'}));
- for(const patch of [{glassOpacity:24},{glassOpacity:96},{glassOpacity:'76'},{glassBlur:25},{glassBlur:-1},{finish:'javascript'},{gradientFrom:'url(https://example.invalid)'},{gradientAngle:NaN},{imageBlur:21},{overlayOpacity:-1},{imageX:Infinity},{welcomeText:'<script>'},{backgroundAssetKey:'sites/other/x.svg'},{layout:'external'}, {pattern:'url(x)'},{cardColor:'red'}])assert.throws(()=>validateKioskAppearance({...kioskAppearance(),...patch}));
+ for(const patch of [{glassOpacity:69},{glassOpacity:96},{glassOpacity:'76'},{glassBlur:13},{glassBlur:-1},{finish:'javascript'},{gradientFrom:'url(https://example.invalid)'},{gradientAngle:NaN},{imageBlur:21},{overlayOpacity:-1},{imageX:Infinity},{welcomeText:'<script>'},{backgroundAssetKey:'sites/other/x.svg'},{layout:'external'}, {pattern:'url(x)'},{cardColor:'red'}])assert.throws(()=>validateKioskAppearance({...kioskAppearance(),...patch}));
  assert.throws(()=>validateKioskPresets([{id:'same',name:'One',appearance:{}},{id:'same',name:'Two',appearance:{}}]));
  assert.throws(()=>validateKioskPresets(Array(9).fill({})));
  assert.equal(validateKioskAppearance({finish:'gloss',colorMode:'gradient',gradientAngle:270}).finish,'gloss');

@@ -5,7 +5,6 @@ import {dashboardPaletteVariables,dashboardPaletteKeys,swatchContrastInk} from '
 import {useWebFactoryTheme} from '../theme'
 import {animate} from 'animejs'
 import {FluidGlassProvider} from './FluidGlassSurface'
-import {TouchRange} from './TouchRange'
 import {useUnsavedChanges} from '../interaction-state'
 import {usePractice} from '../training/practice-context'
 import {PortalProfileProvider} from './ProfileContext'
@@ -34,13 +33,12 @@ export function DashboardProvider({siteId,userId,children,lang='en',name=''}:{si
    paletteReady.current=paletteReady.current||ready
    return
   }
-  const tokens=dashboardPaletteVariables(palette,theme,prefs.alpha)
+  const tokens=dashboardPaletteVariables(palette,theme)
   const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches||prefs.motion<=0
-  if(!paletteReady.current||!ready||reduce||previousPalette.current===palette.id){
+  if(!paletteReady.current||!ready||reduce){
    Object.entries(tokens).forEach(([key,value])=>root.style.setProperty(key,value))
   }else{
    if(!previousPalette.current){
-    root.style.setProperty('--wf-theme-glass-fill','rgba(25,28,34,.85)');root.style.setProperty('--wf-theme-glass-color','#191c22');root.style.setProperty('--wf-theme-glass-ink','#FFFFFF')
     const surface=theme==='dark'?'#29292e':'#f6f5f8'
     for(let i=1;i<=6;i++)root.style.setProperty(`--wf-theme-${i}`,surface)
     const prevInk=theme==='dark'?'#FFFFFF':'#17171c'
@@ -51,7 +49,7 @@ export function DashboardProvider({siteId,userId,children,lang='en',name=''}:{si
   previousPalette.current=palette.id
   paletteReady.current=paletteReady.current||ready
   return()=>{paletteAnimation.current?.cancel();paletteAnimation.current=null}
- },[palette?.id,theme,prefs.motion,prefs.alpha,ready])
+ },[palette?.id,theme,prefs.motion,ready])
  const readResponse=async(response:Response)=>{const data=await response.json();if(!response.ok)throw new Error(String(response.status));return {data,etag:typeof data.version==='string'?data.version:(response.headers.get('etag')||'').replace(/^W\//,'').replace(/^"|"$/g,'')}}
  const accept=(data:any,tag:string)=>{setPrefs(normalizeAppearance(data.prefs));setCustom(Boolean(data.hasCustom));setRevision(data.revision||0);setEtag(tag);setSavedEpoch(value=>value+1)}
  // Use the live same-origin transport only outside isolated training.
@@ -66,8 +64,7 @@ export function DashboardProvider({siteId,userId,children,lang='en',name=''}:{si
  const asset=endpoint+(siteId?'&':'?')+'asset=1&v='+revision;
  const background=prefs.background==='custom'&&hasCustom?asset:(DASHBOARD_WALLPAPERS.find(x=>x.id===prefs.background)||DASHBOARD_WALLPAPERS[0]).src;
  const style={'--glass-blur':prefs.blur+'px','--glass-alpha':prefs.alpha,'--bg-dim':prefs.backgroundNatural?0:prefs.dim,'--motion':prefs.motion,...(palette?{}:{'--accent':prefs.accent})} as CSSProperties;
- const glassAttributes={'data-glass-palette':Boolean(palette)&&prefs.glassPalette,'data-readable-glass':prefs.backgroundNatural||prefs.glassStyle==='liquid'||Boolean(palette)}
- return <AppearanceContext.Provider value={{prefs,setPrefs:value=>{setPrefs(value);setNotice('')},hasCustom,busy,ready,error,notice,etag,savedEpoch,save:()=>mutate('PUT',JSON.stringify(prefs)),upload:file=>mutate('POST',file,file.type),reset:()=>mutate('DELETE'),reload,asset}}><FluidGlassProvider enabled={prefs.glassStyle==='liquid'}><PortalProfileProvider key={userId} siteId={siteId} userId={userId} name={name}><div className="gd-root" ref={rootRef} {...glassAttributes} data-palette-active={Boolean(palette)} data-background-natural={prefs.backgroundNatural} data-glass-style={prefs.glassStyle} style={style}><div className="gd-wallpaper" aria-hidden="true" style={{backgroundImage:`url(${JSON.stringify(background)})`}}/><div className="gd-shade" aria-hidden="true"/>{children}</div></PortalProfileProvider></FluidGlassProvider></AppearanceContext.Provider>
+ return <AppearanceContext.Provider value={{prefs,setPrefs:value=>{setPrefs(value);setNotice('')},hasCustom,busy,ready,error,notice,etag,savedEpoch,save:()=>mutate('PUT',JSON.stringify(prefs)),upload:file=>mutate('POST',file,file.type),reset:()=>mutate('DELETE'),reload,asset}}><FluidGlassProvider enabled={prefs.glassStyle==='liquid'}><PortalProfileProvider key={userId} siteId={siteId} userId={userId} name={name}><div className="gd-root" ref={rootRef} data-palette-active={Boolean(palette)} data-background-natural={prefs.backgroundNatural} data-glass-style={prefs.glassStyle} style={style}><div className="gd-wallpaper" aria-hidden="true" style={{backgroundImage:`url(${JSON.stringify(background)})`}}/><div className="gd-shade" aria-hidden="true"/>{children}</div></PortalProfileProvider></FluidGlassProvider></AppearanceContext.Provider>
 }
 export function SalesAppearanceControls({lang,showSave=true}:{lang:'es'|'en';showSave?:boolean}){
  const a=useOptionalDashboardAppearance(),es=lang==='es';if(!a)return null;
@@ -85,14 +82,12 @@ export default function DashboardAppearance({lang}:{lang:'es'|'en'}){
  <fieldset disabled={!a.ready||a.busy}><legend>{es?'Fondos de pantalla':'Wallpapers'}</legend><div className="gd-wallpaper-grid">{DASHBOARD_WALLPAPERS.map(w=><article key={w.id}><button type="button" className="gd-wallpaper-choice" aria-pressed={a.prefs.background===w.id} onClick={()=>set({background:w.id})}><img src={w.src} alt="" loading="lazy"/><strong>{es?w.nameEs:w.nameEn}</strong><span>{a.prefs.background===w.id?(es?'Seleccionado':'Selected'):(es?'Vista previa':'Preview')}</span></button><a href={w.download} download>{es?'Descargar fondo':'Download wallpaper'}</a></article>)}{a.hasCustom&&<article><button type="button" className="gd-wallpaper-choice" aria-pressed={a.prefs.background==='custom'} onClick={()=>set({background:'custom'})}><img src={a.asset} alt=""/><strong>{es?'Mi imagen':'My image'}</strong><span>{a.prefs.background==='custom'?(es?'Seleccionado':'Selected'):(es?'Vista previa':'Preview')}</span></button><a href={a.asset+'&download=1'} download>{es?'Descargar mi fondo':'Download my wallpaper'}</a></article>}</div>
  <div className="gd-appearance-actions"><label className="gd-upload">{es?'Subir y aplicar mi imagen':'Upload and apply my image'}<input ref={file} type="file" accept="image/jpeg,image/png,image/webp" onChange={e=>void pickFile(e.target.files?.[0])}/></label><p>{es?'JPEG, PNG o WebP · Hasta 4 MB. La imagen se optimiza y permanece privada.':'JPEG, PNG or WebP · Up to 4 MB. Your image is optimized and remains private.'}</p></div>
  <div className="gd-glass-options">
-   <label className="gd-toggle-row"><input type="checkbox" disabled={!a.prefs.paletteId} checked={a.prefs.glassPalette} onChange={e=>set({glassPalette:e.target.checked})}/><span>{es?'Aplicar paleta a los cristales':'Apply palette to glass'}</span></label>
-   <p>{es?'Selecciona una paleta y activa esta opción para teñir los cristales. Desactívala para usar cristal neutro.':'Select a palette and enable this option to tint the glass. Turn it off for neutral glass.'}</p>
    <label className="gd-toggle-row"><input type="checkbox" checked={a.prefs.backgroundNatural} onChange={e=>set({backgroundNatural:e.target.checked})}/><span>{es?'Mantener imagen de fondo original (sin oscurecer)':'Keep original background image (no dimming)'}</span></label>
    <p>{es?'Conserva los colores y la iluminación de tu foto; solo cambia la capa de oscurecimiento. Los campos siguen siendo legibles.':'Preserves your photo colors and brightness; only the dimming layer changes. Fields remain readable.'}</p>
-   <label>{es?'Apariencia del cristal':'Glass appearance'}<select aria-label={es?'Apariencia del cristal':'Glass appearance'} value={a.prefs.glassStyle} onChange={e=>set({glassStyle:e.target.value as DashboardAppearance['glassStyle']})}><option value="classic">{es?'Cristal clásico':'Classic glass'}</option><option value="liquid">{es?'Cristal fluido · transparente':'Fluid glass · transparent'}</option></select></label>
+   <label>{es?'Apariencia del cristal':'Glass appearance'}<select value={a.prefs.glassStyle} onChange={e=>set({glassStyle:e.target.value as DashboardAppearance['glassStyle']})}><option value="classic">{es?'Cristal clásico':'Classic glass'}</option><option value="liquid">{es?'Cristal fluido · transparente':'Fluid glass · transparent'}</option></select></label>
    <p>{es?'Cristal fluido combina reflejos suaves, transparencia y bordes luminosos sin modificar las gráficas ni el diseño de las tarjetas.':'Fluid glass combines soft reflections, translucency and luminous rims without changing your charts or card layout.'}</p>
   </div>
- <div className="gd-adjustments">{([{key:'dim',label:es?'Oscurecimiento del fondo':'Wallpaper dim',min:.25,max:.85,step:.01},{key:'alpha',label:es?'Opacidad del cristal':'Glass opacity',min:.20,max:.96,step:.01},{key:'blur',label:es?'Desenfoque':'Blur',min:0,max:40,step:1},{key:'motion',label:es?'Animaciones':'Animations',min:0,max:1,step:.1}] as const).map(control=><label key={control.key}><span>{control.label}</span><output aria-hidden="true">{control.key==='blur'?a.prefs.blur+' px':Math.round((control.key==='dim'&&a.prefs.backgroundNatural?0:a.prefs[control.key])*100)+'%'}</output><TouchRange aria-label={control.label} disabled={control.key==='dim'&&a.prefs.backgroundNatural} min={control.min} max={control.max} step={control.step} value={a.prefs[control.key]} onValueChange={value=>set({[control.key]:value})}/></label>)}<label>{es?'Color de acento':'Accent color'}<input type="color" value={a.prefs.paletteId?(findColorPalette(a.prefs.paletteId)?.secondary||a.prefs.accent):a.prefs.accent} onChange={e=>set({accent:e.target.value,paletteId:''})}/></label></div>
+ <div className="gd-adjustments">{([{key:'dim',label:es?'Oscurecimiento del fondo':'Wallpaper dim',min:.25,max:.85,step:.01},{key:'alpha',label:es?'Opacidad del cristal':'Glass opacity',min:.20,max:.96,step:.01},{key:'blur',label:es?'Desenfoque':'Blur',min:0,max:40,step:1},{key:'motion',label:es?'Animaciones':'Animations',min:0,max:1,step:.1}] as const).map(control=><label key={control.key}>{control.label}<output>{control.key==='blur'?a.prefs.blur+' px':Math.round((control.key==='dim'&&a.prefs.backgroundNatural?0:a.prefs[control.key])*100)+'%'}</output><input type="range" disabled={control.key==='dim'&&a.prefs.backgroundNatural} min={control.min} max={control.max} step={control.step} value={a.prefs[control.key]} onChange={e=>set({[control.key]:Number(e.target.value)})}/></label>)}<label>{es?'Color de acento':'Accent color'}<input type="color" value={a.prefs.paletteId?(findColorPalette(a.prefs.paletteId)?.secondary||a.prefs.accent):a.prefs.accent} onChange={e=>set({accent:e.target.value,paletteId:''})}/></label></div>
  <p>{es?'La transparencia tiene límites para mantener el texto legible. El modo de movimiento reducido del dispositivo siempre tiene prioridad.':'Transparency is bounded to keep text readable. Your device’s reduced-motion setting always takes priority.'}</p>
  <SalesAppearanceControls lang={lang} showSave={false}/><div className="gd-appearance-actions"><button type="button" onClick={event=>{event.stopPropagation();void a.save()}}>{a.busy?(es?'Guardando…':'Saving…'):(es?'Aplicar y guardar':'Apply and save')}</button><button type="button" onClick={()=>void a.reset()}>{es?'Restaurar predeterminado y borrar mi imagen':'Restore default and delete my image'}</button></div></fieldset></section>
 }

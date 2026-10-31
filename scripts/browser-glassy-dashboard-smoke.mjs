@@ -61,7 +61,7 @@ try{
    assert.equal((await page.request.get(origin+'/dashboard/room.webp')).status(),200)
    if(path==='/client-admin'){await page.locator('.bcc-metrics').waitFor();assert.match(await page.locator('.bcc-metrics').innerText(),/55[.,]00/)}
    if(path==='/client-admin'){const spacing=await page.locator('.gd-overview').evaluate(el=>({gap:Number.parseFloat(getComputedStyle(el.querySelector('.gd-overview-grid')).rowGap),boundary:el.nextElementSibling.getBoundingClientRect().top-el.getBoundingClientRect().bottom}));assert(Math.abs(spacing.boundary-spacing.gap)<1,'Overview-to-service separation matches the card grid gap')}
-   const customize=lang==='es'?'Personalización':'Personalization';await page.locator('.gd-dock').getByRole('button',{name:customize,exact:true}).click();await page.locator('.gd-wallpaper-choice').first().waitFor();await page.locator('.gd-appearance>fieldset').first().waitFor({state:'visible'});await page.waitForFunction(()=>!document.querySelector('.gd-appearance>fieldset').disabled)
+   const customize=lang==='es'?'Personalización':'Personalization';await page.locator('.gd-dock').getByRole('button',{name:customize,exact:true}).click();await page.locator('.gd-wallpaper-choice').first().waitFor();await page.locator('.gd-appearance>fieldset').waitFor({state:'visible'});await page.waitForFunction(()=>!document.querySelector('.gd-appearance>fieldset').disabled)
    await noOverflow(page);assert.equal(await page.locator('.gd-wallpaper-choice').count(),3)
    if(path==='/client-admin'&&width===390&&theme==='dark'&&lang==='es'){
     assert.equal(await page.locator('.gd-palette-grid .gd-palette-choice').count(),23,'Shared palette catalogue has 23 choices');

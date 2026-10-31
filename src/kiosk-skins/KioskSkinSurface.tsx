@@ -32,15 +32,14 @@ export function KioskSkinSurface({appearance,primary,secondary,siteId='',preview
    savedColors.current={background:css.backgroundColor||'#0b1529',surface:panel?getComputedStyle(panel).backgroundColor:'#172334',accent:button?getComputedStyle(button).backgroundColor:'#285fa6'}
    return
   }
-  const tokens=kioskPaletteVariables(palette,config.glassOpacity/100)
+  const tokens=kioskPaletteVariables(palette)
   const reduce=window.matchMedia('(prefers-reduced-motion: reduce)').matches||config.motion==='none'
-  if(!readyRef.current||reduce||previousPalette.current===palette.id){
+  if(!readyRef.current||reduce){
    Object.entries(tokens).forEach(([name,value])=>root.style.setProperty(name,value))
   }else{
    // The first selection also animates: seed palette variables with the colors
    // of the existing live kiosk, then interpolate to the selected six swatches.
    if(!previousPalette.current){
-    root.style.setProperty('--wf-palette-glass-fill','rgba(25,28,34,.85)');root.style.setProperty('--wf-palette-glass-color','#191c22');root.style.setProperty('--wf-palette-glass-ink','#FFFFFF')
     const {background,surface,accent}=savedColors.current
     const seed=[background,surface,surface,accent,surface,accent]
     for(let i=1;i<=6;i++)root.style.setProperty(`--wf-palette-${i}`,seed[i-1])
@@ -52,7 +51,7 @@ export function KioskSkinSurface({appearance,primary,secondary,siteId='',preview
   previousPalette.current=palette.id
   readyRef.current=true
   return()=>{animationRef.current?.cancel();animationRef.current=null}
- },[palette?.id,config.motion,config.glassOpacity])
+ },[palette?.id,config.motion])
  const safePrimary=config.primary||(/^#[a-f0-9]{6}$/i.test(primary||'')?primary:'#0b1529')
  const style={'--glass-opacity':`${config.glassOpacity}%`,'--glass-blur':`${config.glassBlur}px`,...(palette?{}:{'--kiosk-primary':safePrimary,'--kiosk-brand':brand.background,'--kiosk-brand-ink':brand.foreground}),'--skin-font':fonts[config.font],...Object.fromEntries((['header','card','cart'] as const).flatMap(zone=>{const color=config[`${zone}Color`];return color?[[`--zone-${zone}`,color],[`--zone-${zone}-ink`,posBrandPair(color).foreground]]:[]}))} as CSSProperties
  let backgroundImage=''
@@ -61,7 +60,6 @@ export function KioskSkinSurface({appearance,primary,secondary,siteId='',preview
  if(config.colorMode==='image'&&config.backgroundAssetKey&&siteId)backgroundImage=`url("${asset(siteId,config.backgroundAssetKey)}")`
  if(!backgroundImage&&config.wallpaper!=='none')backgroundImage=`url("${DASHBOARD_WALLPAPERS.find(w=>w.id===config.wallpaper)?.src||DASHBOARD_WALLPAPERS[0].src}")`;
  const Tag=preview?'div':'main'
- events={...events,...{'data-glass-palette':config.glassPalette,'data-readable-glass':config.backgroundNatural||config.glassStyle==='liquid'||Boolean(palette)}}
  return <Tag {...events} ref={node=>{rootRef.current=node}} data-palette-active={Boolean(palette)} data-background-natural={config.backgroundNatural} data-glass-style={config.glassStyle} data-card-depth={config.cardDepth} data-button-depth={config.buttonDepth} className={`wf-kiosk gd-sales${preview?' kiosk-appearance-preview':''}`} data-skin={skin.id} data-skin-version={skin.version} data-layout={skin.layout} data-layout-override={config.layout} data-finish={config.finish} data-glass={true} data-color-mode={config.colorMode} data-density={config.density} data-header-custom={Boolean(config.headerColor)} data-card-custom={Boolean(config.cardColor)} data-cart-custom={Boolean(config.cartColor)} data-font={config.font} data-buttons={config.buttons} data-cards={config.cards} data-background={config.background} data-motion={config.motion} style={style}>{backgroundImage&&<div className="kiosk-backdrop" aria-hidden="true"><div id={backdropId} className="kiosk-backdrop-art" style={{backgroundImage,inset:config.colorMode==='image'&&!config.backgroundNatural&&config.imageBlur>0?'-24px':undefined,backgroundSize:config.colorMode==='pattern'&&config.pattern==='dots'?'24px 24px':config.colorMode==='image'?config.imageFit:config.colorMode==='solid'?'cover':undefined,backgroundPosition:`${config.imageX}% ${config.imageY}%`,backgroundRepeat:config.colorMode==='image'?'no-repeat':undefined,filter:config.colorMode==='image'&&!config.backgroundNatural?`blur(${config.imageBlur}px)`:undefined}}/>{(config.colorMode==='image'||config.colorMode==='solid')&&!config.backgroundNatural&&<div className="kiosk-backdrop-shade" style={{backgroundColor:config.overlayColor,opacity:config.overlayOpacity/100}}/>}</div>}{children}{config.glassStyle==='liquid'&&backgroundImage&&<KioskLiquidGlass host={rootRef} backdropSelector={'#'+backdropId}/>}</Tag>
 }
 export function KioskWelcome({appearance,lang}:{appearance?:unknown;lang:'es'|'en'}){const c=kioskAppearance(appearance);return c.welcome==='none'?null:<section className="kiosk-welcome" data-welcome={c.welcome}><h2>{c.welcomeText||(lang==='es'?'Bienvenido. Escoge a tu gusto.':'Welcome. Make yourself at home.')}</h2></section>}

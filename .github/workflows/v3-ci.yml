@@ -138,10 +138,6 @@ jobs:
         run: |
           node scripts/browser-glassy-dashboard-smoke.mjs
           node scripts/browser-glassy-regressions-smoke.mjs
-          node scripts/browser-portal-touch-scroll-smoke.mjs
-          QA_ENGINE=webkit QA_WIDTHS=390,1440 node scripts/browser-portal-touch-scroll-smoke.mjs
-          QA_DOCK_ONLY=1 QA_WIDTHS=390 QA_HEIGHT=480 node scripts/browser-portal-touch-scroll-smoke.mjs
-          QA_DOCK_ONLY=1 QA_ENGINE=webkit QA_WIDTHS=390 QA_HEIGHT=480 node scripts/browser-portal-touch-scroll-smoke.mjs
           node scripts/browser-faro-tax-smoke.mjs
           QA_ENGINE=webkit QA_WIDTHS=390,1440 node scripts/browser-faro-tax-smoke.mjs
           QA_ENGINE=webkit QA_WIDTHS=390,1440 node scripts/browser-glassy-regressions-smoke.mjs
