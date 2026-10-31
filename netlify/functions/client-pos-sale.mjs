@@ -1,3 +1,4 @@
+import {catalogPriceCents} from '../lib/catalog-price.mjs';
 import {assertPosLocation} from "../lib/commercial-access.mjs";
 import { requirePosAdjustments } from '../lib/pos-permissions.mjs';
 import { requireCashierPos } from '../lib/pos-operations.mjs';
@@ -50,7 +51,7 @@ export function createPosSaleHandler({ authorize = requireSiteCapability, getSto
         id: item.id,
         name: cleanText(item.nameEn || item.name || item.nameEs, 220),
         quantity,
-        unitAmount: Math.max(0, Math.round(Number(item.price || 0) * 100)),
+        unitAmount: catalogPriceCents(item.price),
         taxable: item.taxable !== false,
         taxRateOverride: item.taxRateOverride ?? null,
       };

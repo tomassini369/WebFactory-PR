@@ -1,3 +1,4 @@
+import {catalogPriceCents} from '../lib/catalog-price.mjs';
 import {verifyMerchantCapability} from '../lib/stripe-merchant-capability.mjs';
 import {assertPosLocation} from "../lib/commercial-access.mjs";
 import { requirePosAdjustments } from '../lib/pos-permissions.mjs';
@@ -46,7 +47,7 @@ export function createPosCheckoutHandler({ authorize = requireSiteCapability, ge
       if(item.type==="product"&&item.trackInventory&&item.inventory!==null&&item.inventory!==undefined&&!item.allowBackorder&&quantity>Number(item.inventory||0)){
         throw Object.assign(new Error(`${item.name||"Item"} does not have enough inventory.`),{status:409});
       }
-      return {id:item.id,name:cleanText(item.nameEn||item.name||item.nameEs,220),quantity,unitAmount:Math.max(0,Math.round(Number(item.price||0)*100)),taxable:item.taxable!==false,taxRateOverride:item.taxRateOverride??null};
+      return {id:item.id,name:cleanText(item.nameEn||item.name||item.nameEs,220),quantity,unitAmount:catalogPriceCents(item.price),taxable:item.taxable!==false,taxRateOverride:item.taxRateOverride??null};
     });
 
     const subtotal=items.reduce((sum,item)=>sum+item.unitAmount*item.quantity,0);

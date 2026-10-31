@@ -1,3 +1,4 @@
+import {catalogPriceCents} from '../lib/catalog-price.mjs';
 import {verifyMerchantCapability} from '../lib/stripe-merchant-capability.mjs';
 import { bookingBalance, kioskBookingCodeKey } from '../lib/kiosk-bookings.mjs';
 import { clientCheckoutReturn } from '../lib/client-checkout-return.mjs';
@@ -50,7 +51,7 @@ function canonicalCart(site, requested, lang) {
     if (item.type==='product'&&item.trackInventory&&item.inventory!=null&&!item.allowBackorder&&quantity>Number(availableInventory(site,item))) {
       throw Object.assign(new Error(`${localizedText(item, lang, "name")} does not have enough inventory.`), { status: 409 });
     }
-    return { id: item.id, name: localizedText(item, lang, "name"), description: localizedText(item, lang, "description"), quantity, unitAmount: Math.round(Number(item.price) * 100) };
+    return { id: item.id, name: localizedText(item, lang, "name"), description: localizedText(item, lang, "description"), quantity, unitAmount: catalogPriceCents(item.price) };
   });
 }
 
@@ -108,8 +109,8 @@ export async function performCheckout(req, { kiosk = false, kioskQr = false, bal
       const service = (site.catalog || []).find((item) => item.id === payload.booking.serviceId && item.type === "service" && item.requiresAppointment && item.active !== false);
       const employee = (site.employees || []).find((member) => member.id === payload.booking.employeeId && member.active !== false && (member.serviceIds || []).includes(service?.id) && (!locations.length || (locationId && (member.locationIds || []).includes(locationId))));
       if (!service || !employee) throw Object.assign(new Error("The selected service or employee is unavailable."), { status: 409 });
+      const fullAmount = catalogPriceCents(service.price);
       hold = await createBookingHold(site, { ...payload.booking, locationId },{strictGoogle:true});
-      const fullAmount = Math.round(Number(service.price) * 100);
       const unitAmount = site.paymentRules?.bookingPayment === "deposit"
         ? Math.round(fullAmount * Number(site.paymentRules?.bookingDepositPercent || 25) / 100)
         : fullAmount;
@@ -152,7 +153,7 @@ export async function performCheckout(req, { kiosk = false, kioskQr = false, bal
     let bookingTotalCents,bookingTaxCents;
     if(kind==="booking"){
       const service=site.catalog.find(x=>x.id===hold.serviceId);
-      const full=Math.round(Number(service.price)*100);
+      const full=catalogPriceCents(service.price);
       const bookingInvoice=calculateTax({amountCents:full,taxable:service.taxable!==false,taxRateOverride:service.taxRateOverride??null,config:site.taxConfig||{}});
       bookingTotalCents=bookingInvoice.totalCents;bookingTaxCents=bookingInvoice.taxCents;
     }

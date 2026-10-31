@@ -661,3 +661,15 @@ test('kiosk booking cash receipt recovery preserves confirmed payment and create
  const req=()=>new Request('https://webfactorypr.com/.netlify/functions/client-commerce-admin',{method:'POST',headers:{Origin:'https://webfactorypr.com','Content-Type':'application/json'},body:JSON.stringify({siteId:'shop',kind:'booking',transactionId:id,action:'mark_paid',cash:true})});
  assert.equal((await commerceAdmin(req())).status,500);let row=await store.get(commerceKey('shop','bookings',id));assert.equal(row.paymentStatus,'paid_in_person');assert.equal(row.cashReceiptPending,true);const paidAt=row.paidAt;failReceipt=false;assert.equal((await commerceAdmin(req())).status,200);assert.equal((await commerceAdmin(req())).status,200);row=await store.get(commerceKey('shop','bookings',id));assert.equal(row.paidAt,paidAt);assert(row.receiptId);assert.equal(row.cashReceiptPending,false);assert.equal([...f.rows.keys()].filter(key=>key.includes('/v3/receipts/')).length,1);
 });
+
+
+test('legacy null or invalid catalog prices cannot create a free POS sale or receipt',async t=>{
+ const f=fixture(t,5);
+ for(const price of [null,'not-a-number','1e309',-1,{}]){
+  f.site.catalog[0].price=price;await f.prepare();
+  assert.equal((await sale(saleRequest())).status,409);
+  assert.equal((await getClientSite('shop')).catalog[0].inventory,5);
+  assert.equal([...f.rows.keys()].filter(key=>key.includes('/v3/receipts/')).length,0);
+ }
+ f.site.catalog[0].price=0;await f.prepare();assert.equal((await sale(saleRequest())).status,200,'An intentionally free item remains valid');
+});
