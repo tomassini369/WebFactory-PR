@@ -515,8 +515,15 @@ jobs:
         run: |
           node scripts/marketplace-http-smoke.mjs
           for engine in chromium webkit; do
-            QA_ENGINE="$engine" node scripts/browser-marketplace-consumer-smoke.mjs
-            QA_ENGINE="$engine" node scripts/browser-marketplace-return-smoke.mjs
+            for check in consumer return; do
+              log="/tmp/marketplace-${check}-${engine}.log"
+              if ! QA_ENGINE="$engine" node "scripts/browser-marketplace-${check}-smoke.mjs" > "$log" 2>&1; then
+                cat "$log"
+                node scripts/report-kiosk-ci-error.mjs "$log" "marketplace-preview-$engine"
+                exit 1
+              fi
+              cat "$log"
+            done
           done
       - name: Check deployed commercial authentication boundaries
         env:

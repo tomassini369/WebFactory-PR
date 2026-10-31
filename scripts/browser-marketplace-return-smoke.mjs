@@ -2,7 +2,8 @@ import assert from 'node:assert/strict'
 import {preview} from 'vite'
 import {chromium,webkit} from 'playwright'
 const engine=process.env.QA_ENGINE||'chromium',server=process.env.QA_ORIGIN?null:await preview({preview:{host:'127.0.0.1',port:5343,strictPort:true}}),origin=process.env.QA_ORIGIN||'http://127.0.0.1:5343'
-const browser=await(engine==='webkit'?webkit:chromium).launch(engine==='webkit'?{}:process.env.QA_CHROMIUM_PATH?{executablePath:process.env.QA_CHROMIUM_PATH,args:['--no-sandbox']}:{});
+const launch=engine==='webkit'?(process.env.QA_WEBKIT_PATH?{executablePath:process.env.QA_WEBKIT_PATH}:{}):(process.env.QA_CHROMIUM_PATH?{executablePath:process.env.QA_CHROMIUM_PATH,args:['--no-sandbox']}:{})
+const browser=await(engine==='webkit'?webkit:chromium).launch({...launch,...(process.env.QA_ORIGIN&&process.env.HTTPS_PROXY?{proxy:{server:process.env.HTTPS_PROXY}}:{})});
 try{for(const width of (process.env.QA_WIDTHS||'320,375,390,430,768,1024,1440').split(',').map(Number)){
  const context=await browser.newContext({viewport:{width,height:900},reducedMotion:'reduce',serviceWorkers:'block'});await context.addInitScript(()=>{if(window.top===window)localStorage.setItem('webfactory-language','es')});const page=await context.newPage();
  await page.route('**/.netlify/functions/**',r=>r.fulfill({json:{ok:true,user:null,entries:[],truncated:false}}));

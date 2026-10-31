@@ -80,3 +80,18 @@ its exact message/stack and reproduction steps. Authenticated operational
 portals need their own isolated fixtures; anonymous login checks are not proof
 of all private operations. New commit CI/deployment and published reruns must
 be checked independently; local passes are not a claim of remote success.
+
+## Additional completed evidence
+
+The final customizer matrix passed all 24 cases (390/768/1440 × ES/EN ×
+Light/Dark × Chromium/WebKit). Published commit60c890e passed six material/print
+checks at all three sizes in both engines, with no runtime exceptions or
+operational requests. The published consumer smoke independently passed all
+16 cases at390/1440 in both engines, both themes and languages; invalid signup
+and CSRF HTTP boundaries also passed without creating accounts. Return links
+passed published Chromium390/1440. The new CI run still reported a failure in
+its combined consumer step; direct reproductions passed and its signed log
+host was blocked, so no speculative application fix was made. Add existing
+redacted error annotations to that step to make subsequent failures diagnosable.
+Consumer/return scripts now honor the configured proxy and retained WebKit
+path, permitting the same checks in this managed environment.
