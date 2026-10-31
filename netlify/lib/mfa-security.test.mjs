@@ -4,7 +4,7 @@ import crypto from 'node:crypto';
 import * as webAuthn from '@simplewebauthn/server';
 import { totpCode } from './mfa-totp.mjs';
 import { isoCBOR } from '@simplewebauthn/server/helpers';
-import { issuePrimarySession, securityState, assertSecondFactor, createMfaService, hash, userPrefix, PRIMARY_COOKIE, revokePrimarySession } from './mfa-security.mjs';
+import { issuePrimarySession, renewPosSession, securityState, assertSecondFactor, createMfaService, hash, userPrefix, PRIMARY_COOKIE, revokePrimarySession } from './mfa-security.mjs';
 const origin='https://portal.example.com',user={id:'private-user',email:'private@example.com'};
 function memory(){const data=new Map();let revision=0;return {data,async get(key){return structuredClone(data.get(key)?.data??null)},async getWithMetadata(key){return structuredClone(data.get(key)??null)},async setJSON(key,value,options={}){const old=data.get(key);if(options.onlyIfNew&&old||options.onlyIfMatch&&old?.etag!==options.onlyIfMatch)return {modified:false};data.set(key,{data:structuredClone(value),etag:String(++revision)});return {modified:true}},async delete(key){data.delete(key)},async list({prefix}){return {blobs:[...data.keys()].filter(key=>key.startsWith(prefix)).map(key=>({key}))}}};}
 async function setup(){const store=memory(),jar=new Map(),context={cookies:{get:name=>jar.get(name),set:cookie=>{assert.equal(cookie.httpOnly,true);assert.equal(cookie.secure,true);jar.set(cookie.name,cookie.value)},delete:cookie=>jar.delete(cookie.name)}};let clock=Date.now();await issuePrimarySession(user,context,store,clock);const service=createMfaService(store,webAuthn,()=>clock,{totpKey:()=>Buffer.alloc(32,7).toString('base64')});return {store,context,service,clock:()=>clock,advance:value=>clock+=value};}
@@ -92,4 +92,30 @@ test('lost audit completion after SMTP cannot cause notification resend on a ret
  await assert.rejects(s.reset({notify}));s.store.setJSON=write;
  assert.equal((await s.reset({notify})).notification,'review_required');assert.equal(sends,1);
  assert.equal((await securityState(s.target,s.targetContext,s.store,false,s.clock())).verified,false);
+});
+
+// The preview exception never changes stored enrollment or creates MFA proof.
+test('preview MFA exception requires trusted deploy metadata, opt-in and a valid primary login',async t=>{
+ const previous=globalThis.Netlify;t.after(()=>{globalThis.Netlify=previous});const s=await setup();let context='deploy-preview',enabled=true;globalThis.Netlify={context:{deploy:{get context(){return context}}},env:{get:key=>key==='WEBFACTORY_PREVIEW_SKIP_MFA'&&enabled?'true':''}};
+ let state=await securityState(user,s.context,s.store,true,s.clock());assert.equal(state.required,false);assert.equal(state.previewBypass,true);assert.equal(state.verified,false);await assertSecondFactor(user,s.context,s.store,true);
+ const missing={cookies:{get:()=>null}};assert.equal((await securityState(user,missing,s.store,true,s.clock())).required,true);await assert.rejects(assertSecondFactor(user,missing,s.store,true));
+ for(const value of ['production','branch-deploy','dev','unknown','']){context=value;assert.equal((await securityState(user,s.context,s.store,true,s.clock())).required,true);await assert.rejects(assertSecondFactor(user,s.context,s.store,true));}
+ context='deploy-preview';enabled=false;assert.equal((await securityState(user,s.context,s.store,true,s.clock())).required,true);
+});
+test('preview MFA exception preserves enrolled factors and does not satisfy recent MFA for sensitive security actions',async t=>{
+ const previous=globalThis.Netlify;t.after(()=>{globalThis.Netlify=previous});const s=await setup();await enroll(s);await issuePrimarySession(user,s.context,s.store,s.clock());const before=JSON.stringify([...s.store.data]);globalThis.Netlify={context:{deploy:{context:'deploy-preview'}},env:{get:key=>key==='WEBFACTORY_PREVIEW_SKIP_MFA'?'true':''}};
+ const state=await securityState(user,s.context,s.store,true,s.clock());assert.equal(state.required,false);assert.equal(state.enrolled,true);assert.equal(state.verified,false);await assert.rejects(assertRecentSecondFactor(user,s.context,s.store,s.clock()));assert.equal(JSON.stringify([...s.store.data]),before);
+ globalThis.Netlify.context.deploy.context='production';assert.equal((await securityState(user,s.context,s.store,true,s.clock())).required,true);await assert.rejects(assertSecondFactor(user,s.context,s.store,true));
+});
+
+test('POS renewal extends a valid session without resetting MFA proof or reviving revoked/expired sessions',async()=>{
+ const s=await setup();await enroll(s);const token=s.context.cookies.get(PRIMARY_COOKIE),key=`${userPrefix(user)}sessions/${hash(token)}.json`;
+ const before=await s.store.get(key);s.advance(3*3600000);await renewPosSession(user,s.context,s.store,s.clock());const after=await s.store.get(key);assert(after.expiresAt>before.expiresAt);assert.equal(after.verifiedAt,before.verifiedAt);assert.equal(after.issuedAt,before.issuedAt);assert.equal(after.version,before.version);await assert.rejects(assertRecentSecondFactor(user,s.context,s.store,s.clock()),{status:403});
+ await revokePrimarySession(user,s.context,s.store);s.context.cookies.set({name:PRIMARY_COOKIE,value:token,httpOnly:true,secure:true});await assert.rejects(renewPosSession(user,s.context,s.store,s.clock()),{status:401});
+ const expired=await setup();expired.advance(8*3600000+1);await assert.rejects(renewPosSession(user,expired.context,expired.store,expired.clock()),{status:401});
+});
+
+test('POS renewal cannot revive a primary session invalidated by a security reset',async()=>{
+ const s=await setup(),token=s.context.cookies.get(PRIMARY_COOKIE),key=`${userPrefix(user)}sessions/${hash(token)}.json`,before=await s.store.get(key);
+ await s.store.setJSON(`${userPrefix(user)}profile.json`,{resetEpoch:'security-reset'});s.advance(3*3600000);await assert.rejects(renewPosSession(user,s.context,s.store,s.clock()),{status:401});assert.deepEqual(await s.store.get(key),before);
 });

@@ -1,0 +1,136 @@
+{
+  "origin": "https://deploy-preview-125--webfactorypr.netlify.app",
+  "checkedAt": "2026-10-25T17:12:17.590Z",
+  "authenticated": false,
+  "physicalDevice": false,
+  "rows": [
+    {
+      "width": 390,
+      "path": "/copyright",
+      "status": 200,
+      "error": null,
+      "requests": [
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app document",
+          "count": 1
+        },
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app script",
+          "count": 6
+        },
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app stylesheet",
+          "count": 2
+        },
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app image",
+          "count": 2
+        }
+      ],
+      "failedOrigins": [],
+      "storageKeys": {
+        "local": [],
+        "session": []
+      },
+      "cookies": []
+    },
+    {
+      "width": 390,
+      "path": "/sites/faro-norte-preview",
+      "status": 200,
+      "error": null,
+      "requests": [
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app document",
+          "count": 1
+        },
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app script",
+          "count": 14
+        },
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app stylesheet",
+          "count": 7
+        },
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app fetch",
+          "count": 1
+        },
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app image",
+          "count": 6
+        }
+      ],
+      "failedOrigins": [],
+      "storageKeys": {
+        "local": [],
+        "session": []
+      },
+      "cookies": []
+    },
+    {
+      "width": 1440,
+      "path": "/copyright",
+      "status": 200,
+      "error": null,
+      "requests": [
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app document",
+          "count": 1
+        },
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app script",
+          "count": 6
+        },
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app stylesheet",
+          "count": 2
+        },
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app image",
+          "count": 2
+        }
+      ],
+      "failedOrigins": [],
+      "storageKeys": {
+        "local": [],
+        "session": []
+      },
+      "cookies": []
+    },
+    {
+      "width": 1440,
+      "path": "/sites/faro-norte-preview",
+      "status": 200,
+      "error": null,
+      "requests": [
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app document",
+          "count": 1
+        },
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app script",
+          "count": 14
+        },
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app stylesheet",
+          "count": 7
+        },
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app fetch",
+          "count": 1
+        },
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app image",
+          "count": 6
+        }
+      ],
+      "failedOrigins": [],
+      "storageKeys": {
+        "local": [],
+        "session": []
+      },
+      "cookies": []
+    }
+  ]
+}

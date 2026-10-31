@@ -1,7 +1,11 @@
+import {cancelPendingCheckout} from '../lib/cancel-pending-checkout.mjs';
+import {manageInPersonOrder} from '../lib/in-person-orders.mjs';
 import {withBookingLock} from '../lib/booking-lock.mjs';
 import {availabilityForDate} from '../lib/booking-engine.mjs';
 import {kioskBookingModes,lookupKioskBooking,assertKioskBooking,kioskBookingView,bookingBalance} from '../lib/kiosk-bookings.mjs';
 import crypto from 'node:crypto';
+import {kioskAppearance,validateKioskAppearance,kioskPresets,validateKioskPresets} from '../lib/kiosk-skins.mjs';
+import {kioskBackgroundAssets,assertRegisteredBackgrounds} from '../lib/kiosk-backgrounds.mjs';
 import { assertSameOrigin, requireSiteCapability, errorResponse, membershipHasCapability } from '../lib/client-auth.mjs';
 import { clientCommerceStore, getClientSite, commerceKey } from '../lib/client-store.mjs';
 import { cleanText, validEmail } from '../lib/platform-utils.mjs';
@@ -21,7 +25,7 @@ export function createKioskHandler({ authorize = requireSiteCapability, getStore
       balanceBooking=await getStore().get(commerceKey(payload.siteId,"bookings",payload.balanceReference),{type:"json"});
       if(balanceBooking?.balanceAttempt?.attempt!==req.headers.get("Idempotency-Key"))throw kioskFail("Balance attempt mismatch.",409);
     }
-    return performCheckout(req,{kiosk:true,balanceBooking,balanceAttempt:req.headers.get("Idempotency-Key")||""});
+    return performCheckout(req,{kiosk:true,kioskQr:req.headers.get('X-WF-Kiosk-Checkout')==='qr',balanceBooking,balanceAttempt:req.headers.get("Idempotency-Key")||""});
   }, getSite: payload => getSite(payload.siteId), isAvailable, getStore });
   return async req => {
     try {
@@ -33,16 +37,26 @@ export function createKioskHandler({ authorize = requireSiteCapability, getStore
         const raw = await req.text(); if (Buffer.byteLength(raw) > 16000) throw kioskFail('Request too large.', 413);
         input = JSON.parse(raw); if (!input || typeof input !== 'object' || Array.isArray(input)) throw kioskFail('Invalid request.');
       }
-      if (['admin', 'configure', 'create', 'revoke'].includes(input.action)) {
+      if (['admin', 'appearance', 'appearance_presets', 'configure', 'create', 'revoke'].includes(input.action)) {
         const { site, user, membership } = await authorize(input.siteId, 'settings');
         const actor = displayActor(user), email = String(user.email || '').toLowerCase();
         if (!['owner', 'manager'].includes(membership?.role) || !site.members?.some(x => String(x.email).toLowerCase() === email && ['owner', 'manager'].includes(x.role))) throw kioskFail('Business administrator required / Administrador del negocio requerido.', 403);
         const configKey = kioskConfigKey(site.siteId);
         let configuration = await store.get(configKey, { type: 'json' }) || { enabled: false, devices: [] };
+        if(input.action==='appearance'){
+          const appearance=validateKioskAppearance(input.appearance,site.siteId);
+          configuration=await mutateKiosk(store,configKey,current=>{assertRegisteredBackgrounds(current,[appearance],site.siteId);return {...current,appearance,updatedAt:now,updatedBy:actor}});
+        }
+        if(input.action==='appearance_presets'){
+          const appearancePresets=validateKioskPresets(input.presets,site.siteId);
+          configuration=await mutateKiosk(store,configKey,current=>{assertRegisteredBackgrounds(current,appearancePresets.map(p=>p.appearance),site.siteId);return {...current,appearancePresets,updatedAt:now,updatedBy:actor}});
+        }
         if (input.action === 'configure') {
           if (typeof input.enabled !== 'boolean') throw kioskFail('Choose enabled or disabled.');
+          if(input.touchKeyboard!==undefined&&typeof input.touchKeyboard!=='boolean')throw kioskFail('Invalid touch keyboard setting.');
+          if(input.checkoutMode!==undefined&&!['screen','qr'].includes(input.checkoutMode))throw kioskFail('Invalid checkout mode.');
           if(input.bookingModes && (typeof input.bookingModes.newBookings!=="boolean"||typeof input.bookingModes.existingBookings!=="boolean"))throw kioskFail("Invalid booking modes.");
-          configuration = await mutateKiosk(store, configKey, current => ({ ...(current || {}), enabled: input.enabled, ...(input.bookingModes?{bookingModes:input.bookingModes}:{}), devices: current?.devices || [], updatedAt: now, updatedBy: actor }));
+          configuration = await mutateKiosk(store, configKey, current => ({ ...(current || {}), enabled: input.enabled, ...(input.touchKeyboard!==undefined?{touchKeyboard:input.touchKeyboard}:{}), ...(input.checkoutMode?{checkoutMode:input.checkoutMode}:{}), ...(input.bookingModes?{bookingModes:input.bookingModes}:{}), devices: current?.devices || [], updatedAt: now, updatedBy: actor }));
         }
         if (input.action === 'create') {
           if (!configuration.enabled || !isAvailable(site)) throw kioskFail('Enable kiosk first / Habilita el kiosco primero.', 409);
@@ -70,7 +84,7 @@ export function createKioskHandler({ authorize = requireSiteCapability, getStore
           });
           configuration = await mutateKiosk(store, configKey, current => ({ ...(current || {}), devices: (current?.devices || []).filter(x => x.id !== input.id) }));
         }
-        return Response.json({ ok: true, enabled: Boolean(configuration.enabled), bookingModes:kioskBookingModes(configuration), devices: (configuration.devices || []).filter(x => x.expiresAt > now) }, { headers });
+        return Response.json({ ok: true, appearance:kioskAppearance(configuration.appearance,site.siteId), presets:kioskPresets(configuration.appearancePresets,site.siteId),backgroundAssets:kioskBackgroundAssets(configuration,site.siteId), enabled: Boolean(configuration.enabled), touchKeyboard:configuration.touchKeyboard===true, checkoutMode:configuration.checkoutMode==='qr'?'qr':'screen', bookingModes:kioskBookingModes(configuration), devices: (configuration.devices || []).filter(x => x.expiresAt > now) }, { headers });
       }
       const [deviceId, deviceToken] = cookieValue(req).split('.');
       const id = input.action === 'pair' ? input.id : deviceId;
@@ -122,6 +136,16 @@ export function createKioskHandler({ authorize = requireSiteCapability, getStore
         }
         return Response.json({ok:true,...await kioskView(store,state,site),booking:await kioskBookingView(store,state,site,now)},{headers});
       }
+      if(req.method==='POST'&&input.action==='cancel_checkout'){
+        if(input.saleId!==state.saleId||!state.active?.response?.transactionId)throw kioskFail('Sale changed.',409);
+        const transactionId=state.active.response.transactionId;
+        const authorize=row=>{if(row.channel!=='kiosk'||row.locationId!==state.locationId||row.transactionId!==transactionId||row.siteId!==site.siteId)throw kioskFail('Sale unavailable.',403)};
+        const row=await store.get(commerceKey(site.siteId,'transactions',transactionId),{type:'json'});
+        if(!row)throw kioskFail('Verify the existing payment with staff.',409);authorize(row);
+        if(row.source==='in_person_order')await manageInPersonOrder(site.siteId,transactionId,'cancel_in_person');
+        else await cancelPendingCheckout(site,transactionId,{store,requestUrl:req.url,authorize});
+        return Response.json({ok:true,...await kioskView(store,state,site)},{headers});
+      }
       if (req.method === 'POST' && ['checkout', 'booking_checkout', 'balance_checkout', 'resume'].includes(input.action)) {
         if (input.saleId !== state.saleId) throw kioskFail('Sale changed / La venta cambió.', 409);
         if (input.action !== 'resume') {
@@ -150,12 +174,12 @@ export function createKioskHandler({ authorize = requireSiteCapability, getStore
             const windowAt = now - Number(current.checkoutWindowAt || 0) >= 60000 ? now : current.checkoutWindowAt;
             const count = windowAt === current.checkoutWindowAt ? Number(current.checkoutCount || 0) : 0;
             if (count >= 20) throw kioskFail('Too many orders; wait a minute / Demasiadas órdenes; espera un minuto.', 429);
-            return { ...current, checkoutWindowAt: windowAt, checkoutCount: count + 1, active: { kind: input.action==='booking_checkout'?'booking':'order', payload: encoded, fingerprint, attempt, startedAt: now, pricesIncludeTax: Boolean(site.taxConfig?.pricesIncludeTax) } };
+            return { ...current, checkoutWindowAt: windowAt, checkoutCount: count + 1, active: { checkoutMode:configuration.checkoutMode==='qr'?'qr':'screen', kind: input.action==='booking_checkout'?'booking':'order', payload: encoded, fingerprint, attempt, startedAt: now, pricesIncludeTax: Boolean(site.taxConfig?.pricesIncludeTax) } };
           });
         }
         if (!state.active) throw kioskFail('No checkout to resume.', 409);
         if (!state.active.response && state.active.payload) {
-          const forwarded = new Request(`${url.origin}/.netlify/functions/create-client-checkout`, { method: 'POST', headers: { Origin: url.origin, 'Content-Type': 'application/json', 'Idempotency-Key': state.active.attempt }, body: state.active.payload });
+          const forwarded = new Request(`${url.origin}/.netlify/functions/create-client-checkout`, { method: 'POST', headers: { Origin: url.origin, 'Content-Type': 'application/json', 'Idempotency-Key': state.active.attempt, 'X-WF-Kiosk-Checkout':state.active.checkoutMode||'screen' }, body: state.active.payload });
           const result = await executeCheckout(forwarded), body = await result.json();
           if (result.ok && body.ok && body.transactionId) {
             state = await mutateKiosk(store, kioskDeviceKey(id), current => {
@@ -184,3 +208,4 @@ export function createKioskHandler({ authorize = requireSiteCapability, getStore
 }
 export default createKioskHandler();
 export const config = { rateLimit: { windowLimit: 600, windowSize: 60, aggregateBy: ['ip'] } };
+

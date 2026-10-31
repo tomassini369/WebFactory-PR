@@ -1,0 +1,41 @@
+{
+  "enabled": true,
+  "checkoutMode": "qr",
+  "bookingModes": {
+    "newBookings": true,
+    "existingBookings": true
+  },
+  "appearance": {
+    "skinId": "glass-premium",
+    "version": 1,
+    "primary": "#123D42",
+    "secondary": "#BE8152",
+    "font": "native",
+    "buttons": "rounded",
+    "cards": "soft",
+    "background": "brand",
+    "motion": "none",
+    "layout": "list",
+    "finish": "glass",
+    "glassOpacity": 70,
+    "glassBlur": 0,
+    "colorMode": "image",
+    "gradientFrom": "#123D42",
+    "gradientTo": "#BE8152",
+    "gradientAngle": 135,
+    "pattern": "waves",
+    "backgroundAssetKey": "",
+    "imageFit": "contain",
+    "imageX": 50,
+    "imageY": 50,
+    "imageBlur": 0,
+    "overlayColor": "#123D42",
+    "overlayOpacity": 0,
+    "headerColor": "",
+    "cardColor": "",
+    "cartColor": "",
+    "welcome": "banner",
+    "welcomeText": "Sin cita · Reserva con depósito · Ya tengo cita",
+    "density": "comfortable"
+  }
+}

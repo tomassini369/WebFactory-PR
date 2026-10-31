@@ -12,6 +12,11 @@ if (process.env.CONTEXT === 'production') {
     build: { outDir: 'dist/design-preview/portal' },
   })
   await build({
+    configFile: new URL('../kiosk-preview.config.ts', import.meta.url).pathname,
+    base: '/design-preview/kiosk/',
+    build: { outDir: 'dist/design-preview/kiosk' },
+  })
+  await build({
     configFile: new URL('../home-preview.config.ts', import.meta.url).pathname,
     base: '/design-preview/home/',
     define: { __WF_PREVIEW_REVIEW__: 'false' },

@@ -1,3 +1,5 @@
+import {issueBuyerReceiptAccess} from './buyer-receipt-access.mjs';
+import {clientCheckoutReturn} from './client-checkout-return.mjs';
 import crypto from 'node:crypto';
 import Stripe from 'stripe';
 import { clientCommerceStore, commerceKey } from './client-store.mjs';
@@ -16,7 +18,7 @@ export function checkoutParameters(params){
   }
   return result;
 }
-export async function createReservedStripeCheckout(site,record,params,{requestUrl,store=clientCommerceStore(),client, reserve=reserveInventory}={}){
+export async function createReservedStripeCheckout(site,record,params,{requestUrl,store=clientCommerceStore(),client, reserve=reserveInventory, buyerReceiptReturn=false}={}){
   assertStripeWriteAllowed({requestUrl});
   if(record.kind!=='order'||record.siteId!==site.siteId||!record.stripeAccountId||!Number.isSafeInteger(record.amountTotal)||record.amountTotal<=0)throw fail('Invalid inventory checkout.',400);
   const fingerprint=crypto.createHash('sha256').update(JSON.stringify({items:record.items,customer:record.customer,amountTotal:record.amountTotal,discounts:record.discounts,tax:record.tax,tip:record.tip,currency:record.currency,stripeAccountId:record.stripeAccountId})).digest('hex');
@@ -30,6 +32,13 @@ export async function createReservedStripeCheckout(site,record,params,{requestUr
       if(Date.now()-Date.parse(previous.createdAt)>23*60*60*1000)throw fail('An uncertain old checkout requires provider reconciliation.');
       record=previous;
     }else{
+      if(buyerReceiptReturn){
+        if(record.source!=='pos_remote')throw fail('Invalid buyer return flow.',400);
+        const access=await issueBuyerReceiptAccess(site.siteId,record.transactionId,store);
+        record={...record,buyerReceiptHash:access.hash};
+        const returns=clientCheckoutReturn({slug:site.slug,kiosk:true,kioskQr:true,requestUrl,receiptReturn:'receipt='+encodeURIComponent(access.token)});
+        params.set('success_url',returns.success);params.set('cancel_url',returns.cancel);
+      }
       params.set('expires_at',String(Math.floor(Date.now()/1000)+31*60));
       params.set('integration_identifier',`webfactory_${Array.from(crypto.randomBytes(8),value=>String.fromCharCode(97+value%26)).join('')}`);
       record={...record,inventoryProtocol:1,inventoryReservationRequired:true,checkoutFingerprint:fingerprint,checkoutParameters:checkoutParameters(params),status:'checkout_creating'};

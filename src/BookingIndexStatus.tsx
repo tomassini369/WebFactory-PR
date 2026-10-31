@@ -1,0 +1,10 @@
+import {useEffect,useState} from 'react'
+import {PortalPanel} from './PortalPanel'
+import {usePractice} from './training/practice-context'
+import {useWorkspaceApi} from './training/workspace-services'
+export default function BookingIndexStatus({siteId,lang}:{siteId:string;lang:'es'|'en'}){
+ const api=useWorkspaceApi(),practice=usePractice(),es=lang==='es',[status,setStatus]=useState('pending'),[busy,setBusy]=useState(false),[error,setError]=useState('');
+ useEffect(()=>{let active=true;if(!practice)void api('/.netlify/functions/client-booking-index?siteId='+encodeURIComponent(siteId)).then(r=>{if(active)setStatus(r.state.status)}).catch(e=>{if(active)setError(e.message)});return()=>{active=false}},[siteId,practice]);
+ const optimize=async()=>{setBusy(true);setError('');try{for(let i=0;i<3;i++){const r=await api('/.netlify/functions/client-booking-index',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({siteId})});setStatus(r.state.status);if(r.state.status==='ready')break}}catch(e){setError(e instanceof Error?e.message:'Error')}finally{setBusy(false)}};
+ return <PortalPanel className="ca-panel"><h2>{es?'Rendimiento de la agenda':'Calendar performance'}</h2><p>{status==='ready'?(es?'La lectura por fecha está habilitada.':'Date-based reading is enabled.'):(es?'Prepara el historial para acelerar la consulta de horarios. Las reservas continúan disponibles mientras se procesa por etapas.':'Prepare history for faster availability queries. Bookings remain available while preparation runs in stages.')}</p>{status!=='ready'&&<button disabled={busy||!!practice} onClick={()=>void optimize()}>{busy?(es?'Preparando…':'Preparing…'):status==='building'?(es?'Continuar preparación':'Continue preparation'):(es?'Optimizar agenda':'Optimize calendar')}</button>}{error&&<p role="alert">{error}</p>}</PortalPanel>
+}

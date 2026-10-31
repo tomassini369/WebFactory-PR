@@ -17,7 +17,7 @@ try{
    await page.goto('http://127.0.0.1:5191/templates/'+config.slug)
    await page.locator('.template-hero h1').waitFor()
    await page.locator('.template-languages button').filter({hasText:lang.toUpperCase()}).click()
-   assert.equal(await page.locator('.template-location-map iframe').count(),1,'Demo includes sample map')
+   assert.equal(await page.locator('.template-location-map iframe').count(),0,'No Google iframe before an explicit choice');await page.locator('.template-map-consent button').click();assert.equal(await page.locator('.template-location-map iframe').count(),1,'Demo includes sample map')
    assert.equal(await page.locator('.template-header-actions .template-cart-button').count(),config.cartEnabled?1:0)
    assert.equal(await page.locator('.template-hero-actions .template-solid').count(),config.bookingEnabled?1:0)
    for(const selector of ['.template-function-showcase','.template-feature-strip','.template-catalog-gateway','.template-booking-showcase'])assert.equal(await page.locator(selector).count(),0,'No repeated feature blocks')

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import {preview} from 'vite'
 import {chromium} from 'playwright'
 const server=await preview({preview:{host:'127.0.0.1',port:5196,strictPort:true}})
-const browser=await chromium.launch(process.env.QA_CHROMIUM_PATH?{executablePath:process.env.QA_CHROMIUM_PATH,args:['--single-process','--no-sandbox']}:undefined)
+const browser=await chromium.launch(process.env.QA_CHROMIUM_PATH?{executablePath:process.env.QA_CHROMIUM_PATH,args:['--no-sandbox']}:undefined)
 const page=await browser.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message))
 const user={id:'isolated-layout-fixture',email:'layout@example.invalid',user_metadata:{},app_metadata:{},mfa:{required:false}}
 const site={siteId:'layout-fixture',slug:'layout',status:'published',revision:1,business:{name:'WebFactory QA',category:'Barber'},design:{primary:'#0B1529',secondary:'#3C86F6',style:'Modern'},catalog:[],employees:[],hours:{},members:[],settings:{locale:'en',timezone:'America/Puerto_Rico',currency:'USD'},paymentRules:{},googleCalendar:{},features:{},servicePlan:{code:'complimentary',billingModel:'complimentary'}}
@@ -32,7 +32,7 @@ await page.route('**/.netlify/functions/**',async route=>{
 try{
  // Homepage click and actual return button use real route navigation; no auth mutation.
  await page.goto('http://127.0.0.1:5196/')
- await page.locator('.wf-h-login').click()
+ await page.locator('.mk-footer a[href="/client-admin"]').click()
  await page.waitForURL('**/client-admin');await page.locator('.ca-login input[type=email]').waitFor()
  await page.locator('button.portal-return-home').click()
  await page.waitForURL('http://127.0.0.1:5196/')
@@ -42,10 +42,10 @@ try{
   signedIn=true
   await page.evaluate(()=>sessionStorage.removeItem('wf-section:layout-fixture'))
   await page.setViewportSize({width,height:width===844?390:844});await page.goto('http://127.0.0.1:5196/'+path)
-  const root=page.locator(path==='client-admin'?'.ca-dashboard':'.wfa-dashboard');await root.waitFor()
+  const root=page.locator(path==='client-admin'?'.gd-client-dashboard':'.gd-admin-dashboard');await root.waitFor()
   if(await page.locator('html').getAttribute('data-wf-theme')!==theme)await page.locator('.wf-theme-toggle').click()
-  assert.equal(await root.evaluate(e=>getComputedStyle(e).getPropertyValue('--pg-accent').trim()),theme==='dark'?'#91bfff':'#285fa6','Original accents must use platform blue')
-  assert.equal(await root.locator('.sidebar-traffic-lights .dot').count(),3)
+  assert(await page.locator('.gd-dock').isVisible(),'New floating dock is present')
+  assert.equal(await root.locator('.sidebar-traffic-lights').count(),0,'Retired sidebar chrome is absent')
   for(const lang of ['ES','EN']){await page.locator('.portal-language button').getByText(lang,{exact:true}).click();assert.equal(await page.locator('html').getAttribute('lang'),lang.toLowerCase())}
   if(path==='webfactory-admin'){
    const sales=page.locator('.wfa-sales');await sales.locator('.wfa-sales-metrics strong').filter({hasText:'$950.00'}).waitFor()
@@ -66,20 +66,20 @@ try{
   if(process.env.QA_SCREENSHOT_DIR){await page.waitForTimeout(350);await page.screenshot({path:`${process.env.QA_SCREENSHOT_DIR}/${path}-overview-${width}-${theme}.png`,fullPage:path==='webfactory-admin'});if(path==='webfactory-admin'){const sales=page.locator('.wfa-sales');await sales.locator('.wfa-sales-metrics').screenshot({path:`${process.env.QA_SCREENSHOT_DIR}/sales-cards-${width}-${theme}.png`});for(const [i,name] of ['daily','refunds'].entries())await sales.locator('.wfa-sales-chart').nth(i).screenshot({path:`${process.env.QA_SCREENSHOT_DIR}/sales-${name}-${width}-${theme}.png`})}}
   const toggle=page.locator(path==='client-admin'?'.ca-mobile-menu-toggle':'.wfa-menu-toggle')
   await toggle.click();assert.equal(await toggle.getAttribute('aria-expanded'),'true')
-  const sidebar=page.locator('.sidebar-container')
-  await page.waitForFunction(()=>Math.abs(document.querySelector('.sidebar-container').getBoundingClientRect().width-240)<.5)
+  const sidebar=page.locator('.gd-navigation')
+  await sidebar.waitFor({state:'visible'})
   assert.equal(await sidebar.getByText('Dorian',{exact:true}).count(),0)
   assert.equal(await sidebar.locator('.sidebar-bell-badge,.sidebar-item-badge').count(),0)
-  assert.equal(await sidebar.evaluate(el=>getComputedStyle(el).backdropFilter),'none','Opaque navigation does not need a costly blur')
+  assert.equal(await sidebar.evaluate(el=>el.tagName),'DIALOG','Navigation uses a native focus-trapped dialog')
   assert((await sidebar.locator('[aria-current=page]').evaluate(el=>el.getBoundingClientRect().height))>=44,'Navigation targets remain at least 44px on every screen')
   assert(await sidebar.evaluate(el=>el.getBoundingClientRect().bottom<=innerHeight+1),'Short screens must keep navigation scrollable')
-  if(process.env.QA_SCREENSHOT_DIR){await page.locator(path==='client-admin'?'.ca-work':'.wfa-work').evaluate(el=>el.scrollTop=0);await page.waitForTimeout(350);await page.screenshot({path:`${process.env.QA_SCREENSHOT_DIR}/${path}-sidebar-${width}-${theme}.png`})}
-  const search=sidebar.getByRole('textbox',{name:'Search sections'})
-  await search.fill('not-a-real-section');await sidebar.getByRole('status').filter({hasText:'No results'}).waitFor()
+  if(process.env.QA_SCREENSHOT_DIR){await page.locator(path==='client-admin'?'.gd-client-work':'.gd-admin-work').evaluate(el=>el.scrollTop=0);await page.waitForTimeout(350);await page.screenshot({path:`${process.env.QA_SCREENSHOT_DIR}/${path}-sidebar-${width}-${theme}.png`})}
+  const search=sidebar.getByRole('searchbox',{name:'Find a module'})
+  await search.fill('not-a-real-section');await sidebar.getByRole('status').filter({hasText:'No matching modules.'}).waitFor()
   await search.fill(path==='client-admin'?'Products and services':'Clients')
   assert.equal(await sidebar.locator('button[aria-current=page]').count(),0)
   await search.fill('')
-  const nav=page.locator('.wf-sidebar-frame nav')
+  const nav=page.locator('.gd-navigation')
 
   await selectPortalSection(page,path==='client-admin'?'Products and services':'Clients')
   if(width<=820)assert.equal(await toggle.getAttribute('aria-expanded'),'false')
@@ -91,18 +91,14 @@ try{
   if(path==='client-admin'&&width===1280&&theme==='light'){
    await page.getByRole('button',{name:'+ Add',exact:true}).click()
    page.once('dialog',dialog=>dialog.dismiss())
-   await nav.getByRole('button',{name:'Overview',exact:true}).click()
-   assert.equal(await nav.getByRole('button',{name:'Products and services',exact:true}).getAttribute('aria-current'),'page','Cancel must preserve the draft and active page')
+   await selectPortalSection(page,'Overview')
+   assert.equal(await nav.getByRole('button',{name:'Products and services',exact:true,includeHidden:true}).getAttribute('aria-current'),'page','Cancel must preserve the draft and active page')
    page.once('dialog',dialog=>dialog.accept())
-   await nav.getByRole('button',{name:'Overview',exact:true}).click()
+   await selectPortalSection(page,'Overview')
    assert.equal(await page.evaluate(()=>sessionStorage.getItem('wf-section:layout-fixture')),'overview')
-   await page.keyboard.press('Escape')
-   await page.waitForFunction(()=>Math.abs(document.querySelector('.sidebar-container').getBoundingClientRect().width-74)<.5)
-   const first=nav.getByRole('button',{name:'Overview',exact:true});await first.hover()
-   await page.waitForFunction(()=>{const el=document.querySelector('.sidebar-nav-list .sidebar-dock-icon-wrapper');return el&&parseFloat(getComputedStyle(el).transform.split('(')[1])>1.04})
-   assert.equal(await page.getByRole('tooltip').innerText(),'Overview')
+   await page.keyboard.press('Escape');assert.equal(await sidebar.isVisible(),false)
   }
-  if(width<=820||!(await toggle.getAttribute('aria-expanded')==='true'))await toggle.click()
+  if(!await sidebar.isVisible())await toggle.click()
   failLogout=true;await nav.getByRole('button',{name:'Sign out',exact:true}).click()
   await root.getByText('Sign out could not be confirmed.',{exact:false}).waitFor()
   assert(await root.isVisible(),'Failed logout must retain the dashboard')
@@ -116,12 +112,12 @@ try{
   await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({ok:true,site:{...site,siteId},membership:{role:'employee',capabilities:['overview','catalog']}})})
  })
  await page.route('**/.netlify/functions/client-admin',async route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({ok:true,sites:[{siteId:'restricted-one',slug:'one',businessName:'First business'},{siteId:'restricted-two',slug:'two',businessName:'Second business'}]})}))
- await page.setViewportSize({width:1280,height:844});await page.goto('http://127.0.0.1:5196/client-admin');await page.locator('.ca-dashboard').waitFor()
- const restricted=page.locator('.wf-sidebar-frame nav')
+ await page.setViewportSize({width:1280,height:844});await page.goto('http://127.0.0.1:5196/client-admin');await page.locator('.gd-client-dashboard').waitFor()
+ const restricted=page.locator('.gd-navigation nav')
  assert.equal(await restricted.getByRole('button',{name:'Payments',exact:true,includeHidden:true}).count(),0,'Restricted members must not gain menu permissions')
  assert.equal(await restricted.getByRole('button',{name:'Edit website',exact:true,includeHidden:true}).count(),0)
  assert.equal(await restricted.getByRole('button',{name:'Products and services',exact:true,includeHidden:true}).count(),1)
- await selectPortalSection(page,'Products and services');assert.equal(await restricted.getByRole('button',{name:'Products and services',exact:true}).getAttribute('aria-current'),'page');
+ await selectPortalSection(page,'Products and services');assert.equal(await restricted.getByRole('button',{name:'Products and services',exact:true,includeHidden:true}).getAttribute('aria-current'),'page');
  await Promise.all([page.waitForResponse(response=>response.url().includes('client-admin?siteId=restricted-two')),page.locator('.ca-site-switcher select').selectOption('restricted-two')])
  await page.waitForFunction(()=>document.querySelector('.ca-site-switcher select')?.value==='restricted-two')
  assert.equal(await page.locator('.ca-site-switcher select').inputValue(),'restricted-two')

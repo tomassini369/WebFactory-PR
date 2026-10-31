@@ -15,8 +15,12 @@ const ThemeContext = createContext<ThemeContextValue | null>(null)
 
 function getSavedTheme(): Theme | null {
   if (typeof window === 'undefined') return null
-  const value = window.localStorage.getItem(THEME_KEY)
-  return value === 'light' || value === 'dark' ? value : null
+  try {
+    const value = window.localStorage.getItem(THEME_KEY)
+    return value === 'light' || value === 'dark' ? value : null
+  } catch {
+    return null // Use the normal default when optional browser storage is unavailable.
+  }
 }
 
 function getInitialTheme(): Theme {
@@ -30,7 +34,7 @@ function platformSurfaceForPath(pathname: string) {
 }
 
 function legalPlatformPath(pathname: string) {
-  return /^\/(?:privacy|terms|refund-policy)\/?$/.test(pathname)
+  return /^\/(?:privacy|terms|refund-policy|copyright)\/?$/.test(pathname)
 }
 
 function applyDocumentTheme(theme: Theme, isPlatformSurface: boolean) {
@@ -67,7 +71,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     () => typeof window !== 'undefined' && (
       legalPlatformPath(pathname)
       || pathname === '/'
-      || /^\/(?:builder|templates|preview-review|chatgpt|customer-display|kiosk)\/?$/.test(pathname)
+      || /^\/(?:crear|cuenta|builder|templates|preview-review|chatgpt|customer-display|kiosk)\/?$/.test(pathname)
+      || /^\/negocios\//.test(pathname)
       || /^\/(?:webfactory-admin|client-admin|password|password-recovery)\/?$/.test(pathname)
       || /^#(?:invite_token|recovery_token)=/.test(window.location.hash)
     ),
@@ -79,7 +84,11 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   }, [theme, isPlatformSurface])
 
   const setTheme = (nextTheme: Theme) => {
-    window.localStorage.setItem(THEME_KEY, nextTheme)
+    try { window.localStorage.setItem(THEME_KEY, nextTheme) }
+    catch {
+      setThemeState(nextTheme) // Theme selection still works for this session.
+      return
+    }
     setThemeState(nextTheme)
   }
 

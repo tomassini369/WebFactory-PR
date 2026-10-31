@@ -50,7 +50,7 @@ try {
     assert.ok(off.includes('/custom-hero.jpg') && off.includes('/custom-gallery.jpg'))
     assert.ok(!off.includes(config.heroImage), 'Uploaded content overrides sample media')
     const mapped=renderToStaticMarkup(React.createElement(Storefront,{slug:'example',previewSite:{...site,features:{...site.features,maps:true},business:{...site.business,address:'123 Main St, Arecibo',mapsUrl:'https://www.google.com/maps?q=Arecibo'}},previewLanguage:lang}))
-    assert.ok(mapped.includes('template-location-map')&&mapped.includes('https://www.google.com/maps?q=Arecibo&amp;output=embed'),'Visible configured map in shared storefront')
+    assert.ok(mapped.includes('template-location-map')&&!mapped.includes('<iframe')&&mapped.includes('template-map-consent'),'Configured map waits for an explicit load action')
     assert.ok(!off.includes('template-location-map'),'Disabled maps remain hidden')
     const styled=renderToStaticMarkup(React.createElement(Storefront,{slug:'example',previewSite:{...site,design:{...site.design,style:'Luxury'}},previewLanguage:lang}))
     assert.ok(styled.includes('visual-luxury'), 'Saved style preference is honored consistently in Builder and live renderer')

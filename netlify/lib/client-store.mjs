@@ -1,3 +1,4 @@
+import {indexedCommerceStore} from './booking-date-index.mjs';
 import { availableInventory, reservedQuantity } from './inventory-availability.mjs';
 import crypto from "node:crypto";
 import {currentIndexedSites,repairMemberIndex,changedMembershipEmails} from "./member-index.mjs";
@@ -17,7 +18,7 @@ function scopedStore(name) {
 
 export const clientSiteStore = () => scopedStore("webfactory-client-sites");
 export const clientAssetStore = () => scopedStore("webfactory-client-assets");
-export const clientCommerceStore = () => scopedStore("webfactory-client-commerce");
+export const clientCommerceStore = () => indexedCommerceStore(scopedStore("webfactory-client-commerce"));
 export const clientEventStore = () => scopedStore("webfactory-client-events");
 export const clientBackupStore = () => scopedStore("webfactory-client-backups");
 export const clientOAuthStore = () => scopedStore("webfactory-client-oauth");
@@ -206,3 +207,4 @@ export function publicClientSite(site) {
 export function commerceKey(siteId, kind, id) {
   return `${cleanText(siteId, 120)}/${kind}/${cleanText(id, 160)}.json`;
 }
+

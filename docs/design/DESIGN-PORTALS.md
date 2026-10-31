@@ -82,3 +82,92 @@ credentials or payroll in an exercise. Practice and reference guides must be
 distinguishable. Use the existing native typography and blue/navy help chrome;
 the practice POS retains the business colors. No mandatory first-run tour,
 decorative scenes, long modal sequence, keyboard trap or continuous animation.
+
+
+## Owner-supplied Glassy Dashboard v5 · October 27, 2026
+
+The owner explicitly replaces the operating portal appearance with the supplied
+Glassy Dashboard v5 reference, without mixing the retired portal styles.
+This revision supersedes the earlier operating-shell/sidebar direction. It does
+not change authentication surfaces, public storefronts, Marketplace, Builder,
+kiosk skins, or customer display layouts.
+
+Use the supplied room wallpaper, smoked translucent panels, floating icon dock,
+pill navigation, reference profile/board/calendar composition and materialize
+transitions. Retain the official WebFactory logo and ES/EN + Light/Dark controls.
+Each destination renders current real data and existing permission-filtered
+workflows; never copy the reference's demo projects, invoices, email, calls or
+messages into the product. Preserve panel expand/collapse/focus controls.
+
+Operating roots are `gd-client-dashboard` / `gd-admin-dashboard`; old
+`ca-dashboard`, `wfa-dashboard` and `wf-experience` classes are absent. Shared
+material tokens are scoped to `gd-root`. Existing operational components keep
+their data/handler contracts and adopt the new presentation. POS retains its
+validated tenant accents and uses the dashboard's neutral readable material.
+No global document zoom or global design token mutation.
+
+Personal appearance belongs to the authenticated user and portal. The gallery,
+upload and material controls live within the existing portal navigation.
+Use local images, bounded raster uploads, server reencoding, private no-store
+responses and conditional saves. Respect reduced motion and transparency,
+forced colors, readable text and 44px controls. The compact phone navigation
+reflows without hiding destinations; the native dialog exposes all modules.
+
+See `GLASSY-DASHBOARD-V5.md` for provenance, security, verification and limits.
+
+
+### Owner correction: save actions and isolated card expansion
+
+The mobile dock has its own reserved viewport row. It must never cover or
+intercept form actions. Only a successful server acknowledgement resets the
+appearance draft baseline; failures retain the leave warning.
+
+The owner removes Hide/Show and Scroll from portal cards. One directly labeled
+expand/close control remains. Expanded mode hides and makes inert all unrelated
+workspace content while retaining the wallpaper and selected card. It restores
+visibility, focus and card state on Close/Escape and on unmount. Do not remount
+or clone the selected card or mix neighboring cards through its glass surface.
+
+
+### Owner-approved sales surfaces revision — 2026-10-27
+
+Cashier POS and all kiosk layouts inherit the Glassy material. Their existing editors expose flat, soft and raised 3D treatments with independent card/button depth. Cashier appearance is personal to the signed-in user/business; kiosk appearance is shared by that business's paired screens. Do not share private dashboard images with anonymous customer devices. Safe tenant colors and existing sale/booking/device behavior are preserved. The portal dock occupies a layout track separate from scrollable form content; it must never overlay Apply and save. See GLASSY-DASHBOARD-V5.md for provenance and validation.
+
+### Owner login recording · October 28, 2026
+
+The owner's 14:26 recording is the current commercial login appearance reference.
+Retain the frosted card, inset pill email/password surfaces (including the inner
+password capsule), locale/theme/home controls and blue pill submit action. Keep
+stable loading/form geometry. The three bars beside Checking… / Verificando…
+animate only while an authentication request is pending; this is distinct from
+the decorative hover shine. Reduced motion retains the readable status and
+static bars. Validate using intercepted fixture requests, never real credentials.
+
+### Personal portal profile · October 29, 2026
+
+The owner approves a single My profile destination for personal details/photo,
+preferences, existing account security and read-only membership. The overview
+avatar opens it; the module menu provides access in both portals. Keep business identity, logo, public contact,
+integrations, team grants, subscriptions and POS/kiosk editors in their existing
+business modules. Remove duplicate personal editors; Customize remains a shortcut
+to the same Preferences view. Header language/theme controls share saved user
+preferences; sound/haptics remain honest device settings. Preserve current
+wallpapers and account security handlers. Photos are private, optimized raster
+images scoped to the authenticated user, never public tenant assets. No Vaso.
+
+### Owner-approved avatar framing correction
+
+Remove the duplicate header account photo. Retain the overview circle at its
+existing 80 px desktop / 64 px mobile size; constrain and clip its frame to a
+true circle. Profile photo upload uses a temporary circular preview with drag,
+horizontal/vertical position, zoom, reset and explicit save/cancel. Match the
+saved pixels to that preview. No rotation, filters or additional image engine.
+
+### Owner-approved kiosk touch keyboard
+
+The kiosk may opt into a desktop touch keyboard through its existing settings.
+Keep native phone/tablet and date/select controls, physical typing, tenant
+backgrounds and the existing checkout/booking handlers. Use a temporary bottom
+panel with 44 px keys and a visible active input. Match letters/email, phone,
+hexadecimal booking ID and numeric private PIN to the real fields. Never echo
+PINs or auto-submit from Next. No new animation or keyboard service dependency.

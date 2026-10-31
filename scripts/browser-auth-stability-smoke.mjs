@@ -1,13 +1,13 @@
 import assert from 'node:assert/strict'
-import {createServer} from 'vite'
+import {createServer,preview} from 'vite'
 import {chromium} from 'playwright'
-const server=process.env.PREVIEW_URL?null:await createServer({server:{host:'127.0.0.1',port:5199,strictPort:true}})
-await server?.listen()
+const server=process.env.PREVIEW_URL?null:process.env.QA_BUILT?await preview({preview:{host:'127.0.0.1',port:5199,strictPort:true}}):await createServer({server:{host:'127.0.0.1',port:5199,strictPort:true}})
+if(server&&!process.env.QA_BUILT)await server.listen()
 const origin=process.env.PREVIEW_URL||'http://127.0.0.1:5199'
 let browser
 try{
  for(const width of [320,390,430])for(const theme of ['light','dark']){
-  browser=await chromium.launch(process.env.QA_CHROMIUM_PATH?{executablePath:process.env.QA_CHROMIUM_PATH,args:['--no-sandbox','--single-process']}:undefined)
+  browser=await chromium.launch(process.env.QA_CHROMIUM_PATH?{executablePath:process.env.QA_CHROMIUM_PATH,args:['--no-sandbox']}:undefined)
   const page=await browser.newPage({viewport:{width,height:844}})
   const errors=[];page.on('pageerror',e=>errors.push(e.message));let signedIn=false
   await page.addInitScript(theme=>{
@@ -58,7 +58,8 @@ try{
   await page.locator('.portal-language').getByRole('button',{name:'ES',exact:true}).click()
   await page.getByRole('button',{name:'Cerrar sesión',exact:true}).click();await page.locator('input[type=email]').waitFor()
   assert.equal(await page.locator('.portal-language .active').innerText(),'ES','Logout must preserve the selected language')
-  await page.locator('.portal-return-home').click();await page.locator('.wf-h-login').waitFor()
+  await page.locator('.portal-return-home').click();await page.locator('.mk-root').waitFor()
+  await page.locator('.mk-business-cta a[href="/crear"]').click();await page.locator('.wf-hero').waitFor()
   const scrim=await page.locator('.wf-hero-scrim').evaluate(el=>getComputedStyle(el).backgroundImage)
   assert(scrim.includes('0.94')&&scrim.includes('0.91'),'Mobile video must not compete with foreground text')
   assert(await page.locator('.wf-hero-media video,.wf-hero-media img').count(),'Keep the original hero media')

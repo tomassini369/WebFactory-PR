@@ -10,7 +10,7 @@ const site={siteId:'fixture',slug:'fixture',business:{name:'Business fixture',ca
 const receipt={receiptId:'saved',transactionId:'saved-txn',total:4567,subtotal:4321,tax:246,paymentStatus:'paid',paymentMethod:'stripe',createdAt:'2026-10-08T16:00:00Z',items:[{name:'Stored saved item',quantity:1,unitAmount:4321,amount:4321}],customer:{name:'',email:''},businessName:'Business fixture'}
 try{
  for(const width of (process.env.QA_BUILDER_ONLY?[]:process.env.QA_WIDTH?[Number(process.env.QA_WIDTH)]:[390,1280]))for(const theme of ['light','dark'])for(const lang of ['en','es']){
-  const page=await browser.newPage({viewport:{width,height:900}}),errors=[],writes=[]
+  const page=await browser.newPage({viewport:{width,height:900},...(process.env.QA_REDUCED_MOTION?{reducedMotion:'reduce'}:{})}),errors=[],writes=[]
   page.on('pageerror',error=>errors.push(error.message))
   await page.addInitScript(({theme,lang})=>{try{localStorage.setItem('webfactory-theme-v2',theme);localStorage.setItem('webfactory-template-language',lang)}catch{}},{theme,lang})
   await page.route('**/.netlify/functions/**',async route=>{
@@ -37,9 +37,9 @@ try{
   const inspector=printer.locator('.inspector-modal[open]');await inspector.waitFor()
   await page.evaluate(()=>{window.print=()=>{window.__printed=true}})
   await inspector.locator('.inspector-action-btn.secondary').click();assert(await page.evaluate(()=>window.__printed))
-  await page.emulateMedia({media:'print'});assert(await dialog.locator('.wf-buyer-receipt-print').isVisible());assert.equal(await dialog.locator('.wf-buyer-receipt-animation').isVisible(),false)
-  assert.match(await dialog.locator('.wf-buyer-receipt-print').innerText(),/22[.,]00/)
-  const pdf=await PDFDocument.load(await page.pdf());assert(pdf.getPageCount()>=1)
+  await page.emulateMedia({media:'print'});assert(await page.locator('body > .wf-receipt-print-root[data-active=true]').isVisible());assert.equal(await dialog.isVisible(),false)
+  assert.match(await page.locator('body > .wf-receipt-print-root[data-active=true]').innerText(),/22[.,]00/)
+  const pdf=await PDFDocument.load(await page.pdf());assert.equal(pdf.getPageCount(),1,'A short receipt must not print the storefront or blank pages')
   await page.emulateMedia({media:'screen'})
   await inspector.locator('.inspector-action-btn.primary').click()
   await page.waitForFunction(()=>document.querySelector('.wf-original-receipt')?.dataset.printState==='completed')

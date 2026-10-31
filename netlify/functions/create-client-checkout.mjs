@@ -1,3 +1,5 @@
+import {catalogPriceCents} from '../lib/catalog-price.mjs';
+import {verifyMerchantCapability} from '../lib/stripe-merchant-capability.mjs';
 import { bookingBalance, kioskBookingCodeKey } from '../lib/kiosk-bookings.mjs';
 import { clientCheckoutReturn } from '../lib/client-checkout-return.mjs';
 import { createCheckoutAttemptHandler } from '../lib/checkout-attempt.mjs';
@@ -26,16 +28,6 @@ function randomLetters(length = 8) {
   return Array.from(crypto.randomBytes(length), (value) => alphabet[value % alphabet.length]).join("");
 }
 
-async function verifyMerchantCapability(accountId) {
-  const params = new URLSearchParams();
-  params.append("include[]", "configuration.merchant");
-  const response = await fetch(`https://api.stripe.com/v2/core/accounts/${encodeURIComponent(accountId)}?${params}`, {
-    headers: { Authorization: `Bearer ${env("STRIPE_SECRET_KEY")}`, "Stripe-Version": "2026-08-26.preview" },
-  });
-  const account = await response.json();
-  if (!response.ok) throw new Error(account?.error?.message || "Stripe account status could not be verified.");
-  return account.configuration?.merchant?.capabilities?.card_payments?.status || "pending";
-}
 
 function localizedText(item, lang, field) {
   if (field === "name") return lang === "es" ? (item.nameEs || item.nameEn || item.name || "") : (item.nameEn || item.name || item.nameEs || "");
@@ -59,7 +51,7 @@ function canonicalCart(site, requested, lang) {
     if (item.type==='product'&&item.trackInventory&&item.inventory!=null&&!item.allowBackorder&&quantity>Number(availableInventory(site,item))) {
       throw Object.assign(new Error(`${localizedText(item, lang, "name")} does not have enough inventory.`), { status: 409 });
     }
-    return { id: item.id, name: localizedText(item, lang, "name"), description: localizedText(item, lang, "description"), quantity, unitAmount: Math.round(Number(item.price) * 100) };
+    return { id: item.id, name: localizedText(item, lang, "name"), description: localizedText(item, lang, "description"), quantity, unitAmount: catalogPriceCents(item.price) };
   });
 }
 
@@ -71,7 +63,7 @@ function appendLine(params, index, item) {
   params.set(`line_items[${index}][quantity]`, String(item.quantity));
 }
 
-export async function performCheckout(req, { kiosk = false, balanceBooking = null, balanceAttempt = "" } = {}) {
+export async function performCheckout(req, { kiosk = false, kioskQr = false, balanceBooking = null, balanceAttempt = "", series = null } = {}) {
   if (req.method !== "POST") return Response.json({ ok: false, message: "Method not allowed." }, { status: 405 });
   try {
     assertSameOrigin(req);
@@ -88,7 +80,12 @@ export async function performCheckout(req, { kiosk = false, balanceBooking = nul
     if (!customer.name || !validEmail(customer.email)) throw Object.assign(new Error("Customer name and a valid email are required."), { status: 400 });
 
     const lang = payload.lang === "es" ? "es" : "en";
-    const transactionId = `txn_${crypto.randomUUID()}`;
+    const transactionId = series?.transactionId || `txn_${crypto.randomUUID()}`;
+    if(series){
+      if(!payload.booking||site.paymentRules?.bookingPayment!=='in_person')throw Object.assign(new Error('Recurring bookings currently require payment in person.'),{status:409});
+      const existing=await clientCommerceStore().get(commerceKey(site.siteId,'bookings',transactionId),{type:'json'});
+      if(existing){if(existing.seriesId!==series.id)throw Object.assign(new Error('Booking identifier conflict.'),{status:409});return Response.json({ok:true,transactionId,status:existing.status,paymentRequired:false});}
+    }
     const locations = (site.business?.locations || []).filter((location) => location.active !== false);
     const locationId = cleanText(payload.locationId || payload.booking?.locationId, 120);
     if (locations.length && (!locationId || !locations.some((location) => location.id === locationId))) {
@@ -108,11 +105,12 @@ export async function performCheckout(req, { kiosk = false, balanceBooking = nul
       items=[{id:balanceBooking.serviceId,name:lang==="es"?"Saldo de cita":"Booking balance",quantity:1,unitAmount:balance.due-(balanceBooking.pricesIncludeTax?0:balanceTaxCents)}];
     } else if (payload.booking) {
       kind = "booking";
+      if(site.settings?.bookingApproval==='manual'&&site.paymentRules?.bookingPayment!=='in_person')throw Object.assign(new Error('Manual approval requires in-person payment.'),{status:409});
       const service = (site.catalog || []).find((item) => item.id === payload.booking.serviceId && item.type === "service" && item.requiresAppointment && item.active !== false);
       const employee = (site.employees || []).find((member) => member.id === payload.booking.employeeId && member.active !== false && (member.serviceIds || []).includes(service?.id) && (!locations.length || (locationId && (member.locationIds || []).includes(locationId))));
       if (!service || !employee) throw Object.assign(new Error("The selected service or employee is unavailable."), { status: 409 });
+      const fullAmount = catalogPriceCents(service.price);
       hold = await createBookingHold(site, { ...payload.booking, locationId },{strictGoogle:true});
-      const fullAmount = Math.round(Number(service.price) * 100);
       const unitAmount = site.paymentRules?.bookingPayment === "deposit"
         ? Math.round(fullAmount * Number(site.paymentRules?.bookingDepositPercent || 25) / 100)
         : fullAmount;
@@ -155,19 +153,21 @@ export async function performCheckout(req, { kiosk = false, balanceBooking = nul
     let bookingTotalCents,bookingTaxCents;
     if(kind==="booking"){
       const service=site.catalog.find(x=>x.id===hold.serviceId);
-      const full=Math.round(Number(service.price)*100);
+      const full=catalogPriceCents(service.price);
       const bookingInvoice=calculateTax({amountCents:full,taxable:service.taxable!==false,taxRateOverride:service.taxRateOverride??null,config:site.taxConfig||{}});
       bookingTotalCents=bookingInvoice.totalCents;bookingTaxCents=bookingInvoice.taxCents;
     }
     let record = {
       transactionId, siteId: site.siteId, kind, customer, items, locationId, locationName: selectedLocation?.name || "", holdId: hold?.holdId || "",
+      ...(series?{seriesId:series.id,seriesOccurrence:series.occurrence}:{}),
       serviceId: balanceBooking?.serviceId || hold?.serviceId || "", employeeId: balanceBooking?.employeeId || hold?.employeeId || "", start: hold?.start || "", end: hold?.end || "",
+      ...(hold ? {bufferMinutes:hold.bufferMinutes,bufferBeforeMinutes:hold.bufferBeforeMinutes} : {}),
       ...(kind==="booking"?{bookingTotalCents,bookingTaxCents}:{}),
       ...(balanceBooking?{source:"booking_balance",bookingTransactionId:balanceBooking.transactionId,bookingBalanceAttempt:balanceAttempt}:{}),
       channel: kiosk ? "kiosk" : "storefront", pricesIncludeTax: balanceBooking?Boolean(balanceBooking.pricesIncludeTax):Boolean(site.taxConfig?.pricesIncludeTax),
       subtotal, tax: taxCents, amountTotal: subtotal + ((balanceBooking?balanceBooking.pricesIncludeTax:site.taxConfig?.pricesIncludeTax) ? 0 : taxCents), currency: "usd",
       ...(kind === "booking" ? { language:lang, bookingCode:crypto.randomBytes(4).toString("hex").toUpperCase(), customerCalendarInviteRequested: site.settings?.sendGoogleCalendarInvites === true, confirmationEmailRequested: true, calendarToken: crypto.randomBytes(32).toString("base64url") } : {}),
-      paymentStatus: inPerson ? "due" : "pending", status: inPerson ? "confirmed" : "payment_pending",
+      paymentStatus: inPerson ? "due" : "pending", status: inPerson ? (kind==='booking'&&!series&&site.settings?.bookingApproval==='manual'?'pending_approval':'confirmed') : "payment_pending",
       createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
     };
 
@@ -197,6 +197,11 @@ export async function performCheckout(req, { kiosk = false, balanceBooking = nul
         record=await createInPersonOrder(site,record);
         return Response.json({ok:true,paymentRequired:false,transactionId,status:record.status,...(trackingToken?{trackingUrl:`${publicBaseUrl()}/track/${trackingToken}`}:{})},{headers:{'Cache-Control':'no-store'}});
       }
+      await clientCommerceStore().setJSON(commerceKey(site.siteId,'bookings',transactionId),record);
+      if(record.status==='pending_approval'){
+        await clientCommerceStore().setJSON(commerceKey(site.siteId,'transactions',transactionId),record);
+        return Response.json({ok:true,paymentRequired:false,transactionId,status:record.status,manageUrl:bookingManageUrl(record)},{headers:{'Cache-Control':'no-store'}});
+      }
       record = await syncBookingCalendar(site, record);
       await clientCommerceStore().setJSON(commerceKey(site.siteId, kind === "booking" ? "bookings" : "orders", transactionId), record);
       record = await sendBookingConfirmationEmails(site,record, value => clientCommerceStore().setJSON(commerceKey(site.siteId,"bookings",transactionId),value));
@@ -207,7 +212,7 @@ export async function performCheckout(req, { kiosk = false, balanceBooking = nul
     const receiptAccess = await issueBuyerReceiptAccess(site.siteId, transactionId);
     record.buyerReceiptHash = receiptAccess.hash;
     const receiptReturn = `receipt=${encodeURIComponent(receiptAccess.token)}`;
-    const returns = clientCheckoutReturn({ slug: site.slug, kiosk, requestUrl: req.url, receiptReturn, trackingToken });
+    const returns = clientCheckoutReturn({ slug: site.slug, kiosk, kioskQr, requestUrl: req.url, receiptReturn, trackingToken });
     if(payload.paymentProvider === "ath_movil") {
       const result=await createAthCheckout(site,record,{lang,requestUrl:req.url,returnUrl:returns.ath});
       return Response.json(result,{headers:{"Cache-Control":"no-store"}});
@@ -277,3 +282,4 @@ export async function performCheckout(req, { kiosk = false, balanceBooking = nul
 export default createCheckoutAttemptHandler({ performCheckout, getSite: async (payload) => payload.siteId ? getClientSite(payload.siteId) : getClientSiteBySlug(payload.slug), isAvailable: (site) => siteEntitlement(site).public, getStore: clientCommerceStore });
 
 export const config = { rateLimit: { windowLimit: 20, windowSize: 60, aggregateBy: ["ip"] } };
+

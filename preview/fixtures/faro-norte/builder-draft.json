@@ -1,0 +1,267 @@
+{
+  "business": {
+    "name": "Faro Norte Barber Studio · PRUEBAS",
+    "nameEn": "Faro Norte Barber Studio · TEST",
+    "nameEs": "Faro Norte Barber Studio · PRUEBAS",
+    "slug": "faro-norte-preview",
+    "contactName": "Equipo de pruebas WebFactory PR",
+    "category": "Barber",
+    "description": "Barbería ficticia de pruebas en Arecibo, Puerto Rico.",
+    "descriptionEn": "Fictional test barbershop in Arecibo, Puerto Rico. Preview only; no real services or charges.",
+    "descriptionEs": "Barbería ficticia de pruebas en Arecibo, Puerto Rico. Solo preview; sin servicios ni cobros reales.",
+    "email": "faro-norte@example.invalid",
+    "phone": "",
+    "whatsapp": "",
+    "mapsUrl": "",
+    "instagram": "",
+    "facebook": "",
+    "x": "",
+    "gallery": [],
+    "galleryAssets": [],
+    "logoAssetKey": "",
+    "logoAssetName": "logo.webp",
+    "logoAssetType": "image/webp",
+    "policies": {
+      "privacy": "Entorno de pruebas. Utiliza exclusivamente datos ficticios y correos .invalid. No introducir información personal ni financiera real.",
+      "terms": "Barbería ficticia de pruebas. No se prestan servicios reales, no se venden productos y no se realizarán cobros reales.",
+      "refund": "Las reservas de prueba usan un depósito simulado del 30%. El saldo pendiente se consulta sobre la reserva original. Cancelaciones y reembolsos se prueban únicamente en sandbox."
+    }
+  },
+  "design": {
+    "templateSlug": "northline-barber",
+    "customLayout": "split",
+    "sectionOrder": [
+      "catalog",
+      "team",
+      "about",
+      "gallery",
+      "contact"
+    ],
+    "style": "Luxury",
+    "primary": "#123D42",
+    "secondary": "#BE8152"
+  },
+  "features": {
+    "products": false,
+    "services": true,
+    "cart": true,
+    "whatsapp": false,
+    "calls": false,
+    "social": false,
+    "form": false,
+    "maps": false,
+    "stripe": true,
+    "ath": false,
+    "inPersonPayments": true,
+    "bookings": true,
+    "calendar": true
+  },
+  "catalog": [
+    {
+      "id": "corte-clasico-walk-in",
+      "type": "service",
+      "name": "Classic haircut · Walk-in",
+      "nameEn": "Classic haircut · Walk-in",
+      "nameEs": "Corte clásico · Sin cita",
+      "price": 25,
+      "duration": 30,
+      "description": "Classic taper haircut with scissors and clippers, neckline cleanup and styling.",
+      "descriptionEn": "Classic taper haircut with scissors and clippers, neckline cleanup and styling. Walk-in paid in full. Generated illustrative image.",
+      "descriptionEs": "Corte clásico con tijera y máquina, limpieza de contorno y peinado. Sin cita con pago total. Imagen ilustrativa generada.",
+      "requiresAppointment": false,
+      "imageName": "corte-clasico.webp",
+      "imageType": "image/webp",
+      "imageAssetKey": ""
+    },
+    {
+      "id": "corte-clasico-reserva",
+      "type": "service",
+      "name": "Classic haircut · Appointment",
+      "nameEn": "Classic haircut · Appointment",
+      "nameEs": "Corte clásico · Reserva",
+      "price": 25,
+      "duration": 30,
+      "description": "Classic taper haircut with scissors and clippers, neckline cleanup and styling.",
+      "descriptionEn": "Classic taper haircut with scissors and clippers, neckline cleanup and styling. 30% deposit to reserve; remaining balance at arrival. Generated illustrative image.",
+      "descriptionEs": "Corte clásico con tijera y máquina, limpieza de contorno y peinado. Depósito del 30% para reservar; saldo al llegar. Imagen ilustrativa generada.",
+      "requiresAppointment": true,
+      "imageName": "corte-clasico.webp",
+      "imageType": "image/webp",
+      "imageAssetKey": ""
+    },
+    {
+      "id": "corte-barba-walk-in",
+      "type": "service",
+      "name": "Haircut and beard · Walk-in",
+      "nameEn": "Haircut and beard · Walk-in",
+      "nameEs": "Corte y barba · Sin cita",
+      "price": 35,
+      "duration": 45,
+      "description": "Fade haircut, beard shaping and styling.",
+      "descriptionEn": "Fade haircut, beard shaping and styling. Walk-in paid in full. Generated illustrative image.",
+      "descriptionEs": "Corte degradado, perfilado de barba y peinado. Sin cita con pago total. Imagen ilustrativa generada.",
+      "requiresAppointment": false,
+      "imageName": "corte-barba.webp",
+      "imageType": "image/webp",
+      "imageAssetKey": ""
+    },
+    {
+      "id": "corte-barba-reserva",
+      "type": "service",
+      "name": "Haircut and beard · Appointment",
+      "nameEn": "Haircut and beard · Appointment",
+      "nameEs": "Corte y barba · Reserva",
+      "price": 35,
+      "duration": 45,
+      "description": "Fade haircut, beard shaping and styling.",
+      "descriptionEn": "Fade haircut, beard shaping and styling. 30% deposit to reserve; remaining balance at arrival. Generated illustrative image.",
+      "descriptionEs": "Corte degradado, perfilado de barba y peinado. Depósito del 30% para reservar; saldo al llegar. Imagen ilustrativa generada.",
+      "requiresAppointment": true,
+      "imageName": "corte-barba.webp",
+      "imageType": "image/webp",
+      "imageAssetKey": ""
+    },
+    {
+      "id": "barba-walk-in",
+      "type": "service",
+      "name": "Beard grooming · Walk-in",
+      "nameEn": "Beard grooming · Walk-in",
+      "nameEs": "Perfilado de barba · Sin cita",
+      "price": 15,
+      "duration": 15,
+      "description": "Beard trim, cheek and neckline shaping, comb finish.",
+      "descriptionEn": "Beard trim, cheek and neckline shaping, comb finish. Walk-in paid in full. Generated illustrative image.",
+      "descriptionEs": "Recorte de barba, perfilado de mejillas y cuello, acabado con peine. Sin cita con pago total. Imagen ilustrativa generada.",
+      "requiresAppointment": false,
+      "imageName": "barba.webp",
+      "imageType": "image/webp",
+      "imageAssetKey": ""
+    },
+    {
+      "id": "barba-reserva",
+      "type": "service",
+      "name": "Beard grooming · Appointment",
+      "nameEn": "Beard grooming · Appointment",
+      "nameEs": "Perfilado de barba · Reserva",
+      "price": 15,
+      "duration": 15,
+      "description": "Beard trim, cheek and neckline shaping, comb finish.",
+      "descriptionEn": "Beard trim, cheek and neckline shaping, comb finish. 30% deposit to reserve; remaining balance at arrival. Generated illustrative image.",
+      "descriptionEs": "Recorte de barba, perfilado de mejillas y cuello, acabado con peine. Depósito del 30% para reservar; saldo al llegar. Imagen ilustrativa generada.",
+      "requiresAppointment": true,
+      "imageName": "barba.webp",
+      "imageType": "image/webp",
+      "imageAssetKey": ""
+    },
+    {
+      "id": "ritual-toalla-walk-in",
+      "type": "service",
+      "name": "Hot towel ritual · Walk-in",
+      "nameEn": "Hot towel ritual · Walk-in",
+      "nameEs": "Ritual con toalla caliente · Sin cita",
+      "price": 45,
+      "duration": 60,
+      "description": "Haircut, beard grooming and warm towel ritual with shaving brush finish.",
+      "descriptionEn": "Haircut, beard grooming and warm towel ritual with shaving brush finish. Walk-in paid in full. Generated illustrative image.",
+      "descriptionEs": "Corte, arreglo de barba y ritual de toalla caliente con acabado de brocha. Sin cita con pago total. Imagen ilustrativa generada.",
+      "requiresAppointment": false,
+      "imageName": "ritual-toalla.webp",
+      "imageType": "image/webp",
+      "imageAssetKey": ""
+    },
+    {
+      "id": "ritual-toalla-reserva",
+      "type": "service",
+      "name": "Hot towel ritual · Appointment",
+      "nameEn": "Hot towel ritual · Appointment",
+      "nameEs": "Ritual con toalla caliente · Reserva",
+      "price": 45,
+      "duration": 60,
+      "description": "Haircut, beard grooming and warm towel ritual with shaving brush finish.",
+      "descriptionEn": "Haircut, beard grooming and warm towel ritual with shaving brush finish. 30% deposit to reserve; remaining balance at arrival. Generated illustrative image.",
+      "descriptionEs": "Corte, arreglo de barba y ritual de toalla caliente con acabado de brocha. Depósito del 30% para reservar; saldo al llegar. Imagen ilustrativa generada.",
+      "requiresAppointment": true,
+      "imageName": "ritual-toalla.webp",
+      "imageType": "image/webp",
+      "imageAssetKey": ""
+    }
+  ],
+  "team": [
+    {
+      "id": "faro-profesional-pruebas",
+      "name": "Profesional de pruebas",
+      "role": "Barber",
+      "roleEn": "Barber",
+      "roleEs": "Barbero",
+      "serviceIds": [
+        "corte-clasico-reserva",
+        "corte-barba-reserva",
+        "barba-reserva",
+        "ritual-toalla-reserva"
+      ]
+    }
+  ],
+  "hours": {
+    "Lunes": {
+      "enabled": true,
+      "open": "09:00",
+      "close": "18:00"
+    },
+    "Martes": {
+      "enabled": true,
+      "open": "09:00",
+      "close": "18:00"
+    },
+    "Miércoles": {
+      "enabled": true,
+      "open": "09:00",
+      "close": "18:00"
+    },
+    "Jueves": {
+      "enabled": true,
+      "open": "09:00",
+      "close": "18:00"
+    },
+    "Viernes": {
+      "enabled": true,
+      "open": "09:00",
+      "close": "18:00"
+    },
+    "Sábado": {
+      "enabled": true,
+      "open": "09:00",
+      "close": "16:00"
+    },
+    "Domingo": {
+      "enabled": false,
+      "open": "09:00",
+      "close": "18:00"
+    }
+  },
+  "payments": {
+    "methods": {
+      "stripe": true,
+      "ath": false,
+      "inPerson": true
+    },
+    "stripe": {
+      "connection": "connect",
+      "accountStatus": "existing",
+      "checkoutExperience": "hosted",
+      "settlementCurrency": "usd",
+      "dynamicPaymentMethods": true
+    },
+    "ath": {
+      "accountStatus": "needs_account",
+      "publicPath": ""
+    },
+    "inPerson": {
+      "instructions": "Solo pruebas. El personal confirma cualquier pago presencial desde su portal; escanear el QR no confirma el cobro."
+    },
+    "productPayment": "online",
+    "bookingPayment": "deposit",
+    "bookingDepositPercent": 30,
+    "sendCustomerReceipt": true,
+    "allowTips": false
+  }
+}

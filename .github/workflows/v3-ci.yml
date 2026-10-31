@@ -11,12 +11,13 @@ on:
 
 jobs:
   verify-suite:
-    runs-on: ubuntu-latest
+    # Use the same pinned browser environment as the Deploy Preview smoke.
+    runs-on: ubuntu-24.04
     timeout-minutes: 35
     strategy:
       fail-fast: false
       matrix:
-        suite: [core, commerce, experience]
+        suite: [core, commerce, experience, experience-navigation]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -71,6 +72,15 @@ jobs:
             fi
             cat "$log"
           done
+      - name: Check Marketplace consumer accounts and public business profiles
+        if: matrix.suite == 'experience'
+        env:
+          QA_WIDTHS: 390,1440
+        run: |
+          for engine in chromium webkit; do
+            QA_ENGINE="$engine" node scripts/browser-marketplace-consumer-smoke.mjs
+            QA_ENGINE="$engine" node scripts/browser-marketplace-return-smoke.mjs
+          done
       - name: Save login contrast browser evidence
         if: always() && matrix.suite == 'core'
         uses: actions/upload-artifact@v4
@@ -123,24 +133,73 @@ jobs:
             /tmp/webfactory-training-qa/
             /tmp/training-*.log
           if-no-files-found: ignore
+      - name: Check Glassy dashboard, wallpaper uploads and private appearance persistence
+        if: matrix.suite == 'experience'
+        run: |
+          check_experience() {
+            log="/tmp/experience-$1.log"
+            shift
+            if ! "$@" > "$log" 2>&1; then
+              cat "$log"
+              node scripts/report-kiosk-ci-error.mjs "$log" experience
+              exit 1
+            fi
+            cat "$log"
+          }
+          check_experience dashboard node scripts/browser-glassy-dashboard-smoke.mjs
+          check_experience regressions node scripts/browser-glassy-regressions-smoke.mjs
+          check_experience faro node scripts/browser-faro-tax-smoke.mjs
+          check_experience faro-webkit env QA_ENGINE=webkit QA_WIDTHS=390,1440 node scripts/browser-faro-tax-smoke.mjs
+          check_experience regressions-webkit env QA_ENGINE=webkit QA_WIDTHS=390,1440 node scripts/browser-glassy-regressions-smoke.mjs
+          check_experience interactions env QA_INTERACTION_ONLY=1 node scripts/browser-glassy-dashboard-smoke.mjs
+          check_experience dashboard-webkit env QA_ENGINE=webkit QA_WIDTHS=390,1440 node scripts/browser-glassy-dashboard-smoke.mjs
+          QA_ENGINE=webkit QA_INTERACTION_ONLY=1 QA_INTERACTION_WIDTHS=390,1440 node scripts/browser-glassy-dashboard-smoke.mjs
+      - name: Check personal portal profile, photo privacy and consolidated settings
+        if: matrix.suite == 'experience'
+        run: |
+          node scripts/browser-portal-profile-smoke.mjs
+          QA_ENGINE=webkit QA_WIDTHS=390,1440 node scripts/browser-portal-profile-smoke.mjs
       - name: Check unified workspace hierarchy, disclosures and Builder state
         if: matrix.suite == 'experience'
         run: |
           node scripts/browser-workspace-experience-smoke.mjs
           node scripts/browser-admin-experience-smoke.mjs
-      - name: Check portal route transitions and template Home controls
+      - name: Check Marketplace and preserved Crear landing on Chromium and WebKit
         if: matrix.suite == 'experience'
+        env:
+          QA_WIDTHS: 390,1440
+        run: |
+          for engine in chromium webkit; do
+            log="/tmp/marketplace-$engine.log"
+            if ! QA_ENGINE="$engine" QA_PORT=5340 node scripts/browser-marketplace-smoke.mjs > "$log" 2>&1; then
+              node scripts/report-kiosk-ci-error.mjs "$log" "marketplace-$engine"
+              exit 1
+            fi
+            cat "$log"
+          done
+      - name: Check portal route transitions and template Home controls
+        if: matrix.suite == 'experience-navigation'
         run: node scripts/browser-route-transitions-smoke.mjs
       - name: Check stable authentication cards, keyboard and mobile hero
-        if: matrix.suite == 'experience'
-        run: node scripts/browser-auth-stability-smoke.mjs
+        if: matrix.suite == 'experience-navigation'
+        run: QA_BUILT=1 node scripts/browser-auth-stability-smoke.mjs
       - name: Check login locale persistence and single session handoff
-        if: matrix.suite == 'experience'
+        if: matrix.suite == 'experience-navigation'
         run: |
           QA_BUILT=1 node scripts/browser-login-lifecycle-smoke.mjs
+          node scripts/browser-login-loading-smoke.mjs
+          QA_ASSERT=1 QA_HOLD_IMAGES=1 node scripts/browser-login-paint-smoke.mjs
+          QA_ENGINE=webkit QA_ASSERT=1 QA_HOLD_IMAGES=1 node scripts/browser-login-paint-smoke.mjs
+          QA_WIDTHS=390,980 node scripts/browser-login-navigation-paint-smoke.mjs
+          QA_ENGINE=webkit QA_WIDTHS=390,980 node scripts/browser-login-navigation-paint-smoke.mjs
+          node scripts/browser-shared-login-smoke.mjs
+          QA_ENGINE=webkit QA_WIDTHS=390,1440 node scripts/browser-shared-login-smoke.mjs
+          node scripts/browser-commercial-loading-detail-smoke.mjs
+          QA_ENGINE=webkit QA_WIDTHS=390,980,1440 node scripts/browser-commercial-loading-detail-smoke.mjs
+          QA_ENGINE=webkit QA_WIDTHS=390,1440 node scripts/browser-login-loading-smoke.mjs
           QA_BUILT=1 QA_ENGINE=webkit node scripts/browser-login-lifecycle-smoke.mjs
       - name: Check initial login visibility, locale handoff and failure states
-        if: matrix.suite == 'experience'
+        if: matrix.suite == 'experience-navigation'
         run: node scripts/browser-auth-usability-smoke.mjs
       - name: Check Home FAQ desktop/mobile, themes and languages
         if: matrix.suite == 'experience'
@@ -259,7 +318,7 @@ jobs:
         if: matrix.suite == 'experience'
         run: node scripts/browser-shadcn-smoke.mjs
       - name: Check floating portal login cards and return controls
-        if: matrix.suite == 'experience'
+        if: matrix.suite == 'experience-navigation'
         run: node scripts/browser-portal-glass-smoke.mjs
       - name: Check receipt presentation and cart flight without changing commerce
         if: matrix.suite == 'commerce'
@@ -268,13 +327,17 @@ jobs:
         if: matrix.suite == 'commerce'
         run: node scripts/browser-buyer-receipt-smoke.mjs
       - name: Check portal login fields on desktop and mobile
-        if: matrix.suite == 'experience'
-        run: node scripts/browser-login-layout-smoke.mjs
+        if: matrix.suite == 'experience-navigation'
+        run: |
+          node scripts/browser-login-layout-smoke.mjs
+          QA_ENGINE=webkit node scripts/browser-login-layout-smoke.mjs
       - name: Check panel keyboard navigation
-        if: matrix.suite == 'experience'
-        run: node scripts/browser-accessibility-smoke.mjs
+        if: matrix.suite == 'experience-navigation'
+        run: |
+          node scripts/browser-accessibility-smoke.mjs
+          QA_ENGINE=webkit node scripts/browser-accessibility-smoke.mjs
       - name: Check email previews on mobile and desktop
-        if: matrix.suite == 'experience'
+        if: matrix.suite == 'experience-navigation'
         run: node scripts/browser-email-smoke.mjs
       - name: Save portal navigation failure evidence
         if: failure() && matrix.suite == 'core'
@@ -299,8 +362,55 @@ jobs:
           SUITE_RESULT: ${{ needs.verify-suite.result }}
         run: test "$SUITE_RESULT" = success
 
+  kiosk-skins:
+    runs-on: ubuntu-24.04
+    # Classic also runs the full appearance/customizer/QR matrix. The previous
+    # 20-minute job deadline cancelled those checks; per-action limits remain.
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        engine: [chromium, webkit]
+        skin: [classic, glass-premium, restaurant-touch, barber-luxury, retail-minimal]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: WF_DESIGN_PREVIEW=1 npm run build
+      # The keyboard suite explicitly includes WebKit in every matrix job.
+      - run: npx playwright install --with-deps ${{ matrix.engine }} webkit
+      - name: Verify skin commerce, accessibility, bookings and receipts with isolated providers
+        env:
+          QA_ENGINE: ${{ matrix.engine }}
+          QA_SKIN: ${{ matrix.skin }}
+        run: |
+          node scripts/browser-kiosk-smoke.mjs
+          node scripts/browser-kiosk-bookings-smoke.mjs
+          node scripts/browser-kiosk-keyboard-smoke.mjs
+          QA_ENGINE=webkit QA_WIDTHS=1024,1440 QA_PORT=5363 node scripts/browser-kiosk-keyboard-smoke.mjs
+      - name: Verify appearance configurator and preview isolation
+        if: matrix.skin == 'classic'
+        env:
+          QA_ENGINE: ${{ matrix.engine }}
+        run: |
+          node scripts/browser-kiosk-skins-settings-smoke.mjs
+          node scripts/browser-kiosk-customizer-smoke.mjs
+          node scripts/browser-kiosk-qr-smoke.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: kiosk-skins-${{ matrix.skin }}-${{ matrix.engine }}
+          path: |
+            /tmp/webfactory-kiosk/
+            /tmp/webfactory-kiosk-skins/
+            /tmp/webfactory-kiosk-customizer/
+            /tmp/webfactory-kiosk-qr/
+
   kiosk-bookings:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     strategy:
       fail-fast: false
@@ -323,8 +433,11 @@ jobs:
 
   deploy-preview-smoke:
     if: github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
-    timeout-minutes: 25
+    # Keep browser dependencies reproducible during ubuntu-latest image migrations.
+    runs-on: ubuntu-24.04
+    # Includes matching-deploy wait, setup, and 25 verification steps. Preserve
+    # every assertion while allowing the complete deployed suite to finish.
+    timeout-minutes: 45
     permissions:
       contents: read
       statuses: read
@@ -355,7 +468,7 @@ jobs:
         env:
           PREVIEW_URL: https://deploy-preview-${{ github.event.pull_request.number }}--webfactorypr.netlify.app
         run: |
-          for path in / /templates /builder /client-admin /kiosk; do
+          for path in / /crear /templates /builder /client-admin /kiosk; do
             echo "Checking $PREVIEW_URL$path"
             curl -fLsS --retry 4 --retry-delay 2 --max-time 30 -o /dev/null "$PREVIEW_URL$path"
           done
@@ -388,16 +501,48 @@ jobs:
         with:
           node-version: 22
           cache: npm
-      - name: Install verification dependencies and browsers
-        run: |
-          npm ci
-          npx playwright install --with-deps chromium webkit
+      - name: Install preview verification dependencies
+        timeout-minutes: 5
+        run: npm ci
+      - name: Install preview verification browsers
+        timeout-minutes: 8
+        run: npx playwright install --with-deps chromium webkit
       - name: Build deployed-preview verification bundle
         run: |
-          npm run build > /tmp/unified-preview-build.log 2>&1 || {
+          CONTEXT=deploy-preview npm run build > /tmp/unified-preview-build.log 2>&1 || {
             node scripts/report-kiosk-ci-error.mjs /tmp/unified-preview-build.log build
             exit 1
           }
+      - name: Check actual Marketplace and Crear routes on the Deploy Preview
+        env:
+          QA_ORIGIN: https://deploy-preview-${{ github.event.pull_request.number }}--webfactorypr.netlify.app
+          QA_WIDTHS: 390,1440
+        run: |
+          for engine in chromium webkit; do
+            log="/tmp/marketplace-preview-$engine.log"
+            if ! QA_ENGINE="$engine" node scripts/browser-marketplace-smoke.mjs > "$log" 2>&1; then
+              node scripts/report-kiosk-ci-error.mjs "$log" "marketplace-preview-$engine"
+              exit 1
+            fi
+            cat "$log"
+          done
+      - name: Check deployed consumer account and public business UI
+        env:
+          QA_ORIGIN: https://deploy-preview-${{ github.event.pull_request.number }}--webfactorypr.netlify.app
+          QA_WIDTHS: 390,1440
+        run: |
+          node scripts/marketplace-http-smoke.mjs
+          for engine in chromium webkit; do
+            for check in consumer return; do
+              log="/tmp/marketplace-${check}-${engine}.log"
+              if ! QA_ENGINE="$engine" node "scripts/browser-marketplace-${check}-smoke.mjs" > "$log" 2>&1; then
+                cat "$log"
+                node scripts/report-kiosk-ci-error.mjs "$log" "marketplace-preview-$engine"
+                exit 1
+              fi
+              cat "$log"
+            done
+          done
       - name: Check deployed commercial authentication boundaries
         env:
           PREVIEW_URL: https://deploy-preview-${{ github.event.pull_request.number }}--webfactorypr.netlify.app
@@ -562,3 +707,4 @@ jobs:
           fi
           test "$link_chromium_result" -eq 0
           test "$link_webkit_result" -eq 0
+

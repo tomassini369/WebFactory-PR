@@ -1,6 +1,16 @@
 /** Exercise the same disclosures and controls a portal user sees. */
 export async function selectPortalSection(page,name){
- const sidebar=page.locator('.sidebar-container');
+ if(await page.locator('.gd-root').count()){
+  if(['Seguridad de mi cuenta','Account security'].includes(name)){
+   const es=name==='Seguridad de mi cuenta';await selectPortalSection(page,es?'Mi perfil':'My profile');
+   await page.locator('.gd-profile-sections').getByRole('button',{name:es?'Seguridad':'Security',exact:true}).click();return;
+  }
+
+  if(!await page.locator('.gd-navigation').isVisible())await page.locator('.gd-menu-toggle').click();
+  const drawer=page.locator('.gd-navigation');await drawer.waitFor({state:'visible'});
+  await drawer.getByRole('button',{name,exact:true}).click();return;
+ }
+ const sidebar=page.locator('.gd-navigation');
  const toggle=page.locator('.ca-mobile-menu-toggle,.wfa-menu-toggle');
  if(!await sidebar.isVisible())await toggle.click();
  const button=sidebar.getByRole('button',{name,exact:true,includeHidden:true});
@@ -13,6 +23,7 @@ export async function selectPortalSection(page,name){
 }
 export async function openPanelTools(panel){
  const menu=panel.locator(':scope>.wf-panel-tools');
+ if(await menu.evaluate(el=>el.tagName!=='DETAILS'))return;
  if(!await menu.evaluate(el=>el.open))await menu.locator(':scope>summary').click();
 }
 export async function showBuilderPreview(page){

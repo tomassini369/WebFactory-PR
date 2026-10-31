@@ -1,3 +1,4 @@
+import {useState} from 'react'
 import type {TemplateLanguage} from './templateI18n'
 
 /** Embed only Google Maps URLs; shortened links remain links when no address is available. */
@@ -19,9 +20,10 @@ export function googleMapsEmbedUrl(value:string,location=''){
 
 export default function TemplateMap({location,mapsUrl='',language,sample=false}:{location:string;mapsUrl?:string;language:TemplateLanguage;sample?:boolean}){
   const embed=googleMapsEmbedUrl(mapsUrl,location)
+  const [loadedEmbed,setLoadedEmbed]=useState<string|null>(null)
   const title=language==='es'?'Ubicación en Google Maps':'Location on Google Maps'
   return <section className="template-location-map" aria-label={title}>
     <header><div><small>{sample?(language==='es'?'UBICACIÓN DE MUESTRA':'SAMPLE LOCATION'):title}</small>{location&&<p>{location}</p>}</div>{mapsUrl&&<a href={mapsUrl} target="_blank" rel="noreferrer">{language==='es'?'Abrir en Google Maps':'Open in Google Maps'} ↗</a>}</header>
-    {embed?<iframe src={embed} title={title} loading="lazy" referrerPolicy="no-referrer-when-downgrade"/>:<p>{language==='es'?'Abre Google Maps para consultar la ubicación.':'Open Google Maps to view the location.'}</p>}
+    {embed?loadedEmbed===embed?<iframe src={embed} title={title} loading="lazy" referrerPolicy="no-referrer"/>:<div className="template-map-consent"><p>{language==='es'?'Al cargar el mapa, tu navegador se conecta a Google. Puedes consultar la dirección sin cargarlo.':'Loading the map connects your browser to Google. You can read the address without loading it.'}</p><button type="button" onClick={()=>setLoadedEmbed(embed)}>{language==='es'?'Cargar Google Maps':'Load Google Maps'}</button></div>:<p>{language==='es'?'Abre Google Maps para consultar la ubicación.':'Open Google Maps to view the location.'}</p>}
   </section>
 }

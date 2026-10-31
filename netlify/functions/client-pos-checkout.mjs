@@ -1,22 +1,15 @@
+import {catalogPriceCents} from '../lib/catalog-price.mjs';
+import {verifyMerchantCapability} from '../lib/stripe-merchant-capability.mjs';
 import {assertPosLocation} from "../lib/commercial-access.mjs";
 import { requirePosAdjustments } from '../lib/pos-permissions.mjs';
 import { requireCashierPos } from '../lib/pos-operations.mjs';
 import { clientCommerceStore } from '../lib/client-store.mjs';
 import { createReservedStripeCheckout } from '../lib/reserved-stripe-checkout.mjs';
 import { assertSameOrigin, errorResponse, requireSiteCapability } from "../lib/client-auth.mjs";
-import { cleanText, publicBaseUrl, validEmail } from "../lib/platform-utils.mjs";
+import { cleanText, validEmail } from "../lib/platform-utils.mjs";
 import { calculateTax } from "../lib/webfactory-v3-domain.mjs";
 import { assertStripeWriteAllowed } from "../lib/stripe-runtime.mjs";
 
-function env(name){return globalThis.Netlify?.env?.get(name)||"";}
-
-async function verifyMerchantCapability(accountId){
-  const params=new URLSearchParams();params.append("include[]","configuration.merchant");
-  const response=await fetch(`https://api.stripe.com/v2/core/accounts/${encodeURIComponent(accountId)}?${params}`,{headers:{Authorization:`Bearer ${env("STRIPE_SECRET_KEY")}`,"Stripe-Version":"2026-08-26.preview"}});
-  const account=await response.json();
-  if(!response.ok)throw new Error(account?.error?.message||"Stripe account status could not be verified.");
-  return account.configuration?.merchant?.capabilities?.card_payments?.status||"pending";
-}
 
 function appendLine(params,index,item){
   params.set(`line_items[${index}][price_data][currency]`,"usd");
@@ -54,7 +47,7 @@ export function createPosCheckoutHandler({ authorize = requireSiteCapability, ge
       if(item.type==="product"&&item.trackInventory&&item.inventory!==null&&item.inventory!==undefined&&!item.allowBackorder&&quantity>Number(item.inventory||0)){
         throw Object.assign(new Error(`${item.name||"Item"} does not have enough inventory.`),{status:409});
       }
-      return {id:item.id,name:cleanText(item.nameEn||item.name||item.nameEs,220),quantity,unitAmount:Math.max(0,Math.round(Number(item.price||0)*100)),taxable:item.taxable!==false,taxRateOverride:item.taxRateOverride??null};
+      return {id:item.id,name:cleanText(item.nameEn||item.name||item.nameEs,220),quantity,unitAmount:catalogPriceCents(item.price),taxable:item.taxable!==false,taxRateOverride:item.taxRateOverride??null};
     });
 
     const subtotal=items.reduce((sum,item)=>sum+item.unitAmount*item.quantity,0);
@@ -81,8 +74,6 @@ export function createPosCheckoutHandler({ authorize = requireSiteCapability, ge
     const transactionId=`txn_pos_${saleAttemptId}`;
     const params=new URLSearchParams();
     params.set("mode","payment");
-    params.set("success_url",`${publicBaseUrl()}/client-admin?pos=success&session_id={CHECKOUT_SESSION_ID}`);
-    params.set("cancel_url",`${publicBaseUrl()}/client-admin?pos=cancelled`);
     params.set("customer_email",customer.email);
     params.set("client_reference_id",transactionId);
     params.set("metadata[flow]","webfactory_client_commerce");
@@ -100,7 +91,7 @@ export function createPosCheckoutHandler({ authorize = requireSiteCapability, ge
       paymentStatus:"pending",status:"payment_pending",createdAt:now,updatedAt:now,
       createdById:user.id,locationId:cleanText(payload.locationId,120),createdBy:cleanText(user.email||user.id,320),stripeAccountId:accountId,
     };
-    const checkout=await createReservedStripeCheckout(site,record,params,{requestUrl:req.url});
+    const checkout=await createReservedStripeCheckout(site,record,params,{requestUrl:req.url,store:getStore(),buyerReceiptReturn:true});
     return Response.json({ok:true,transactionId,checkoutUrl:checkout.checkoutUrl},{headers:{'Cache-Control':'no-store'}});
   }catch(error){return errorResponse(error);}
 }; }

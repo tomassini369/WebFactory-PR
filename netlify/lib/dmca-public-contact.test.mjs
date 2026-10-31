@@ -1,0 +1,4 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {publicContact} from '../functions/dmca-public-contact.mjs';
+const input={status:'active',name:'Example operator',organization:'Example operator',address:'Example mailing address',phone:'555-0100',email:'agent@example.invalid',registration:'DMCA-123',secret:'never expose'};
+test('public designation exposes only explicitly configured contact fields',()=>{const result=publicContact(JSON.stringify(input));assert.equal(result.registration,'DMCA-123');assert(!JSON.stringify(result).includes('never expose'));assert.equal(Object.keys(result).length,7)});
+test('unverified, absent, malformed or incomplete registration does not claim an active agent',()=>{for(const value of ['',JSON.stringify({...input,status:'pending'}),JSON.stringify({...input,registration:'bad'}),JSON.stringify({...input,email:'bad'}),JSON.stringify({...input,address:''})])assert.equal(publicContact(value),null)});

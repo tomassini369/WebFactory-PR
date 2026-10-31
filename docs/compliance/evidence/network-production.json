@@ -1,0 +1,680 @@
+{
+  "origin": "https://webfactorypr.com",
+  "checkedAt": "2026-10-25T17:10:17.078Z",
+  "authenticated": false,
+  "physicalDevice": false,
+  "rows": [
+    {
+      "width": 390,
+      "path": "/",
+      "status": 200,
+      "error": null,
+      "requests": [
+        {
+          "category": "https://webfactorypr.com document",
+          "count": 1
+        },
+        {
+          "category": "https://webfactorypr.com script",
+          "count": 3
+        },
+        {
+          "category": "https://webfactorypr.com stylesheet",
+          "count": 1
+        },
+        {
+          "category": "https://webfactorypr.com image",
+          "count": 3
+        }
+      ],
+      "failedOrigins": [],
+      "storageKeys": {
+        "local": [],
+        "session": []
+      },
+      "cookies": []
+    },
+    {
+      "width": 390,
+      "path": "/crear",
+      "status": 404,
+      "error": null,
+      "requests": [
+        {
+          "category": "https://webfactorypr.com document",
+          "count": 1
+        }
+      ],
+      "failedOrigins": [],
+      "storageKeys": {
+        "local": [],
+        "session": []
+      },
+      "cookies": []
+    },
+    {
+      "width": 390,
+      "path": "/cuenta",
+      "status": 404,
+      "error": null,
+      "requests": [
+        {
+          "category": "https://webfactorypr.com document",
+          "count": 1
+        }
+      ],
+      "failedOrigins": [],
+      "storageKeys": {
+        "local": [],
+        "session": []
+      },
+      "cookies": []
+    },
+    {
+      "width": 390,
+      "path": "/privacy",
+      "status": 200,
+      "error": null,
+      "requests": [
+        {
+          "category": "https://webfactorypr.com document",
+          "count": 1
+        },
+        {
+          "category": "https://webfactorypr.com script",
+          "count": 4
+        },
+        {
+          "category": "https://webfactorypr.com stylesheet",
+          "count": 2
+        },
+        {
+          "category": "https://webfactorypr.com image",
+          "count": 2
+        }
+      ],
+      "failedOrigins": [],
+      "storageKeys": {
+        "local": [],
+        "session": []
+      },
+      "cookies": []
+    },
+    {
+      "width": 390,
+      "path": "/terms",
+      "status": 200,
+      "error": null,
+      "requests": [
+        {
+          "category": "https://webfactorypr.com document",
+          "count": 1
+        },
+        {
+          "category": "https://webfactorypr.com script",
+          "count": 4
+        },
+        {
+          "category": "https://webfactorypr.com stylesheet",
+          "count": 2
+        },
+        {
+          "category": "https://webfactorypr.com image",
+          "count": 2
+        }
+      ],
+      "failedOrigins": [],
+      "storageKeys": {
+        "local": [],
+        "session": []
+      },
+      "cookies": []
+    },
+    {
+      "width": 390,
+      "path": "/refund-policy",
+      "status": 200,
+      "error": null,
+      "requests": [
+        {
+          "category": "https://webfactorypr.com document",
+          "count": 1
+        },
+        {
+          "category": "https://webfactorypr.com script",
+          "count": 4
+        },
+        {
+          "category": "https://webfactorypr.com stylesheet",
+          "count": 2
+        },
+        {
+          "category": "https://webfactorypr.com image",
+          "count": 2
+        }
+      ],
+      "failedOrigins": [],
+      "storageKeys": {
+        "local": [],
+        "session": []
+      },
+      "cookies": []
+    },
+    {
+      "width": 390,
+      "path": "/client-admin/",
+      "status": 200,
+      "error": null,
+      "requests": [
+        {
+          "category": "https://webfactorypr.com document",
+          "count": 1
+        },
+        {
+          "category": "https://webfactorypr.com script",
+          "count": 13
+        },
+        {
+          "category": "https://webfactorypr.com stylesheet",
+          "count": 8
+        },
+        {
+          "category": "https://webfactorypr.com image",
+          "count": 2
+        },
+        {
+          "category": "https://webfactorypr.com fetch",
+          "count": 2
+        }
+      ],
+      "failedOrigins": [],
+      "storageKeys": {
+        "local": [],
+        "session": []
+      },
+      "cookies": []
+    },
+    {
+      "width": 390,
+      "path": "/webfactory-admin/",
+      "status": 200,
+      "error": null,
+      "requests": [
+        {
+          "category": "https://webfactorypr.com document",
+          "count": 1
+        },
+        {
+          "category": "https://webfactorypr.com script",
+          "count": 10
+        },
+        {
+          "category": "https://webfactorypr.com stylesheet",
+          "count": 4
+        },
+        {
+          "category": "https://webfactorypr.com image",
+          "count": 2
+        },
+        {
+          "category": "https://webfactorypr.com fetch",
+          "count": 2
+        }
+      ],
+      "failedOrigins": [],
+      "storageKeys": {
+        "local": [],
+        "session": []
+      },
+      "cookies": []
+    },
+    {
+      "width": 390,
+      "path": "/builder",
+      "status": 200,
+      "error": null,
+      "requests": [
+        {
+          "category": "https://webfactorypr.com document",
+          "count": 1
+        },
+        {
+          "category": "https://webfactorypr.com script",
+          "count": 13
+        },
+        {
+          "category": "https://webfactorypr.com stylesheet",
+          "count": 14
+        },
+        {
+          "category": "https://webfactorypr.com image",
+          "count": 2
+        }
+      ],
+      "failedOrigins": [],
+      "storageKeys": {
+        "local": [
+          "webfactory-v3-builder-draft"
+        ],
+        "session": [
+          "wf-builder-step"
+        ]
+      },
+      "cookies": []
+    },
+    {
+      "width": 390,
+      "path": "/kiosk",
+      "status": 200,
+      "error": null,
+      "requests": [
+        {
+          "category": "https://webfactorypr.com document",
+          "count": 1
+        },
+        {
+          "category": "https://webfactorypr.com script",
+          "count": 7
+        },
+        {
+          "category": "https://webfactorypr.com stylesheet",
+          "count": 2
+        },
+        {
+          "category": "https://webfactorypr.com fetch",
+          "count": 1
+        }
+      ],
+      "failedOrigins": [],
+      "storageKeys": {
+        "local": [],
+        "session": []
+      },
+      "cookies": []
+    },
+    {
+      "width": 390,
+      "path": "/customer-display",
+      "status": 200,
+      "error": null,
+      "requests": [
+        {
+          "category": "https://webfactorypr.com document",
+          "count": 1
+        },
+        {
+          "category": "https://webfactorypr.com script",
+          "count": 6
+        },
+        {
+          "category": "https://webfactorypr.com stylesheet",
+          "count": 2
+        },
+        {
+          "category": "https://webfactorypr.com fetch",
+          "count": 1
+        }
+      ],
+      "failedOrigins": [],
+      "storageKeys": {
+        "local": [],
+        "session": []
+      },
+      "cookies": []
+    },
+    {
+      "width": 390,
+      "path": "/sites/faro-norte-preview",
+      "status": 404,
+      "error": null,
+      "requests": [
+        {
+          "category": "https://webfactorypr.com document",
+          "count": 1
+        }
+      ],
+      "failedOrigins": [],
+      "storageKeys": {
+        "local": [],
+        "session": []
+      },
+      "cookies": []
+    },
+    {
+      "width": 1440,
+      "path": "/",
+      "status": 200,
+      "error": null,
+      "requests": [
+        {
+          "category": "https://webfactorypr.com document",
+          "count": 1
+        },
+        {
+          "category": "https://webfactorypr.com script",
+          "count": 3
+        },
+        {
+          "category": "https://webfactorypr.com stylesheet",
+          "count": 1
+        },
+        {
+          "category": "https://webfactorypr.com image",
+          "count": 3
+        }
+      ],
+      "failedOrigins": [],
+      "storageKeys": {
+        "local": [],
+        "session": []
+      },
+      "cookies": []
+    },
+    {
+      "width": 1440,
+      "path": "/crear",
+      "status": 404,
+      "error": null,
+      "requests": [
+        {
+          "category": "https://webfactorypr.com document",
+          "count": 1
+        }
+      ],
+      "failedOrigins": [],
+      "storageKeys": {
+        "local": [],
+        "session": []
+      },
+      "cookies": []
+    },
+    {
+      "width": 1440,
+      "path": "/cuenta",
+      "status": 404,
+      "error": null,
+      "requests": [
+        {
+          "category": "https://webfactorypr.com document",
+          "count": 1
+        }
+      ],
+      "failedOrigins": [],
+      "storageKeys": {
+        "local": [],
+        "session": []
+      },
+      "cookies": []
+    },
+    {
+      "width": 1440,
+      "path": "/privacy",
+      "status": 200,
+      "error": null,
+      "requests": [
+        {
+          "category": "https://webfactorypr.com document",
+          "count": 1
+        },
+        {
+          "category": "https://webfactorypr.com script",
+          "count": 4
+        },
+        {
+          "category": "https://webfactorypr.com stylesheet",
+          "count": 2
+        },
+        {
+          "category": "https://webfactorypr.com image",
+          "count": 2
+        }
+      ],
+      "failedOrigins": [],
+      "storageKeys": {
+        "local": [],
+        "session": []
+      },
+      "cookies": []
+    },
+    {
+      "width": 1440,
+      "path": "/terms",
+      "status": 200,
+      "error": null,
+      "requests": [
+        {
+          "category": "https://webfactorypr.com document",
+          "count": 1
+        },
+        {
+          "category": "https://webfactorypr.com script",
+          "count": 4
+        },
+        {
+          "category": "https://webfactorypr.com stylesheet",
+          "count": 2
+        },
+        {
+          "category": "https://webfactorypr.com image",
+          "count": 2
+        }
+      ],
+      "failedOrigins": [],
+      "storageKeys": {
+        "local": [],
+        "session": []
+      },
+      "cookies": []
+    },
+    {
+      "width": 1440,
+      "path": "/refund-policy",
+      "status": 200,
+      "error": null,
+      "requests": [
+        {
+          "category": "https://webfactorypr.com document",
+          "count": 1
+        },
+        {
+          "category": "https://webfactorypr.com script",
+          "count": 4
+        },
+        {
+          "category": "https://webfactorypr.com stylesheet",
+          "count": 2
+        },
+        {
+          "category": "https://webfactorypr.com image",
+          "count": 2
+        }
+      ],
+      "failedOrigins": [],
+      "storageKeys": {
+        "local": [],
+        "session": []
+      },
+      "cookies": []
+    },
+    {
+      "width": 1440,
+      "path": "/client-admin/",
+      "status": 200,
+      "error": null,
+      "requests": [
+        {
+          "category": "https://webfactorypr.com document",
+          "count": 1
+        },
+        {
+          "category": "https://webfactorypr.com script",
+          "count": 13
+        },
+        {
+          "category": "https://webfactorypr.com stylesheet",
+          "count": 8
+        },
+        {
+          "category": "https://webfactorypr.com image",
+          "count": 2
+        },
+        {
+          "category": "https://webfactorypr.com fetch",
+          "count": 2
+        }
+      ],
+      "failedOrigins": [],
+      "storageKeys": {
+        "local": [],
+        "session": []
+      },
+      "cookies": []
+    },
+    {
+      "width": 1440,
+      "path": "/webfactory-admin/",
+      "status": 200,
+      "error": null,
+      "requests": [
+        {
+          "category": "https://webfactorypr.com document",
+          "count": 1
+        },
+        {
+          "category": "https://webfactorypr.com script",
+          "count": 10
+        },
+        {
+          "category": "https://webfactorypr.com stylesheet",
+          "count": 4
+        },
+        {
+          "category": "https://webfactorypr.com image",
+          "count": 2
+        },
+        {
+          "category": "https://webfactorypr.com fetch",
+          "count": 2
+        }
+      ],
+      "failedOrigins": [],
+      "storageKeys": {
+        "local": [],
+        "session": []
+      },
+      "cookies": []
+    },
+    {
+      "width": 1440,
+      "path": "/builder",
+      "status": 200,
+      "error": null,
+      "requests": [
+        {
+          "category": "https://webfactorypr.com document",
+          "count": 1
+        },
+        {
+          "category": "https://webfactorypr.com script",
+          "count": 13
+        },
+        {
+          "category": "https://webfactorypr.com stylesheet",
+          "count": 14
+        },
+        {
+          "category": "https://webfactorypr.com image",
+          "count": 2
+        }
+      ],
+      "failedOrigins": [],
+      "storageKeys": {
+        "local": [
+          "webfactory-v3-builder-draft"
+        ],
+        "session": [
+          "wf-builder-step"
+        ]
+      },
+      "cookies": []
+    },
+    {
+      "width": 1440,
+      "path": "/kiosk",
+      "status": 200,
+      "error": null,
+      "requests": [
+        {
+          "category": "https://webfactorypr.com document",
+          "count": 1
+        },
+        {
+          "category": "https://webfactorypr.com script",
+          "count": 7
+        },
+        {
+          "category": "https://webfactorypr.com stylesheet",
+          "count": 2
+        },
+        {
+          "category": "https://webfactorypr.com fetch",
+          "count": 1
+        }
+      ],
+      "failedOrigins": [],
+      "storageKeys": {
+        "local": [],
+        "session": []
+      },
+      "cookies": []
+    },
+    {
+      "width": 1440,
+      "path": "/customer-display",
+      "status": 200,
+      "error": null,
+      "requests": [
+        {
+          "category": "https://webfactorypr.com document",
+          "count": 1
+        },
+        {
+          "category": "https://webfactorypr.com script",
+          "count": 6
+        },
+        {
+          "category": "https://webfactorypr.com stylesheet",
+          "count": 2
+        },
+        {
+          "category": "https://webfactorypr.com fetch",
+          "count": 1
+        }
+      ],
+      "failedOrigins": [],
+      "storageKeys": {
+        "local": [],
+        "session": []
+      },
+      "cookies": []
+    },
+    {
+      "width": 1440,
+      "path": "/sites/faro-norte-preview",
+      "status": 404,
+      "error": null,
+      "requests": [
+        {
+          "category": "https://webfactorypr.com document",
+          "count": 1
+        }
+      ],
+      "failedOrigins": [],
+      "storageKeys": {
+        "local": [],
+        "session": []
+      },
+      "cookies": []
+    }
+  ]
+}

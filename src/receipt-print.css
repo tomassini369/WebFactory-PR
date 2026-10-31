@@ -1,0 +1,60 @@
+/* A body-level copy avoids dialog top layers, 3D transforms and hidden-page space.
+   Reuse ReceiptDetails and its saved amounts; printing never creates a payment. */
+.wf-receipt-print-root{display:none!important}
+@media print{
+  html:has(body>.wf-receipt-print-root[data-active="true"]),
+  body:has(>.wf-receipt-print-root[data-active="true"]){
+    display:block!important;position:static!important;inset:auto!important;
+    margin:0!important;padding:0!important;width:auto!important;height:auto!important;
+    min-width:0!important;min-height:0!important;max-height:none!important;
+    overflow:visible!important;transform:none!important;filter:none!important;
+    background:#fff!important;color:#111!important;color-scheme:light!important;
+  }
+  body:has(>.wf-receipt-print-root[data-active="true"])>:not(.wf-receipt-print-root[data-active="true"]),
+  body:has(>.wf-receipt-print-root[data-active="true"]) dialog{display:none!important}
+  html:has(body>.wf-receipt-print-root[data-active="true"])::before,
+  html:has(body>.wf-receipt-print-root[data-active="true"])::after,
+  body:has(>.wf-receipt-print-root[data-active="true"])::before,
+  body:has(>.wf-receipt-print-root[data-active="true"])::after{display:none!important;content:none!important}
+  body>.wf-receipt-print-root[data-active="true"]{
+    display:block!important;position:static!important;width:100%!important;
+    max-width:110mm!important;margin:0 auto!important;padding:0!important;
+    min-height:0!important;height:auto!important;background:#fff!important;
+    border:0!important;border-radius:0!important;box-shadow:none!important;
+    page:wf-receipt;
+  }
+  .wf-receipt-print-root[data-active="true"] *{
+    box-sizing:border-box;visibility:visible!important;animation:none!important;
+    transition:none!important;transform:none!important;text-shadow:none!important;
+    box-shadow:none!important;filter:none!important;backdrop-filter:none!important;
+    color:#111!important;
+  }
+  .wf-receipt-print-root .receipt-sheet{
+    width:100%!important;max-width:none!important;margin:0!important;padding:0!important;
+    background:#fff!important;font:10pt/1.35 ui-monospace,SFMono-Regular,Consolas,monospace;
+    overflow:visible!important;overflow-wrap:anywhere;break-inside:auto;
+  }
+  .wf-receipt-print-root .receipt-content{padding:0 4mm!important}
+  .wf-receipt-print-root .receipt-header{text-align:center;margin-bottom:2mm}
+  .wf-receipt-print-root .receipt-store-title{font:700 14pt/1.3 system-ui;margin:2mm 0}
+  .wf-receipt-print-root :is(.receipt-brand-badge,.receipt-meta-info,.receipt-codes-container){font-size:8pt}
+  .wf-receipt-print-root .receipt-platform-logo{display:flex;justify-content:center;padding:2mm 0}
+  .wf-receipt-print-root :is(.receipt-info-grid,.receipt-totals-table){display:flex;flex-direction:column;gap:1mm;margin:2mm 0}
+  .wf-receipt-print-root :is(.receipt-row-between,.receipt-table-head,.receipt-item-row){display:flex;justify-content:space-between;gap:2mm;padding:1mm 0}
+  .wf-receipt-print-root .receipt-row-between .val{max-width:70%;text-align:right}
+  .wf-receipt-print-root .receipt-table-head{font-weight:700;border-bottom:1px dashed #777}
+  .wf-receipt-print-root :is(.receipt-divider-stars,.receipt-divider-dashed,.receipt-divider-double){text-align:center;margin:2mm 0;font-size:8pt}
+  .wf-receipt-print-root .receipt-grand-total{font-weight:700;font-size:12pt}
+  .wf-receipt-print-root :is(.receipt-codes-container,.receipt-footer){text-align:center;padding:2mm 0;border-top:1px dashed #777}
+  .wf-receipt-print-root :is(.receipt-sawtooth,.receipt-crease),
+  .wf-receipt-print-root .receipt-sheet::after{display:none!important}
+  .wf-receipt-print-root .receipt-platform-logo img{
+    width:auto!important;height:auto!important;max-width:45mm!important;max-height:26mm!important;
+  }
+  .wf-receipt-print-root :is(.receipt-header,.receipt-item-row,.receipt-row-between,.receipt-totals-table,.receipt-codes-container){break-inside:avoid}
+  .wf-receipt-print-root .receipt-table-head{break-after:avoid}
+  .wf-receipt-print-root .col-qty{width:12mm;flex-shrink:0}
+  .wf-receipt-print-root .col-amt{width:20mm;flex-shrink:0;text-align:right}
+  .wf-receipt-print-root .col-item{flex:1;min-width:0;padding-right:2mm}
+}
+@page wf-receipt{size:auto;margin:12mm}

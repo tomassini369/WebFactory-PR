@@ -33,7 +33,7 @@ export function assertCommerceAction(site, member, record, action) {
 // salary data must never reach an employee browser, even in a hidden panel.
 export function employeeCommerceRecord(record, member) {
   if (isBusinessOwner(member)) return record;
-  const keys = ['transactionId','siteId','kind','employeeId','serviceId','locationId','locationName','start','end','status','paymentStatus','createdAt','updatedAt','completedAt','queueNumber','kitchenStatus'];
+  const keys = ['transactionId','siteId','kind','employeeId','serviceId','locationId','locationName','start','end','status','paymentStatus','createdAt','updatedAt','completedAt','queueNumber','kitchenStatus','cashReceiptPending'];
   const result = Object.fromEntries(keys.filter(key => record[key] !== undefined).map(key => [key,record[key]]));
   result.customer = {name: record.customer?.name || '', ...(record.kind === 'booking' ? {email:record.customer?.email || '',phone:record.customer?.phone || ''} : {})};
   result.items = (record.items || []).map(item => ({id:item.id,name:item.name,quantity:item.quantity, ...(member.permissions?.collect === true ? {unitAmount:item.unitAmount} : {})}));

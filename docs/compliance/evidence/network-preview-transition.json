@@ -1,0 +1,776 @@
+{
+  "origin": "https://deploy-preview-125--webfactorypr.netlify.app",
+  "checkedAt": "2026-10-25T17:10:15.845Z",
+  "authenticated": false,
+  "physicalDevice": false,
+  "rows": [
+    {
+      "width": 390,
+      "path": "/",
+      "status": 200,
+      "error": null,
+      "requests": [
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app document",
+          "count": 1
+        },
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app script",
+          "count": 14
+        },
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app stylesheet",
+          "count": 2
+        },
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app image",
+          "count": 4
+        },
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app fetch",
+          "count": 1
+        }
+      ],
+      "failedOrigins": [],
+      "storageKeys": {
+        "local": [],
+        "session": []
+      },
+      "cookies": []
+    },
+    {
+      "width": 390,
+      "path": "/crear",
+      "status": 200,
+      "error": null,
+      "requests": [
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app document",
+          "count": 2
+        },
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app script",
+          "count": 7
+        },
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app stylesheet",
+          "count": 2
+        },
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app image",
+          "count": 3
+        }
+      ],
+      "failedOrigins": [],
+      "storageKeys": {
+        "local": [],
+        "session": []
+      },
+      "cookies": []
+    },
+    {
+      "width": 390,
+      "path": "/cuenta",
+      "status": 200,
+      "error": null,
+      "requests": [
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app document",
+          "count": 1
+        },
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app script",
+          "count": 13
+        },
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app stylesheet",
+          "count": 4
+        },
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app image",
+          "count": 2
+        },
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app fetch",
+          "count": 3
+        }
+      ],
+      "failedOrigins": [],
+      "storageKeys": {
+        "local": [],
+        "session": []
+      },
+      "cookies": []
+    },
+    {
+      "width": 390,
+      "path": "/privacy",
+      "status": 200,
+      "error": null,
+      "requests": [
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app document",
+          "count": 1
+        },
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app script",
+          "count": 6
+        },
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app stylesheet",
+          "count": 2
+        },
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app image",
+          "count": 2
+        }
+      ],
+      "failedOrigins": [],
+      "storageKeys": {
+        "local": [],
+        "session": []
+      },
+      "cookies": []
+    },
+    {
+      "width": 390,
+      "path": "/terms",
+      "status": 200,
+      "error": null,
+      "requests": [
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app document",
+          "count": 1
+        },
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app script",
+          "count": 6
+        },
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app stylesheet",
+          "count": 2
+        },
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app image",
+          "count": 2
+        }
+      ],
+      "failedOrigins": [],
+      "storageKeys": {
+        "local": [],
+        "session": []
+      },
+      "cookies": []
+    },
+    {
+      "width": 390,
+      "path": "/refund-policy",
+      "status": 200,
+      "error": null,
+      "requests": [
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app document",
+          "count": 1
+        },
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app script",
+          "count": 6
+        },
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app stylesheet",
+          "count": 2
+        },
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app image",
+          "count": 2
+        }
+      ],
+      "failedOrigins": [],
+      "storageKeys": {
+        "local": [],
+        "session": []
+      },
+      "cookies": []
+    },
+    {
+      "width": 390,
+      "path": "/client-admin/",
+      "status": 200,
+      "error": null,
+      "requests": [
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app document",
+          "count": 1
+        },
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app script",
+          "count": 21
+        },
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app stylesheet",
+          "count": 10
+        },
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app image",
+          "count": 2
+        },
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app fetch",
+          "count": 2
+        }
+      ],
+      "failedOrigins": [],
+      "storageKeys": {
+        "local": [],
+        "session": []
+      },
+      "cookies": []
+    },
+    {
+      "width": 390,
+      "path": "/webfactory-admin/",
+      "status": 200,
+      "error": null,
+      "requests": [
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app document",
+          "count": 1
+        },
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app script",
+          "count": 15
+        },
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app stylesheet",
+          "count": 4
+        },
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app image",
+          "count": 2
+        },
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app fetch",
+          "count": 2
+        }
+      ],
+      "failedOrigins": [],
+      "storageKeys": {
+        "local": [],
+        "session": []
+      },
+      "cookies": []
+    },
+    {
+      "width": 390,
+      "path": "/builder",
+      "status": 200,
+      "error": null,
+      "requests": [
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app document",
+          "count": 1
+        },
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app script",
+          "count": 18
+        },
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app stylesheet",
+          "count": 18
+        },
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app image",
+          "count": 2
+        }
+      ],
+      "failedOrigins": [],
+      "storageKeys": {
+        "local": [
+          "webfactory-v3-builder-draft"
+        ],
+        "session": [
+          "wf-builder-step"
+        ]
+      },
+      "cookies": []
+    },
+    {
+      "width": 390,
+      "path": "/kiosk",
+      "status": 200,
+      "error": null,
+      "requests": [
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app document",
+          "count": 1
+        },
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app script",
+          "count": 9
+        },
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app stylesheet",
+          "count": 3
+        },
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app fetch",
+          "count": 1
+        }
+      ],
+      "failedOrigins": [],
+      "storageKeys": {
+        "local": [],
+        "session": []
+      },
+      "cookies": []
+    },
+    {
+      "width": 390,
+      "path": "/customer-display",
+      "status": 200,
+      "error": null,
+      "requests": [
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app document",
+          "count": 1
+        },
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app script",
+          "count": 8
+        },
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app stylesheet",
+          "count": 2
+        },
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app fetch",
+          "count": 1
+        }
+      ],
+      "failedOrigins": [],
+      "storageKeys": {
+        "local": [],
+        "session": []
+      },
+      "cookies": []
+    },
+    {
+      "width": 390,
+      "path": "/sites/faro-norte-preview",
+      "status": 200,
+      "error": null,
+      "requests": [
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app document",
+          "count": 1
+        },
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app script",
+          "count": 14
+        },
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app stylesheet",
+          "count": 7
+        },
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app fetch",
+          "count": 1
+        },
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app image",
+          "count": 6
+        }
+      ],
+      "failedOrigins": [],
+      "storageKeys": {
+        "local": [],
+        "session": []
+      },
+      "cookies": []
+    },
+    {
+      "width": 1440,
+      "path": "/",
+      "status": 200,
+      "error": null,
+      "requests": [
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app document",
+          "count": 1
+        },
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app script",
+          "count": 14
+        },
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app stylesheet",
+          "count": 2
+        },
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app image",
+          "count": 4
+        },
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app fetch",
+          "count": 1
+        }
+      ],
+      "failedOrigins": [],
+      "storageKeys": {
+        "local": [],
+        "session": []
+      },
+      "cookies": []
+    },
+    {
+      "width": 1440,
+      "path": "/crear",
+      "status": 200,
+      "error": null,
+      "requests": [
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app document",
+          "count": 2
+        },
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app script",
+          "count": 7
+        },
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app stylesheet",
+          "count": 2
+        },
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app image",
+          "count": 3
+        }
+      ],
+      "failedOrigins": [],
+      "storageKeys": {
+        "local": [],
+        "session": []
+      },
+      "cookies": []
+    },
+    {
+      "width": 1440,
+      "path": "/cuenta",
+      "status": 200,
+      "error": null,
+      "requests": [
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app document",
+          "count": 1
+        },
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app script",
+          "count": 13
+        },
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app stylesheet",
+          "count": 4
+        },
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app image",
+          "count": 2
+        },
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app fetch",
+          "count": 3
+        }
+      ],
+      "failedOrigins": [],
+      "storageKeys": {
+        "local": [],
+        "session": []
+      },
+      "cookies": []
+    },
+    {
+      "width": 1440,
+      "path": "/privacy",
+      "status": 200,
+      "error": null,
+      "requests": [
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app document",
+          "count": 1
+        },
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app script",
+          "count": 6
+        },
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app stylesheet",
+          "count": 2
+        },
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app image",
+          "count": 2
+        }
+      ],
+      "failedOrigins": [],
+      "storageKeys": {
+        "local": [],
+        "session": []
+      },
+      "cookies": []
+    },
+    {
+      "width": 1440,
+      "path": "/terms",
+      "status": 200,
+      "error": null,
+      "requests": [
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app document",
+          "count": 1
+        },
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app script",
+          "count": 6
+        },
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app stylesheet",
+          "count": 2
+        },
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app image",
+          "count": 2
+        }
+      ],
+      "failedOrigins": [],
+      "storageKeys": {
+        "local": [],
+        "session": []
+      },
+      "cookies": []
+    },
+    {
+      "width": 1440,
+      "path": "/refund-policy",
+      "status": 200,
+      "error": null,
+      "requests": [
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app document",
+          "count": 1
+        },
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app script",
+          "count": 6
+        },
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app stylesheet",
+          "count": 2
+        },
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app image",
+          "count": 2
+        }
+      ],
+      "failedOrigins": [],
+      "storageKeys": {
+        "local": [],
+        "session": []
+      },
+      "cookies": []
+    },
+    {
+      "width": 1440,
+      "path": "/client-admin/",
+      "status": 200,
+      "error": null,
+      "requests": [
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app document",
+          "count": 1
+        },
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app script",
+          "count": 21
+        },
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app stylesheet",
+          "count": 10
+        },
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app image",
+          "count": 2
+        },
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app fetch",
+          "count": 2
+        }
+      ],
+      "failedOrigins": [],
+      "storageKeys": {
+        "local": [],
+        "session": []
+      },
+      "cookies": []
+    },
+    {
+      "width": 1440,
+      "path": "/webfactory-admin/",
+      "status": 200,
+      "error": null,
+      "requests": [
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app document",
+          "count": 1
+        },
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app script",
+          "count": 15
+        },
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app stylesheet",
+          "count": 4
+        },
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app image",
+          "count": 2
+        },
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app fetch",
+          "count": 2
+        }
+      ],
+      "failedOrigins": [],
+      "storageKeys": {
+        "local": [],
+        "session": []
+      },
+      "cookies": []
+    },
+    {
+      "width": 1440,
+      "path": "/builder",
+      "status": 200,
+      "error": null,
+      "requests": [
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app document",
+          "count": 1
+        },
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app script",
+          "count": 18
+        },
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app stylesheet",
+          "count": 18
+        },
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app image",
+          "count": 2
+        }
+      ],
+      "failedOrigins": [],
+      "storageKeys": {
+        "local": [
+          "webfactory-v3-builder-draft"
+        ],
+        "session": [
+          "wf-builder-step"
+        ]
+      },
+      "cookies": []
+    },
+    {
+      "width": 1440,
+      "path": "/kiosk",
+      "status": 200,
+      "error": null,
+      "requests": [
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app document",
+          "count": 1
+        },
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app script",
+          "count": 9
+        },
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app stylesheet",
+          "count": 3
+        },
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app fetch",
+          "count": 1
+        }
+      ],
+      "failedOrigins": [],
+      "storageKeys": {
+        "local": [],
+        "session": []
+      },
+      "cookies": []
+    },
+    {
+      "width": 1440,
+      "path": "/customer-display",
+      "status": 200,
+      "error": null,
+      "requests": [
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app document",
+          "count": 1
+        },
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app script",
+          "count": 8
+        },
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app stylesheet",
+          "count": 2
+        },
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app fetch",
+          "count": 1
+        }
+      ],
+      "failedOrigins": [],
+      "storageKeys": {
+        "local": [],
+        "session": []
+      },
+      "cookies": []
+    },
+    {
+      "width": 1440,
+      "path": "/sites/faro-norte-preview",
+      "status": 200,
+      "error": null,
+      "requests": [
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app document",
+          "count": 1
+        },
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app script",
+          "count": 14
+        },
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app stylesheet",
+          "count": 7
+        },
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app fetch",
+          "count": 1
+        },
+        {
+          "category": "https://deploy-preview-125--webfactorypr.netlify.app image",
+          "count": 6
+        }
+      ],
+      "failedOrigins": [],
+      "storageKeys": {
+        "local": [],
+        "session": []
+      },
+      "cookies": []
+    }
+  ]
+}

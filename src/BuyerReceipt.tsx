@@ -1,6 +1,5 @@
 import { useEffect, useRef } from 'react'
 import ReceiptPaper, { type ReceiptColors, type ReceiptRecord } from './ReceiptPaper'
-import ReceiptDetails from './receipt-original/Receipt'
 import './buyer-receipt.css'
 
 export function demoReceipt(businessName: string, items: NonNullable<ReceiptRecord['items']>, paymentMethod: string, customer = { name: 'Demo', email: '' }, logoUrl = ''): ReceiptRecord {
@@ -17,6 +16,5 @@ export default function BuyerReceipt({ receipt, lang, timeZone, colors, onClose 
   return <dialog ref={dialog} className="wf-buyer-receipt" aria-label={es ? 'Recibo de compra' : 'Purchase receipt'} onClose={()=>{if(!dialog.current?.open)onClose()}}>
     <header><div><small>{receipt.demo ? (es ? 'DEMOSTRACIÓN · SIN COBROS NI EMAILS' : 'DEMO · NO CHARGES OR EMAILS') : (['paid','paid_in_person'].includes(receipt.paymentStatus) ? (es ? 'PAGO CONFIRMADO' : 'PAYMENT CONFIRMED') : (es ? 'RECIBO DE COMPRA' : 'PURCHASE RECEIPT'))}</small><h2>{receipt.businessName || (es ? 'Tu recibo' : 'Your receipt')}</h2></div><button autoFocus type="button" onClick={() => dialog.current?.close()} aria-label={es ? 'Cerrar recibo' : 'Close receipt'}>×</button></header>
     <div className="wf-buyer-receipt-animation"><ReceiptPaper receipt={receipt} lang={lang} timeZone={timeZone} colors={colors}/></div>
-    <div className="wf-buyer-receipt-print"><ReceiptDetails receipt={receipt} lang={lang} timeZone={timeZone}/></div>
   </dialog>
 }
