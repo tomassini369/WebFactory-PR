@@ -61,7 +61,7 @@ try{
    assert.equal((await page.request.get(origin+'/dashboard/room.webp')).status(),200)
    if(path==='/client-admin'){await page.locator('.bcc-metrics').waitFor();assert.match(await page.locator('.bcc-metrics').innerText(),/55[.,]00/)}
    if(path==='/client-admin'){const spacing=await page.locator('.gd-overview').evaluate(el=>({gap:Number.parseFloat(getComputedStyle(el.querySelector('.gd-overview-grid')).rowGap),boundary:el.nextElementSibling.getBoundingClientRect().top-el.getBoundingClientRect().bottom}));assert(Math.abs(spacing.boundary-spacing.gap)<1,'Overview-to-service separation matches the card grid gap')}
-   const customize=lang==='es'?'Personalización':'Personalization';await page.locator('.gd-dock').getByRole('button',{name:customize,exact:true}).click();await page.locator('.gd-wallpaper-choice').first().waitFor();await page.locator('.gd-appearance>fieldset').waitFor({state:'visible'});await page.waitForFunction(()=>!document.querySelector('.gd-appearance>fieldset').disabled)
+   const customize=lang==='es'?'Personalización':'Personalization';await page.locator('.gd-dock').getByRole('button',{name:customize,exact:true}).click();await page.locator('.gd-wallpaper-choice').first().waitFor();await page.locator('.gd-appearance>fieldset:not(.gd-palette-section)').waitFor({state:'visible'});await page.waitForFunction(()=>!document.querySelector('.gd-appearance>fieldset').disabled)
    await noOverflow(page);assert.equal(await page.locator('.gd-wallpaper-choice').count(),3)
    if(path==='/client-admin'&&width===390&&theme==='dark'&&lang==='es'){
     assert.equal(await page.locator('.gd-palette-grid .gd-palette-choice').count(),23,'Shared palette catalogue has 23 choices');
@@ -78,10 +78,10 @@ try{
     assert.equal(await page.getByRole('button',{name:'Paleta Ocean Blue',exact:true}).getAttribute('aria-pressed'),'true');
     await page.getByRole('button',{name:'Usar mis colores actuales',exact:true}).click();
     await page.getByRole('checkbox',{name:'Mantener imagen de fondo original (sin oscurecer)',exact:true}).check();
-    await page.getByLabel('Apariencia del cristal',{exact:true}).selectOption('liquid');
+    await page.getByRole('combobox',{name:/^Apariencia del cristal/}).selectOption('liquid');
     assert.equal(await page.locator('.gd-root').getAttribute('data-background-natural'),'true');
     assert.equal(await page.locator('.gd-root').getAttribute('data-glass-style'),'liquid');
-    assert((await page.locator('.wf-licensed-liquid-glass').count())>0,'Real Liquid Glass package is rendered on dashboard panels');
+    await page.locator('.wf-licensed-liquid-glass').first().waitFor({state:'attached'});assert((await page.locator('.wf-licensed-liquid-glass').count())>0,'Real Liquid Glass package is rendered on dashboard panels');
     assert.equal(await page.locator('.gd-shade').evaluate(el=>getComputedStyle(el).opacity),'0');
     await page.getByRole('button',{name:'Aplicar y guardar',exact:true}).click();
     await page.getByRole('status').filter({hasText:'Apariencia guardada.'}).waitFor();

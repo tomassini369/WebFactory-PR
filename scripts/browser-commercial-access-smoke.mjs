@@ -23,6 +23,7 @@ try{
   await page.route('**/.netlify/functions/**',async route=>{
    const request=route.request(),url=new URL(request.url()),name=url.pathname.split('/').at(-1);let body={ok:true},status=200
    if(name==='dashboard-appearance')body={ok:true,prefs:{},hasCustom:false};
+   else if(name==='portal-profile'){assert(['GET','PUT'].includes(request.method()));const preferences=request.method()==='PUT'?request.postDataJSON():{};body={ok:true,profile:{name:'',phone:'',language:preferences.language||null,theme:preferences.theme||null},hasPhoto:false,revision:0,version:'isolated-profile-fixture'}}
    else if(name==='portal-session')body={ok:true,user}
    else if(name==='client-admin'){
     if(request.method()==='PATCH')throw Error('Unexpected general settings mutation')

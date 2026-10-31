@@ -349,7 +349,7 @@ jobs:
         run: test "$SUITE_RESULT" = success
 
   kiosk-skins:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     strategy:
       fail-fast: false
@@ -364,7 +364,8 @@ jobs:
           cache: npm
       - run: npm ci
       - run: WF_DESIGN_PREVIEW=1 npm run build
-      - run: npx playwright install --with-deps ${{ matrix.engine }}
+      # The keyboard suite explicitly includes WebKit in every matrix job.
+      - run: npx playwright install --with-deps ${{ matrix.engine }} webkit
       - name: Verify skin commerce, accessibility, bookings and receipts with isolated providers
         env:
           QA_ENGINE: ${{ matrix.engine }}
