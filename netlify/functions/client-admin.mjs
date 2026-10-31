@@ -1,9 +1,10 @@
+import {claimPublicSiteSlug, validatePublicSiteSlug} from '../lib/client-site-slug.mjs';
 import {commercialCapabilities, employeeSiteView} from "../lib/commercial-access.mjs";
 import { sanitizePolicies } from "../lib/publication-review.mjs";
 import {normalizeBookingPolicy} from '../lib/booking-policy.mjs';
 import { readPosOperations } from '../lib/pos-operations.mjs';
 import { assertSameOrigin, authorizedSites, errorResponse, requireSiteAccess } from "../lib/client-auth.mjs";
-import { patchClientSite, publicClientSite, renameClientSiteSlug } from "../lib/client-store.mjs";
+import { clientAssetStore, clientSiteStore, patchClientSite, publicClientSite, renameClientSiteSlug } from "../lib/client-store.mjs";
 import { cleanText, validEmail } from "../lib/platform-utils.mjs";
 import { normalizeTaxConfig } from "../lib/webfactory-v3-domain.mjs";
 
@@ -248,6 +249,62 @@ export function normalizeClientSection(site, section, incoming, user, membership
     return value;
 }
 
+/** Existing-site Builder writes are validated together and committed with one revision. */
+export async function normalizeBuilderUpdate(site, input, user, membership, assetMetadata = key => clientAssetStore().getMetadata(key)) {
+  const fail = (message,status=400) => {throw Object.assign(new Error(message),{status});};
+  if (!input || typeof input !== 'object' || Array.isArray(input)) fail('Invalid Builder changes.');
+  const fields=['business','design','features','catalog','team','hours','payments'];
+  if (Object.keys(input).some(key=>!fields.includes(key)) || fields.some(key=>input[key]===undefined)) fail('Invalid Builder sections.');
+  for(const key of ['business','design','features','hours','payments'])if(!input[key]||typeof input[key]!=='object'||Array.isArray(input[key]))fail('Invalid Builder section.');
+  if(!Array.isArray(input.catalog)||!Array.isArray(input.team))fail('Catalog and team must be lists.');
+  if([...input.catalog,...input.team].some(item=>!item||typeof item!=='object'||Array.isArray(item)))fail('Invalid Builder records.');
+  const patch={};
+  patch.business=normalizeClientSection(site,'business',input.business,user,membership);
+  // Branches, portal identities and administrative settings are not Builder fields.
+  patch.business.locations=site.business?.locations||[];
+  patch.business.heroAssetKey=cleanText(input.business.heroAssetKey,700);
+  if(!Array.isArray(input.business.galleryAssets)||input.business.galleryAssets.length>100)fail('The gallery limit is 100 images.');
+  patch.business.galleryAssetKeys=input.business.galleryAssets.map(asset=>{if(!asset||typeof asset.assetKey!=='string'||!asset.assetKey)fail('Invalid gallery image.');return cleanText(asset.assetKey,700);});
+  patch.design=normalizeClientSection(site,'design',input.design,user,membership);
+  if(!['split','centered','editorial','showcase'].includes(input.design.customLayout))fail('Invalid custom layout.');
+  const sections=['catalog','team','about','gallery','contact'];
+  if(!Array.isArray(input.design.sectionOrder)||input.design.sectionOrder.length>5||new Set(input.design.sectionOrder).size!==input.design.sectionOrder.length||input.design.sectionOrder.some(key=>!sections.includes(key)))fail('Invalid section order.');
+  Object.assign(patch.design,{customLayout:input.design.customLayout,sectionOrder:input.design.sectionOrder});
+  patch.features=normalizeClientSection(site,'features',input.features,user,membership);
+  if(!Array.isArray(input.catalog)||!Array.isArray(input.team))fail('Catalog and team must be lists.');
+  // Keep existing stock, tax metadata and historical rows. Removal means deactivation.
+  const catalogFields=['id','type','name','nameEn','nameEs','description','descriptionEn','descriptionEs','price','requiresAppointment','duration','imageAssetKey'];
+  const catalog=input.catalog.map(item=>{
+    if(typeof item.price!=='number'||!Number.isFinite(item.price)||item.price<0)fail('Every catalog price must be a valid nonnegative number.');
+    const previous=(site.catalog||[]).find(row=>row.id===item.id);
+    return {...previous,...Object.fromEntries(catalogFields.filter(key=>item[key]!==undefined).map(key=>[key,item[key]])),active:true};
+  });
+  const catalogIds=new Set(catalog.map(item=>item.id));
+  const archived=(site.catalog||[]).filter(item=>!catalogIds.has(item.id)).map(item=>({...item,active:false}));
+  if(catalog.length+archived.length>100)fail('The catalog limit is 100 products and services, including inactive records.');
+  patch.catalog=[...normalizeClientSection(site,'catalog',catalog,user,membership).map(item=>({...((site.catalog||[]).find(row=>row.id===item.id)||{}),...item})),...archived];
+  const employeeFields=['id','name','role','roleEn','roleEs','serviceIds'];
+  const team=input.team.map(member=>({...((site.employees||[]).find(row=>row.id===member.id)||{}),...Object.fromEntries(employeeFields.filter(key=>member[key]!==undefined).map(key=>[key,member[key]])),active:true}));
+  const teamIds=new Set(team.map(member=>member.id));
+  team.push(...(site.employees||[]).filter(member=>!teamIds.has(member.id)).map(member=>({...member,active:false})));
+  patch.employees=normalizeClientSection({...site,catalog:patch.catalog},'employees',team,user,membership);
+  patch.hours=normalizeClientSection(site,'hours',input.hours,user,membership);
+  patch.paymentRules=normalizeClientSection(site,'paymentRules',input.payments,user,membership);
+  Object.assign(patch.features,{stripe:patch.paymentRules.methods.stripe,ath:patch.paymentRules.methods.ath,inPersonPayments:patch.paymentRules.methods.inPerson});
+  const keys=value=>[value.business?.logoAssetKey,value.business?.heroAssetKey,...(value.business?.galleryAssetKeys||[]),...(value.catalog||[]).map(item=>item.imageAssetKey)].filter(Boolean);
+  const oldKeys=new Set(keys(site));
+  for(const key of new Set(keys(patch))){
+    // Existing legacy Builder assets can be retained, never attached from another draft.
+    if(oldKeys.has(key))continue;
+    if(!key.startsWith(`sites/${site.siteId}/`)||key.split('/').some(part=>part==='..'||part==='.')||/[\\%?#]/.test(key))fail('This image does not belong to this business.',403);
+    const metadata=await assetMetadata(key);
+    if(!metadata||!['image/jpeg','image/png','image/webp','image/gif'].includes(metadata.metadata?.contentType))fail('Upload this image again before publishing.');
+  }
+  const slug=String(input.business.slug||'');
+  if(slug!==site.slug){const validated=validatePublicSiteSlug(slug);patch.slug=validated;}
+  return patch;
+}
+
 export default async (req) => {
   try {
     if (req.method === "GET") {
@@ -267,8 +324,15 @@ export default async (req) => {
     assertSameOrigin(req);
     const payload = await req.json();
     const section = cleanText(payload.section, 40);
-    if (!allowedSections.has(section)) throw Object.assign(new Error("Invalid settings section."), { status: 400 });
+    if (section!=="builder" && !allowedSections.has(section)) throw Object.assign(new Error("Invalid settings section."), { status: 400 });
     const { user, site, membership } = await requireSiteAccess(payload.siteId, ["owner"]);
+    if(section==='builder') {
+      if(!Number.isSafeInteger(payload.revision)||payload.revision!==site.revision)throw Object.assign(new Error('This website changed. Reload before publishing your changes.'),{status:409});
+      const patch=await normalizeBuilderUpdate(site,payload.value,user,membership);
+      if(patch.slug)await claimPublicSiteSlug(clientSiteStore(),site.siteId,patch.slug);
+      const updated=await patchClientSite(site.siteId,patch,{expectedRevision:payload.revision});
+      return Response.json({ok:true,site:updated,publicSite:publicClientSite(updated)},{headers:{'Cache-Control':'no-store'}});
+    }
     if (section === "slug") {
       const updated = await renameClientSiteSlug(site.siteId, payload.value, payload.revision);
       return Response.json({ ok: true, site: updated, publicSite: publicClientSite(updated) }, { headers: { "Cache-Control": "no-store" } });

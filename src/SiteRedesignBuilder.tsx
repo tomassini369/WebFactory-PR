@@ -1,21 +1,61 @@
-import { useUnsavedChanges } from './interaction-state'
-import StorefrontPreview from './StorefrontPreview'
-import type {StorefrontSite} from './ClientStorefront'
-import { useEffect, useState } from 'react'
-import { templateConfigs, templateVisualStyle } from './templateData'
-import './client-admin.css'
+import {useEffect, useMemo, useState} from 'react'
+import WebFactoryBuilder, {initialState, type BuilderState, type BuilderAsset} from './WebFactoryBuilder'
+import {useWorkspaceFetch} from './training/workspace-services'
+import {templateConfigs} from './templateData'
+import {usePractice} from './training/practice-context'
 
 type Lang='es'|'en'
-type Site=StorefrontSite & {servicePlan:any}
+export function existingBuilderState(site:any):BuilderState {
+  const defaults=structuredClone(initialState)
+  const url=(key:string)=>key?`/.netlify/functions/client-asset?siteId=${encodeURIComponent(site.siteId)}&key=${encodeURIComponent(key)}`:''
+  return {
+    ...defaults,
+    business:{...defaults.business,...site.business,slug:site.slug,logo:url(site.business?.logoAssetKey),hero:url(site.business?.heroAssetKey),gallery:(site.business?.galleryAssetKeys||[]).map(url),galleryAssets:(site.business?.galleryAssetKeys||[]).map((assetKey:string)=>({assetKey,fileName:'',contentType:''}))},
+    design:{...defaults.design,...site.design},features:{...defaults.features,...site.features},
+    catalog:(site.catalog||[]).filter((item:any)=>item.active!==false).map((item:any)=>({...item,image:url(item.imageAssetKey)})),
+    team:(site.employees||[]).filter((member:any)=>member.active!==false),
+    hours:{...defaults.hours,...site.hours},
+    payments:{...defaults.payments,...site.paymentRules,methods:{...defaults.payments.methods,...site.paymentRules?.methods},stripe:{...defaults.payments.stripe,accountStatus:site.paymentRules?.stripeConnectedAccountId?'existing':'new'},ath:{...defaults.payments.ath,...site.paymentRules?.ath,accountStatus:site.paymentRules?.ath?.credentialsConfigured?'active':'needs_account'},inPerson:{...defaults.payments.inPerson,...site.paymentRules?.inPerson}},
+  }
+}
 
-export default function SiteRedesignBuilder({siteId,lang}:{siteId:string;lang:Lang}){
-  const es=lang==='es';const [site,setSite]=useState<Site|null>(null);const [business,setBusiness]=useState<any>({});const [design,setDesign]=useState<any>({});const [features,setFeatures]=useState<Record<string,boolean>>({});const [busy,setBusy]=useState(false);const [error,setError]=useState('');const [saved,setSaved]=useState(false)
-  useUnsavedChanges({business,design,features},site,original=>{setBusiness(original.business);setDesign(original.design);setFeatures(original.features)},lang,site?{business:site.business,design:site.design,features:site.features||{}}:undefined)
-  const request=async(url:string,options?:RequestInit)=>{const response=await fetch(url,{credentials:'include',cache:'no-store',...options});const result=await response.json();if(!response.ok||!result.ok)throw new Error(result.message||'Request failed.');return result}
-  useEffect(()=>{let active=true;request(`/.netlify/functions/client-admin?siteId=${encodeURIComponent(siteId)}`).then(result=>{if(!active)return;setSite(result.site);setBusiness(result.site.business);setDesign(result.site.design);setFeatures(result.site.features||{})}).catch(error=>{if(active)setError(error instanceof Error?error.message:'Could not open Builder.')});return()=>{active=false}},[siteId])
-  const active=['active','trialing','trial','complimentary'].includes(site?.servicePlan?.subscriptionStatus)
-  const save=async()=>{if(!site||!active||busy)return;setBusy(true);setError('');setSaved(false);try{await request('/.netlify/functions/client-admin',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({siteId,section:'design',value:design})});await request('/.netlify/functions/client-admin',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({siteId,section:'business',value:business})});const result=await request('/.netlify/functions/client-admin',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({siteId,section:'features',value:features})});setSite(result.site);setSaved(true)}catch(error){setError(error instanceof Error?error.message:'Changes could not be saved.')}finally{setBusy(false)}}
-  if(!site)return <section className="wf-redesign"><p>{error|| (es?'Cargando Builder…':'Loading Builder…')}</p></section>
-  if(!active)return <section className="wf-redesign"><h2>{es?'Se requiere una suscripción activa':'An active subscription is required'}</h2><p>{es?'Activa o renueva tu plan desde el portal para rediseñar esta página.':'Activate or renew your plan from the client portal to redesign this page.'}</p><a href="/client-admin">{es?'Volver al portal':'Back to portal'}</a></section>
-  return <section className="wf-redesign"><div><small>{es?'BUILDER · REDISEÑO':'BUILDER · REDESIGN'}</small><h2>{es?'Rediseña tu página':'Redesign your page'}</h2><p>{es?'Actualiza la marca, el modelo de negocio y el diseño de tu página.':'Update your brand, business model and website design.'}</p></div><div className="wf-redesign-grid"><label>{es?'Nombre del negocio':'Business name'}<input value={business.nameEn||business.name||''} onChange={e=>setBusiness({...business,name:e.target.value,nameEn:e.target.value})}/></label><label>{es?'Categoría':'Business category'}<input value={business.category||''} onChange={e=>setBusiness({...business,category:e.target.value})}/></label><label className="wide">{es?'Descripción':'Description'}<textarea rows={4} value={business.descriptionEn||business.description||''} onChange={e=>setBusiness({...business,description:e.target.value,descriptionEn:e.target.value})}/></label><label>{es?'Template':'Template'}<select value={design.templateSlug||''} onChange={e=>{const template=templateConfigs.find(x=>x.slug===e.target.value);const styles={modern:'Modern',luxury:'Luxury',minimal:'Minimal',bold:'Bold'};setDesign({...design,templateSlug:template?.slug||'',templateName:template?.name||'',templateCategory:template?.category||'',style:template?styles[templateVisualStyle(template.category) as keyof typeof styles]:design.style,primary:template?.dark||design.primary,secondary:template?.accent||design.secondary})}}><option value="">{es?'Diseño Custom':'Custom design'}</option>{templateConfigs.map(template=><option value={template.slug} key={template.slug}>{template.name} · {template.category}</option>)}</select></label><label>{es?'Estilo':'Style'}<select value={design.style||'Modern'} onChange={e=>setDesign({...design,style:e.target.value})}>{['Modern','Luxury','Minimal','Bold'].map(x=><option key={x}>{x}</option>)}</select></label><label>{es?'Color principal':'Primary color'}<input type="color" value={design.primary||'#0B1529'} onChange={e=>setDesign({...design,primary:e.target.value})}/></label><label>{es?'Color de acento':'Accent color'}<input type="color" value={design.secondary||'#3C86F6'} onChange={e=>setDesign({...design,secondary:e.target.value})}/></label></div><fieldset className="wf-redesign-features"><legend>{es?'Funciones del website':'Website features'}</legend>{[['products',es?'Productos':'Products'],['services',es?'Servicios':'Services'],['bookings',es?'Reservaciones':'Bookings'],['cart',es?'Carrito':'Cart'],['maps',es?'Mapas':'Maps'],['calls',es?'Llamadas':'Calls'],['whatsapp','WhatsApp'],['form',es?'Formulario de contacto':'Contact form']].map(([key,label])=><label className="check" key={key}><input type="checkbox" checked={features[key]!==false} onChange={e=>setFeatures({...features,[key]:e.target.checked})}/>{label}</label>)}</fieldset><button className="wf-redesign-save" disabled={busy} onClick={save}>{busy?(es?'Publicando…':'Publishing…'):(es?'Guardar y publicar':'Save and publish')}</button>{saved&&<p role="status">{es?'Cambios publicados.':'Changes published.'}</p>}{error&&<p role="alert">{error}</p>}<h3>{es?'Preview antes de publicar':'Preview before publishing'}</h3><StorefrontPreview previewSite={{...site,business,design,features}} lang={lang}/><p><a href={`/sites/${site.slug}`} target="_blank" rel="noreferrer">{es?'Ver website publicado ↗':'View published website ↗'}</a></p></section>
+export default function SiteRedesignBuilder({siteId,lang}:{siteId:string;lang:Lang}) {
+  const fetch=useWorkspaceFetch(),practice=usePractice(),es=lang==='es'
+  const [site,setSite]=useState<any>(null),[error,setError]=useState(''),[saving,setSaving]=useState(false)
+  const request=async(url:string,options?:RequestInit)=>{
+    const response=await fetch(url,{credentials:'include',cache:'no-store',...options})
+    const result=await response.json()
+    if(!response.ok||!result.ok)throw new Error(result.message||(es?'No se pudo completar la solicitud.':'The request could not be completed.'))
+    return result
+  }
+  useEffect(()=>{
+    let active=true;setSite(null);setError('')
+    request(`/.netlify/functions/client-admin?siteId=${encodeURIComponent(siteId)}`).then(result=>{
+      if(!active)return
+      if(result.membership?.role!=='owner'&&!(result.membership?.role==='admin'&&result.membership?.platform===true))throw new Error(es?'Solo el Dueño puede rediseñar este negocio.':'Only the Owner can redesign this business.')
+      setSite(result.site)
+    }).catch(error=>{if(active)setError(error instanceof Error?error.message:String(error))})
+    return()=>{active=false}
+  },[siteId])
+  const state=useMemo(()=>site?existingBuilderState(site):null,[site])
+  const upload=async(file:File):Promise<BuilderAsset>=>{
+    if(practice)throw new Error(es?'Los archivos no se suben durante Training.':'Uploads are disabled during Training.')
+    if(!['image/png','image/jpeg','image/webp','image/gif'].includes(file.type)||file.size>8*1024*1024)throw new Error(es?'Usa una imagen JPG, PNG, WebP o GIF de hasta 8 MB.':'Use a JPG, PNG, WebP or GIF image up to 8 MB.')
+    const form=new FormData();form.append('siteId',siteId);form.append('file',file)
+    const result=await request('/.netlify/functions/client-asset',{method:'POST',body:form})
+    return {assetKey:result.assetKey,imageUrl:result.imageUrl,fileName:file.name,contentType:file.type,size:file.size}
+  }
+  const publish=async(value:BuilderState)=>{
+    if(practice)throw new Error(es?'Training no publica cambios.':'Training does not publish changes.')
+    const template=templateConfigs.find(template=>template.slug===value.design.templateSlug)
+    const changes={...value,design:{...value.design,templateName:template?.name||'',templateCategory:template?.category||''}}
+    setSaving(true)
+    try{
+      const result=await request('/.netlify/functions/client-admin',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({siteId,revision:site.revision,section:'builder',value:changes})})
+      setSite(result.site);return existingBuilderState(result.site)
+    }finally{setSaving(false)}
+  }
+  if(!site||!state)return <section className="wf-redesign"><p role={error?'alert':'status'}>{error||(es?'Cargando Builder…':'Loading Builder…')}</p></section>
+  if(!['active','trialing','trial','complimentary'].includes(site.servicePlan?.subscriptionStatus))return <section className="wf-redesign"><h2>{es?'Se requiere una suscripción activa':'An active subscription is required'}</h2><a href="/client-admin">{es?'Volver al portal':'Back to portal'}</a></section>
+  return <WebFactoryBuilder key={siteId} lang={lang} editing={{initialState:state,revision:site.revision,saving,timezone:site.settings?.timezone,publicUrl:`/sites/${site.slug}`,upload,publish}}/>
 }

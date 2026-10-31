@@ -193,3 +193,9 @@
 .wf-template-preview-frame{display:block;width:1280px;height:800px;border:0;background:#fff}
 .wf-template-preview-shell.tablet{width:min(768px,100%)}.wf-template-preview-shell.tablet .wf-template-preview-frame{width:768px}
 .wf-template-preview-shell.mobile{width:min(390px,100%)}.wf-template-preview-shell.mobile .wf-template-preview-frame{width:390px;height:740px}
+
+/* Native dialog top layer preserves the catalog editor above sticky Builder controls. */
+dialog.wf-builder-modal-backdrop{width:100%;height:100%;max-width:none;max-height:none;margin:0;border:0;box-sizing:border-box;color:inherit}
+dialog.wf-builder-modal-backdrop:not([open]){display:none}
+.wf-builder-photo-grid>div{min-width:0}
+.wf-builder-photo-grid button,.wf-builder-item-modal button{min-height:44px;min-width:44px}

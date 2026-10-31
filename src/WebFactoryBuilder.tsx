@@ -4,7 +4,8 @@ import {templateCapabilities,usesTemplateCapabilities} from './templateCapabilit
 import './business-policies.css'
 import type {StorefrontSite} from './ClientStorefront'
 import StorefrontPreview from './StorefrontPreview'
-import { useEffect, useMemo, useState, type CSSProperties, type Dispatch, type SetStateAction } from 'react'
+import { useUnsavedChanges } from './interaction-state'
+import { createContext, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode, type CSSProperties, type Dispatch, type SetStateAction } from 'react'
 import { templateConfigs, templateGroups, templateGroupForCategory, templateVisualStyle } from './templateData'
 import BuilderAiAssistant from './BuilderAiAssistant'
 import { feedback } from './feedback/feedback'
@@ -76,7 +77,7 @@ type PaymentConfiguration = {
   allowTips: boolean
 }
 
-type BuilderState = {
+export type BuilderState = {
   business: {
     policies?: {privacy:string;terms:string;refund:string}
     name: string
@@ -121,12 +122,33 @@ type BuilderState = {
   payments: PaymentConfiguration
 }
 
+export type BuilderAsset = {assetKey:string;fileName:string;contentType:string;size:number;imageUrl?:string}
+export type BuilderEditing = {
+  initialState:BuilderState; revision:number; saving:boolean; publicUrl:string; timezone?:string;
+  upload:(file:File)=>Promise<BuilderAsset>;
+  publish:(state:BuilderState)=>Promise<BuilderState>;
+}
+const EditingContext = createContext<BuilderEditing|undefined>(undefined)
+const PendingUploadsContext = createContext<(delta:number)=>void>(()=>{})
+function useBuilderUpload() {
+  const practice=usePractice(),editing=useContext(EditingContext),pending=useContext(PendingUploadsContext)
+  return async(file:File,id:string) => {
+    if(practice)throw new Error('File uploads are disabled in Training. / Los archivos no se suben durante Training.')
+    pending(1)
+    try {
+      const asset:BuilderAsset=editing?await editing.upload(file):await uploadOrderAsset(file,id)
+      const preview=asset.imageUrl||await readFile(file)
+      return {asset,preview}
+    } finally {pending(-1)}
+  }
+}
+
 const PRICE = '$30'
 const CATALOG_LIMIT = 100
 const STORAGE_KEY = 'webfactory-v3-builder-draft'
 const DRAFT_ID_KEY = 'webfactory-v2-draft-id'
 
-const initialState: BuilderState = {
+export const initialState: BuilderState = {
   business: {
     name: '',
     slug: '',
@@ -355,19 +377,20 @@ function Field({label,value,onChange,placeholder,type='text',disabled=false}:{
 }
 
 function Preview({state,device,lang}:{state:BuilderState;device:Device;lang:Language}) {
+  const editing=useContext(EditingContext)
   const previewSite: StorefrontSite = {
     siteId:'builder-preview',slug:state.business.slug || 'preview',
     business:{...state.business,logoUrl:state.business.logo,heroUrl:state.business.hero,galleryUrls:state.business.gallery},
     design:state.design,features:state.features,
     catalog:state.catalog.map(item=>({...item,imageUrl:item.image||'',inventory:null})),employees:state.team,
-    hours:state.hours,paymentRules:state.payments,settings:{locale:lang,timezone:'America/Puerto_Rico'},
+    hours:state.hours,paymentRules:state.payments,settings:{locale:lang,timezone:editing?.timezone||'America/Puerto_Rico'},
   }
   return <StorefrontPreview previewSite={previewSite} lang={lang} device={device}/>
 }
 
 function BusinessStep({state,setState,lang,lockedEmail}:{state:BuilderState;setState:Dispatch<SetStateAction<BuilderState>>;lang:Language;lockedEmail?:string}) {
-  const practice=usePractice()
-  const uploadAsset=(file:File,id:string)=>uploadOrderAsset(file,id,Boolean(practice))
+  const uploadAsset=useBuilderUpload()
+  const editing=useContext(EditingContext)
   const [uploadingLogo,setUploadingLogo] = useState(false)
   const [uploadError,setUploadError] = useState('')
   const [optionalOpen,setOptionalOpen] = useState(()=>Boolean(state.business.instagram||state.business.facebook||state.business.x||state.business.mapsUrl||state.business.logoAssetKey||state.business.heroAssetKey||state.business.galleryAssets?.length))
@@ -379,10 +402,7 @@ function BusinessStep({state,setState,lang,lockedEmail}:{state:BuilderState;setS
     setUploadingLogo(true)
     setUploadError('')
     try {
-      const [preview,asset] = await Promise.all([
-        readFile(file),
-        uploadAsset(file,'business-logo'),
-      ])
+      const {preview,asset} = await uploadAsset(file,'business-logo')
       setState((current)=>({
         ...current,
         business:{
@@ -405,7 +425,7 @@ function BusinessStep({state,setState,lang,lockedEmail}:{state:BuilderState;setS
     setUploadingLogo(true)
     setUploadError('')
     try {
-      const [preview,asset] = await Promise.all([readFile(file),uploadAsset(file,'business-hero')])
+      const {preview,asset} = await uploadAsset(file,'business-hero')
       setState((current)=>({...current,business:{...current.business,hero:preview,heroAssetKey:asset.assetKey,heroAssetName:asset.fileName,heroAssetType:asset.contentType}}))
     } catch (error) {
       setUploadError(error instanceof Error ? error.message : (lang==='es'?'No se pudo guardar la imagen principal.':'The hero image could not be saved.'))
@@ -415,12 +435,12 @@ function BusinessStep({state,setState,lang,lockedEmail}:{state:BuilderState;setS
   }
 
   const uploadGallery = async (file?:File) => {
-    if (!file) return
+    if (!file || (state.business.galleryAssets?.length||0)>=100) return
     const currentCount = state.business.galleryAssets?.length || 0
     setUploadingLogo(true)
     setUploadError('')
     try {
-      const [preview,asset] = await Promise.all([readFile(file),uploadAsset(file,'business-gallery-'+String(currentCount+1))])
+      const {preview,asset} = await uploadAsset(file,'business-gallery-'+String(currentCount+1))
       setState((current)=>({...current,business:{
         ...current.business,
         gallery:[...(current.business.gallery||[]),preview],
@@ -484,23 +504,25 @@ function BusinessStep({state,setState,lang,lockedEmail}:{state:BuilderState;setS
         </small>
       </label>
       <label className="wf-upload">
-        <input type="file" accept="image/png,image/jpeg,image/webp,image/heic,image/heif" disabled={uploadingLogo} onChange={(event)=>uploadLogo(event.target.files?.[0])} />
+        <input type="file" accept={editing?"image/png,image/jpeg,image/webp,image/gif":"image/png,image/jpeg,image/webp,image/heic,image/heif"} disabled={uploadingLogo} onChange={(event)=>{const file=event.target.files?.[0];event.target.value='';void uploadLogo(file)}} />
         <span>{uploadingLogo?(lang==='es'?'Guardando logo…':'Saving logo…'):state.business.logoAssetKey?(lang==='es'?'✓ Logo guardado':'✓ Logo saved'):(lang==='es'?'Subir logo del cliente':'Upload customer logo')}</span>
         <small>{lang==='es'?'El archivo se guarda de forma segura para tu website y portal administrativo.':'The file is stored securely for your website and administrative portal.'}</small>
       </label>
+      {state.business.logoAssetKey&&<button type="button" disabled={uploadingLogo} onClick={()=>setState(current=>({...current,business:{...current.business,logo:'',logoAssetKey:'',logoAssetName:'',logoAssetType:''}}))}>{lang==='es'?'Quitar logo personalizado':'Remove custom logo image'}</button>}
       <div className="wf-step-intro compact"><small>{lang==='es'?'FOTOS DE LA PLANTILLA':'TEMPLATE PHOTOS'}</small><h3>{lang==='es'?'Usa las fotos reales de tu negocio.':'Use your real business photos.'}</h3><p>{lang==='es'?'La composición del Template se conserva; solo reemplazamos las imágenes de muestra.':'The Template composition is preserved; only the sample photography is replaced.'}</p></div>
       <label className="wf-upload">
-        <input type="file" accept="image/png,image/jpeg,image/webp,image/heic,image/heif" disabled={uploadingLogo} onChange={(event)=>uploadHero(event.target.files?.[0])} />
+        <input type="file" accept={editing?"image/png,image/jpeg,image/webp,image/gif":"image/png,image/jpeg,image/webp,image/heic,image/heif"} disabled={uploadingLogo} onChange={(event)=>{const file=event.target.files?.[0];event.target.value='';void uploadHero(file)}} />
         <small>{lang==='es'?'Elige una foto horizontal, nítida y con espacio libre para el texto. El preview muestra cómo se recorta en móvil.':'Choose a clear landscape photo with space for text. Preview shows how it crops on mobile.'}</small>
         <span>{state.business.heroAssetKey?(lang==='es'?'✓ Imagen principal guardada':'✓ Hero image saved'):(lang==='es'?'Subir imagen principal / Hero':'Upload main / Hero image')}</span>
         <small>{lang==='es'?'Mantendrá el encuadre y estilo visual del Template seleccionado.':'It will preserve the framing and visual style of the selected Template.'}</small>
       </label>
+      {state.business.heroAssetKey&&<button type="button" disabled={uploadingLogo} onClick={()=>setState(current=>({...current,business:{...current.business,hero:'',heroAssetKey:'',heroAssetName:'',heroAssetType:''}}))}>{lang==='es'?'Quitar imagen principal personalizada':'Remove custom hero image'}</button>}
       <label className="wf-upload">
-        <input type="file" accept="image/png,image/jpeg,image/webp,image/heic,image/heif" disabled={uploadingLogo} onChange={(event)=>uploadGallery(event.target.files?.[0])} />
+        <input type="file" accept={editing?"image/png,image/jpeg,image/webp,image/gif":"image/png,image/jpeg,image/webp,image/heic,image/heif"} disabled={uploadingLogo||(state.business.galleryAssets?.length||0)>=100} onChange={(event)=>{const file=event.target.files?.[0];event.target.value='';void uploadGallery(file)}} />
         <span>{lang==='es'?'Añadir foto de galería':'Add gallery photo'} ({state.business.galleryAssets?.length||0})</span>
-        <small>{lang==='es'?'Puedes añadir tantas fotos de galería como necesites. No cuentan dentro del límite de 100 productos/servicios.':'Add as many gallery photos as you need. They do not count toward the 100 products/services limit.'}</small>
+        <small>{lang==='es'?'Puedes añadir hasta 100 fotos de galería. No cuentan dentro del límite de 100 productos/servicios.':'Add up to 100 gallery photos. They do not count toward the 100 products/services limit.'}</small>
       </label>
-      {(state.business.gallery||[]).length>0&&<div className="wf-builder-photo-grid">{(state.business.gallery||[]).map((image,index)=><img key={index} src={image} alt="" />)}</div>}
+      {(state.business.gallery||[]).length>0&&<div className="wf-builder-photo-grid">{(state.business.gallery||[]).map((image,index)=><div key={index}><img src={image} alt="" /><button type="button" disabled={uploadingLogo} aria-label={`${lang==='es'?'Quitar foto':'Remove photo'} ${index+1}`} onClick={()=>setState(current=>({...current,business:{...current.business,gallery:current.business.gallery?.filter((_,i)=>i!==index),galleryAssets:current.business.galleryAssets?.filter((_,i)=>i!==index)}}))}>{lang==='es'?'Quitar':'Remove'}</button></div>)}</div>}
       {uploadError && <small className="wf-upload-error">{uploadError}</small>}
       </details>
     </div>
@@ -520,6 +542,7 @@ function templateDefaults(current:BuilderState,template:typeof templateConfigs[n
 }
 
 function DesignStep({state,setState,lang}:{state:BuilderState;setState:Dispatch<SetStateAction<BuilderState>>;lang:Language}) {
+  const editing=useContext(EditingContext)
   const setDesign = <K extends keyof BuilderState['design']>(key:K, value:BuilderState['design'][K]) =>
     setState((current)=>({...current,design:{...current.design,[key]:value}}))
   const selectedTemplate = templateConfigs.find((template)=>template.slug===state.design.templateSlug)
@@ -532,7 +555,7 @@ function DesignStep({state,setState,lang}:{state:BuilderState;setState:Dispatch<
     const template = templateConfigs.find((entry)=>entry.slug===slug)
     setState((current)=>({
       ...current,
-      ...(template?templateDefaults(current,template):{}),
+      ...(template&&!editing?templateDefaults(current,template):{}),
       design:{
         ...current.design,
         templateSlug:slug,
@@ -642,6 +665,7 @@ function DesignStep({state,setState,lang}:{state:BuilderState;setState:Dispatch<
 }
 
 function FeaturesStep({state,setState,lang}:{state:BuilderState;setState:Dispatch<SetStateAction<BuilderState>>;lang:Language}) {
+  const editing=useContext(EditingContext)
   return (
     <div className="wf-step-content">
       <div className="wf-step-intro"><small>{lang==='es'?'PASO 3 · FUNCIONES':'STEP 3 · FEATURES'}</small><h3>{lang==='es'?'Activa exactamente lo que tu negocio necesita.':'Enable exactly what your business needs.'}</h3><p>{lang==='es'?'Cada interruptor controla una función real del website. Si lo apagas, esa función no debe aparecer en la página publicada.':'Each switch controls a real website capability. If you turn it off, that capability should not appear on the published site.'}</p></div>
@@ -657,15 +681,21 @@ function FeaturesStep({state,setState,lang}:{state:BuilderState;setState:Dispatc
           />
         ))}
       </div>
-      <div className="wf-guidance"><b>{lang==='es'?'Herramientas internas opcionales':'Optional internal tools'}</b><span>{lang==='es'?'Tu Template recomienda funciones según el tipo de negocio. La asistencia del personal se activa después desde Empleados en el portal; no se habilita automáticamente ni afecta las citas.':'Your Template recommends features based on business type. Staff attendance can be enabled later from Employees in the portal; it stays off by default and never changes bookings.'}</span></div>
-      <div className="wf-fixed-price"><span>WEBFACTORY COMMERCE PLATFORM</span><strong>{PRICE} / {lang==='es'?'mes':'month'}</strong><b>{lang==='es'?'o $350 / año · 7 días gratis · sin comisión':'or $350 / year · 7 days free · no sales commission'}</b></div>
+      {!editing&&<div className="wf-fixed-price"><span>WEBFACTORY COMMERCE PLATFORM</span><strong>{PRICE} / {lang==='es'?'mes':'month'}</strong><b>{lang==='es'?'o $350 / año · 7 días gratis · sin comisión':'or $350 / year · 7 days free · no sales commission'}</b></div>}
     </div>
   )
 }
 
+/** Native top layer keeps the editor above sticky navigation and clips no controls. */
+function BuilderCatalogDialog({children,onClose}:{children:ReactNode;onClose:()=>void}) {
+  const dialog=useRef<HTMLDialogElement>(null)
+  useLayoutEffect(()=>{const node=dialog.current;if(node&&!node.open)node.showModal();return()=>{if(node?.open)node.close()}},[])
+  return <dialog ref={dialog} className="wf-builder-modal-backdrop" aria-labelledby="wf-catalog-editor-title" onCancel={event=>{event.preventDefault();onClose()}} onMouseDown={event=>{if(event.target===event.currentTarget)onClose()}}>{children}</dialog>
+}
+
 function CatalogStep({state,setState,lang}:{state:BuilderState;setState:Dispatch<SetStateAction<BuilderState>>;lang:Language}) {
-  const practice=usePractice()
-  const uploadAsset=(file:File,id:string)=>uploadOrderAsset(file,id,Boolean(practice))
+  const uploadAsset=useBuilderUpload()
+  const editing=useContext(EditingContext)
   const itemName = (item:CatalogItem) => lang==='es' ? (item.nameEs || item.nameEn || item.name) : (item.nameEn || item.name || item.nameEs || '')
   const [editingId,setEditingId] = useState<string | null>(null)
   const editingItem = state.catalog.find((item)=>item.id===editingId) ?? null
@@ -710,10 +740,7 @@ function CatalogStep({state,setState,lang}:{state:BuilderState;setState:Dispatch
     setUploadingId(id)
     setUploadError('')
     try {
-      const [preview,asset] = await Promise.all([
-        readFile(file),
-        uploadAsset(file,id),
-      ])
+      const {preview,asset} = await uploadAsset(file,id)
       update(id,{
         image:preview,
         imageAssetKey:asset.assetKey,
@@ -743,7 +770,7 @@ function CatalogStep({state,setState,lang}:{state:BuilderState;setState:Dispatch
             <div>
               <small>{String(index+1).padStart(2,'0')} · {item.type==='service'?(lang==='es'?'SERVICIO':'SERVICE'):(lang==='es'?'PRODUCTO':'PRODUCT')}</small>
               <strong>{itemName(item) || (lang==='es'?'Sin nombre':'Untitled')}</strong>
-              <span>${Number(item.price || 0).toFixed(2)}</span>
+              <span>{item.price!==null&&Number.isFinite(Number(item.price))?`$${Number(item.price).toFixed(2)}`:(lang==='es'?'Revisa el precio':'Review price')}</span>
             </div>
             <em>{lang==='es'?'Editar':'Edit'} →</em>
           </button>
@@ -753,18 +780,19 @@ function CatalogStep({state,setState,lang}:{state:BuilderState;setState:Dispatch
       {uploadError && <small className="wf-upload-error">{uploadError}</small>}
 
       {editingItem && (
-        <div className="wf-builder-modal-backdrop" onMouseDown={()=>setEditingId(null)}>
+        <BuilderCatalogDialog onClose={()=>setEditingId(null)}>
           <section className="wf-builder-item-modal" onMouseDown={(event)=>event.stopPropagation()}>
             <header>
-              <div><small>{editingItem.type==='service'?(lang==='es'?'SERVICIO':'SERVICE'):(lang==='es'?'PRODUCTO':'PRODUCT')}</small><h4>{itemName(editingItem) || (lang==='es'?'Sin nombre':'Untitled')}</h4></div>
-              <button onClick={()=>setEditingId(null)}>×</button>
+              <div><small>{editingItem.type==='service'?(lang==='es'?'SERVICIO':'SERVICE'):(lang==='es'?'PRODUCTO':'PRODUCT')}</small><h4 id="wf-catalog-editor-title">{itemName(editingItem) || (lang==='es'?'Sin nombre':'Untitled')}</h4></div>
+              <button aria-label={lang==='es'?'Cerrar editor del artículo':'Close item editor'} onClick={()=>setEditingId(null)}>×</button>
             </header>
             <div className="wf-item-editor modal">
               <label className="wf-item-image">
-                <input type="file" accept="image/png,image/jpeg,image/webp,image/heic,image/heif" disabled={uploadingId===editingItem.id} onChange={(e)=>uploadImage(editingItem.id,e.target.files?.[0])} />
+                <input type="file" accept={editing?"image/png,image/jpeg,image/webp,image/gif":"image/png,image/jpeg,image/webp,image/heic,image/heif"} disabled={uploadingId===editingItem.id} onChange={(e)=>{const file=e.target.files?.[0];e.target.value='';void uploadImage(editingItem.id,file)}} />
                 {editingItem.image?<img src={editingItem.image} alt="" />:<span>{uploadingId===editingItem.id?(lang==='es'?'Guardando…':'Saving…'):(lang==='es'?'+ Imagen':'+ Image')}</span>}
               </label>
               <div>
+                {editingItem.imageAssetKey&&<button type="button" disabled={uploadingId===editingItem.id} onClick={()=>update(editingItem.id,{image:'',imageAssetKey:'',imageName:'',imageType:''})}>{lang==='es'?'Quitar imagen personalizada':'Remove custom image'}</button>}
                 <div className="wf-bilingual-grid">
                   <Field label="Name · English" value={editingItem.nameEn ?? editingItem.name} onChange={(v)=>update(editingItem.id,{name:v,nameEn:v})} />
                   <Field label="Nombre · Español" value={editingItem.nameEs ?? ''} onChange={(v)=>update(editingItem.id,{nameEs:v})} />
@@ -785,7 +813,7 @@ function CatalogStep({state,setState,lang}:{state:BuilderState;setState:Dispatch
               </div>
             </div>
           </section>
-        </div>
+        </BuilderCatalogDialog>
       )}
     </div>
   )
@@ -852,6 +880,7 @@ function HoursStep({state,setState,lang}:{state:BuilderState;setState:Dispatch<S
 }
 
 function PaymentsStep({state,setState,lang}:{state:BuilderState;setState:Dispatch<SetStateAction<BuilderState>>;lang:Language}) {
+  const editing=useContext(EditingContext)
   const payments = state.payments
   const setMethod = (method:keyof PaymentConfiguration['methods'], value:boolean) => {
     setState((current)=>({
@@ -872,12 +901,13 @@ function PaymentsStep({state,setState,lang}:{state:BuilderState;setState:Dispatc
     <div className="wf-step-content">
       <div className="wf-step-intro"><small>{lang==='es'?'PASO 7':'STEP 7'}</small><h3>{lang==='es'?'Configura cómo cobrará el negocio.':'Configure how the business gets paid.'}</h3><p>{lang==='es'?'El dinero de las ventas irá directamente a las cuentas del cliente. Nunca introduzcas contraseñas ni claves secretas aquí.':'Sales funds go directly to the business accounts. Never enter passwords or secret keys here.'}</p></div>
 
+      {editing&&<p>{lang==='es'?'Las conexiones de Stripe y ATH Móvil se administran desde Integraciones en tu portal. Aquí puedes guardar los métodos y las reglas de cobro.':'Manage Stripe and ATH Móvil connections in your portal’s Integrations section. Save payment methods and rules here.'} <a href="/client-admin">{lang==='es'?'Abrir portal':'Open portal'}</a></p>}
       <div className="wf-payment-methods">
         <article className={payments.methods.stripe?'selected':''}>
           <Toggle label="Stripe Connect" checked={payments.methods.stripe} onChange={(value)=>setMethod('stripe',value)} />
           <p>{lang==='es'?'Tarjetas y métodos elegibles se mostrarán dinámicamente mediante Stripe Checkout.':'Cards and eligible payment methods appear dynamically through Stripe Checkout.'}</p>
           {payments.methods.stripe && <>
-            <label className="wf-field"><span>{lang==='es'?'Cuenta Stripe':'Stripe account'}</span><select value={payments.stripe.accountStatus} onChange={(event)=>patchPayments({stripe:{...payments.stripe,accountStatus:event.target.value as 'new'|'existing'}})}><option value="new">{lang==='es'?'Necesito crear una cuenta':'I need to create an account'}</option><option value="existing">{lang==='es'?'Ya tengo una cuenta Stripe':'I already have a Stripe account'}</option></select></label>
+            <label className="wf-field"><span>{lang==='es'?'Cuenta Stripe':'Stripe account'}</span><select disabled={Boolean(editing)} value={payments.stripe.accountStatus} onChange={(event)=>patchPayments({stripe:{...payments.stripe,accountStatus:event.target.value as 'new'|'existing'}})}><option value="new">{lang==='es'?'Necesito crear una cuenta':'I need to create an account'}</option><option value="existing">{lang==='es'?'Ya tengo una cuenta Stripe':'I already have a Stripe account'}</option></select></label>
             <small className="wf-secure-note">{lang==='es'?'Desde tu portal recibirás un enlace privado para conectar o crear la cuenta directamente con Stripe.':'Your portal will provide a private link to connect or create the account directly with Stripe.'}</small>
           </>}
         </article>
@@ -886,7 +916,7 @@ function PaymentsStep({state,setState,lang}:{state:BuilderState;setState:Dispatc
           <Toggle label="ATH Móvil Business" checked={payments.methods.ath} onChange={(value)=>setMethod('ath',value)} />
           <p>{lang==='es'?'Para clientes en Puerto Rico con una cuenta ATH Móvil Business administrada por el negocio.':'For Puerto Rico businesses that manage their own ATH Móvil Business account.'}</p>
           {payments.methods.ath && <>
-            <label className="wf-field"><span>{lang==='es'?'Estado de la cuenta':'Account status'}</span><select value={payments.ath.accountStatus} onChange={(event)=>patchPayments({ath:{...payments.ath,accountStatus:event.target.value as 'needs_account'|'active'}})}><option value="needs_account">{lang==='es'?'Necesito crear/configurarla':'I need to create or configure it'}</option><option value="active">{lang==='es'?'Ya está activa':'It is already active'}</option></select></label>
+            <label className="wf-field"><span>{lang==='es'?'Estado de la cuenta':'Account status'}</span><select disabled={Boolean(editing)} value={payments.ath.accountStatus} onChange={(event)=>patchPayments({ath:{...payments.ath,accountStatus:event.target.value as 'needs_account'|'active'}})}><option value="needs_account">{lang==='es'?'Necesito crear/configurarla':'I need to create or configure it'}</option><option value="active">{lang==='es'?'Ya está activa':'It is already active'}</option></select></label>
             <Field label={lang==='es'?'pATH público del negocio (opcional)':'Business public pATH (optional)'} value={payments.ath.publicPath} onChange={(value)=>patchPayments({ath:{...payments.ath,publicPath:value}})} placeholder={lang==='es'?'Ej. /MiNegocio':'E.g. /MyBusiness'} />
             <small className="wf-secure-note">{lang==='es'?'Configura los tokens de ATH Business después en tu portal → Integraciones. Este pATH no conecta la API.':'Configure ATH Business tokens later in your portal → Integrations. This pATH does not connect the API.'}</small>
           </>}
@@ -1032,9 +1062,13 @@ function FinalStep({state,setStep,lang,complimentaryInviteToken,trialInviteToken
   )
 }
 
-export default function WebFactoryBuilder({lang}:{lang:Language}) {
+export default function WebFactoryBuilder({lang,editing}:{lang:Language;editing?:BuilderEditing}) {
   const practice=usePractice(),fetch=useWorkspaceFetch()
+  const [pendingUploads,setPendingUploads]=useState(0)
+  const [publishError,setPublishError]=useState('')
+  const [published,setPublished]=useState(false)
   const [state,setState] = useState<BuilderState>(() => {
+    if(editing)return structuredClone(editing.initialState)
     if(practice){
       const saved=practice.ui.builder
       return saved ? {...structuredClone(initialState),...saved} : {...structuredClone(initialState),business:{...structuredClone(initialState.business),name:'Practice business',nameEn:'Practice business',nameEs:'Negocio de práctica',slug:'practice-business',contactName:'Practice / Práctica',email:'practice@example.invalid',logo:'',hero:'',gallery:[],logoAssetKey:'',heroAssetKey:'',galleryAssets:[]},design:{...initialState.design,primary:practice.site.design.primary,secondary:practice.site.design.secondary},catalog:practice.site.catalog,team:practice.site.employees}
@@ -1067,8 +1101,8 @@ export default function WebFactoryBuilder({lang}:{lang:Language}) {
       return initialState
     }
   })
-  const [step,setStep] = useState<number>(()=>{if(practice)return practice.ui.builderStep||0;try{return Math.min(7,Math.max(0,Number(sessionStorage.getItem('wf-builder-step'))||0))}catch{return 0}})
-  useEffect(()=>{if(practice){practice.setUi('builderStep',step);return}try{sessionStorage.setItem('wf-builder-step',String(step))}catch{}},[practice,step])
+  const [step,setStep] = useState<number>(()=>{if(editing)return 0;if(practice)return practice.ui.builderStep||0;try{return Math.min(7,Math.max(0,Number(sessionStorage.getItem('wf-builder-step'))||0))}catch{return 0}})
+  useEffect(()=>{if(editing)return;if(practice){practice.setUi('builderStep',step);return}try{sessionStorage.setItem('wf-builder-step',String(step))}catch{}},[practice,step])
   const [mobileView,setMobileView] = useState<'edit'|'preview'>('edit')
   const [device,setDevice] = useState<Device>(() => ['desktop','tablet','mobile'].includes(practice?.ui['builder-device']?.device)?practice!.ui['builder-device'].device:window.matchMedia('(max-width: 767px)').matches ? 'mobile' : window.matchMedia('(max-width: 1023px)').matches ? 'tablet' : 'desktop')
   const [deviceSelection,setDeviceSelection]=useState(0)
@@ -1081,14 +1115,14 @@ export default function WebFactoryBuilder({lang}:{lang:Language}) {
   const [trialInviteToken,setTrialInviteToken] = useState('')
 
   useEffect(()=>{
-    if(practice)return
+    if(practice||editing)return
     const params = new URLSearchParams(window.location.search)
     const templateSlug = params.get('template') || ''
     const template = templateConfigs.find((entry)=>entry.slug===templateSlug)
     if (template) {
       setState((current)=>({
         ...current,
-        ...templateDefaults(current,template),
+        ...(editing?{}:templateDefaults(current,template)),
         design:{...current.design,templateSlug:template.slug,primary:template.dark,secondary:template.accent,style:({modern:'Modern',luxury:'Luxury',minimal:'Minimal',bold:'Bold'} as const)[templateVisualStyle(template.category)]},
       }))
       setStep(1)
@@ -1108,6 +1142,7 @@ export default function WebFactoryBuilder({lang}:{lang:Language}) {
   },[])
 
   useEffect(()=>{
+    if(editing)return
     if(practice){practice.setUi('builder',state);setSaved(true);return}
     try {
       const persistentState = {
@@ -1124,6 +1159,14 @@ export default function WebFactoryBuilder({lang}:{lang:Language}) {
     }
   },[state])
 
+  const dirty=useUnsavedChanges(editing?state:undefined,editing?.revision,original=>setState(original),lang,editing?.initialState)
+  const publish=async()=>{
+    if(!editing||practice||pendingUploads||editing.saving)return
+    setPublishError('');setPublished(false)
+    try{const next=await editing.publish(state);setState(next);setPublished(true)}
+    catch(error){setPublishError(error instanceof Error?error.message:String(error))}
+  }
+
   const labels = lang==='es'
     ? ['Negocio','Diseño','Funciones','Catálogo','Equipo','Horarios','Pagos','Preview']
     : ['Business','Design','Features','Catalog','Team','Hours','Payments','Preview']
@@ -1132,6 +1175,7 @@ export default function WebFactoryBuilder({lang}:{lang:Language}) {
 
   const reset = () => {
     if (!window.confirm(lang==='es'?'¿Reiniciar la configuración del Builder?':'Reset Builder configuration?')) return
+    if(editing){setState(structuredClone(editing.initialState));setStep(0);setPublished(false);return}
     if(practice){setState({...structuredClone(initialState),business:{...initialState.business,name:'Practice business',nameEn:'Practice business',nameEs:'Negocio de práctica',email:'practice@example.invalid'}});setStep(0);return}
     setState(initialState)
     localStorage.removeItem(STORAGE_KEY)
@@ -1147,19 +1191,29 @@ export default function WebFactoryBuilder({lang}:{lang:Language}) {
     <TeamStep key="team" state={state} setState={setState} lang={lang}/>,
     <HoursStep key="hours" state={state} setState={setState} lang={lang}/>,
     <PaymentsStep key="payments" state={state} setState={setState} lang={lang}/>,
-    <FinalStep key="preview" state={state} setStep={setStep} lang={lang} complimentaryInviteToken={complimentaryInviteToken} trialInviteToken={trialInviteToken} onPoliciesChange={policies=>setState(current=>({...current,business:{...current.business,policies}}))}/>,
+    editing?<div className="wf-step-content" key="publish">
+      <h3>{lang==='es'?'Revisa y publica tus cambios':'Review and publish your changes'}</h3>
+      <p>{lang==='es'?'Revisa la vista previa. Guardar actualizará este mismo negocio; no creará una cuenta ni una suscripción.':'Review the preview. Saving updates this business without creating an account or subscription.'}</p>
+      <p>{state.business.name} · {state.catalog.length} {lang==='es'?'productos y servicios':'products and services'} · {state.team.length} {lang==='es'?'profesionales':'professionals'}</p>
+      <label className="wf-field"><span>{lang==='es'?'Política de privacidad':'Privacy policy'}</span><textarea value={state.business.policies?.privacy||''} onChange={e=>setState(current=>({...current,business:{...current.business,policies:{privacy:e.target.value,terms:current.business.policies?.terms||'',refund:current.business.policies?.refund||''}}}))}/></label>
+      <label className="wf-field"><span>{lang==='es'?'Términos y condiciones':'Terms and conditions'}</span><textarea value={state.business.policies?.terms||''} onChange={e=>setState(current=>({...current,business:{...current.business,policies:{privacy:current.business.policies?.privacy||'',terms:e.target.value,refund:current.business.policies?.refund||''}}}))}/></label>
+      <label className="wf-field"><span>{lang==='es'?'Política de reembolso':'Refund policy'}</span><textarea value={state.business.policies?.refund||''} onChange={e=>setState(current=>({...current,business:{...current.business,policies:{privacy:current.business.policies?.privacy||'',terms:current.business.policies?.terms||'',refund:e.target.value}}}))}/></label>
+      <button className="btn primary" disabled={Boolean(practice)||pendingUploads>0||editing.saving||!dirty} onClick={()=>void publish()}>{editing.saving?(lang==='es'?'Publicando…':'Publishing…'):pendingUploads?(lang==='es'?'Subiendo imágenes…':'Uploading images…'):(lang==='es'?'Guardar y publicar':'Save and publish')}</button>
+      {publishError&&<p role="alert">{publishError}</p>}{published&&<p role="status">{lang==='es'?'Cambios publicados.':'Changes published.'}</p>}
+      <a href={editing.publicUrl} target="_blank" rel="noreferrer">{lang==='es'?'Ver website publicado':'View published website'}</a>
+    </div>:<FinalStep key="preview" state={state} setStep={setStep} lang={lang} complimentaryInviteToken={complimentaryInviteToken} trialInviteToken={trialInviteToken} onPoliciesChange={policies=>setState(current=>({...current,business:{...current.business,policies}}))}/>,
   ][step]
 
   return (
-    <div className="wf-builder-app wf-experience" data-mobile-view={mobileView}>
+    <EditingContext.Provider value={editing}><PendingUploadsContext.Provider value={delta=>setPendingUploads(count=>count+delta)}><div className="wf-builder-app wf-experience" data-mobile-view={mobileView}>
       <div className="wf-builder-topbar">
         <div>
           <span>WEBFACTORY BUILDER</span>
-          <strong>{lang==='es'?'PREVIEW — NO PUBLICADO':'PREVIEW — NOT PUBLISHED'}</strong>
+          <strong>{editing?(lang==='es'?'REDISEÑO — VISTA PREVIA':'REDESIGN — PREVIEW'):(lang==='es'?'PREVIEW — NO PUBLICADO':'PREVIEW — NOT PUBLISHED')}</strong>
         </div>
         <div className="wf-builder-status">
-          <span role="status" className={saved?'saved':''}>{saved?(lang==='es'?'✓ Borrador guardado':'✓ Draft saved'):draftError?(lang==='es'?'No se pudo guardar el borrador en este dispositivo. Mantén esta página abierta.':'Could not save this draft on this device. Keep this page open.'):(lang==='es'?'Guardando borrador…':'Saving draft…')}</span>
-          <button onClick={reset}>{lang==='es'?'Reiniciar':'Reset'}</button>
+          <span role="status" className={saved?'saved':''}>{editing?(dirty?(lang==='es'?'Cambios sin publicar':'Unpublished changes'):(lang==='es'?'Sin cambios pendientes':'No pending changes')):saved?(lang==='es'?'✓ Borrador guardado':'✓ Draft saved'):draftError?(lang==='es'?'No se pudo guardar el borrador en este dispositivo. Mantén esta página abierta.':'Could not save this draft on this device. Keep this page open.'):(lang==='es'?'Guardando borrador…':'Saving draft…')}</span>
+          <button disabled={editing?.saving||pendingUploads>0} onClick={reset}>{lang==='es'?'Reiniciar':'Reset'}</button>
         </div>
       </div>
 
@@ -1169,7 +1223,7 @@ export default function WebFactoryBuilder({lang}:{lang:Language}) {
         <button type="button" aria-pressed={mobileView==='edit'} onClick={()=>setMobileView('edit')}>{lang==='es'?'Editar':'Edit'}</button>
         <button type="button" aria-pressed={mobileView==='preview'} onClick={()=>setMobileView('preview')}>{lang==='es'?'Vista previa':'Preview'}</button>
       </div>
-      <div className="wf-builder-workspace">
+      <div className="wf-builder-workspace" inert={editing?.saving||undefined}>
         <aside className="wf-builder-nav" aria-label={lang==='es'?'Pasos de configuración':'Setup steps'}>
           {labels.map((label,index)=>(
             <button key={label} aria-current={step===index?'step':undefined} className={step===index?'selected':''} onClick={()=>setStep(index)}>
@@ -1183,7 +1237,7 @@ export default function WebFactoryBuilder({lang}:{lang:Language}) {
             <div><small>{lang==='es'?'CONFIGURACIÓN GUIADA':'GUIDED SETUP'}</small><strong>{labels[step]}</strong></div>
             <span>{completion}%</span>
           </div>
-          {(complimentaryInviteToken||trialInviteToken)&&<div className="wf-invite-banner"><strong>{complimentaryInviteToken?(lang==='es'?'Acceso complimentary activo':'Complimentary access active'):(lang==='es'?'Invitación de prueba de 7 días activa':'7-day trial invitation active')}</strong><span>{complimentaryInviteToken?(lang==='es'?'Completa el Builder usando el email invitado. No se cobrará suscripción mientras este acceso permanezca activo.':'Complete the Builder using the invited email. No subscription will be charged while this access remains active.'):(lang==='es'?'Completa el Builder con el email invitado. No se requiere tarjeta; activarás los 7 días desde tu portal.':'Complete the Builder with the invited email. No card is required; activate the 7 days from your portal.')}</span></div>}{complimentaryInviteError&&<div className="wf-checkout-warning error">{complimentaryInviteError}</div>}<BuilderAiAssistant state={state} setState={setState} lang={lang}/>
+          {(complimentaryInviteToken||trialInviteToken)&&<div className="wf-invite-banner"><strong>{complimentaryInviteToken?(lang==='es'?'Acceso complimentary activo':'Complimentary access active'):(lang==='es'?'Invitación de prueba de 7 días activa':'7-day trial invitation active')}</strong><span>{complimentaryInviteToken?(lang==='es'?'Completa el Builder usando el email invitado. No se cobrará suscripción mientras este acceso permanezca activo.':'Complete the Builder using the invited email. No subscription will be charged while this access remains active.'):(lang==='es'?'Completa el Builder con el email invitado. No se requiere tarjeta; activarás los 7 días desde tu portal.':'Complete the Builder with the invited email. No card is required; activate the 7 days from your portal.')}</span></div>}{complimentaryInviteError&&<div className="wf-checkout-warning error">{complimentaryInviteError}</div>}<BuilderAiAssistant preserveExisting={Boolean(editing)} state={state} setState={setState} lang={lang}/>
           {stepContent}
           <div className="wf-builder-navigation">
             <button className="secondary" disabled={step===0} onClick={()=>setStep((current)=>Math.max(0,current-1))}>← {lang==='es'?'Atrás':'Back'}</button>
@@ -1201,7 +1255,7 @@ export default function WebFactoryBuilder({lang}:{lang:Language}) {
                 </button>
               ))}
             </div>
-            <strong>{PRICE} / {lang==='es'?'mes':'month'}</strong>
+            {!editing&&<strong>{PRICE} / {lang==='es'?'mes':'month'}</strong>}
           </header>
           <div className="wf-preview-context"><span>{templateConfigs.find(template=>template.slug===state.design.templateSlug)?.name || (lang==='es'?'Diseño personalizado':'Custom design')}</span><small>{device==='mobile'?'390':device==='tablet'?'768':'1280'} px · {lang==='es'?'Vista previa':'Preview'}</small></div>
           <div className="wf-live-stage">
@@ -1209,6 +1263,6 @@ export default function WebFactoryBuilder({lang}:{lang:Language}) {
           </div>
         </section>
       </div>
-    </div>
+    </div></PendingUploadsContext.Provider></EditingContext.Provider>
   )
 }
