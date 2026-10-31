@@ -102,7 +102,7 @@ with sync_playwright() as p:
     assert len(uploads)==3
     page.locator('.wf-builder-nav button').nth(3).click();page.locator('.wf-catalog-tile').first.click()
     if args.faults:
-     control['rejectUpload']=True;page.locator('.wf-builder-item-modal input[type=file]').set_input_files({'name':'fixture-catalog.png','mimeType':'image/png','buffer':PNG});page.get_by_text('Fixture upload failure',exact=True).wait_for();expect(page.locator('.wf-builder-item-modal input[type=file]')).to_be_enabled()
+     control['rejectUpload']=True;page.locator('.wf-builder-item-modal input[type=file]').set_input_files({'name':'fixture-catalog.png','mimeType':'image/png','buffer':PNG});page.locator('.wf-builder-item-modal').get_by_role('alert').filter(has_text='Fixture upload failure').wait_for();expect(page.locator('.wf-builder-item-modal input[type=file]')).to_be_enabled()
     page.locator('.wf-builder-item-modal input[type=file]').set_input_files({'name':'fixture-catalog.png','mimeType':'image/png','buffer':PNG})
     expect(page.locator('.wf-builder-item-modal input[type=file]')).to_be_enabled();assert len(uploads)==4
     page.locator('.wf-builder-item-modal input[type=number]').fill('33.50')

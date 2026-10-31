@@ -18,7 +18,9 @@ sending an invitation, changing its subscription or connecting a provider.
 Provider account state is read-only here; connections remain in the portal.
 Creation drafts and the creation step in browser storage are untouched by edit
 mode. Unsaved edits have the existing navigation/unload protection. Pending
-uploads block publication; failed uploads retain the previous selection.
+uploads block publication; failed uploads retain the previous selection. Catalog
+upload errors appear inside the modal editor as an accessible alert, so the
+modal cannot obscure the failure or its retry path.
 
 A mobile browser test also demonstrated that sticky Builder navigation covered
 the catalog editor's close button. The existing editor now uses a native modal

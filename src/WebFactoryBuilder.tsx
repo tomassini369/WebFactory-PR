@@ -777,7 +777,7 @@ function CatalogStep({state,setState,lang}:{state:BuilderState;setState:Dispatch
         ))}
         {state.catalog.length===0 && <div className="wf-empty-editor">{lang==='es'?'Añade tu primer producto o servicio.':'Add your first product or service.'}</div>}
       </div>
-      {uploadError && <small className="wf-upload-error">{uploadError}</small>}
+      {uploadError && !editingItem && <small className="wf-upload-error" role="alert">{uploadError}</small>}
 
       {editingItem && (
         <BuilderCatalogDialog onClose={()=>setEditingId(null)}>
@@ -786,6 +786,7 @@ function CatalogStep({state,setState,lang}:{state:BuilderState;setState:Dispatch
               <div><small>{editingItem.type==='service'?(lang==='es'?'SERVICIO':'SERVICE'):(lang==='es'?'PRODUCTO':'PRODUCT')}</small><h4 id="wf-catalog-editor-title">{itemName(editingItem) || (lang==='es'?'Sin nombre':'Untitled')}</h4></div>
               <button aria-label={lang==='es'?'Cerrar editor del artículo':'Close item editor'} onClick={()=>setEditingId(null)}>×</button>
             </header>
+            {uploadError&&<p className="wf-upload-error" role="alert">{uploadError}</p>}
             <div className="wf-item-editor modal">
               <label className="wf-item-image">
                 <input type="file" accept={editing?"image/png,image/jpeg,image/webp,image/gif":"image/png,image/jpeg,image/webp,image/heic,image/heif"} disabled={uploadingId===editingItem.id} onChange={(e)=>{const file=e.target.files?.[0];e.target.value='';void uploadImage(editingItem.id,file)}} />
