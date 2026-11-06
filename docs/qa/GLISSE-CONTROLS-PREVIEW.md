@@ -1,10 +1,5 @@
 # Glisse controls evaluation
 
-Historical initial gallery evaluation. Work is now consolidated in PR #125;
-see [the real Personalization integration](GLISSE-PERSONALIZATION.md) for the
-current operational controls and validation. PR #128 is closed and its branch
-was deleted after its commits were preserved.
-
 Date: 2026-11-06. Baseline: PR #125, `094d21f8f92d76fe35c21760ffe7d2bfcb5b876c`.
 Branch: `feat/glisse-controls-preview`. Glisse-specific changes are in
 `48be8c5` and `1f99f3d`. PR #128 initially targeted the #125 branch, which did

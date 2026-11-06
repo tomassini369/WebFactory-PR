@@ -7,5 +7,3 @@
 @media(max-width:767px){.wf-glisse-grid{grid-template-columns:1fr}.wf-glisse-grid>section{padding:16px}.wf-glisse-header{align-items:flex-start}.wf-glisse-header .wf-glisse-actions{width:100%}}
 @media(prefers-reduced-transparency:reduce){.wf-glisse-preview .lg-glass{backdrop-filter:none;-webkit-backdrop-filter:none;background:var(--trial-surface)}}
 @media(forced-colors:active){.wf-glisse-preview .lg-glass{background:Canvas;color:CanvasText;border:1px solid ButtonText;backdrop-filter:none;-webkit-backdrop-filter:none}.wf-glisse-preview button{border:1px solid ButtonText}}
-
-.wf-glisse-preview .wf-glisse-visual{grid-column:1/-1}.wf-glisse-visual>select{font:inherit;font-size:16px;min-height:44px;max-width:100%;color:var(--trial-ink);background:var(--trial-surface);border:1px solid var(--trial-border);padding:8px 12px;border-radius:12px}.wf-glisse-preview .wf-glisse-live-scene{min-height:360px}.wf-glisse-preview .wf-glisse-live-card{--lg-glass:rgb(255 255 255 / .82)}.wf-glisse-preview[data-theme=dark] .wf-glisse-live-card{--lg-glass:rgb(14 24 41 / .82)}

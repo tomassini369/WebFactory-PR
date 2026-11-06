@@ -43,9 +43,6 @@ with sync_playwright() as p:
     page.goto(args.base+'/glisse-preview/');page.wait_for_load_state('networkidle')
     expect(page.get_by_role('heading',level=1)).to_have_text('Prueba de controles Glisse' if es else 'Glisse controls preview')
     expect(page.locator('.wf-glisse-grid>section')).to_have_count(8)
-    wallpaper=page.get_by_label('Fondo para visualizar el cristal' if es else 'Wallpaper for viewing glass',exact=True)
-    wallpaper.select_option('/portal-violet-landscape.webp')
-    expect(page.locator('.wf-glisse-visual [data-glisse-backdrop]')).to_have_css('background-image',__import__('re').compile('portal-violet-landscape'))
     expect(page.locator('.wf-glisse-preview')).to_have_attribute('data-theme',theme)
     theme_switch=page.get_by_role('switch',name='Modo oscuro' if es else 'Dark mode')
     expect(page.locator('.wf-theme-toggle.floating')).to_have_count(0)
@@ -58,7 +55,6 @@ with sync_playwright() as p:
     page.get_by_role('switch',name='Modo oscuro' if es else 'Dark mode').click()
     expect(page.locator('.wf-glisse-preview')).to_have_attribute('data-theme',theme)
     expect(page.get_by_role('switch',name='Interruptor deshabilitado' if es else 'Disabled switch')).to_be_disabled()
-    wallpaper.select_option('/portal-violet-landscape.webp')
     title=page.get_by_label('Título de la tarjeta de prueba' if es else 'Test card title')
     apply=page.get_by_role('button',name='Aplicar a la muestra' if es else 'Apply to sample')
     title.fill('');apply.click();expect(page.get_by_test_id('apply-count')).to_have_text('0')
@@ -92,7 +88,6 @@ with sync_playwright() as p:
     trigger.click();page.get_by_role('menuitem',name='Restablecer muestra' if es else 'Reset sample').click()
     expect(title).to_have_value('WebFactory PR');expect(page.get_by_test_id('apply-count')).to_have_text('0')
     expect(slider).to_have_value('16');expect(page.get_by_test_id('glass-result')).to_have_attribute('data-layout','cards')
-    expect(wallpaper).to_have_value('/dashboard/room.webp')
     assert page.evaluate('document.documentElement.scrollWidth<=innerWidth'), 'Horizontal overflow'
     assert not page.evaluate('window.__rejections'), 'Unhandled promise rejection'
     assert not row['errors'] and not row['failed_requests'] and not row['http_errors'] and not row['api_requests'],row

@@ -85,7 +85,7 @@ try{
     await page.locator('.gd-palette-grid').waitFor();await page.waitForFunction(()=>!document.querySelector('.gd-appearance>fieldset').disabled);
     assert.equal(await page.getByRole('button',{name:'Paleta Ocean Blue',exact:true}).getAttribute('aria-pressed'),'true');
     await page.getByRole('button',{name:'Usar mis colores actuales',exact:true}).click();
-    await page.waitForFunction(()=>{const root=document.querySelector('.gd-appearance');return root&&root.dataset.glisseState!=='loading'});if(await page.locator('.gd-appearance').getAttribute('data-glisse-state')==='ready')await page.getByRole('switch',{name:'Mantener imagen de fondo original (sin oscurecer)',exact:true}).click();else await page.getByRole('checkbox',{name:'Mantener imagen de fondo original (sin oscurecer)',exact:true}).check();
+    await page.getByRole('checkbox',{name:'Mantener imagen de fondo original (sin oscurecer)',exact:true}).check();
     await page.getByRole('combobox',{name:/^Apariencia del cristal/}).selectOption('liquid');
     assert.equal(await page.locator('.gd-root').getAttribute('data-background-natural'),'true');
     assert.equal(await page.locator('.gd-root').getAttribute('data-glass-style'),'liquid');
