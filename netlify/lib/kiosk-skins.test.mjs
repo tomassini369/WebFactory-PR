@@ -68,3 +68,44 @@ test('kiosk clear glass settings preserve existing appearance and reject unsafe 
   assert.throws(()=>validateKioskAppearance({...legacy,...patch}));
  }
 });
+
+test('kiosk distortion defaults legacy records and rejects unsupported optical values',()=>{
+ assert.equal(validateKioskAppearance({glassStyle:'liquid'}).glassDistortion,10);
+ for(const value of [0,10,50])assert.equal(validateKioskAppearance({glassDistortion:value}).glassDistortion,value);
+ for(const value of [-1,51,1.5,'20',null,NaN,Infinity])assert.throws(()=>validateKioskAppearance({glassDistortion:value}));
+});
+test('kiosk distortion saves to paired presentation and presets without changing the sale',async()=>{
+ const f=kioskFixture(),p=await f.paired();
+ const appearance={...kioskAppearance(),glassStyle:'liquid',glassDistortion:35};
+ assert.equal((await f.admin('appearance',{appearance})).status,200);
+ let view=await(await f.handler(f.request(null,p.cookie))).json();assert.equal(view.presentation.appearance.glassDistortion,35);assert.equal(view.saleId,p.view.saleId);
+ const presets=[{id:'distortion-fixture',name:'Lens fixture',appearance}];
+ const saved=await f.admin('appearance_presets',{presets});assert.equal(saved.status,200);assert.equal((await saved.json()).presets[0].appearance.glassDistortion,35);
+ assert.equal((await f.admin('appearance',{appearance:{...appearance,glassDistortion:51}})).status,400);
+ f.setRole('employee');assert.equal((await f.admin('appearance',{appearance})).status,403);
+ view=await(await f.handler(f.request(null,p.cookie))).json();assert.equal(view.presentation.appearance.glassDistortion,35);assert.equal(view.saleId,p.view.saleId);
+});
+
+test('older clients keep their appearance shape and cannot erase stored distortion',async()=>{
+ const f=kioskFixture(),p=await f.paired();
+ const appearance={...kioskAppearance(),skinId:'barber-luxury',glassStyle:'liquid',glassDistortion:34};
+ await f.admin('appearance',{appearance});await f.admin('appearance_presets',{presets:[{id:'legacy-design',name:'Before',appearance}]});
+ const legacy=async(input,cookie='')=>{const request=f.request(input,cookie);request.headers.delete('X-WF-Kiosk-Optics');return f.handler(request)};
+ let response=await legacy(null,p.cookie),data=await response.json();assert.equal(data.presentation.appearance.skinId,'barber-luxury');assert.equal(Object.hasOwn(data.presentation.appearance,'glassDistortion'),false);assert.equal(data.saleId,p.view.saleId);
+ data=await(await legacy({action:'admin',siteId:f.site.siteId})).json();assert.equal(Object.hasOwn(data.appearance,'glassDistortion'),false);assert.equal(Object.hasOwn(data.presets[0].appearance,'glassDistortion'),false);
+ const {glassDistortion,...oldAppearance}=appearance;
+ assert.equal((await legacy({action:'appearance',siteId:f.site.siteId,appearance:{...oldAppearance,primary:'#123456'}})).status,200);
+ assert.equal((await legacy({action:'appearance_presets',siteId:f.site.siteId,presets:[{id:'legacy-design',name:'Renamed',appearance:oldAppearance}]})).status,200);
+ data=await(await f.admin('admin')).json();assert.equal(data.appearance.glassDistortion,34);assert.equal(data.appearance.primary,'#123456');assert.equal(data.presets[0].appearance.glassDistortion,34);assert.equal(data.presets[0].name,'Renamed');
+ assert.equal((await legacy({action:'appearance',siteId:f.site.siteId,appearance:{...oldAppearance,glassDistortion:51}})).status,400);
+});
+
+test('legacy writes preserve distortion from the current CAS snapshot, not a stale read',async()=>{
+ const f=kioskFixture(),p=await f.paired(),appearance={...kioskAppearance(),glassDistortion:20};await f.admin('appearance',{appearance});
+ const get=f.store.get.bind(f.store);let armed=true;
+ f.store.get=async(key,options)=>{const value=await get(key,options);if(armed&&key===kioskConfigKey(f.site.siteId)){armed=false;await f.store.setJSON(key,{...value,appearance:{...value.appearance,glassDistortion:43}})}return value};
+ const {glassDistortion,...old}=appearance,request=f.request({action:'appearance',siteId:f.site.siteId,appearance:{...old,secondary:'#123456'}});request.headers.delete('X-WF-Kiosk-Optics');
+ assert.equal((await f.handler(request)).status,200);f.store.get=get;
+ const data=await(await f.admin('admin')).json();assert.equal(data.appearance.glassDistortion,43);assert.equal(data.appearance.secondary,'#123456');
+ assert.equal((await(await f.handler(f.request(null,p.cookie))).json()).saleId,p.view.saleId);
+});

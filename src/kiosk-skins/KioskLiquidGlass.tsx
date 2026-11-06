@@ -4,7 +4,7 @@ import {FluidGlassSurface} from '../glassy-dashboard/FluidGlassSurface'
 
 // Only mount the actual MIT-licensed lens on two large stable kiosk surfaces.
 // No second renderer is written here; this chooses targets for the library.
-export default function KioskLiquidGlass({host,backdropSelector}:{host:RefObject<HTMLElement|null>;backdropSelector:string}){
+export default function KioskLiquidGlass({host,backdropSelector,distortion}:{host:RefObject<HTMLElement|null>;backdropSelector:string;distortion?:number}){
  const [targets,setTargets]=useState<HTMLElement[]>([])
  useEffect(()=>{
   const root=host.current
@@ -19,7 +19,7 @@ export default function KioskLiquidGlass({host,backdropSelector}:{host:RefObject
   return()=>{observer.disconnect();setTargets([])}
  },[host])
  return <>{targets.map((target,index)=>createPortal(
-  <FluidGlassSurface radius={index===0?28:30} backdropSelector={backdropSelector}/>,
+  <FluidGlassSurface distortion={distortion} radius={index===0?28:30} backdropSelector={backdropSelector}/>,
   target,
   index===0?'header':'cart'
  ))}</>

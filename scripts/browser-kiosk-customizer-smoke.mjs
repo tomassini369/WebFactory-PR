@@ -3,7 +3,7 @@ import {preview} from 'vite';
 import {chromium,webkit} from 'playwright';
 import {mkdir,readFile} from 'node:fs/promises';
 const port=Number(process.env.QA_PORT||5370),server=await preview({preview:{host:'127.0.0.1',port,strictPort:true}}),root=process.env.QA_ORIGIN||`http://127.0.0.1:${port}`,engine=process.env.QA_ENGINE==='webkit'?webkit:chromium;
-const browser=await engine.launch(engine===chromium?{args:['--no-sandbox'],...(process.env.QA_CHROMIUM_PATH?{executablePath:process.env.QA_CHROMIUM_PATH}:{}),...(process.env.QA_ORIGIN&&process.env.HTTPS_PROXY?{proxy:{server:process.env.HTTPS_PROXY}}:{})}:process.env.QA_WEBKIT_PATH?{executablePath:process.env.QA_WEBKIT_PATH}:{});
+const browser=await engine.launch(engine===chromium?{args:['--no-sandbox'],...(process.env.QA_CHROMIUM_PATH?{executablePath:process.env.QA_CHROMIUM_PATH}:{}),...(process.env.QA_ORIGIN&&process.env.HTTPS_PROXY?{proxy:{server:process.env.HTTPS_PROXY}}:{})}:{...(process.env.QA_WEBKIT_PATH?{executablePath:process.env.QA_WEBKIT_PATH}:{}),...(process.env.QA_ORIGIN&&process.env.HTTPS_PROXY?{proxy:{server:process.env.HTTPS_PROXY}}:{})});
 const output='/tmp/webfactory-kiosk-customizer',errors=[],photo=await readFile(new URL('../assets/template-images/262978.jpg',import.meta.url));await mkdir(output,{recursive:true});
 try{
  for(const width of (process.env.QA_WIDTHS||'320,375,390,430,768,1024,1440').split(',').map(Number))for(const theme of (process.env.QA_THEMES||'light,dark').split(','))for(const lang of (process.env.QA_LANGS||'es,en').split(',')){
@@ -43,10 +43,17 @@ try{
   assert.equal(await surface.locator('.kiosk-backdrop-shade').count(),0,'Natural wallpaper has no overlay');
   // Refraction requires a backdrop; palette selection deliberately clears it.
   await page.getByLabel(t('Fondo integrado','Built-in wallpaper'),{exact:true}).selectOption('room');
+  const distortion=page.getByRole('slider',{name:t('Distorsión del cristal','Glass distortion'),exact:true});assert.equal(await distortion.inputValue(),'10');assert(await distortion.isDisabled());
   await page.getByLabel(t('Apariencia del cristal','Glass appearance'),{exact:true}).selectOption('liquid');
   assert.equal(await surface.getAttribute('data-glass-style'),'liquid');
   await surface.locator('.wf-licensed-liquid-glass').first().waitFor();
-  await page.getByLabel(t('Apariencia del cristal','Glass appearance'),{exact:true}).selectOption('classic');
+  await distortion.press('Home');assert.equal(await distortion.inputValue(),'0');await page.waitForFunction(()=>[...document.querySelectorAll('.kiosk-appearance-preview .wf-licensed-liquid-glass')].every(el=>el.dataset.fluidDistortion==='0'));
+  const lens=surface.locator('.kiosk-header .wf-licensed-liquid-glass').first();await lens.scrollIntoViewIfNeeded();await page.waitForTimeout(600);
+  const optical=await lens.locator('feImage,feDisplacementMap').evaluateAll(nodes=>nodes.map(el=>el.tagName+':'+(el.getAttribute('scale')||el.getAttribute('href')||el.getAttribute('xlink:href'))).join('|'));
+  await distortion.press('End');assert.equal(await distortion.inputValue(),'50');await page.waitForFunction(()=>[...document.querySelectorAll('.kiosk-appearance-preview .wf-licensed-liquid-glass')].every(el=>el.dataset.fluidDistortion==='50'));
+  await lens.scrollIntoViewIfNeeded();if(optical)await page.waitForFunction(before=>[...document.querySelectorAll('.kiosk-appearance-preview .kiosk-header .wf-licensed-liquid-glass :is(feImage,feDisplacementMap)')].map(el=>el.tagName+':'+(el.getAttribute('scale')||el.getAttribute('href')||el.getAttribute('xlink:href'))).join('|')!==before,optical);
+  console.log('PASS distortion 0/50, renderer',await lens.getAttribute('data-glass-strategy'),'optical map compared:',Boolean(optical));
+  await page.getByLabel(t('Apariencia del cristal','Glass appearance'),{exact:true}).selectOption('classic');assert(await distortion.isDisabled());
   await page.getByRole('checkbox',{name:t('Mantener imagen original, sin oscurecimiento','Keep original image, without dimming'),exact:true}).uncheck();
   await page.getByLabel(t('Tipo de fondo','Background type'),{exact:true}).selectOption('gradient');await page.getByLabel(t('Ángulo del degradado','Gradient angle'),{exact:true}).press('End');assert.match(await surface.locator('.kiosk-backdrop-art').evaluate(el=>getComputedStyle(el).backgroundImage),/360deg/);
   await page.getByLabel(t('Tipo de fondo','Background type'),{exact:true}).selectOption('pattern');await page.getByLabel(t('Patrón','Pattern'),{exact:true}).selectOption('dots');assert.equal(await surface.locator('.kiosk-backdrop-art').evaluate(el=>getComputedStyle(el).backgroundSize),'24px 24px');

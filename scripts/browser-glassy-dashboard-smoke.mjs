@@ -8,7 +8,7 @@ import {siteRoleCapabilities} from '../netlify/lib/client-auth.mjs'
 import {selectPortalSection} from './qa-workspace-navigation.mjs'
 const port=Number(process.env.QA_PORT||5335),origin=process.env.QA_ORIGIN||`http://127.0.0.1:${port}`
 const server=process.env.QA_DEV==='1'?await createServer({server:{host:'127.0.0.1',port,strictPort:true}}):await preview({preview:{host:'127.0.0.1',port,strictPort:true}});if(process.env.QA_DEV==='1')await server.listen()
-const isWebKit=process.env.QA_ENGINE==='webkit';const browser=await (isWebKit?webkit:chromium).launch(isWebKit?(process.env.QA_WEBKIT_PATH?{executablePath:process.env.QA_WEBKIT_PATH}:{}):{...(process.env.QA_CHROMIUM_PATH?{executablePath:process.env.QA_CHROMIUM_PATH}:{}),args:['--no-sandbox','--disable-dev-shm-usage','--disable-gpu']})
+const isWebKit=process.env.QA_ENGINE==='webkit';const browser=await (isWebKit?webkit:chromium).launch({...((process.env.QA_ORIGIN&&process.env.HTTPS_PROXY)?{proxy:{server:process.env.HTTPS_PROXY}}:{}),...(isWebKit?(process.env.QA_WEBKIT_PATH?{executablePath:process.env.QA_WEBKIT_PATH}:{}):{...(process.env.QA_CHROMIUM_PATH?{executablePath:process.env.QA_CHROMIUM_PATH}:{}),args:['--no-sandbox','--disable-dev-shm-usage','--disable-gpu']})})
 const output='/tmp/glassy-dashboard-qa';await mkdir(output,{recursive:true})
 const user={id:'glassy-user',email:'glassy@example.invalid',user_metadata:{},app_metadata:{roles:['admin']},mfa:{required:false}}
 const site={siteId:'glassy-site',slug:'glassy-site',status:'published',revision:1,business:{name:'Glassy fixture · QA',category:'Barber',email:'fixture@example.invalid'},design:{primary:'#0B1529',secondary:'#3C86F6',style:'Modern'},catalog:[],employees:[],hours:{},members:[],settings:{locale:'en',timezone:'America/Puerto_Rico',currency:'USD'},paymentRules:{},googleCalendar:{},features:{},servicePlan:{code:'complimentary',billingModel:'complimentary'}}
@@ -86,7 +86,10 @@ try{
     assert.equal(await page.getByRole('button',{name:'Paleta Ocean Blue',exact:true}).getAttribute('aria-pressed'),'true');
     await page.getByRole('button',{name:'Usar mis colores actuales',exact:true}).click();
     await page.getByRole('checkbox',{name:'Mantener imagen de fondo original (sin oscurecer)',exact:true}).check();
+    const distortion=page.getByRole('slider',{name:'Distorsión del cristal',exact:true});assert.equal(await distortion.inputValue(),'10');assert(await distortion.isDisabled());
     await page.getByRole('combobox',{name:/^Apariencia del cristal/}).selectOption('liquid');
+    await distortion.press('Home');assert.equal(await distortion.inputValue(),'0');await page.waitForFunction(()=>[...document.querySelectorAll('.wf-licensed-liquid-glass')].length>0&&[...document.querySelectorAll('.wf-licensed-liquid-glass')].every(el=>el.dataset.fluidDistortion==='0'));
+    await distortion.press('End');assert.equal(await distortion.inputValue(),'50');await page.waitForFunction(()=>[...document.querySelectorAll('.wf-licensed-liquid-glass')].every(el=>el.dataset.fluidDistortion==='50'));
     assert.equal(await page.locator('.gd-root').getAttribute('data-background-natural'),'true');
     assert.equal(await page.locator('.gd-root').getAttribute('data-glass-style'),'liquid');
     await page.locator('.wf-licensed-liquid-glass').first().waitFor({state:'attached'});assert((await page.locator('.wf-licensed-liquid-glass').count())>0,'Real Liquid Glass package is rendered on dashboard panels');
@@ -98,6 +101,8 @@ try{
     assert.equal(await page.locator('.gd-root').getAttribute('data-glass-style'),'liquid');
     await page.locator('.gd-dock').getByRole('button',{name:'Personalización',exact:true}).click();
     await page.waitForFunction(()=>!document.querySelector('.gd-appearance>fieldset').disabled);
+    await page.waitForFunction(()=>[...document.querySelectorAll('.wf-licensed-liquid-glass')].length>0&&[...document.querySelectorAll('.wf-licensed-liquid-glass')].every(el=>el.dataset.fluidDistortion==='50'));
+
    }
    if(width===1440&&theme==='dark'){await page.screenshot({path:`${output}/${path.slice(1)}-appearance-${lang}.png`,fullPage:true})}
    await page.locator('.gd-wallpaper-choice').nth(1).click();await page.getByRole('button',{name:lang==='es'?'Aplicar y guardar':'Apply and save',exact:true}).click();await page.getByRole('status').filter({hasText:lang==='es'?'Apariencia guardada.':'Appearance saved.'}).waitFor();await page.reload();await page.locator('.gd-content').waitFor();await page.waitForFunction(()=>getComputedStyle(document.querySelector('.gd-wallpaper')).backgroundImage.includes('portal-violet'))
