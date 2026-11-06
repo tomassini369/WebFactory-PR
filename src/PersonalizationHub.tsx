@@ -31,6 +31,7 @@ export default function PersonalizationHub({site,lang,canManageKiosk,canEditWebs
    <span className="wf-personalization-symbol" aria-hidden="true"><Palette size={21}/></span>
    <div><h1 id="wf-personalization-title">{t('Personalización','Personalization')}</h1><p>{t('Todos los controles de apariencia en un solo lugar. Las opciones de diseño se editan aquí. Comprueba cada cambio antes de guardarlo.','Edit visual settings here. Check each change before saving.')}</p></div>
   </header>
+  {__WF_PREVIEW_REVIEW__&&<a href="/glisse-preview">{t('Probar controles Glisse (preview)','Try Glisse controls (preview)')}</a>}
   <nav className="wf-personalization-areas" aria-label={t('Elegir área de personalización','Choose customization area')}>
    {items.map(({id,title,hint,Icon})=><button key={id} type="button" aria-current={area===id?'page':undefined} onClick={()=>setArea(id)}><Icon size={20} aria-hidden="true"/><span><strong>{title}</strong><small>{hint}</small></span></button>)}
   </nav>

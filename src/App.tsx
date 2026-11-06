@@ -38,6 +38,8 @@ const SiteRedesignBuilder = lazy(() => import('./SiteRedesignBuilder'))
 // Preview-only visual comparison. Compiled out of production builds (see vite.config.ts).
 const PreviewReviewPage = typeof __WF_PREVIEW_REVIEW__ !== 'undefined' && __WF_PREVIEW_REVIEW__ ? lazy(() => import('./PreviewReviewPage')) : null
 
+const GlissePreview = __WF_PREVIEW_REVIEW__ ? lazy(() => import('./GlissePreview')) : null
+
 const ShadcnPreview = __WF_PREVIEW_REVIEW__ ? lazy(() => import('./ShadcnPreview')) : null
 
 const TemplateParityReview = __WF_PREVIEW_REVIEW__ ? lazy(() => import('./TemplateParityReview')) : null
@@ -91,6 +93,7 @@ function App(){
   if (/^\/kiosk-receipt\/?$/.test(pathname)) return <RouteView><KioskMobileReceipt lang={lang} setLang={setLang}/></RouteView>
   if (/^\/kiosk\/?$/.test(pathname)) return <RouteView><Kiosk lang={lang} setLang={setLang} pairing={kioskPairing}/></RouteView>
   if (/^\/customer-display\/?$/.test(pathname)) return <RouteView><CustomerDisplay lang={lang} setLang={setLang} pairing={displayPairing}/></RouteView>
+  if (GlissePreview && /^\/glisse-preview\/?$/.test(pathname)) return <RouteView><GlissePreview/></RouteView>
   if (ShadcnPreview && /^\/shadcn-preview\/?$/.test(pathname)) return <RouteView><ShadcnPreview/></RouteView>
   if (TemplateParityReview && /^\/template-parity-preview\/?$/.test(pathname)) return <RouteView><TemplateParityReview/></RouteView>
   if (PreviewReviewPage && /^\/preview-review\/?$/.test(pathname)) return <RouteView><PreviewReviewPage lang={lang} setLang={setLang} /></RouteView>
