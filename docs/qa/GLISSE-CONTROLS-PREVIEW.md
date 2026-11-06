@@ -1,7 +1,13 @@
 # Glisse controls evaluation
 
 Date: 2026-11-06. Baseline: PR #125, `094d21f8f92d76fe35c21760ffe7d2bfcb5b876c`.
-Branch: `feat/glisse-controls-preview`. This trial is separate from the kiosk engine work.
+Branch: `feat/glisse-controls-preview`. Glisse-specific changes are in
+`48be8c5` and `1f99f3d`. PR #128 initially targeted the #125 branch, which did
+not activate the repository's main-only pull-request CI. Netlify also listed
+no deploy for review #128. The PR base was changed to main to use the normal
+connected CI/preview workflow. Its ancestry still includes unmerged #125 work;
+review that dependency before considering any merge. No main merge or
+production deployment was performed.
 
 ## Package and scope
 
