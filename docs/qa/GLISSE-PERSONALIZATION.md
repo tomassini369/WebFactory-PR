@@ -77,6 +77,9 @@ deployment is authorized by this integration.
   both themes/locales. Its selectors follow the new controls and preserve assertions for real handler persistence, photo framing, locale/theme
   synchronization, employee ownership, stale updates and failed-save retries.
 - Gallery smoke: both browsers passed with the photograph/Glass section first.
+  An added reset regression reproduced a missing wallpaper reset in both
+  browsers (expected room, actual violet landscape). Reset now also restores
+  the local wallpaper; this does not modify the saved personal wallpaper.
 - Production compilation passed; no glisse-styles marker or Glisse gallery
   module was emitted. This was a local build, not a production deployment.
 - Impeccable 4.1.0: exit 2, 20 pre-existing recommendations; none in the new

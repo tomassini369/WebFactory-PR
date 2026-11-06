@@ -27,7 +27,7 @@ export default function GlissePreview(){
  useLayoutEffect(()=>{
   root.current?.querySelector('.lg-input-clear')?.setAttribute('aria-label',t('Borrar búsqueda','Clear search'))
  },[search,lang])
- function reset(){setTitle('WebFactory PR');setSearch('');setRadius(16);setLayout('cards');setTab('controls');setCount(0)}
+ function reset(){setTitle('WebFactory PR');setSearch('');setRadius(16);setLayout('cards');setTab('controls');setCount(0);setWallpaper(DASHBOARD_WALLPAPERS[0].src)}
  return <main className="wf-glisse-preview wf-glisse-scope" data-theme={theme} ref={root}>
   <header className="wf-glisse-header">
    <a href="/" aria-label={t('Ir al Marketplace','Go to Marketplace')}><AdaptiveLogo alt="WebFactory PR"/></a>
