@@ -33,3 +33,69 @@ Verify 320/375/390/430px mobile and 768/1024/1440px desktop/tablet; ES/EN, Light
 ## Related surfaces
 
 Template and storefront composition follows [DESIGN-TEMPLATES.md](docs/design/DESIGN-TEMPLATES.md). Portal surfaces follow [DESIGN-PORTALS.md](docs/design/DESIGN-PORTALS.md). The approved storefront photographic overlay is distinct from the homepage video hero.
+
+## Public entry points: Marketplace Phase 1
+
+The owner-approved consumer Marketplace occupies `/`. The complete original
+business landing occupies `/crear`; its video Hero, native scroll tour, demos,
+pricing and Factory AI retain the contract above. The Marketplace is a separate
+public surface using the same native typography, navy/blue tokens, Light/Dark
+and ES/EN controls. Its discovery filters are local presentation state until a
+public directory exists. Keep honest empty featured/feed/promotion sections.
+Do not invent listings, ratings, offers, maps, favorites or following.
+
+Both routes use `AdaptiveLogo` and the two original PNGs without recoloring,
+filters, clipping or replacement. Verify and report SHA-256 before/after.
+An eventual real Puerto Rico photograph is a local asset with documented source
+and license, and never replaces the original video on `/crear`.
+
+## Marketplace reference revision (October 23, 2026)
+
+The owner explicitly requests the supplied desktop/mobile Marketplace reference.
+For this surface, replace the first-phase presentation with a panoramic Puerto
+Rico photograph, white integrated search, category capsules, compact business
+cards, a business-creation banner, consumer account and mobile bottom navigation.
+The public directory now reads eligible active/trial storefronts with public
+entitlement. The previous presentation-only filter rule is superseded. Never
+publish preview/setup/hidden/expired tenants, invented ratings, verification
+badges or promotions. Consumer access is explicitly authorized functional work;
+it reuses Identity/MFA without granting commercial roles or membership.
+
+Design Read: consumer discovery for Puerto Rico, navy photographic reference;
+ENERGY 2 / RHYTHM 2 / MOTION 1. Density 6, variance 4, motion 2.
+
+- Color: deep ocean navy (#061624) connects discovery to the reference and brand;
+  raised navy (#0C2233), pale text (#F2F6FC), muted steel (#B7C5D5), and blue
+  action (#215FC5) create hierarchy. Light surfaces remain #F6F9FE / #FFFFFF,
+  navy text #102237, secondary #4D6076. Blue focus #A9CDFF / #235CA8.
+- Typography: retain the native sans-serif stack and original PNG logo for brand
+  continuity and loading performance. Display uses clamp, tight tracking, 1.04
+  leading; body 1rem, secondary 14px, max 65ch. No new font downloads.
+- Layout: left discovery copy with a small local-support aside mirrors the
+  supplied composition. On phones, one column, two-row search, horizontal
+  category/business rails contained inside the page, and a safe-area bottom nav.
+- Cards distinguish individual published businesses; public business detail
+  uses its real images/catalog and routes commerce into the existing storefront.
+  No parallel booking, payment, reviews, promotion or follow subsystem is added.
+- White search is the discovery focal point. Capsule categories identify filter
+  choices, not decorative badges. One blurred support aside separates text from
+  the photo; other surfaces remain solid. The blue banner routes business owners
+  into `/crear`. Store icons identify this destination and Marketplace return.
+- Motion is limited to tap feedback and native scrolling, with reduced-motion
+  support. No continuous effects. Controls have 44px minimum targets and visible
+  keyboard focus, loading/error/empty states, Escape-close menus and native dialog.
+- Banned: fabricated listings/reviews/metrics, decorative badge claims, clipped
+  logos, changes to tenant branding, dead account buttons, consent by default,
+  AI neon effects, duplicated business systems or ambient animations.
+
+The original Hero video and scroll on `/crear` remain intact. Both `/crear` and
+`/builder` expose a dedicated, labeled Marketplace return icon in their headers.
+
+### Consumer access appearance · October 23, 2026
+
+The owner requests the existing portal login's visual treatment for `/cuenta`,
+while explicitly preserving the Marketplace account layout. Keep its header,
+form order, copy, spacing, language/theme controls and account behavior. Scope
+the portal slate/navy canvas, translucent card, inset pill fields and blue pill
+action to signed-out consumer access and confirmation only. Do not move the
+controls into the card, add a desktop welcome column or change authentication.

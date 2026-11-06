@@ -1,3 +1,4 @@
+import {isAdEvent,settleAdEvent} from '../lib/marketplace-ads.mjs';
 import crypto from "node:crypto";
 import { platformStripeEventStore } from "../lib/platform-utils.mjs";
 import { isSubscriptionBillingEvent, processSubscriptionBillingEvent } from "../lib/subscription-billing.mjs";
@@ -54,6 +55,12 @@ export default async (req) => {
       return Response.json({ received:true,duplicate:true });
     }
 
+    if (isAdEvent(event)) {
+      const advertisement=await settleAdEvent(event);
+      await platformStripeEventStore().setJSON(processedKey,{completed:true,eventType:event.type,advertisement,processedAt:new Date().toISOString()});
+      return Response.json({received:true,advertisement});
+    }
+
     if (isSubscriptionBillingEvent(event)) {
       const billing = await processSubscriptionBillingEvent(event);
       await platformStripeEventStore().setJSON(processedKey, {
@@ -74,9 +81,9 @@ export default async (req) => {
     });
     return Response.json({ received:true,ignored:true,unsupportedEvent:true });
   } catch (error) {
-    console.error("stripe-webhook", error);
+    console.error("stripe-webhook", {status:500});
     return Response.json(
-      { received:false,message:error?.message || "Webhook processing failed." },
+      { received:false,message:"Webhook processing failed." },
       { status:500 },
     );
   }

@@ -1,4 +1,5 @@
 import { assertSameOrigin, errorResponse, requireClientUser, requireSiteAccess } from "../lib/client-auth.mjs";
+import { purgePortalProfile } from './portal-profile.mjs';
 import { normalizeEmail, sitesForEmail } from "../lib/client-store.mjs";
 import { deleteIdentityUser, purgeClientSite, removeUserFromSite } from "../lib/client-lifecycle.mjs";
 
@@ -39,6 +40,7 @@ export default async(req)=>{
         }
       }
 
+      await purgePortalProfile(req.url,user.id);
       await deleteIdentityUser(user);
       return Response.json({ok:true,accountDeleted:true,deletedSites,leftSites},{headers:{"Cache-Control":"no-store"}});
     }

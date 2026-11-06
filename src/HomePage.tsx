@@ -7,12 +7,13 @@ import './home-apple.css'
 import './home-evolution.css'
 import './home-craft-phase2.css'
 import { useSelectionPill } from './useSelectionPill'
+import MarketplaceReturn from './MarketplaceReturn'
 
 type Language = 'en' | 'es'
 
 const copy = {
   en: {
-    nav: ['Platform', 'Tour', 'Demo', 'Plans', 'FAQ'], templatesNav: 'Templates', login: 'Log In', menu: 'Menu', mainNav: 'Main navigation',
+    nav: ['Platform', 'Tour', 'Demo', 'Plans', 'FAQ'], marketplaceNav: 'Marketplace', templatesNav: 'Templates', login: 'Log In', menu: 'Menu', mainNav: 'Main navigation',
     eyebrow: 'BUILT IN PUERTO RICO · FOR YOUR BUSINESS', title: 'Your whole business,', accent: 'one control center.',
     lead: 'Launch a bilingual website, sell products and services, accept bookings, get paid and manage your team, all connected to your Business Control Center.',
     modules: ['Website', 'Commerce', 'Payments', 'Employees', 'Bookings'],
@@ -59,7 +60,7 @@ const copy = {
     footer: 'Your website. Your operation. Your control.', legal: ['Privacy', 'Terms', 'Refunds'], legalNav: 'Legal links',
   },
   es: {
-    nav: ['Plataforma', 'Recorrido', 'Demo', 'Planes', 'FAQ'], templatesNav: 'Templates', login: 'Log In', menu: 'Menú', mainNav: 'Navegación principal',
+    nav: ['Plataforma', 'Recorrido', 'Demo', 'Planes', 'FAQ'], marketplaceNav: 'Marketplace', templatesNav: 'Templates', login: 'Log In', menu: 'Menú', mainNav: 'Navegación principal',
     eyebrow: 'CREADO EN PUERTO RICO · PARA TU NEGOCIO', title: 'Todo tu negocio,', accent: 'un centro de control.',
     lead: 'Lanza un website bilingüe, vende productos y servicios, recibe reservas, cobra y administra tu equipo, todo conectado a tu Business Control Center.',
     modules: ['Website', 'Ventas', 'Pagos', 'Empleados', 'Reservas'],
@@ -416,8 +417,9 @@ export default function HomePage({ lang, setLang }: { lang: Language, setLang: (
     <header className={'wf-h-header' + (scrolled ? ' scrolled' : '')}>
       <div className="wf-h-header-inner">
         <a href="/" className="wf-h-logo"><AdaptiveLogo alt="WebFactory PR" /></a>
-        <nav id="wf-main-nav" className={menu ? 'open' : ''} aria-label={t.mainNav}>{t.nav.map((label, i) => <a key={label} href={nav[i]} onClick={() => setMenu(false)}>{label}</a>)}<a href="/templates" onClick={() => setMenu(false)}>{t.templatesNav}</a></nav>
+        <nav id="wf-main-nav" className={menu ? 'open' : ''} aria-label={t.mainNav}><a href="/" onClick={() => setMenu(false)}>{t.marketplaceNav}</a>{t.nav.map((label, i) => <a key={label} href={nav[i]} onClick={() => setMenu(false)}>{label}</a>)}<a href="/templates" onClick={() => setMenu(false)}>{t.templatesNav}</a></nav>
         <div className="wf-h-actions">
+          <MarketplaceReturn lang={lang}/>
           <div className="wf-h-languages" role="group" aria-label="Language / Idioma"><button aria-pressed={lang === 'en'} onClick={() => setLang('en')}>EN</button><button aria-pressed={lang === 'es'} onClick={() => setLang('es')}>ES</button></div>
           <ThemeToggle />
           <a className="wf-h-login" href="/client-admin">{t.login}</a>
@@ -497,7 +499,7 @@ export default function HomePage({ lang, setLang }: { lang: Language, setLang: (
 
     <footer className="wf-footer wf-shell">
       <div><a className="wf-h-logo" href="/"><AdaptiveLogo alt="WebFactory PR" /></a><p>{t.footer}</p><small>© 2026 WebFactory PR</small></div>
-      <nav aria-label={t.legalNav}><a href="mailto:info@webfactorypr.com">info@webfactorypr.com</a>{t.legal.map((s, i) => <a key={s} href={['/privacy', '/terms', '/refund-policy'][i]}>{s}</a>)}<FeedbackPreferences lang={lang} /></nav>
+      <nav aria-label={t.legalNav}><a href="mailto:info@webfactorypr.com">info@webfactorypr.com</a>{t.legal.map((s, i) => <a key={s} href={['/privacy', '/terms', '/refund-policy'][i]}>{s}</a>)}<a href="/copyright">{lang==='es'?'Reclamaciones de copyright':'Copyright complaints'}</a><FeedbackPreferences lang={lang} /></nav>
     </footer>
   </div>
 }

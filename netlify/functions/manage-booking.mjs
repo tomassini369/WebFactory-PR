@@ -30,7 +30,7 @@ export default async req=>{
     const hidden=`<input type="hidden" name="token" value="${e(token)}"><input type="hidden" name="version" value="${bookingVersion(record)}">`;
     if(canManageBooking(site,record,"reschedule")) {
       const date=url.searchParams.get("date") || "", today=new Intl.DateTimeFormat("en-CA",{timeZone:d.timeZone,year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date());
-      content+=`<h2>${es?'Reprogramar cita':'Reschedule appointment'}</h2><p>${es?'Elige otro horario disponible para el mismo servicio, profesional y localidad. Los cambios online requieren al menos una hora de anticipación.':'Choose another available time for the same service, professional and location. Online changes require at least one hour of notice.'}</p><form method="get"><input type="hidden" name="token" value="${e(token)}"><label>${es?'Nueva fecha':'New date'}<input type="date" name="date" value="${/^\d{4}-\d{2}-\d{2}$/.test(date)?date:""}" min="${today}" max="${new Date(Date.now()+365*86400000).toISOString().slice(0,10)}" required></label><button type="submit">${es?'Ver horarios':'View available times'}</button></form>`;
+      content+=`<h2>${es?'Reprogramar cita':'Reschedule appointment'}</h2><p>${es?'Elige otro horario disponible para el mismo servicio, profesional y localidad. Los cambios están sujetos a la política de anticipación del negocio.':'Choose another available time for the same service, professional and location. Changes are subject to the business notice policy.'}</p><form method="get"><input type="hidden" name="token" value="${e(token)}"><label>${es?'Nueva fecha':'New date'}<input type="date" name="date" value="${/^\d{4}-\d{2}-\d{2}$/.test(date)?date:""}" min="${today}" max="${new Date(Date.now()+365*86400000).toISOString().slice(0,10)}" required></label><button type="submit">${es?'Ver horarios':'View available times'}</button></form>`;
       if(date) {
         if(!/^\d{4}-\d{2}-\d{2}$/.test(date) || Date.parse(date)<Date.now()-2*86400000 || Date.parse(date)>Date.now()+366*86400000) throw Object.assign(new Error("Invalid date / Fecha inválida"),{status:400});
         let slots=[], unavailable=false;
@@ -46,3 +46,4 @@ export default async req=>{
     return new Response(page(`<h1>No se pudo completar / Could not complete</h1><p>${escapeHtml(error.status?error.message:"Please try again later. / Inténtalo más tarde.")}</p><p>Regresa al enlace de tu correo y actualiza la página. / Return to your email link and reload the page.</p>`),{status,headers:{...headers,"Content-Type":"text/html; charset=utf-8"}});
   }
 };
+

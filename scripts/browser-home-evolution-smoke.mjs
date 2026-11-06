@@ -14,8 +14,9 @@ try {
         const page = await browser.newPage({ viewport: { width, height: 900 } })
         const errors = []
         page.on('pageerror', error => errors.push(error.message))
-        await page.addInitScript(t => localStorage.setItem('webfactory-theme-v2', t), theme)
-        await page.goto(origin)
+        await page.addInitScript(({theme,lang})=>{localStorage.setItem('webfactory-theme-v2',theme);localStorage.setItem('webfactory-language',lang)},{theme,lang})
+        await page.goto(origin+'/crear')
+        await page.locator('.wf-premium-home').waitFor()
         if (lang === 'es') await page.getByRole('button', { name: 'ES', exact: true }).click()
         await page.waitForFunction(() => getComputedStyle(document.querySelector('.wf-hero-copy .wf-actions')).opacity === '1')
         assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, `${width}: page overflow`)

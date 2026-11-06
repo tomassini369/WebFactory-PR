@@ -38,7 +38,8 @@ The browser never supplies an authoritative subscription price. The server selec
 
 ## Main routes
 
-- `/` — WebFactory homepage.
+- `/` — consumer Marketplace, Phase 1 with honest empty states and presentation filters.
+- `/crear` — complete existing WebFactory business landing, original Hero video, demos, plans and Factory AI.
 - `/templates` — Templates library.
 - `/templates/:templateSlug` — Template preview.
 - `/builder` — WebFactory Builder + Factory AI.
@@ -105,3 +106,5 @@ Availability is based on **Service + Employee + Time** and can include duration,
 ## Current V3 scope
 
 V3 includes the Web/PWA business platform and POS. A dedicated native iOS app and Tap to Pay NFC UI are deferred to a separate future phase.
+
+Marketplace Phase 1 scope, route matrix, original logo hashes and future work: [docs/MARKETPLACE-PHASE-1.md](docs/MARKETPLACE-PHASE-1.md).

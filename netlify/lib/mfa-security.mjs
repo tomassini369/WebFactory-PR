@@ -10,6 +10,8 @@ export const userPrefix=user=>`users/${hash(user.id)}/`;
 export function mfaStore(){return globalThis.Netlify?.context?.deploy?.context==='production' ? getStore('webfactory-auth-security',{consistency:'strong'}) : getDeployStore('webfactory-auth-security',{consistency:'strong'});}
 function env(name){return globalThis.Netlify?.env?.get(name)||'';}
 const normalizeEmail=value=>String(value||'').trim().toLowerCase();
+// Deployment metadata is trusted; request headers and browser flags cannot opt out.
+export function previewMfaBypass(){return globalThis.Netlify?.context?.deploy?.context==='deploy-preview'&&env('WEBFACTORY_PREVIEW_SKIP_MFA')==='true';}
 export function mfaRequiredByPolicy(){return env('WEBFACTORY_REQUIRE_MFA')==='true'||globalThis.Netlify?.context?.deploy?.context==='deploy-preview';}
 export function mfaRequiredForUser(user){
   const roles=new Set([
@@ -41,7 +43,23 @@ export async function securityState(user,context,store=mfaStore(),mandatory=mfaR
   const validSession=session?.userId===user.id&&session.expiresAt>now&&(session.resetEpoch||null)===(profile?.resetEpoch||null);
   const verified=Boolean(validSession&&enrolled&&session.verifiedAt&&session.version===profile.version);
   const policyRequired=Boolean(mandatory||mfaRequiredForUser(user)||profile?.forceMfa);
-  return {required:Boolean(policyRequired||enrolled),policyRequired,enrolled,verified,needsLogin:!validSession,authenticatorEnrolled:Boolean(profile?.totp),authenticatorAvailable:totpAvailable(),credentials:(profile?.credentials||[]).map(({id,label,createdAt})=>({id,label,createdAt})),recoveryCodesRemaining:profile?.codes?.length||0};
+  const previewBypass=previewMfaBypass();
+  return {required:previewBypass?!validSession:Boolean(policyRequired||enrolled),policyRequired:previewBypass?false:policyRequired,enrolled,verified,previewBypass,needsLogin:!validSession,authenticatorEnrolled:Boolean(profile?.totp),authenticatorAvailable:totpAvailable(),credentials:(profile?.credentials||[]).map(({id,label,createdAt})=>({id,label,createdAt})),recoveryCodesRemaining:profile?.codes?.length||0};
+}
+
+// Renew only an already valid POS operator session; never mint a login or MFA proof.
+export async function renewPosSession(user,context=globalThis.Netlify?.context,store=mfaStore(),now=Date.now()){
+ if(!user?.id)throw reject();
+ return withBookingLock(store,`${userPrefix(user)}lock`,async()=>{
+  const state=await securityState(user,context,store,mfaRequiredByPolicy(),now);
+  if(state.needsLogin||state.required&&!state.verified)throw reject();
+  const token=context.cookies.get(PRIMARY_COOKIE),key=sessionKey(user,token);
+  const session=await store.get(key,{type:'json'});
+  if(session.expiresAt-now>6*3600000)return;
+  const expiresAt=now+8*3600000;
+  await indexAuthExpiry(store,key,expiresAt);await store.setJSON(key,{...session,expiresAt});
+  context.cookies.set({name:PRIMARY_COOKIE,value:token,httpOnly:true,secure:true,sameSite:'Lax',path:'/',maxAge:8*3600});
+ });
 }
 
 export async function assertSecondFactor(user,context=globalThis.Netlify?.context,store=mfaStore(),mandatory=mfaRequiredByPolicy()){

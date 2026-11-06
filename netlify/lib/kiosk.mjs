@@ -1,5 +1,6 @@
 import {kioskBookingModes,bookingKioskPin} from './kiosk-bookings.mjs';
 import crypto from 'node:crypto';
+import {kioskAppearance} from './kiosk-skins.mjs';
 import { availableInventory } from './inventory-availability.mjs';
 import { cleanText, validEmail } from './platform-utils.mjs';
 import { commerceKey } from './client-store.mjs';
@@ -61,6 +62,8 @@ export async function kioskSaleView(store, state) {
   const record = await store.get(commerceKey(state.siteId, 'transactions', transactionId), { type: 'json' }) || booking;
   if (!record || record.siteId !== state.siteId || record.transactionId !== transactionId || record.kind !== kind || record.channel !== 'kiosk' || record.locationId !== state.locationId) return { status: 'review', saleId: state.saleId, canReset: false };
   const paid = ['paid', 'paid_in_person'].includes(record.paymentStatus) && ['confirmed', 'completed'].includes(record.status) && Boolean(record.receiptId && (kind==='booking'||record.inventoryAppliedAt)) && !record.inventoryNeedsReview && !record.athFulfillmentNeedsReview;
+  const checkoutCancelled=record.status==='cancelled'&&record.paymentStatus==='cancelled'&&Boolean(record.cancelledByCustomerAt)&&!record.inventoryAppliedAt;
+  const cashClosed=checkoutCancelled||active.checkoutMode==='qr'&&record.status==='cancelled'&&((record.source==='in_person_order'&&record.paymentStatus==='cancelled'&&!record.inventoryAppliedAt)||(kind==='booking'&&record.paymentStatus==='due'));
   const terminal = Boolean(record.inventoryNeedsReview || record.athFulfillmentNeedsReview) || ['paid', 'paid_in_person'].includes(record.paymentStatus) && !paid || ['failed', 'cancelled', 'expired', 'refunded', 'partially_refunded'].includes(record.paymentStatus) || ['failed', 'cancelled', 'expired', 'payment_failed'].includes(record.status);
   const due = (record.source === 'in_person_order'||kind==='booking') && record.paymentStatus === 'due' && record.status === 'confirmed' && !terminal;
   // Delivery retries update the canonical booking before its transaction mirror.
@@ -69,7 +72,7 @@ export async function kioskSaleView(store, state) {
   const confirmationEmailStatus = confirmation.customerEmailSent === true ? 'sent' : confirmation.customerEmailDeliveryStatus === 'action_required' ? 'action_required' : 'pending';
   // Expiration, cancellation and failure require inventory reconciliation before
   // the screen can start another order. Browser redirects are never proof.
-  return { kind, status: terminal ? 'review' : paid ? 'paid' : due ? 'due' : 'pending', saleId: state.saleId, canReset: paid || due, canResume: !terminal && !paid && !due && Boolean(active.response?.checkoutUrl), checkoutUrl: !terminal && !paid && !due ? active.response?.checkoutUrl || '' : '',
+  return { kind, status: cashClosed ? 'cancelled' : terminal ? 'review' : paid ? 'paid' : due ? 'due' : 'pending', saleId: state.saleId, checkoutMode:active.checkoutMode==='qr'?'qr':'screen', canReset: paid || cashClosed || due&&active.checkoutMode!=='qr', canResume: !terminal && !paid && !due && Boolean(active.response?.checkoutUrl), checkoutUrl: !terminal && !paid && !due ? active.response?.checkoutUrl || '' : '',
     transactionId, ...(kind==='booking'&&(paid||due)?{confirmationEmailStatus}:{}), ...(kind==='booking'&&(paid||due)&&bookingKioskPin(record)?{bookingReference:{code:record.bookingCode,pin:bookingKioskPin(record)}}:{}), total: Number(record.amountTotal || 0), subtotal: Number(record.subtotal || 0), tax: Number(record.tax || 0), taxIncluded: Boolean(record.pricesIncludeTax ?? state.active.pricesIncludeTax), queueNumber: record.queueNumber || '',
     receipt: paid ? { id: record.receiptId, createdAt: record.paidAt || record.createdAt } : null,
     items: (record.items || []).map(x => ({ name: String(x.name || ''), quantity: x.quantity, unitAmount: x.unitAmount })) };
@@ -83,9 +86,10 @@ export async function kioskView(store, state, site) {
     bookingModes:modes, bookingProviders:kioskBookingProviders(site),balanceProviders:kioskBookingProviders(site,true),timezone:site.settings?.timezone||'America/Puerto_Rico',
     appointmentServices:modes.newBookings?(site.catalog||[]).filter(x=>x.active!==false&&x.requiresAppointment&&x.type==='service').map(x=>({id:x.id,nameEn:x.nameEn||x.name,nameEs:x.nameEs||x.name,price:x.price})):[],
     professionals:modes.newBookings?(site.employees||[]).filter(x=>x.active!==false&&(!state.locationId||x.locationIds?.includes(state.locationId))).map(x=>({id:x.id,name:x.name,serviceIds:x.serviceIds||[]})):[],
-    presentation: { profile: capabilities.profile }, saleId: state.saleId, providers: kioskProviders(site), taxConfig: { enabled: site.taxConfig?.enabled !== false, stateRate: site.taxConfig?.stateRate ?? 10.5, municipalRate: site.taxConfig?.municipalRate ?? 1, pricesIncludeTax: Boolean(site.taxConfig?.pricesIncludeTax) },
+    presentation: { touchKeyboard:configuration?.touchKeyboard===true, profile: capabilities.profile, appearance:kioskAppearance(configuration?.appearance,site.siteId) }, saleId: state.saleId, providers: kioskProviders(site), taxConfig: { enabled: site.taxConfig?.enabled !== false, stateRate: site.taxConfig?.stateRate ?? 10.5, municipalRate: site.taxConfig?.municipalRate ?? 1, pricesIncludeTax: Boolean(site.taxConfig?.pricesIncludeTax) },
     catalog: (site.catalog || []).filter(x => x.active !== false && !x.requiresAppointment && Number.isFinite(x.price) && x.price >= 0).map(x => ({ id: x.id, type: x.type, nameEn: x.nameEn || x.name || x.nameEs || x.id, nameEs: x.nameEs || x.nameEn || x.name || x.id,
       price: x.price, imageAssetKey: x.imageAssetKey || '', descriptionEn: x.descriptionEn || x.description || '', descriptionEs: x.descriptionEs || x.descriptionEn || x.description || '', taxable: x.taxable !== false, taxRateOverride: x.taxRateOverride ?? null,
       trackInventory: Boolean(x.trackInventory), inventory: x.type === 'product' && x.trackInventory && x.inventory != null ? availableInventory(site, x) : null, allowBackorder: Boolean(x.allowBackorder) })),
-    hasAppointments: (site.catalog || []).some(x => x.active !== false && x.requiresAppointment), sale: await kioskSaleView(store, state) };
+    hasAppointments: site.features?.bookings !== false && (site.catalog || []).some(x => x.active !== false && x.requiresAppointment), sale: await kioskSaleView(store, state) };
 }
+

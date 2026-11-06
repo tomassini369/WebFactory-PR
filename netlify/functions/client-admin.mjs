@@ -1,8 +1,10 @@
+import {claimPublicSiteSlug, validatePublicSiteSlug} from '../lib/client-site-slug.mjs';
 import {commercialCapabilities, employeeSiteView} from "../lib/commercial-access.mjs";
 import { sanitizePolicies } from "../lib/publication-review.mjs";
+import {normalizeBookingPolicy} from '../lib/booking-policy.mjs';
 import { readPosOperations } from '../lib/pos-operations.mjs';
 import { assertSameOrigin, authorizedSites, errorResponse, requireSiteAccess } from "../lib/client-auth.mjs";
-import { patchClientSite, publicClientSite, renameClientSiteSlug } from "../lib/client-store.mjs";
+import { clientAssetStore, clientSiteStore, patchClientSite, publicClientSite, renameClientSiteSlug } from "../lib/client-store.mjs";
 import { cleanText, validEmail } from "../lib/platform-utils.mjs";
 import { normalizeTaxConfig } from "../lib/webfactory-v3-domain.mjs";
 
@@ -48,6 +50,26 @@ function sanitizeBusiness(value = {}, current = {}) {
   };
 }
 
+function catalogNumber(value, fallback = 0) {
+  if (value === undefined || value === null || value === "") return fallback;
+  if (!["number", "string"].includes(typeof value) || (typeof value === "string" && !value.trim())) {
+    throw Object.assign(new Error("Catalog numeric fields must be finite numbers."), { status: 400 });
+  }
+  const number = Number(value);
+  if (!Number.isFinite(number) || Math.abs(number) > Number.MAX_SAFE_INTEGER) {
+    throw Object.assign(new Error("Catalog numeric fields must be finite numbers within the supported range."), { status: 400 });
+  }
+  return number;
+}
+
+function settingsTimezone(value) {
+  if (typeof value !== "string") throw Object.assign(new Error("Choose a valid time zone."), { status: 400 });
+  const timezone = cleanText(value, 120);
+  try { new Intl.DateTimeFormat("en-US", { timeZone: timezone }).format(); }
+  catch { throw Object.assign(new Error("Choose a valid time zone."), { status: 400 }); }
+  return timezone;
+}
+
 function sanitizeCatalog(value) {
   if (!Array.isArray(value)) throw Object.assign(new Error("Catalog must be a list."), { status: 400 });
   if (value.length > 100) throw Object.assign(new Error("The catalog limit is 100 products and services."), { status: 400 });
@@ -56,6 +78,8 @@ function sanitizeCatalog(value) {
     const id = cleanText(item.id || `item-${index + 1}`, 120);
     if (ids.has(id)) throw Object.assign(new Error("Catalog item IDs must be unique."), { status: 400 });
     ids.add(id);
+    const price = Math.round(Math.max(0, catalogNumber(item.price)) * 100);
+    if (!Number.isSafeInteger(price)) throw Object.assign(new Error("Catalog price exceeds the supported range."), { status: 400 });
     return {
       id,
       type: item.type === "service" ? "service" : "product",
@@ -65,20 +89,20 @@ function sanitizeCatalog(value) {
       description: cleanText(item.descriptionEn || item.description || item.descriptionEs, 6000),
       descriptionEn: cleanText(item.descriptionEn || item.description, 6000),
       descriptionEs: cleanText(item.descriptionEs, 6000),
-      price: Math.round(Math.max(0, Number(item.price || 0)) * 100) / 100,
+      price: price / 100,
       active: item.active !== false,
       inventory: item.type === "product" && item.inventory !== null && item.inventory !== ""
-        ? Math.max(0, Math.floor(Number(item.inventory || 0)))
+        ? Math.max(0, Math.floor(catalogNumber(item.inventory)))
         : null,
       requiresAppointment: item.type === "service" && Boolean(item.requiresAppointment),
-      duration: item.type === "service" ? Math.max(5, Math.min(1440, Number(item.duration || 30))) : 0,
-      bufferMinutes: item.type === "service" ? Math.max(0, Math.min(240, Number(item.bufferMinutes || 0))) : 0,
+      duration: item.type === "service" ? Math.max(5, Math.min(1440, catalogNumber(item.duration, 30))) : 0,
+      bufferMinutes: item.type === "service" ? Math.max(0, Math.min(240, catalogNumber(item.bufferMinutes))) : 0,
       imageAssetKey: cleanText(item.imageAssetKey, 700),
       taxable: item.taxable !== false,
-      taxRateOverride: item.taxRateOverride === null || item.taxRateOverride === "" || item.taxRateOverride === undefined ? null : Math.max(0, Math.min(100, Number(item.taxRateOverride))),
+      taxRateOverride: item.taxRateOverride === null || item.taxRateOverride === "" || item.taxRateOverride === undefined ? null : Math.max(0, Math.min(100, catalogNumber(item.taxRateOverride))),
       sku: cleanText(item.sku, 120),
       trackInventory: item.type === "product" && Boolean(item.trackInventory),
-      lowStockThreshold: item.type === "product" ? Math.max(0, Math.floor(Number(item.lowStockThreshold || 0))) : 0,
+      lowStockThreshold: item.type === "product" ? Math.max(0, Math.floor(catalogNumber(item.lowStockThreshold))) : 0,
       allowBackorder: item.type === "product" && Boolean(item.allowBackorder),
     };
   });
@@ -208,16 +232,77 @@ export function normalizeClientSection(site, section, incoming, user, membership
 
     if (section === "settings") value = {
       ...site.settings,
+      bookingPolicy: normalizeBookingPolicy(payload.value?.bookingPolicy || {}, site.settings?.bookingPolicy),
+      waitlistEnabled: typeof payload.value?.waitlistEnabled==='boolean'?payload.value.waitlistEnabled:site.settings?.waitlistEnabled===true,
+      bookingApproval: payload.value?.bookingApproval ?? site.settings?.bookingApproval ?? 'automatic',
       locale: payload.value?.locale === "es" ? "es" : "en",
-      timezone: cleanText(payload.value?.timezone || site.settings?.timezone || "America/Puerto_Rico", 120),
+      timezone: settingsTimezone(payload.value?.timezone ?? site.settings?.timezone ?? "America/Puerto_Rico"),
       currency: "usd",
       allowCustomerCancellation: typeof payload.value?.allowCustomerCancellation === "boolean" ? payload.value.allowCustomerCancellation : (site.settings?.allowCustomerCancellation ?? true),
       allowCustomerRescheduling: typeof payload.value?.allowCustomerRescheduling === "boolean" ? payload.value.allowCustomerRescheduling : (site.settings?.allowCustomerRescheduling ?? true),
       sendGoogleCalendarInvites: typeof payload.value?.sendGoogleCalendarInvites === "boolean" ? payload.value.sendGoogleCalendarInvites : (site.settings?.sendGoogleCalendarInvites === true),
     };
     if (section === "business" && value.email && !validEmail(value.email)) throw Object.assign(new Error("Business email is invalid."), { status: 400 });
+    if(section==='settings' && (!['automatic','manual'].includes(value.bookingApproval)||value.bookingApproval==='manual'&&site.paymentRules?.bookingPayment!=='in_person'))throw Object.assign(new Error('Manual approval requires in-person booking payment.'),{status:400});
+    if(section==='paymentRules'&&site.settings?.bookingApproval==='manual'&&value.bookingPayment!=='in_person')throw Object.assign(new Error('Disable manual approval before changing booking payment mode.'),{status:400});
 
     return value;
+}
+
+/** Existing-site Builder writes are validated together and committed with one revision. */
+export async function normalizeBuilderUpdate(site, input, user, membership, assetMetadata = key => clientAssetStore().getMetadata(key)) {
+  const fail = (message,status=400) => {throw Object.assign(new Error(message),{status});};
+  if (!input || typeof input !== 'object' || Array.isArray(input)) fail('Invalid Builder changes.');
+  const fields=['business','design','features','catalog','team','hours','payments'];
+  if (Object.keys(input).some(key=>!fields.includes(key)) || fields.some(key=>input[key]===undefined)) fail('Invalid Builder sections.');
+  for(const key of ['business','design','features','hours','payments'])if(!input[key]||typeof input[key]!=='object'||Array.isArray(input[key]))fail('Invalid Builder section.');
+  if(!Array.isArray(input.catalog)||!Array.isArray(input.team))fail('Catalog and team must be lists.');
+  if([...input.catalog,...input.team].some(item=>!item||typeof item!=='object'||Array.isArray(item)))fail('Invalid Builder records.');
+  const patch={};
+  patch.business=normalizeClientSection(site,'business',input.business,user,membership);
+  // Branches, portal identities and administrative settings are not Builder fields.
+  patch.business.locations=site.business?.locations||[];
+  patch.business.heroAssetKey=cleanText(input.business.heroAssetKey,700);
+  if(!Array.isArray(input.business.galleryAssets)||input.business.galleryAssets.length>100)fail('The gallery limit is 100 images.');
+  patch.business.galleryAssetKeys=input.business.galleryAssets.map(asset=>{if(!asset||typeof asset.assetKey!=='string'||!asset.assetKey)fail('Invalid gallery image.');return cleanText(asset.assetKey,700);});
+  patch.design=normalizeClientSection(site,'design',input.design,user,membership);
+  if(!['split','centered','editorial','showcase'].includes(input.design.customLayout))fail('Invalid custom layout.');
+  const sections=['catalog','team','about','gallery','contact'];
+  if(!Array.isArray(input.design.sectionOrder)||input.design.sectionOrder.length>5||new Set(input.design.sectionOrder).size!==input.design.sectionOrder.length||input.design.sectionOrder.some(key=>!sections.includes(key)))fail('Invalid section order.');
+  Object.assign(patch.design,{customLayout:input.design.customLayout,sectionOrder:input.design.sectionOrder});
+  patch.features=normalizeClientSection(site,'features',input.features,user,membership);
+  if(!Array.isArray(input.catalog)||!Array.isArray(input.team))fail('Catalog and team must be lists.');
+  // Keep existing stock, tax metadata and historical rows. Removal means deactivation.
+  const catalogFields=['id','type','name','nameEn','nameEs','description','descriptionEn','descriptionEs','price','requiresAppointment','duration','imageAssetKey'];
+  const catalog=input.catalog.map(item=>{
+    if(typeof item.price!=='number'||!Number.isFinite(item.price)||item.price<0)fail('Every catalog price must be a valid nonnegative number.');
+    const previous=(site.catalog||[]).find(row=>row.id===item.id);
+    return {...previous,...Object.fromEntries(catalogFields.filter(key=>item[key]!==undefined).map(key=>[key,item[key]])),active:true};
+  });
+  const catalogIds=new Set(catalog.map(item=>item.id));
+  const archived=(site.catalog||[]).filter(item=>!catalogIds.has(item.id)).map(item=>({...item,active:false}));
+  if(catalog.length+archived.length>100)fail('The catalog limit is 100 products and services, including inactive records.');
+  patch.catalog=[...normalizeClientSection(site,'catalog',catalog,user,membership).map(item=>({...((site.catalog||[]).find(row=>row.id===item.id)||{}),...item})),...archived];
+  const employeeFields=['id','name','role','roleEn','roleEs','serviceIds'];
+  const team=input.team.map(member=>({...((site.employees||[]).find(row=>row.id===member.id)||{}),...Object.fromEntries(employeeFields.filter(key=>member[key]!==undefined).map(key=>[key,member[key]])),active:true}));
+  const teamIds=new Set(team.map(member=>member.id));
+  team.push(...(site.employees||[]).filter(member=>!teamIds.has(member.id)).map(member=>({...member,active:false})));
+  patch.employees=normalizeClientSection({...site,catalog:patch.catalog},'employees',team,user,membership);
+  patch.hours=normalizeClientSection(site,'hours',input.hours,user,membership);
+  patch.paymentRules=normalizeClientSection(site,'paymentRules',input.payments,user,membership);
+  Object.assign(patch.features,{stripe:patch.paymentRules.methods.stripe,ath:patch.paymentRules.methods.ath,inPersonPayments:patch.paymentRules.methods.inPerson});
+  const keys=value=>[value.business?.logoAssetKey,value.business?.heroAssetKey,...(value.business?.galleryAssetKeys||[]),...(value.catalog||[]).map(item=>item.imageAssetKey)].filter(Boolean);
+  const oldKeys=new Set(keys(site));
+  for(const key of new Set(keys(patch))){
+    // Existing legacy Builder assets can be retained, never attached from another draft.
+    if(oldKeys.has(key))continue;
+    if(!key.startsWith(`sites/${site.siteId}/`)||key.split('/').some(part=>part==='..'||part==='.')||/[\\%?#]/.test(key))fail('This image does not belong to this business.',403);
+    const metadata=await assetMetadata(key);
+    if(!metadata||!['image/jpeg','image/png','image/webp','image/gif'].includes(metadata.metadata?.contentType))fail('Upload this image again before publishing.');
+  }
+  const slug=String(input.business.slug||'');
+  if(slug!==site.slug){const validated=validatePublicSiteSlug(slug);patch.slug=validated;}
+  return patch;
 }
 
 export default async (req) => {
@@ -239,8 +324,15 @@ export default async (req) => {
     assertSameOrigin(req);
     const payload = await req.json();
     const section = cleanText(payload.section, 40);
-    if (!allowedSections.has(section)) throw Object.assign(new Error("Invalid settings section."), { status: 400 });
+    if (section!=="builder" && !allowedSections.has(section)) throw Object.assign(new Error("Invalid settings section."), { status: 400 });
     const { user, site, membership } = await requireSiteAccess(payload.siteId, ["owner"]);
+    if(section==='builder') {
+      if(!Number.isSafeInteger(payload.revision)||payload.revision!==site.revision)throw Object.assign(new Error('This website changed. Reload before publishing your changes.'),{status:409});
+      const patch=await normalizeBuilderUpdate(site,payload.value,user,membership);
+      if(patch.slug)await claimPublicSiteSlug(clientSiteStore(),site.siteId,patch.slug);
+      const updated=await patchClientSite(site.siteId,patch,{expectedRevision:payload.revision});
+      return Response.json({ok:true,site:updated,publicSite:publicClientSite(updated)},{headers:{'Cache-Control':'no-store'}});
+    }
     if (section === "slug") {
       const updated = await renameClientSiteSlug(site.siteId, payload.value, payload.revision);
       return Response.json({ ok: true, site: updated, publicSite: publicClientSite(updated) }, { headers: { "Cache-Control": "no-store" } });
@@ -255,3 +347,4 @@ export default async (req) => {
     return errorResponse(error);
   }
 };
+

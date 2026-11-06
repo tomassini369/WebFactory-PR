@@ -1,0 +1,70 @@
+{
+  "origin": "https://deploy-preview-125--webfactorypr.netlify.app",
+  "readOnly": true,
+  "checkedAt": "2026-10-25T17:08:11.253Z",
+  "rows": [
+    {
+      "path": "webfactory-admin-overview",
+      "method": "GET",
+      "status": 401,
+      "expected": 401,
+      "ok": true
+    },
+    {
+      "path": "export-client-site-backup?siteId=nonexistent-security-test",
+      "method": "GET",
+      "status": 401,
+      "expected": 401,
+      "ok": true
+    },
+    {
+      "path": "admin-security-audit",
+      "method": "GET",
+      "status": 401,
+      "expected": 401,
+      "ok": true
+    },
+    {
+      "path": "admin-reset-authenticator",
+      "method": "GET",
+      "status": 405,
+      "expected": 405,
+      "ok": true
+    },
+    {
+      "path": "client-admin?siteId=nonexistent-security-test",
+      "method": "GET",
+      "status": 401,
+      "expected": 401,
+      "ok": true
+    },
+    {
+      "path": "client-stripe-status?siteId=nonexistent-security-test",
+      "method": "GET",
+      "status": 401,
+      "expected": 401,
+      "ok": true
+    },
+    {
+      "path": "portal-mfa",
+      "method": "POST",
+      "status": 401,
+      "expected": 401,
+      "ok": true
+    },
+    {
+      "path": "admin-reset-authenticator",
+      "method": "POST",
+      "status": 403,
+      "expected": 403,
+      "ok": true
+    },
+    {
+      "path": "admin-reset-authenticator",
+      "method": "POST",
+      "status": 401,
+      "expected": 401,
+      "ok": true
+    }
+  ]
+}

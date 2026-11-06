@@ -13,6 +13,7 @@ import './portal-glass.css'
 import './glassy-original-effects.css'
 import './phase3-premium.css'
 import './workspace-experience.css'
+import './login-interactions.css'
 
 const adminPwaRoutes: Record<string, string> = {
   '/webfactory-admin': '/manifest-webfactory-admin.webmanifest',

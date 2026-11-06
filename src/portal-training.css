@@ -86,3 +86,9 @@ html body #root .wf-training-session .ca-dashboard.wf-practice-portal{height:100
 
 .wf-training-help{background:#fff;color:#285fa6;border-color:#7c8da4}
 html[data-wf-theme=dark] .wf-training-help{background:#0e1829;color:#eef4ff;border-color:#73869e}
+
+/* Keep the training controls outside the instruction scroller: a tall sticky
+   toolbar must not cover the acknowledgement button on an iPhone. */
+.wf-training-session>.wf-training-coach{display:flex;flex-direction:column;overflow:hidden}
+.wf-training-session .wf-training-session-bar{position:relative;top:auto;flex:0 0 auto}
+.wf-training-session .wf-training-coach-content{flex:1 1 auto;min-height:0;overflow:auto;box-sizing:border-box}

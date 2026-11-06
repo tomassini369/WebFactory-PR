@@ -144,12 +144,12 @@ export function GlassCard({
 
         {/* Media Layer: Image with top-to-bottom cinematic fade */}
         <div className={`card-media-layer ${isActive ? 'is-active-media' : 'is-side-media'}`}>
-          <img
+          {movie.image && <img
             src={movie.image}
             alt="" draggable={false}
             className="card-media-img"
             loading="eager"
-          />
+          />}
           <div className="card-media-scrim" />
         </div>
 

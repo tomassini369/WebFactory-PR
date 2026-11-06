@@ -16,8 +16,9 @@ type Proposal={
 
 const categories=[...new Set([...templateConfigs.map((template)=>template.category),'Other'])]
 const createId=(prefix:string)=>`${prefix}-${Date.now()}-${Math.random().toString(36).slice(2,7)}`
+const uniqueMatch=(items:any[],predicate:(item:any)=>boolean)=>{const matches=items.filter(predicate);return matches.length===1?matches[0]:undefined}
 
-export default function BuilderAiAssistant({state,setState,lang}:{state:any;setState:Dispatch<SetStateAction<any>>;lang:Language}){
+export default function BuilderAiAssistant({state,setState,lang,preserveExisting=false}:{state:any;setState:Dispatch<SetStateAction<any>>;lang:Language;preserveExisting?:boolean}){
   const fetch=useWorkspaceFetch()
   const [open,setOpen]=useState(false)
   const [prompt,setPrompt]=useState('')
@@ -64,13 +65,13 @@ export default function BuilderAiAssistant({state,setState,lang}:{state:any;setS
   const apply=()=>{
     if(!proposal)return
     const generatedCatalog=proposal.catalog.map((item)=>({
-      id:createId(item.type),type:item.type,name:item.nameEn||item.nameEs,nameEn:item.nameEn,nameEs:item.nameEs,
+      id:(preserveExisting?uniqueMatch(state.catalog,(existing:any)=>existing.type===item.type&&String(existing.nameEn||existing.name||'').toLowerCase()===(item.nameEn||item.nameEs).toLowerCase())?.id:undefined)||createId(item.type),type:item.type,name:item.nameEn||item.nameEs,nameEn:item.nameEn,nameEs:item.nameEs,
       price:item.price,description:item.descriptionEn||item.descriptionEs,descriptionEn:item.descriptionEn,
       descriptionEs:item.descriptionEs,requiresAppointment:item.type==='service'&&item.requiresAppointment,
       duration:item.type==='service'?item.duration:0,
     }))
     const generatedTeam=proposal.team.map((member)=>({
-      id:createId('employee'),name:member.name,role:member.roleEn||member.roleEs,roleEn:member.roleEn,roleEs:member.roleEs,
+      id:(preserveExisting?uniqueMatch(state.team,(existing:any)=>String(existing.name||'').toLowerCase()===member.name.toLowerCase())?.id:undefined)||createId('employee'),name:member.name,role:member.roleEn||member.roleEs,roleEn:member.roleEn,roleEs:member.roleEs,
       serviceIds:member.serviceIndexes.map((index)=>generatedCatalog[index]?.id).filter(Boolean),
     }))
     const template=templateConfigs.find((entry)=>entry.slug===proposal.design.templateSlug)
@@ -96,8 +97,8 @@ export default function BuilderAiAssistant({state,setState,lang}:{state:any;setS
         sectionOrder:proposal.design.sectionOrder.length?proposal.design.sectionOrder:current.design.sectionOrder,
       },
       features:{...current.features,...proposal.features},
-      catalog:generatedCatalog.length?generatedCatalog:current.catalog,
-      team:generatedTeam.length?generatedTeam:current.team,
+      catalog:generatedCatalog.length?(preserveExisting?[...current.catalog.map((item:any)=>({...item,...generatedCatalog.find(row=>row.id===item.id)})),...generatedCatalog.filter(row=>!current.catalog.some((item:any)=>item.id===row.id))]:generatedCatalog):current.catalog,
+      team:generatedTeam.length?(preserveExisting?[...current.team.map((member:any)=>{const proposed=generatedTeam.find(row=>row.id===member.id);return proposed?{...member,...proposed,serviceIds:[...new Set([...(member.serviceIds||[]),...proposed.serviceIds])]}:member}),...generatedTeam.filter(row=>!current.team.some((member:any)=>member.id===row.id))]:generatedTeam):current.team,
     }))
     setProposal(null);setOpen(false)
   }

@@ -20,7 +20,7 @@ export function renderTenantHtml(shell,site,{indexable=true}={}){
  return html.replace(/<html\b[^>]*>/i,`<html lang="${m.lang}">`).replace(/<\/head>/i,`${tags}\n</head>`);
 }
 export async function buildTenantSitemap(store,{clock=Date.now,budgetMs=15000,maxSites=5000}={}){
- const started=clock(),urls=[CANONICAL_ORIGIN+'/',CANONICAL_ORIGIN+'/templates',CANONICAL_ORIGIN+'/privacy',CANONICAL_ORIGIN+'/terms',CANONICAL_ORIGIN+'/refund-policy'];let count=0;
+ const started=clock(),urls=[CANONICAL_ORIGIN+'/',CANONICAL_ORIGIN+'/crear',CANONICAL_ORIGIN+'/templates',CANONICAL_ORIGIN+'/privacy',CANONICAL_ORIGIN+'/terms',CANONICAL_ORIGIN+'/refund-policy'];let count=0;
  for await(const page of store.list({prefix:'sites/',paginate:true})){
   for(const {key} of page.blobs||[]){
    if(++count>maxSites||clock()-started>budgetMs)throw Object.assign(Error('Sitemap capacity exceeded'),{status:503});
