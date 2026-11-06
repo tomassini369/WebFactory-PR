@@ -92,7 +92,11 @@ with sync_playwright() as p:
     assert not page.evaluate('window.__rejections'), 'Unhandled promise rejection'
     assert not row['errors'] and not row['failed_requests'] and not row['http_errors'] and not row['api_requests'],row
     if (width==390 and lang=='es' and theme=='dark') or (width==1440 and lang=='en' and theme=='light'):
-     page.screenshot(path=str(out/f'{engine}-{width}-{lang}-{theme}.png'),full_page=True)
+     page.evaluate('()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)))')
+     page.screenshot(path=str(out/f'{engine}-{width}-{lang}-{theme}.png'),full_page=engine=='chromium')
+     if engine=='webkit':
+      page.locator('.lg-tab-bar').screenshot(path=str(out/f'{engine}-{width}-{lang}-{theme}-tabs.png'))
+      page.locator('.lg-slider').first.screenshot(path=str(out/f'{engine}-{width}-{lang}-{theme}-slider.png'))
     row['passed']=True
    except Exception as error:
     row['passed']=False;row['failure']=str(error)

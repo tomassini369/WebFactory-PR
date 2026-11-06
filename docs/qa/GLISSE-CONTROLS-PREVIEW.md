@@ -61,6 +61,7 @@ unchanged on other routes. Device zoom, scroll and logo rendering are preserved.
 - `npm run build`: passed, including TypeScript and the static preview entry.
 - `scripts/browser-glisse-preview.py`: 56 development cases passed, Chromium
   and WebKit; 320/375/390/430/768/1024/1440 px, ES/EN, Light/Dark, reduced motion.
+- The final compiled preview also passed all 56 cases across the same matrix.
 - Two additional built-preview cases passed with normal motion and slider drag
   (Chromium/WebKit, 390 px, ES, Dark).
 - Existing `browser-portal-menu-destinations-smoke.mjs`: eight cases passed,
@@ -77,6 +78,10 @@ JavaScript errors, HTTP errors, failed requests or horizontal page overflow.
 It tests form validation, keyboard, controlled state, theme persistence,
 search/clear/empty results, menu Escape and reset, slider bounds and selection.
 Screenshots and JSON results are written outside the repository under `/tmp`.
+WebKit full-page captures showed miscomposited off-screen lens layers after
+reset. Individual control screenshots and DOM geometry were correct; the test
+therefore saves viewport and individual-control WebKit screenshots rather than
+treating that full-page capture artifact as an application failure.
 Tests use desktop and touch-enabled mobile emulation, not physical devices.
 No claim is made that every upstream option or every OS/device has been tested.
 
