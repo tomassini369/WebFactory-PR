@@ -41,7 +41,8 @@ The adapter bridges the local theme to Glisse while retaining data-wf-theme and
 the current theme/profile providers. CSS is scoped to the personalization surface;
 specific overrides prevent existing important button rules from deforming the
 library's tabs and filled buttons. The original PNGs/AdaptiveLogo are intact.
-Focus, 44px targets, 16px input text, reduced motion, reduced-transparency and
+Glass text explicitly uses the primary theme ink rather than inherited muted
+copy, including over very dark/light photographs. Focus, 44px targets, 16px input text, reduced motion, reduced-transparency and
 forced-colors behavior are retained. Native controls remain available if the
 optional preview chunk fails to load, with a visible warning in the hub.
 
@@ -89,7 +90,10 @@ miscomposited; viewport/individual component captures are used for evidence.
 
 Mobile testing uses emulation, not physical iPhone/Android devices. Tests do not
 send real emails or create sales, payments, appointments or production settings.
-Remote preview verification and current GitHub CI status are recorded in PR #125.
+The published f4501a4 preview also passed all 58 integration cases and the
+two-browser gallery smoke. The text-contrast follow-up passed six additional
+compiled Light/Dark checks. Final remote follow-up and current GitHub CI status
+are recorded in PR #125.
 A successful local suite does not claim that the complete CI or every upstream
 library option has passed.
 

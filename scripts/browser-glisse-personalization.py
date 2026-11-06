@@ -9,6 +9,7 @@ parser.add_argument('--base',default='http://127.0.0.1:5173')
 parser.add_argument('--output',default='/tmp/wf-glisse-personalization')
 parser.add_argument('--quick',action='store_true')
 parser.add_argument('--engine',choices=['chromium','webkit','both'],default='both')
+parser.add_argument('--themes',nargs='+',choices=['light','dark'],default=None)
 args=parser.parse_args();out=Path(args.output);out.mkdir(parents=True,exist_ok=True)
 SITE={'siteId':'glisse-fixture','slug':'glisse-fixture','status':'published','revision':1,'business':{'name':'Isolated Glisse fixture','category':'Retail','phone':'','locations':[]},'design':{'primary':'#0B1529','secondary':'#3C86F6','style':'Modern'},'catalog':[],'employees':[],'hours':{},'members':[],'settings':{'locale':'en','timezone':'America/Puerto_Rico','currency':'USD'},'paymentRules':{},'googleCalendar':{},'features':{},'servicePlan':{'code':'complimentary','billingModel':'complimentary','subscriptionStatus':'complimentary'}}
 CAPS=['overview','website','share','orders','bookings','customers','catalog','employees','payments','pos','collect','marketing','analytics','integrations','settings','billing','refunds','kitchen']
@@ -26,7 +27,7 @@ with sync_playwright() as p:
   if engine=='chromium':options['args']=['--no-sandbox']
   if args.base.startswith('https://'):options['proxy']={'server':os.environ['HTTPS_PROXY']}
   browser=getattr(p,engine).launch(**options)
-  cases=[('owner',w,lang,theme) for w,lang,theme in itertools.product([390] if args.quick else [320,375,390,430,768,1024,1440],['es'] if args.quick else ['es','en'],['dark'] if args.quick else ['light','dark'])]+[('employee',390,'es','dark')]
+  cases=[('owner',w,lang,theme) for w,lang,theme in itertools.product([390] if args.quick else [320,375,390,430,768,1024,1440],['es'] if args.quick else ['es','en'],args.themes or (['dark'] if args.quick else ['light','dark']))]+[('employee',390,'es','dark')]
   for role,width,lang,theme in cases:
    row={'engine':engine,'role':role,'width':width,'lang':lang,'theme':theme,'errors':[],'unexpected_requests':[],'failed_requests':[],'http_errors':[],'writes':[]}
    prefs=copy.deepcopy(PREFS);profile={'name':'Fixture','phone':'','language':None,'theme':None};presets=[];version=1;fail_next=True

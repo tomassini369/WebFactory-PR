@@ -11,3 +11,5 @@ html[data-wf-theme=dark] .wf-glisse-scope{--lg-foreground:#eef4ff;--lg-muted:#b7
 /* The portal has important generic button rules; preserve Glisse's own geometry here. */
 .gd-root .wf-glisse-scope :is(.lg-segmented,.lg-tab-bar) .lg-tab{border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;padding:4px!important;color:var(--lg-foreground)!important;min-height:44px!important;min-width:0!important}
 .gd-root .wf-glisse-scope .lg-button[data-variant=filled]{background:#285fa6!important;color:#fff!important;border-color:transparent!important}
+/* Use the readable primary ink over photographs instead of inherited muted copy. */
+.wf-glisse-scope .wf-glisse-live-card :is(strong,p){color:var(--lg-foreground)!important}
