@@ -60,7 +60,7 @@ export function DashboardProvider({siteId,userId,children,lang='en',name=''}:{si
  useEffect(()=>{void reload();return()=>{generation.current++}},[endpoint,userId,Boolean(practice)])
  const mutate=async(method:string,body?:BodyInit,type='application/json',preserveDraft=false)=>{
   if(practice){setNotice('practice');return}if(!ready||busy)return;setBusy(true);setError('');setNotice('');
-  try{const {data,etag:tag}=await readResponse(await fetch(endpoint,{method,credentials:'same-origin',headers:{'Content-Type':type,'X-Appearance-Version':etag},body}));accept(data,tag,preserveDraft);setNotice('saved')}
+  try{const {data,etag:tag}=await readResponse(await fetch(endpoint,{method,credentials:'same-origin',headers:{'Content-Type':type,'X-Appearance-Version':etag},body}));accept(data,tag,preserveDraft);setNotice(preserveDraft?'designSaved':'saved')}
   catch(e){setError(e instanceof Error&&e.message==='409'?'conflict':'save')}
   finally{setBusy(false)}
  }
@@ -76,7 +76,7 @@ export default function DashboardAppearance({lang}:{lang:'es'|'en'}){
  const pickFile=async(f?:File)=>{if(!f)return;setLocalError('');if(!['image/jpeg','image/png','image/webp'].includes(f.type)||f.size>4*1024*1024){setLocalError(es?'Usa JPEG, PNG o WebP de hasta 4 MB.':'Use JPEG, PNG or WebP up to 4 MB.');return}await a.upload(f);if(file.current)file.current.value=''};
  return <section className="gd-appearance" aria-labelledby="gd-appearance-title"><header><small>WEBFACTORY PR</small><h2 id="gd-appearance-title">{es?'Portal y POS/Cajero':'Portal and POS/Cashier'}</h2><p>{es?'Tu apariencia se guarda para tu usuario en este portal y se recupera en tus dispositivos.':'Your appearance is saved for your user in this portal and restored across your devices.'}</p></header>
  {(localError||a.error)&&<div className="gd-feedback" role="alert">{localError||(a.error==='conflict'?(es?'La configuración cambió en otro dispositivo. Recárgala antes de guardar.':'Settings changed on another device. Reload before saving.'):es?'No se pudo cargar o guardar la apariencia. Inténtalo nuevamente.':'Could not load or save appearance. Please try again.')}<button type="button" disabled={a.busy} onClick={()=>void a.reload()}>{es?'Recargar configuración':'Reload settings'}</button></div>}
- {a.notice&&<p role="status">{a.notice==='practice'?(es?'La personalización no se guarda durante la práctica.':'Appearance is not saved during practice.'):(es?'Apariencia guardada.':'Appearance saved.')}</p>}
+ {a.notice&&<p role="status">{a.notice==='practice'?(es?'La personalización no se guarda durante la práctica.':'Appearance is not saved during practice.'):a.notice==='designSaved'?(es?'Diseños guardados. La apariencia activa no cambió.':'Designs saved. The active appearance has not changed.'):(es?'Apariencia guardada.':'Appearance saved.')}</p>}
  {!a.ready&&!a.error&&<p role="status">{es?'Cargando tu apariencia…':'Loading your appearance…'}</p>}
  <fieldset disabled={!a.ready||a.busy} className="wf-personalization-controls">
  <DesignPicker lang={lang} designs={commonDesigns.map(d=>({id:d.id,es:d.es,en:d.en,patch:d.id==='original'?{...DEFAULT_APPEARANCE}:d.patch}))} value={a.prefs} onSelect={patch=>set(patch)} presets={a.presets} onSave={name=>void a.saveDesign(name)} onDelete={id=>void a.deleteDesign(id)}/>
