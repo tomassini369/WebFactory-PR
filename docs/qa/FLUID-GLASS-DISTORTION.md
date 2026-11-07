@@ -1,5 +1,7 @@
 # Fluid glass distortion — PR #125
 
+Historical report for commit `904b0fb`. The subsequent unified editor and additional controls are documented in [UNIFIED-PERSONALIZATION.md](UNIFIED-PERSONALIZATION.md).
+
 ## Scope and use
 
 Existing Personalization → Portal/POS and Kiosk → Appearance now offer **Glass distortion / Distorsión del cristal**. Choose Fluid glass, adjust the native keyboard-accessible range, and use the existing Apply/Save action. The control is disabled under Classic. Range: integer 0–50%; default 10% preserves the original rendering. Zero removes lens bending; blur/tint remain independent. Personal preferences and business kiosk appearance remain separate and retain their existing authorization/storage.

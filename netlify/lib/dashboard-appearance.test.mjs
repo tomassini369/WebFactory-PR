@@ -16,10 +16,10 @@ test('preferences are private, scoped by authenticated user and business',async(
 test('writes require same origin and current ETag; stale device cannot overwrite',async()=>{const f=fixture();assert.equal((await f.handler(f.req('PUT',{},undefined,undefined,'https://attacker.invalid'))).status,403);const r=await f.handler(f.req('PUT',{background:'waves'}));assert.equal(r.status,200);assert.equal((await f.handler(f.req('PUT',{background:'room'}))).status,409);assert.equal(f.writes,1)});
 test('revoked membership denies preferences AND private image',async()=>{const f=fixture();f.deny();for(const query of ['?siteId=site-a','?siteId=site-a&asset=1'])assert.equal((await f.handler(f.req('GET',undefined,undefined,query))).status,403);assert.equal(f.writes,0)});
 test('platform personalization requires existing platform authorization',async()=>{const f=fixture();assert.equal((await f.handler(f.req('GET',undefined,undefined,''))).status,403);f.makeAdmin();assert.equal((await f.handler(f.req('GET',undefined,undefined,''))).status,200)});
-test('remote URLs, unsafe accent and extreme transparency never enter CSS prefs',()=>{assert.deepEqual(normalizeAppearance({background:'https://tracker.invalid/x',alpha:0,dim:-1,blur:900,motion:NaN,accent:'url(secret)'}),{backgroundNatural:false,glassStyle:'classic',glassDistortion:10,paletteId:'',background:'room',alpha:.2,dim:.25,blur:40,motion:1,accent:'#6aa8ff',cardDepth:'soft',buttonDepth:'soft'})});
+test('remote URLs, unsafe accent and extreme transparency never enter CSS prefs',()=>{assert.deepEqual(normalizeAppearance({background:'https://tracker.invalid/x',alpha:0,dim:-1,blur:900,motion:NaN,accent:'url(secret)'}),{glassOptics:{},backgroundNatural:false,glassStyle:'classic',glassDistortion:10,paletteId:'',background:'room',alpha:.2,dim:.25,blur:40,motion:1,accent:'#6aa8ff',cardDepth:'soft',buttonDepth:'soft'})});
 test('custom image is reencoded, private, stripped from settings JSON, replaceable and deletable',async()=>{const f=fixture();const bytes=await sharp({create:{width:4,height:4,channels:3,background:'#89abcd'}}).png().toBuffer();let r=await f.handler(f.req('POST',bytes));assert.equal(r.status,200);let data=await r.json();assert.equal(data.prefs.background,'custom');assert.equal(data.hasCustom,true);assert.equal(data.image,undefined);let tag=r.headers.get('etag');r=await f.handler(f.req('GET',undefined,undefined,'?siteId=site-a&asset=1'));assert.equal(r.headers.get('content-type'),'image/webp');assert.equal((await sharp(Buffer.from(await r.arrayBuffer())).metadata()).format,'webp');r=await f.handler(f.req('PUT',{background:'landscape'},tag));assert.equal(r.status,200);tag=r.headers.get('etag');r=await f.handler(f.req('DELETE',undefined,tag));assert.equal((await r.json()).hasCustom,false);assert.equal((await f.handler(f.req('GET',undefined,undefined,'?siteId=site-a&asset=1'))).status,404)});
 test('corrupt raster and active SVG cannot be uploaded',async()=>{const f=fixture();assert.equal((await f.handler(f.req('POST',Buffer.from('<svg onload="alert(1)"/>')))).status,400);assert.equal(f.writes,0)});
-test('upload size and JSON settings are bounded',async()=>{const f=fixture();assert.equal((await f.handler(f.req('POST',Buffer.alloc(4*1024*1024+1)))).status,413);assert.equal((await f.handler(f.req('PUT',{x:'x'.repeat(4000)}))).status,413);assert.equal((await f.handler(f.req('PUT',[]))).status,400);assert.equal((await f.handler(f.req('PUT',{background:'custom'}))).status,400);assert.equal(f.writes,0)});
+test('upload size and JSON settings are bounded',async()=>{const f=fixture();assert.equal((await f.handler(f.req('POST',Buffer.alloc(4*1024*1024+1)))).status,413);assert.equal((await f.handler(f.req('PUT',{x:'x'.repeat(16001)}))).status,413);assert.equal((await f.handler(f.req('PUT',[]))).status,400);assert.equal((await f.handler(f.req('PUT',{background:'custom'}))).status,400);assert.equal(f.writes,0)});
 
  test('cashier depth preferences round-trip without allowing executable styles',async()=>{const f=fixture();const r=await f.handler(f.req('PUT',{cardDepth:'raised',buttonDepth:'flat'}));assert.equal(r.status,200);const saved=await r.json();assert.equal(saved.prefs.cardDepth,'raised');assert.equal(saved.prefs.buttonDepth,'flat');assert.equal(normalizeAppearance({cardDepth:'url(secret)',buttonDepth:'script'}).cardDepth,'soft')});
 
@@ -74,4 +74,21 @@ test('fluid distortion persists through the existing private conditional-write A
  r=await f.handler(f.req('PUT',{glassStyle:'liquid',glassDistortion:0},tag));assert.equal(r.status,200);assert.equal((await r.json()).prefs.glassDistortion,0);
  f.setId('user-b');r=await f.handler(f.req());assert.equal((await r.json()).prefs.glassDistortion,10);
  f.deny();assert.equal((await f.handler(f.req())).status,403);
+});
+
+test('advanced optical preferences round trip privately and survive older clients',async()=>{
+ const f=fixture();const put=async body=>{const current=await f.handler(f.req());return f.handler(f.req('PUT',body,current.headers.get('etag')))};let r=await put({glassStyle:'liquid',glassOptics:{curvature:.72,depth:.9,material:'smoked',tint:'#112233',liquid:'flow'}});assert.equal(r.status,200);
+ let d=await r.json();assert.equal(d.prefs.glassOptics.curvature,.72);
+ r=await put({background:'waves'});d=await r.json();assert.equal(d.prefs.glassOptics.depth,.9);
+ f.setId('user-other');d=await(await f.handler(f.req())).json();assert.deepEqual(d.prefs.glassOptics,{});
+});
+test('private saved designs preserve active preferences, reject malformed input and remain user scoped',async()=>{
+ const f=fixture();const put=async body=>{const current=await f.handler(f.req());return f.handler(f.req('PUT',body,current.headers.get('etag')))};let r=await put({background:'waves',glassOptics:{curvature:.8}});assert.equal(r.status,200);
+ const preset={id:'qa-design',name:'My optical design',appearance:{background:'landscape',glassStyle:'liquid',glassOptics:{curvature:.6}}};
+ r=await put({presets:[preset]});assert.equal(r.status,200);let d=await r.json();assert.equal(d.prefs.background,'waves');assert.equal(d.presets[0].appearance.glassOptics.curvature,.6);
+ assert.equal((await put({presets:[preset,preset]})).status,400);
+ assert.equal((await put({presets:[{...preset,name:'<script>'}]})).status,400);
+ assert.equal((await put({presets:[preset],background:'room'})).status,400);
+ f.setId('other');d=await(await f.handler(f.req())).json();assert.deepEqual(d.presets,[]);
+ f.setId('user-a');assert.equal((await(await f.handler(f.req())).json()).presets.length,1);
 });

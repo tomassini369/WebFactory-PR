@@ -2,7 +2,7 @@ import crypto from 'node:crypto';
 import sharp from 'sharp';
 import {getStore} from '@netlify/blobs';
 import {assertSameOrigin,errorResponse,requireSiteAccess,requirePlatformAdmin} from '../lib/client-auth.mjs';
-import {DEFAULT_APPEARANCE,normalizeAppearance} from '../../shared/dashboard-appearance.mjs';
+import {DEFAULT_APPEARANCE,normalizeAppearance,validateDashboardPresets} from '../../shared/dashboard-appearance.mjs';
 const headers={'Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer','Vary':'Cookie'};
 const fail=(message,status)=>Object.assign(new Error(message),{status});
 async function boundedBody(req,max){
@@ -30,7 +30,7 @@ export function createDashboardAppearanceHandler({siteAccess=requireSiteAccess,p
  // Read the value and its storage version together, so CAS protects this exact snapshot.
  const snapshot=await storage.getWithMetadata(key,{type:'json'});const current=snapshot?.data||{};
  const etag='"'+crypto.createHash('sha256').update(JSON.stringify(current)).digest('hex')+'"';
- const respond=record=>Response.json({ok:true,prefs:normalizeAppearance(record.prefs||DEFAULT_APPEARANCE),hasCustom:Boolean(record.image),revision:record.revision||0,version:crypto.createHash('sha256').update(JSON.stringify(record)).digest('hex')},{headers:{...headers,ETag:'"'+crypto.createHash('sha256').update(JSON.stringify(record)).digest('hex')+'"'}});
+ const respond=record=>Response.json({ok:true,prefs:normalizeAppearance(record.prefs||DEFAULT_APPEARANCE),presets:validateDashboardPresets(record.presets||[]),hasCustom:Boolean(record.image),revision:record.revision||0,version:crypto.createHash('sha256').update(JSON.stringify(record)).digest('hex')},{headers:{...headers,ETag:'"'+crypto.createHash('sha256').update(JSON.stringify(record)).digest('hex')+'"'}});
  if(req.method==='GET'){
   if(url.searchParams.get('asset')==='1'){
    if(!current.image)throw fail('Background not found.',404);
@@ -43,17 +43,20 @@ export function createDashboardAppearanceHandler({siteAccess=requireSiteAccess,p
  const matches=expected!==null?expected===etag.slice(1,-1):req.headers.get('if-match')?.replace(/^W\//,'')===etag;
  if(!matches)throw fail('Appearance changed. Reload your settings and try again.',409);
  let next={...current,revision:(current.revision||0)+1};
- if(req.method==='DELETE'){next={prefs:{...DEFAULT_APPEARANCE},revision:next.revision};}
+ if(req.method==='DELETE'){next={prefs:{...DEFAULT_APPEARANCE},presets:current.presets||[],revision:next.revision};}
  else if(req.method==='POST'){
   if(!['image/jpeg','image/png','image/webp'].includes((req.headers.get('content-type')||'').split(';')[0]))throw fail('Use JPEG, PNG or WebP.',400);
   const bytes=await boundedBody(req,4*1024*1024);let image;try{image=await encodeImage(bytes)}catch(error){if(error.status)throw error;throw fail('The image could not be read.',400)}
   if(image.length>2*1024*1024)throw fail('Choose a smaller image.',413);
   next={...next,image:image.toString('base64'),prefs:{...normalizeAppearance(current.prefs),background:'custom'}};
  }else{
-  const bytes=await boundedBody(req,3000);let input;try{input=JSON.parse(bytes.toString())}catch{throw fail('Invalid JSON.',400)}
+  const bytes=await boundedBody(req,16000);let input;try{input=JSON.parse(bytes.toString())}catch{throw fail('Invalid JSON.',400)}
   if(!input||typeof input!=='object'||Array.isArray(input))throw fail('Invalid settings.',400);
-  next.prefs=normalizeAppearance(input);
-  if(next.prefs.background==='custom'&&!current.image)throw fail('Upload a background first.',400);
+  if(Object.hasOwn(input,'presets')){
+   if(Object.keys(input).length!==1)throw fail('Invalid settings.',400);
+   next.presets=validateDashboardPresets(input.presets);
+  }else next.prefs=normalizeAppearance({...input,...(!Object.hasOwn(input,'glassOptics')?{glassOptics:current.prefs?.glassOptics}:{})});
+  if(next.prefs?.background==='custom'&&!current.image)throw fail('Upload a background first.',400);
  }
  // One conditional record commits image + settings together; no public asset URL.
  const options=snapshot?{onlyIfMatch:snapshot.etag}:{onlyIfNew:true};

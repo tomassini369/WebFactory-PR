@@ -29,8 +29,8 @@ export function createKioskHandler({ authorize = requireSiteCapability, getStore
     return performCheckout(req,{kiosk:true,kioskQr:req.headers.get('X-WF-Kiosk-Checkout')==='qr',balanceBooking,balanceAttempt:req.headers.get("Idempotency-Key")||""});
   }, getSite: payload => getSite(payload.siteId), isAvailable, getStore });
   return async req => {
-    const supportsOptics=req.headers.get('X-WF-Kiosk-Optics')==='1';
-    const respond=(data,init)=>Response.json(kioskOpticsResponse(data,supportsOptics),init);
+    const opticsVersion=Number(req.headers.get('X-WF-Kiosk-Optics'))||0, supportsOptics=opticsVersion>=2;
+    const respond=(data,init)=>Response.json(kioskOpticsResponse(data,opticsVersion),init);
     try {
       if (!['GET', 'POST'].includes(req.method)) return new Response(null, { status: 405, headers: { Allow: 'GET, POST' } });
       assertSameOrigin(req);

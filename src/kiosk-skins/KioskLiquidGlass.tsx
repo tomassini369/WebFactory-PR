@@ -1,10 +1,11 @@
+import type {GlassOptics} from '../../shared/glass-optics.mjs'
 import {createPortal} from 'react-dom'
 import {useEffect,useState,type RefObject} from 'react'
 import {FluidGlassSurface} from '../glassy-dashboard/FluidGlassSurface'
 
 // Only mount the actual MIT-licensed lens on two large stable kiosk surfaces.
 // No second renderer is written here; this chooses targets for the library.
-export default function KioskLiquidGlass({host,backdropSelector,distortion}:{host:RefObject<HTMLElement|null>;backdropSelector:string;distortion?:number}){
+export default function KioskLiquidGlass({host,backdropSelector,distortion,optics,motion}:{host:RefObject<HTMLElement|null>;backdropSelector:string;distortion?:number;optics?:GlassOptics;motion?:boolean}){
  const [targets,setTargets]=useState<HTMLElement[]>([])
  useEffect(()=>{
   const root=host.current
@@ -19,7 +20,7 @@ export default function KioskLiquidGlass({host,backdropSelector,distortion}:{hos
   return()=>{observer.disconnect();setTargets([])}
  },[host])
  return <>{targets.map((target,index)=>createPortal(
-  <FluidGlassSurface distortion={distortion} radius={index===0?28:30} backdropSelector={backdropSelector}/>,
+  <FluidGlassSurface optics={optics} motion={motion} distortion={distortion} radius={index===0?28:30} backdropSelector={backdropSelector}/>,
   target,
   index===0?'header':'cart'
  ))}</>

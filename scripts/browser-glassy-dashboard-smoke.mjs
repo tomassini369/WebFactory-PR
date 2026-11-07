@@ -1,3 +1,5 @@
+import {exerciseGlassOptics} from './qa-glass-optics.mjs'
+import {openAppearanceDetails} from './qa-appearance-disclosures.mjs'
 import assert from 'node:assert/strict'
 import {mkdir} from 'node:fs/promises'
 import {preview,createServer} from 'vite'
@@ -70,7 +72,7 @@ try{
    if(path==='/client-admin'){await page.locator('.bcc-metrics').waitFor();assert.match(await page.locator('.bcc-metrics').innerText(),/55[.,]00/)}
    if(path==='/client-admin'){const spacing=await page.locator('.gd-overview').evaluate(el=>({gap:Number.parseFloat(getComputedStyle(el.querySelector('.gd-overview-grid')).rowGap),boundary:el.nextElementSibling.getBoundingClientRect().top-el.getBoundingClientRect().bottom}));assert(Math.abs(spacing.boundary-spacing.gap)<1,'Overview-to-service separation matches the card grid gap')}
    const customize=lang==='es'?'Personalización':'Personalization';await page.locator('.gd-dock').getByRole('button',{name:customize,exact:true}).click();await page.locator('.gd-wallpaper-choice').first().waitFor();await page.locator('.gd-appearance>fieldset:not(.gd-palette-section)').waitFor({state:'visible'});await page.waitForFunction(()=>!document.querySelector('.gd-appearance>fieldset').disabled)
-   await noOverflow(page);assert.equal(await page.locator('.gd-wallpaper-choice').count(),3)
+   await noOverflow(page);if([390,1440].includes(width)&&lang==='es')await page.screenshot({path:`${output}/unified-${path.slice(1)}-${width}-${theme}-${process.env.QA_ENGINE||'chromium'}.png`,fullPage:true});assert.equal(await page.locator('.gd-wallpaper-choice').count(),3);assert.equal(await page.locator('.gd-appearance .wf-design-picker select').count(),1);assert.equal(await page.locator('.gd-appearance .wf-appearance-group').count(),3);await openAppearanceDetails(page,'.gd-appearance')
    if(path==='/client-admin'&&width===390&&theme==='dark'&&lang==='es'){
     assert.equal(await page.locator('.gd-palette-grid .gd-palette-choice').count(),23,'Shared palette catalogue has 23 choices');
     assert.notEqual(await page.locator('.gd-root').getAttribute('data-palette-active'),'true');
@@ -82,16 +84,22 @@ try{
     await page.getByRole('status').filter({hasText:'Apariencia guardada.'}).waitFor();
     await page.reload();await page.locator('.gd-content').waitFor();
     await page.locator('.gd-dock').getByRole('button',{name:'Personalización',exact:true}).click();
-    await page.locator('.gd-palette-grid').waitFor();await page.waitForFunction(()=>!document.querySelector('.gd-appearance>fieldset').disabled);
+    await openAppearanceDetails(page,'.gd-appearance');await page.locator('.gd-palette-grid').waitFor();await page.waitForFunction(()=>!document.querySelector('.gd-appearance>fieldset').disabled);
     assert.equal(await page.getByRole('button',{name:'Paleta Ocean Blue',exact:true}).getAttribute('aria-pressed'),'true');
     await page.getByRole('button',{name:'Usar mis colores actuales',exact:true}).click();
-    await page.getByRole('checkbox',{name:'Mantener imagen de fondo original (sin oscurecer)',exact:true}).check();
+    await page.getByRole('checkbox',{name:'Mantener imagen original, sin oscurecimiento',exact:true}).check();
     const distortion=page.getByRole('slider',{name:'Distorsión del cristal',exact:true});assert.equal(await distortion.inputValue(),'10');assert(await distortion.isDisabled());
     await page.getByRole('combobox',{name:/^Apariencia del cristal/}).selectOption('liquid');
     await distortion.press('Home');assert.equal(await distortion.inputValue(),'0');await page.waitForFunction(()=>[...document.querySelectorAll('.wf-licensed-liquid-glass')].length>0&&[...document.querySelectorAll('.wf-licensed-liquid-glass')].every(el=>el.dataset.fluidDistortion==='0'));
     await distortion.press('End');assert.equal(await distortion.inputValue(),'50');await page.waitForFunction(()=>[...document.querySelectorAll('.wf-licensed-liquid-glass')].every(el=>el.dataset.fluidDistortion==='50'));
     assert.equal(await page.locator('.gd-root').getAttribute('data-background-natural'),'true');
     assert.equal(await page.locator('.gd-root').getAttribute('data-glass-style'),'liquid');
+    await exerciseGlassOptics(page,'.gd-appearance',lang);
+    await page.getByLabel('Nombre de mi diseño',{exact:true}).fill('QA Portal');await page.getByRole('button',{name:'Guardar como diseño propio',exact:true}).click();await page.getByRole('status').filter({hasText:'Apariencia guardada.'}).waitFor();
+    assert.equal(await page.getByLabel('Curvatura',{exact:true}).inputValue(),'1','Saving a design must preserve the unsaved optical draft');
+    assert(await page.getByRole('button',{name:'Guardar como diseño propio',exact:true}).isDisabled(),'Duplicate configuration cannot be saved twice');
+    await page.getByLabel('Curvatura',{exact:true}).press('Home');await page.getByRole('button',{name:'Deshacer',exact:true}).click();assert.equal(await page.getByLabel('Curvatura',{exact:true}).inputValue(),'1');await page.getByRole('button',{name:'Rehacer',exact:true}).click();assert.equal(await page.getByLabel('Curvatura',{exact:true}).inputValue(),'0');await page.getByRole('combobox',{name:'Diseño',exact:true}).selectOption({label:'QA Portal'});assert.equal(await page.getByLabel('Curvatura',{exact:true}).inputValue(),'1');
+
     await page.locator('.wf-licensed-liquid-glass').first().waitFor({state:'attached'});assert((await page.locator('.wf-licensed-liquid-glass').count())>0,'Real Liquid Glass package is rendered on dashboard panels');
     assert.equal(await page.locator('.gd-shade').evaluate(el=>getComputedStyle(el).opacity),'0');
     await page.getByRole('button',{name:'Aplicar y guardar',exact:true}).click();
@@ -102,11 +110,12 @@ try{
     await page.locator('.gd-dock').getByRole('button',{name:'Personalización',exact:true}).click();
     await page.waitForFunction(()=>!document.querySelector('.gd-appearance>fieldset').disabled);
     await page.waitForFunction(()=>[...document.querySelectorAll('.wf-licensed-liquid-glass')].length>0&&[...document.querySelectorAll('.wf-licensed-liquid-glass')].every(el=>el.dataset.fluidDistortion==='50'));
+    await openAppearanceDetails(page,'.gd-appearance');assert.equal(await page.getByLabel('Curvatura',{exact:true}).inputValue(),'1');await page.getByRole('button',{name:'Eliminar diseño QA Portal',exact:true}).click();await page.getByRole('combobox',{name:'Diseño',exact:true}).locator('option').filter({hasText:'QA Portal'}).waitFor({state:'detached'});
 
    }
    if(width===1440&&theme==='dark'){await page.screenshot({path:`${output}/${path.slice(1)}-appearance-${lang}.png`,fullPage:true})}
    await page.locator('.gd-wallpaper-choice').nth(1).click();await page.getByRole('button',{name:lang==='es'?'Aplicar y guardar':'Apply and save',exact:true}).click();await page.getByRole('status').filter({hasText:lang==='es'?'Apariencia guardada.':'Appearance saved.'}).waitFor();await page.reload();await page.locator('.gd-content').waitFor();await page.waitForFunction(()=>getComputedStyle(document.querySelector('.gd-wallpaper')).backgroundImage.includes('portal-violet'))
-   await page.locator('.gd-dock').getByRole('button',{name:customize,exact:true}).click();await page.waitForFunction(()=>!document.querySelector('.gd-appearance>fieldset').disabled);await page.getByRole('button',{name:lang==='es'?'Restaurar predeterminado y borrar mi imagen':'Restore default and delete my image',exact:true}).click();await page.getByRole('status').filter({hasText:lang==='es'?'Apariencia guardada.':'Appearance saved.'}).waitFor()
+   await page.locator('.gd-dock').getByRole('button',{name:customize,exact:true}).click();await page.waitForFunction(()=>!document.querySelector('.gd-appearance>fieldset').disabled);await page.getByRole('button',{name:lang==='es'?'Restaurar':'Restore',exact:true}).click();await page.getByRole('button',{name:lang==='es'?'Aplicar y guardar':'Apply and save',exact:true}).click();await page.getByRole('status').filter({hasText:lang==='es'?'Apariencia guardada.':'Appearance saved.'}).waitFor()
    await selectPortalSection(page,lang==='es'?'Resumen':'Overview');await noOverflow(page)
    if([390,1440].includes(width)&&lang==='es')await page.screenshot({path:`${output}/${path.slice(1)}-${width}-${theme}.png`,fullPage:true})
   }
@@ -117,7 +126,7 @@ try{
  const image=await sharp({create:{width:80,height:60,channels:3,background:'#5985a1'}}).png().toBuffer();await customPage.locator('input[type=file]').setInputFiles({name:'fixture.png',mimeType:'image/png',buffer:image});await customPage.locator('.gd-wallpaper-choice').nth(3).waitFor();assert.equal(await customPage.locator('.gd-wallpaper-choice').nth(3).getAttribute('aria-pressed'),'true');
  const stalePage=await customContext.newPage();await intercept(stalePage);await stalePage.goto(origin+'/client-admin');await stalePage.locator('.gd-content').waitFor();await stalePage.locator('.gd-dock button').last().click();await stalePage.waitForFunction(()=>!document.querySelector('.gd-appearance>fieldset').disabled);
  await customPage.locator('.gd-wallpaper-choice').first().click();await customPage.getByRole('button',{name:/^(Apply and save|Aplicar y guardar)$/}).click();await customPage.getByRole('status').filter({hasText:/Appearance saved|Apariencia guardada/}).waitFor();
- await stalePage.locator('.gd-wallpaper-choice').nth(1).click();await stalePage.getByRole('button',{name:/^(Apply and save|Aplicar y guardar)$/}).click();await stalePage.getByRole('alert').filter({hasText:/another device|otro dispositivo/}).waitFor();await stalePage.getByRole('button',{name:/Reload settings|Recargar configuración/}).click();await stalePage.waitForFunction(()=>!document.querySelector('.gd-appearance>fieldset').disabled);await stalePage.getByRole('button',{name:/Restore default and delete my image|Restaurar predeterminado y borrar mi imagen/}).click();await stalePage.locator('.gd-wallpaper-choice').nth(3).waitFor({state:'detached'});await customContext.close();console.log('PASS upload, optimized private image, stale-tab conflict, reload and deletion');
+ await stalePage.locator('.gd-wallpaper-choice').nth(1).click();await stalePage.getByRole('button',{name:/^(Apply and save|Aplicar y guardar)$/}).click();await stalePage.getByRole('alert').filter({hasText:/another device|otro dispositivo/}).waitFor();await stalePage.getByRole('button',{name:/Reload settings|Recargar configuración/}).click();await stalePage.waitForFunction(()=>!document.querySelector('.gd-appearance>fieldset').disabled);await openAppearanceDetails(stalePage,'.gd-appearance');await stalePage.getByRole('button',{name:/Restore default and delete my image|Restaurar predeterminado y borrar mi imagen/}).click();await stalePage.locator('.gd-wallpaper-choice').nth(3).waitFor({state:'detached'});await customContext.close();console.log('PASS upload, optimized private image, stale-tab conflict, reload and deletion');
  // Employee keeps personal appearance while owner destinations remain absent.
  role='employee';const context=await browser.newContext({viewport:{width:390,height:844},serviceWorkers:'block'}),page=await context.newPage();await intercept(page);await page.goto(origin+'/client-admin');await page.locator('.gd-content').waitFor();await page.locator('.gd-menu-toggle').click();assert.equal(await page.locator('.gd-navigation').getByRole('button',{name:'Business settings',exact:true}).count(),0);await page.keyboard.press('Escape');await context.close();
  console.log('PASS employee role-aware navigation')
