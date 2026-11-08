@@ -1,3 +1,4 @@
+import {verifyNeutralGlass} from './qa-neutral-reading.mjs'
 import {exerciseGlassOptics} from './qa-glass-optics.mjs'
 import {openAppearanceDetails} from './qa-appearance-disclosures.mjs'
 import assert from 'node:assert/strict'
@@ -54,6 +55,7 @@ async function checkChartContrast(page,theme){
 }
 
 try{
+ if(process.env.QA_CONTRAST_ONLY==='1')await verifyNeutralGlass({browser,origin,intercept,appearance,site});else{
  if(process.env.QA_INTERACTION_ONLY==='1')for(const width of (process.env.QA_INTERACTION_WIDTHS||'320,375,390,430,768,900,901,1024,1280,1440').split(',').map(Number))for(const theme of ['light','dark']){
   console.log('CHECK',width,theme);role='owner';const context=await browser.newContext({viewport:{width,height:width<=430?480:720},reducedMotion:'reduce',serviceWorkers:'block'}),page=await context.newPage();let dialogs=0;page.on('pageerror',e=>console.error('PAGEERROR',e.message));page.on('console',m=>{if(m.type()==='error')console.error('CONSOLE',m.text())});page.on('requestfailed',r=>console.error('FAILED',r.url(),r.failure()));page.on('dialog',async dialog=>{dialogs++;await dialog.dismiss()});await page.addInitScript(t=>localStorage.setItem('webfactory-theme-v2',t),theme);await intercept(page);
   await page.goto(origin+'/client-admin');await page.locator('.gd-content').waitFor();await page.locator('.portal-language').getByRole('button',{name:'ES',exact:true}).click();await page.locator('.gd-dock button').last().click();await page.waitForFunction(()=>!document.querySelector('.gd-appearance>fieldset').disabled);await page.locator('.gd-wallpaper-choice').nth(1).click();const save=page.getByRole('button',{name:'Aplicar y guardar',exact:true});await save.evaluate(e=>e.scrollIntoView({block:'end'}));
@@ -130,4 +132,5 @@ try{
  // Employee keeps personal appearance while owner destinations remain absent.
  role='employee';const context=await browser.newContext({viewport:{width:390,height:844},serviceWorkers:'block'}),page=await context.newPage();await intercept(page);await page.goto(origin+'/client-admin');await page.locator('.gd-content').waitFor();await page.locator('.gd-menu-toggle').click();assert.equal(await page.locator('.gd-navigation').getByRole('button',{name:'Business settings',exact:true}).count(),0);await page.keyboard.press('Escape');await context.close();
  console.log('PASS employee role-aware navigation')
+}
 }finally{await browser.close();if(process.env.QA_DEV==='1')await server.close();else await new Promise(resolve=>server.httpServer.close(resolve))}

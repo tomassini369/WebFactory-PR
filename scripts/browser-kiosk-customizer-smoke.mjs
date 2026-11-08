@@ -1,3 +1,4 @@
+import {verifyKioskNeutral} from './qa-neutral-reading.mjs';
 import {exerciseGlassOptics} from './qa-glass-optics.mjs';
 import {openAppearanceDetails} from './qa-appearance-disclosures.mjs';
 import assert from 'node:assert/strict';
@@ -50,6 +51,7 @@ try{
   await page.getByLabel(t('Apariencia del cristal','Glass appearance'),{exact:true}).selectOption('liquid');
   assert.equal(await surface.getAttribute('data-glass-style'),'liquid');
   await surface.locator('.wf-licensed-liquid-glass').first().waitFor();
+  if([390,1440].includes(width)&&lang==='es')await verifyKioskNeutral(page,lang);
   await distortion.press('Home');assert.equal(await distortion.inputValue(),'0');await page.waitForFunction(()=>[...document.querySelectorAll('.kiosk-appearance-preview .wf-licensed-liquid-glass')].every(el=>el.dataset.fluidDistortion==='0'));
   const lens=surface.locator('.kiosk-header .wf-licensed-liquid-glass').first();await lens.scrollIntoViewIfNeeded();await page.waitForTimeout(600);
   const optical=await lens.locator('feImage,feDisplacementMap').evaluateAll(nodes=>nodes.map(el=>el.tagName+':'+(el.getAttribute('scale')||el.getAttribute('href')||el.getAttribute('xlink:href'))).join('|'));
@@ -63,6 +65,7 @@ try{
   await page.getByLabel(t('Tipo de fondo','Background type'),{exact:true}).selectOption('pattern');await page.getByLabel(t('Patrón','Pattern'),{exact:true}).selectOption('dots');assert.equal(await surface.locator('.kiosk-backdrop-art').evaluate(el=>getComputedStyle(el).backgroundSize),'24px 24px');
   await page.getByLabel(t('Color de cabecera','Header color'),{exact:true}).fill('#ffffff');await page.getByLabel(t('Color de tarjetas','Card color'),{exact:true}).fill('#000000');await page.getByLabel(t('Color del carrito','Cart color'),{exact:true}).fill('#102038');
   await page.waitForFunction(()=>getComputedStyle(document.querySelector('.kiosk-appearance-preview .kiosk-header')).backgroundColor==='rgb(255, 255, 255)'&&getComputedStyle(document.querySelector('.kiosk-appearance-preview .kiosk-product')).backgroundColor==='rgb(0, 0, 0)');assert.equal(await surface.locator('.kiosk-header').evaluate(el=>getComputedStyle(el).backgroundColor),'rgb(255, 255, 255)');assert.equal(await surface.locator('.kiosk-product').first().evaluate(el=>getComputedStyle(el).backgroundColor),'rgb(0, 0, 0)');
+  if(width===390&&theme==='dark'&&lang==='es'){await page.getByLabel(t('Apariencia del cristal','Glass appearance'),{exact:true}).selectOption('liquid');await verifyKioskNeutral(page,lang,{custom:true});await page.getByLabel(t('Apariencia del cristal','Glass appearance'),{exact:true}).selectOption('classic')}
   await page.getByLabel(t('Bienvenida','Welcome'),{exact:true}).selectOption('hero');await page.getByLabel(t('Texto de bienvenida','Welcome text'),{exact:true}).fill('Welcome / Bienvenidos');assert.equal(await surface.locator('.kiosk-welcome h2').innerText(),'Welcome / Bienvenidos');
   await page.getByLabel(t('Distribución','Layout'),{exact:true}).selectOption('gallery');assert.equal(await surface.getAttribute('data-layout-override'),'gallery');
   assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),`${width} editor overflow`);

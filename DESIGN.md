@@ -99,3 +99,20 @@ form order, copy, spacing, language/theme controls and account behavior. Scope
 the portal slate/navy canvas, translucent card, inset pill fields and blue pill
 action to signed-out consumer access and confirmation only. Do not move the
 controls into the card, add a desktop welcome column or change authentication.
+
+
+### Neutral Liquid Glass reading surfaces · November 8, 2026
+
+Approved for PR #125: retain the existing Liquid/Fluid Glass renderer, photo,
+logo, layouts and tenant accents. Reading panels use smoke-white (#f6f6f6)
+with graphite ink in Light, and charcoal (#202020) with soft-white ink in Dark.
+This is a scoped reading-surface revision, not a replacement of brand colors.
+
+Keep optical refraction below an actual, decorative DOM reading layer. The
+existing opacity control has an 82% minimum only for Liquid Glass. Render old
+lower values safely without silently rewriting their saved records. Keep the
+existing blur control connected to the optical renderer; do not add duplicate
+opacity or blur controls. Explicit kiosk zone colors retain their hue and
+matching ink, with enough fill to protect contrast over the backdrop. Classic
+glass retains its previous range. Honor reduced transparency, forced colors,
+print and reduced motion; preserve the photo outside the panels.
