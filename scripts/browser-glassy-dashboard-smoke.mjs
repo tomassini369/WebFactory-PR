@@ -107,6 +107,8 @@ try{
     await page.getByRole('button',{name:'Aplicar y guardar',exact:true}).click();
     await page.getByRole('status').filter({hasText:'Apariencia guardada.'}).waitFor();
     await page.reload();await page.locator('.gd-content').waitFor();
+    // Dashboard shell mounts before its private appearance request completes.
+    await page.waitForFunction(()=>document.querySelector('.gd-root')?.dataset.backgroundNatural==='true');
     assert.equal(await page.locator('.gd-root').getAttribute('data-background-natural'),'true');
     assert.equal(await page.locator('.gd-root').getAttribute('data-glass-style'),'liquid');
     await page.locator('.gd-dock').getByRole('button',{name:'Personalización',exact:true}).click();
