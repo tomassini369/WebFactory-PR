@@ -3,6 +3,7 @@ import crypto from 'node:crypto';
 import {preview} from 'vite';
 import {chromium,webkit} from 'playwright';
 import {kioskFixture} from './fixtures/kiosk-fixture.mjs';
+import {kioskAppearance} from '../netlify/lib/kiosk-skins.mjs';
 import {commerceKey} from '../netlify/lib/client-store.mjs';
 import {bookingKioskPin} from '../netlify/lib/kiosk-bookings.mjs';
 const port=Number(process.env.QA_PORT||5238),server=await preview({preview:{host:'127.0.0.1',port,strictPort:true}}),root=process.env.QA_ORIGIN||`http://127.0.0.1:${port}`;
@@ -28,7 +29,7 @@ try{
 for(const width of (process.env.QA_WIDTHS||'320,375,390,430,768,1024,1440').split(',').map(Number))for(const lang of ['es','en'])for(const theme of ['light','dark']){
  const start=new Date(Date.now()+3600000).toISOString(),end=new Date(Date.now()+7200000).toISOString();
  const f=kioskFixture(root,{availability:async()=>[{start,end}]});f.store.delete=async key=>f.rows.delete(key);f.site.paymentRules.bookingPayment='in_person';f.site.employees=[{id:'barber',name:'QA Barber',active:true,serviceIds:['appointment'],locationIds:['branch']}];
- const p=await f.paired();await f.admin('configure',{enabled:true,bookingModes:{newBookings:true,existingBookings:true}});
+ const p=await f.paired();await f.admin('configure',{enabled:true,bookingModes:{newBookings:true,existingBookings:true}});if(process.env.QA_SKIN)assert.equal((await f.admin('appearance',{appearance:{...kioskAppearance(),skinId:process.env.QA_SKIN}})).status,200);
  const token=crypto.randomBytes(32).toString('base64url'),record={siteId:f.site.siteId,transactionId:'qa_booking',kind:'booking',locationId:'branch',serviceId:'appointment',start,end,status:'confirmed',paymentStatus:'paid',amountTotal:1000,bookingTotalCents:3000,calendarToken:token,bookingCode:'8C29F758',customer:{name:'Private QA',email:'secret@example.invalid'}};
  await f.store.setJSON(commerceKey(f.site.siteId,'bookings',record.transactionId),record);await f.store.setJSON(commerceKey(f.site.siteId,'transactions',record.transactionId),record);await f.store.setJSON(`calendar/${crypto.createHash('sha256').update(token).digest('hex')}.json`,{siteId:f.site.siteId,transactionId:record.transactionId});
  const context=await browser.newContext({viewport:{width,height:1000},reducedMotion:'reduce',ignoreHTTPSErrors:process.env.QA_IGNORE_TLS_ERRORS==='1'});await context.addInitScript(({lang,theme})=>{try{localStorage.setItem('wf-kiosk-language',lang);localStorage.setItem('wf-theme',theme)}catch{}},{lang,theme});

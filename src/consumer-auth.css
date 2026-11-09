@@ -1,0 +1,81 @@
+/* Consumer access keeps its Marketplace layout and behavior, with the
+   approved portal login's palette, glass card and pill-shaped controls. */
+html .mk-root.mk-consumer-access {
+  --mk-canvas: #edf2f7;
+  --mk-surface: rgba(255,255,255,.91);
+  --mk-raised: #fff;
+  --mk-text: #18202c;
+  --mk-muted: #536072;
+  --mk-line: #c2c7d0;
+  --mk-control: #77869b;
+  --mk-accent: #2867b2;
+  --mk-button: #285fa6;
+  background: radial-gradient(ellipse at 8% 5%,#dce7f5 0,transparent 45%),
+    radial-gradient(ellipse at 95% 95%,#e0e8f0 0,transparent 50%),var(--mk-canvas);
+}
+html[data-wf-theme=dark] .mk-root.mk-consumer-access {
+  --mk-canvas: #0d1522;
+  --mk-surface: rgba(24,24,30,.9);
+  --mk-raised: #1c1c24;
+  --mk-text: #f7f7fa;
+  --mk-muted: #bfc0cd;
+  --mk-line: #555560;
+  --mk-control: #8392a7;
+  --mk-accent: #91bfff;
+  background: radial-gradient(ellipse at 8% 5%,#1b304a 0,transparent 45%),
+    radial-gradient(ellipse at 95% 95%,#19293e 0,transparent 50%),var(--mk-canvas);
+}
+.mk-consumer-access .mk-auth-card {
+  border-radius: 28px;
+  background: var(--mk-surface);
+  box-shadow: inset 0 1px 0 #ffffff45,0 28px 75px #08081030;
+  backdrop-filter: blur(28px) saturate(150%);
+  -webkit-backdrop-filter: blur(28px) saturate(150%);
+}
+.mk-consumer-access .mk-auth-form input:not([type=checkbox]) {
+  border-radius: 999px;
+  background: var(--mk-raised);
+  box-shadow: inset 0 2px 4px #0003;
+  color: var(--mk-text);
+  -webkit-text-fill-color: var(--mk-text);
+  caret-color: var(--mk-text);
+}
+.mk-consumer-access .mk-auth-form input::placeholder {
+  color: var(--mk-muted);
+  -webkit-text-fill-color: var(--mk-muted);
+  opacity: 1;
+}
+.mk-consumer-access :is(.mk-auth-form>button,.mk-account-button) {
+  border-radius: 999px;
+  background: var(--mk-button);
+  border-color: var(--mk-button);
+  box-shadow: 0 8px 22px #3c86f630;
+}
+.mk-consumer-access .mk-auth-form>button:disabled {
+  background: var(--mk-canvas);
+  color: var(--mk-muted);
+  border-color: var(--mk-control);
+  box-shadow: none;
+  opacity: 1;
+}
+.mk-consumer-access .mk-auth-links :is(a,button) {font-weight:600}
+.mk-consumer-access .mk-auth-links button:disabled {color:var(--mk-muted);opacity:1}
+@media (prefers-reduced-transparency:reduce) {
+  .mk-consumer-access .mk-auth-card {background:var(--mk-raised);backdrop-filter:none;-webkit-backdrop-filter:none}
+}
+@supports not (backdrop-filter:blur(1px)) {
+  .mk-consumer-access .mk-auth-card {background:var(--mk-raised)}
+}
+@media (forced-colors:active) {
+  .mk-root.mk-consumer-access,.mk-consumer-access .mk-auth-card {background:Canvas;color:CanvasText;box-shadow:none}
+  .mk-consumer-access :is(input,button,a) {forced-color-adjust:auto}
+  .mk-consumer-access .mk-auth-form input:not([type=checkbox]) {-webkit-text-fill-color:CanvasText;background:Canvas;box-shadow:none}
+  .mk-consumer-access .mk-auth-form>button {background:ButtonFace;color:ButtonText;border-color:ButtonText;box-shadow:none}
+  .mk-consumer-access .mk-auth-form>button:disabled {color:GrayText}
+}
+
+/* Cold route and session loading share the consumer form's actual geometry. */
+.consumer-loading-field{display:block;width:100%;min-height:48px}
+.consumer-loading-submit{display:flex;align-items:center;justify-content:center;min-height:48px;padding:11px 16px;background:var(--mk-canvas);color:var(--mk-muted);border:1px solid var(--mk-control);border-radius:999px;font:inherit;font-weight:650}
+.consumer-loading-links>span{display:flex;align-items:center;min-height:44px;font-size:.875rem;color:var(--mk-accent);font-weight:600}
+@media(forced-colors:active){.consumer-loading-field,.consumer-loading-check,.consumer-loading-submit{background:Canvas;color:CanvasText;box-shadow:none;border-color:CanvasText}}

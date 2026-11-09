@@ -201,7 +201,7 @@ export default async (req) => {
     return Response.json({ received: true, transactionId: result.record.transactionId, pending: result.pending });
     });
   } catch (error) {
-    if (error?.status !== 409) console.error("stripe-connect-webhook", error);
+    if (error?.status !== 409) console.error("stripe-connect-webhook", {status:Number(error?.status)||500});
     return Response.json({ received: false, message: "Webhook processing failed. Retry this event." }, { status: error?.status === 409 ? 409 : 500 });
   }
 };

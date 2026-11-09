@@ -39,6 +39,8 @@ async function setup(){
     return route.fulfill({contentType:'application/json',body:JSON.stringify({ok:true,site:saved})});
    }catch(error){return route.fulfill({status:error.status||500,contentType:'application/json',body:JSON.stringify({ok:false,code:error.code,message:error.message})})}
   }
+  if(name==='client-customer-display'&&req.method()==='POST'){assert.equal(req.postDataJSON().action,'keepalive');return route.fulfill({json:{ok:true,paired:false}})}
+  if(name==='portal-profile'){assert(['GET','PUT'].includes(req.method()));const profile=req.method()==='PUT'?req.postDataJSON():{};return route.fulfill({json:{ok:true,profile:{name:'',phone:'',language:profile.language||null,theme:profile.theme||null},hasPhoto:false,revision:0,version:'isolated-profile-fixture'}})}
   assert(req.method()==='GET'||name==='portal-session',`Unexpected write during isolated URL QA: ${name}`);
   let data={ok:true};
   if(name==='portal-session')data={ok:true,user};
@@ -50,16 +52,20 @@ async function setup(){
   if(name==='client-commerce-admin')data={ok:true,orders:[],bookings:[]};
   await route.fulfill({contentType:'application/json',body:JSON.stringify(data)});
  });
- const open=async()=>{await page.goto(root+'/client-admin',{waitUntil:process.env.QA_ORIGIN?'domcontentloaded':'load'});await page.locator('.ca-dashboard').waitFor()};
+ const open=async()=>{await page.goto(root+'/client-admin',{waitUntil:process.env.QA_ORIGIN?'domcontentloaded':'load'});await page.locator('.gd-client-dashboard').waitFor()};
  const nav=name=>selectPortalSection(page,name);
  return {f,other,context,page,open,nav,calls:()=>calls,mode:value=>mode=value,release:()=>release?.(),role:value=>{role=value;f.site.members[0].role=value}};
 }
 function contrast(element){
- const rgb=color=>{const canvas=document.createElement('canvas'),ctx=canvas.getContext('2d');ctx.fillStyle=color;ctx.fillRect(0,0,1,1);return [...ctx.getImageData(0,0,1,1).data].slice(0,3)};
- const lum=color=>rgb(color).map(v=>{v/=255;return v<=.04045?v/12.92:((v+.055)/1.055)**2.4}).reduce((sum,v,i)=>sum+v*[.2126,.7152,.0722][i],0),ratio=(a,b)=>(Math.max(lum(a),lum(b))+.05)/(Math.min(lum(a),lum(b))+.05);
- const card=getComputedStyle(element),field=getComputedStyle(element.querySelector('input')),wrapper=getComputedStyle(element.querySelector('.ca-public-site-field'));
- return {copy:[...element.querySelectorAll('p,label,small,strong')].filter(el=>el.offsetHeight).map(el=>({text:el.textContent,ratio:ratio(getComputedStyle(el).color,card.backgroundColor)})),buttons:[...element.querySelectorAll('button,a')].filter(el=>!el.disabled).map(el=>{const s=getComputedStyle(el);return ratio(s.color,s.backgroundColor==='rgba(0, 0, 0, 0)'?card.backgroundColor:s.backgroundColor)}),input:ratio(field.color,wrapper.backgroundColor),border:ratio(wrapper.borderTopColor,wrapper.backgroundColor)};
+ const rgba=color=>{const canvas=document.createElement('canvas'),ctx=canvas.getContext('2d');ctx.fillStyle=color;ctx.fillRect(0,0,1,1);return [...ctx.getImageData(0,0,1,1).data]};
+ const blend=(fg,bg)=>fg.slice(0,3).map((v,i)=>v*fg[3]/255+bg[i]*(1-fg[3]/255));
+ const background=el=>{const chain=[];for(let node=el;node;node=node.parentElement)chain.unshift(node);return chain.reduce((bg,node)=>blend(rgba(getComputedStyle(node).backgroundColor),bg),[255,255,255])};
+ const lum=rgb=>rgb.map(v=>{v/=255;return v<=.04045?v/12.92:((v+.055)/1.055)**2.4}).reduce((sum,v,i)=>sum+v*[.2126,.7152,.0722][i],0),ratio=(a,b)=>(Math.max(lum(a),lum(b))+.05)/(Math.min(lum(a),lum(b))+.05);
+ const textRatio=el=>{const bg=background(el);return ratio(blend(rgba(getComputedStyle(el).color),bg),bg)};
+ const input=element.querySelector('input'),wrapper=element.querySelector('.ca-public-site-field'),bg=background(wrapper);
+ return {copy:[...element.querySelectorAll('p,label,small,strong')].filter(el=>el.offsetHeight).map(el=>({text:el.textContent,ratio:textRatio(el)})),buttons:[...element.querySelectorAll('button,a')].filter(el=>!el.disabled).map(textRatio),input:textRatio(input),border:ratio(blend(rgba(getComputedStyle(wrapper).borderTopColor),bg),bg)};
 }
+
 try{
  for(const width of widths)for(const theme of ['light','dark'])for(const lang of ['es','en']){
   const qa=await setup(),{page}=qa,es=lang==='es';await page.setViewportSize({width,height:1000});await qa.open();await page.getByRole('button',{name:lang.toUpperCase(),exact:true}).click();if(await page.locator('html').getAttribute('data-wf-theme')!==theme)await page.locator('.wf-theme-toggle').click();await qa.nav(es?'Editar página':'Edit website');
@@ -67,7 +73,7 @@ try{
   await input.fill('admin');assert.equal(await input.getAttribute('aria-invalid'),'true');assert(await save.isDisabled());
   await input.fill('fixture-new');assert.match(await card.locator('.ca-public-site-preview').innerText(),/webfactorypr.com\/sites\/fixture-new/);
   const c=await card.evaluate(contrast);assert(c.copy.every(x=>x.ratio>=4.5)&&c.buttons.every(x=>x>=4.5)&&c.input>=4.5&&c.border>=3,JSON.stringify(c));
-  await input.focus();assert.equal(await card.locator('.ca-public-site-field').evaluate(el=>getComputedStyle(el).outlineStyle),'solid');assert.equal(await input.evaluate(el=>getComputedStyle(el).fontSize),'16px');assert.equal(await input.evaluate(el=>getComputedStyle(el).backgroundColor),'rgba(0, 0, 0, 0)','the field has one continuous themed surface');
+  await input.focus();assert.equal(await card.locator('.ca-public-site-field').evaluate(el=>getComputedStyle(el).outlineStyle),'solid');assert.equal(await input.evaluate(el=>getComputedStyle(el).fontSize),'16px');assert(c.input>=4.5,'Input text remains readable on its rendered themed surface');
   for(const control of await card.locator('button,a,input').all()){const box=await control.boundingBox();assert(box&&box.height>=43.5,`44px touch target: ${await control.evaluate(el=>el.outerHTML)} ${JSON.stringify(box)}`)}
   assert.equal(await page.locator('.ca-website-panel .wf-panel-tools').evaluate(el=>getComputedStyle(el).position),'static');
   page.once('dialog',d=>d.dismiss());await save.click();assert.equal(qa.calls(),0);assert.equal(await input.inputValue(),'fixture-new');
@@ -89,6 +95,6 @@ try{
   qa.mode(mode);await input.fill('fixture-'+mode);page.once('dialog',d=>d.accept());await save.click();await card.getByRole('alert').filter({hasText:'Reload to verify'}).waitFor();assert.equal(await input.inputValue(),'fixture-'+mode);qa.mode('');page.once('dialog',d=>d.accept());await card.getByRole('button',{name:'Reload address',exact:true}).click();const expected=qa.f.site.slug;await page.waitForFunction(value=>document.querySelector('#ca-public-site-slug')?.value===value,expected);assert(await save.isDisabled());assert.equal(qa.calls(),mode==='offline'?3:4);
  }
  assert.deepEqual({catalog:qa.f.site.catalog,employees:qa.f.site.employees,paymentRules:qa.f.site.paymentRules},preserved);
- qa.role('owner');await qa.open();await qa.nav('Edit website');await input.waitFor();assert.equal(await input.isDisabled(),false);qa.role('employee');await qa.open();await page.locator('.ca-mobile-menu-toggle').click();assert.equal(await page.locator('.sidebar-container').getByRole('button',{name:'Edit website',exact:true}).count(),0);
+ qa.role('owner');await qa.open();await qa.nav('Edit website');await input.waitFor();assert.equal(await input.isDisabled(),false);qa.role('employee');await qa.open();await page.locator('.ca-mobile-menu-toggle').click();assert.equal(await page.locator('.gd-navigation').getByRole('button',{name:'Edit website',exact:true}).count(),0);
  await qa.context.close();assert.deepEqual(errors,[]);console.log('PASS draft navigation, conflicts, server reload, pending tenant switch protection, lost responses, Owner/Employee permissions; zero real writes or payments');
 }finally{await browser.close();await new Promise((resolve,reject)=>server.httpServer.close(error=>error?reject(error):resolve()))}

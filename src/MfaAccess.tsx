@@ -54,11 +54,11 @@ function SecurityPanel({user,lang,onComplete,onCodes,allowDisable=false}:{user:U
   </section>
 }
 
-export function MfaGate({children}:{children:ReactNode}) {
+export function MfaGate({children,loadingView}:{children:ReactNode;loadingView?:ReactNode}) {
   const [user,setUser]=useState<User|null>(null),[loading,setLoading]=useState(true),[failed,setFailed]=useState(false),[holdCodes,setHoldCodes]=useState(false)
   const [lang,setLang]=usePortalLanguage()
   useEffect(()=>{let active=true;const stop=onAuthChange((_event,next)=>{if(active){setUser(next);setLoading(false);setFailed(false)}});void getUser().then(next=>{if(active)setUser(next)}).catch(()=>{if(active)setFailed(true)}).finally(()=>{if(active)setLoading(false)});return()=>{active=false;stop()}},[])
-  if(loading)return <PortalLoadingCard lang={lang}/>
+  if(loading)return loadingView||<PortalLoadingCard lang={lang}/>
   if(failed)return <main className="mfa-screen"><p role="alert">{lang==='es'?'No se pudo comprobar tu sesión.':'Unable to check your session.'}</p><button className="btn" onClick={()=>window.location.reload()}>{lang==='es'?'Intentar de nuevo':'Try again'}</button><a href="/">{lang==='es'?'Volver a WebFactory PR':'Return to WebFactory PR'}</a></main>
   if(!user?.mfa?.required||(user.mfa.verified&&!holdCodes))return <PortalSessionContext.Provider value={user}>{children}</PortalSessionContext.Provider>
   return <main translate="no" className="ca-page mfa-login-page"><PortalSceneCopy lang={lang}/><section className="ca-login mfa-login-card" key="security"><div className="portal-language"><PortalReturnHome lang={lang}/><button className={lang==='en'?'active':''} onClick={()=>setLang('en')}>EN</button><button className={lang==='es'?'active':''} onClick={()=>setLang('es')}>ES</button><ThemeToggle/></div><AdaptiveLogo alt="WebFactory PR"/><SecurityPanel user={user} lang={lang} onCodes={()=>setHoldCodes(true)} onComplete={async()=>{await refreshPortalUser();setHoldCodes(false)}}/><button className="ca-link" onClick={()=>void logout().catch(()=>setFailed(true))}>{lang==='es'?'Cerrar sesión':'Sign out'}</button></section></main>

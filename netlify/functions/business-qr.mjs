@@ -1,3 +1,4 @@
+import { renderBusinessQr } from '../lib/business-qr-image.mjs'
 import { errorResponse, requirePlatformAdmin, requireSiteAccess } from '../lib/client-auth.mjs'
 import { clientAssetStore, getClientSite } from '../lib/client-store.mjs'
 import { publicBaseUrl } from '../lib/platform-utils.mjs'
@@ -34,75 +35,44 @@ async function businessLogo(site) {
   return bytes.length <= 1_000_000 ? `data:${type};base64,${bytes.toString('base64')}` : ''
 }
 
-export default async (req) => {
+export function createBusinessQrHandler(deps = {}) {
+ const access = deps.siteAccess || requireSiteAccess
+ const admin = deps.platformAccess || requirePlatformAdmin
+ const loadSite = deps.getSite || getClientSite
+ const render = deps.render || renderBusinessQr
+ return async (req) => {
   try {
     if (req.method !== 'GET') return new Response('Method not allowed', { status: 405 })
     const url = new URL(req.url)
     const siteId = (url.searchParams.get('siteId') || '').trim()
     const platform = url.searchParams.get('platform') === '1'
-    const lang = url.searchParams.get('lang') === 'es' ? 'es' : 'en'
 
     let site = null
-    let target = `${publicBaseUrl()}/`
-    let name = 'WebFactory PR'
-    let accent = '3c86f6'
+    let target = `${url.origin}/`
     let ink = '0b1529'
     let logo = ''
-    let description = lang === 'es' ? 'Páginas web, ventas y reservaciones.' : 'Websites, online sales and bookings.'
 
     if (platform) {
-      await requirePlatformAdmin()
-      logo = await platformLogo()
+      await admin()
+      logo = await platformLogo().catch(() => '')
     } else {
       if (!siteId) throw Object.assign(new Error('Business is required.'), { status: 400 })
-      site = await getClientSite(siteId)
+      site = await loadSite(siteId)
       if (!site) throw Object.assign(new Error('Business not found.'), { status: 404 })
       try {
-        await requireSiteAccess(siteId)
+        await access(siteId)
       } catch (accessError) {
         if (Number(accessError?.status) !== 403) throw accessError
-        await requirePlatformAdmin()
+        await admin()
       }
-      target = `${publicBaseUrl()}/sites/${encodeURIComponent(site.slug)}`
-      name = site.business?.name || site.business?.nameEn || site.business?.nameEs || site.slug
-      const business = site.business || {}
-      description = lang === 'es'
-        ? (business.descriptionEs || business.descriptionEn || business.description || business.category || '')
-        : (business.descriptionEn || business.description || business.descriptionEs || business.category || '')
-      description = String(description).replace(/\s+/g, ' ').trim()
-      if (!description) description = lang === 'es' ? 'Descubre nuestros productos y servicios.' : 'Explore our products and services.'
-      if (Array.from(description).length > 104) description = `${Array.from(description).slice(0, 101).join('').trimEnd()}…`
+      target = `${url.origin}/sites/${encodeURIComponent(site.slug)}`
       const primary = safeColor(site.design?.primary, '0b1529')
       const secondary = safeColor(site.design?.secondary, '3c86f6')
       ink = luminance(primary) <= .20 ? primary : luminance(secondary) <= .20 ? secondary : '0b1529'
-      accent = secondary
-      logo = await businessLogo(site)
+      logo = await businessLogo(site).catch(() => '')
     }
 
-    const payload = {
-      text: target,
-      size: 900,
-      format: 'png',
-      margin: 2,
-      dark: ink,
-      light: 'ffffff',
-      finderColor: accent,
-      dotStyle: 'rounded',
-      finderStyle: 'rounded',
-      finderDotStyle: 'rounded',
-      ecLevel: logo ? 'H' : 'Q',
-      ...(logo ? { centerImageUrl: logo, centerImageSizeRatio: .22 } : {}),
-      caption: description ? `${name}\n${description}` : name,
-      captionFontSize: description ? 22 : 28,
-      captionFontColor: ink,
-    }
-    const response = await fetch('https://quickchart.io/qr', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    })
-    if (!response.ok) throw new Error('QR image could not be generated.')
-    const bytes = await response.arrayBuffer()
+    const bytes = await render({target, ink, logo})
     const slug = site?.slug || 'webfactory-pr'
     return new Response(bytes, { headers: {
       'Content-Type': 'image/png',
@@ -113,4 +83,6 @@ export default async (req) => {
   } catch (error) {
     return errorResponse(error)
   }
+ }
 }
+export default createBusinessQrHandler()

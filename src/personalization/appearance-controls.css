@@ -1,0 +1,15 @@
+.wf-appearance-group,.wf-design-picker,.wf-glass-controls{display:grid;gap:14px;min-width:0}
+.wf-appearance-group h3{margin:0}
+.wf-appearance-advanced{min-width:0;border-top:1px solid color-mix(in srgb,currentColor 20%,transparent);padding-top:10px}
+.wf-appearance-advanced summary,.wf-design-picker summary{cursor:pointer;min-height:44px;display:list-item;align-content:center}
+.wf-appearance-advanced[open]>.ca-grid{margin-top:12px}
+.wf-glass-controls label{display:grid;gap:6px;min-width:0}
+.wf-glass-controls output{font-variant-numeric:tabular-nums}
+.wf-glass-controls input[type=range]{width:100%;min-width:0;min-height:44px}
+.wf-design-picker select{width:100%;min-height:44px}
+.wf-appearance-group details:focus-within{outline-offset:3px}
+.wf-personalization-controls{display:grid;gap:28px;min-width:0}
+.wf-personalization-controls label{display:grid;gap:8px;min-width:0}
+.wf-personalization-controls input[type=range]{width:100%;min-width:0;min-height:44px}
+.wf-appearance-toolbar{display:flex;flex-wrap:wrap;gap:12px;min-width:0}
+.wf-appearance-toolbar button{min-height:44px}

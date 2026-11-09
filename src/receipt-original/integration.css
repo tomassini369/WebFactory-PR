@@ -12,7 +12,6 @@ html body #root .wf-original-receipt .wf-receipt-paper{width:100%;margin:0;anima
 .wf-original-receipt :is(button,[role=button]):focus-visible{outline:3px solid #3c86f6;outline-offset:3px}
 .wf-receipt-status{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
 @media(prefers-reduced-motion:reduce){.wf-original-receipt *{animation:none!important;transition:none!important}.wf-original-receipt .slot-paper-feed-viewport{transform:translateX(-50%)!important}}
-@media print{body:has(.wf-original-receipt dialog[open]) *{visibility:hidden}.wf-original-receipt dialog[open],.wf-original-receipt dialog[open] .inspector-body,.wf-original-receipt dialog[open] .inspector-body *{visibility:visible}.wf-original-receipt dialog[open]{position:absolute;inset:0;max-height:none;border:0;box-shadow:none}.wf-original-receipt .inspector-body{max-height:none;overflow:visible}.wf-original-receipt .inspector-header,.wf-original-receipt .inspector-actions{display:none}}
 
 .wf-original-receipt dialog:not([open]){display:none}
 .wf-original-receipt .btn-primary-print{background:#3c86f6;border-color:#3c86f6;color:#fff}

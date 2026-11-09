@@ -89,3 +89,20 @@ test('real Stripe SDK serializes checkout quantities, metadata, account and idem
  const result=await createReservedStripeCheckout({siteId:'shop'},record(),input,{requestUrl:'https://deploy-preview-57--webfactorypr.netlify.app',store:commerce,client,reserve:(site,id,lines)=>reserveInventory(site,id,lines,stock)});
  assert.equal(called,true);assert.equal(result.stripeSessionId,'cs_sdk');
 });
+
+test('cashier QR return uses a scoped buyer receipt, survives retry and never returns to business login',async t=>{
+ context(t);const commerce=memory(),seen=[];
+ const client={checkout:{sessions:{create:async(input)=>{seen.push(structuredClone(input));if(seen.length===1)throw Error('lost response');return {id:'cs_test_pos',url:'https://checkout.stripe.com/c/pay/cs_test_pos',expires_at:Number(input.expires_at)}}}}};
+ const options={requestUrl:'https://deploy-preview-125--webfactorypr.netlify.app/.netlify/functions/client-pos-checkout?redirect=https://evil.invalid',store:commerce,client,reserve:async()=>{},buyerReceiptReturn:true};
+ const site={siteId:'shop',slug:'shop'},sale={...record(),source:'pos_remote'};
+ await assert.rejects(createReservedStripeCheckout(site,sale,params(),options));
+ const saved=await createReservedStripeCheckout(site,sale,params(),options);assert.deepEqual(seen[0],seen[1]);
+ const success=new URL(seen[0].success_url),cancel=new URL(seen[0].cancel_url),fragment=new URLSearchParams(success.hash.slice(1));
+ assert.equal(success.origin,'https://deploy-preview-125--webfactorypr.netlify.app');assert.equal(success.pathname,'/kiosk-receipt');assert.equal(success.search,'');assert.match(fragment.get('receipt'),/^[A-Za-z0-9_-]{32}$/);assert.equal(fragment.get('slug'),'shop');assert.equal(new URLSearchParams(cancel.hash.slice(1)).get('cancelled'),'1');assert.equal(cancel.pathname,success.pathname);assert.equal(saved.buyerReceiptHash.length,64);
+ assert.equal([...commerce.rows.keys()].filter(k=>k.startsWith('buyer-receipts/')).length,1);
+ const {readBuyerReceipt}=await import('./buyer-receipt-access.mjs');
+ assert.deepEqual(await readBuyerReceipt(fragment.get('receipt'),{store:commerce,slug:'shop'}),{status:'pending'});
+ saved.paymentStatus='paid';saved.receiptId='receipt-pos';await commerce.setJSON('shop/orders/txn_a.json',saved);
+ const receipt={...saved,receiptId:'receipt-pos',total:100,createdAt:new Date().toISOString()};
+ const result=await readBuyerReceipt(fragment.get('receipt'),{store:commerce,slug:'shop',readSite:async()=>({...site,business:{name:'Test business'}}),readReceipt:async()=>receipt});assert.equal(result.status,'ready');assert.equal(result.receipt.total,100);assert.deepEqual(result.receipt.customer,{name:'',email:''});
+});

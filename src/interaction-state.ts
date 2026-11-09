@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useLayoutEffect, useRef } from 'react'
 
 type Draft = { discard: () => void; es: boolean }
 const drafts = new Map<symbol, Draft>()
@@ -21,7 +21,7 @@ export function useUnsavedChanges(value: unknown, revision: unknown, discard: (o
   }
   const key = useRef(Symbol('draft'))
   const dirty = JSON.stringify(value) !== original.current.serialized
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (dirty) drafts.set(key.current, { discard: () => discard(original.current.value), es: lang === 'es' })
     else drafts.delete(key.current)
     const id = key.current

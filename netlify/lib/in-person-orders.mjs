@@ -27,7 +27,7 @@ export async function createInPersonOrder(site,seed){
   });
 }
 
-export async function manageInPersonOrder(siteId,transactionId,action,{lockHeld=false}={}){
+export async function manageInPersonOrder(siteId,transactionId,action,{lockHeld=false,cashActor=null}={}){
   const store=clientCommerceStore(),key=keys(siteId,transactionId);
   const run=async()=>{
     let record=await store.get(key.transaction,{type:'json'});
@@ -50,7 +50,7 @@ export async function manageInPersonOrder(siteId,transactionId,action,{lockHeld=
     if(!reservation||reservation.provider!=='in_person'||reservation.fingerprint!==inventoryFingerprint(record.items)||!['held','consumed'].includes(reservation.state))throw fail('Verify the original inventory reservation before recording payment.');
     if(record.paymentStatus==='due'&&reservation.state!=='held')throw fail('Consumed inventory with an unpaid record requires reconciliation.');
     const now=new Date().toISOString();
-    record={...record,paymentStatus:'paid_in_person',status:'processing',paidAt:record.paidAt||now,updatedAt:now};
+    record={...record,paymentStatus:'paid_in_person',status:'processing',...(cashActor?{paymentMethod:'cash',cashConfirmedBy:cashActor}:{}),paidAt:record.paidAt||now,updatedAt:now};
     // Record operator-confirmed payment before stock. Retries resume this same
     // order; they never ask the operator to collect a second payment.
     await store.setJSON(key.transaction,record);

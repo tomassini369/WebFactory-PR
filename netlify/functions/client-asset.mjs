@@ -25,7 +25,7 @@ export default async (req) => {
       if (!data) throw Object.assign(new Error("Asset not found."), { status: 404 });
       return new Response(data, { headers: {
         "Content-Type": metadata?.metadata?.contentType || "application/octet-stream",
-        "Cache-Control": isPublic?"public, max-age=60":"private, no-store",
+        "Cache-Control": isPublic?(metadata?.metadata?.kioskBackground===true?"public, max-age=31536000, immutable":"public, max-age=60"):"private, no-store",
         "X-Content-Type-Options": "nosniff",
       } });
     }

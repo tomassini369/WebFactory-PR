@@ -1,4 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react'
+import { createPortal } from 'react-dom'
+import './receipt-print.css'
 import ReceiptDetails from './receipt-original/Receipt'
 import SlotPrinter from './receipt-original/SlotPrinter'
 import { sound } from './receipt-original/audio'
@@ -31,6 +33,20 @@ function ReceiptPrinter(props: ReceiptProps) {
   const [paperHeight, setPaperHeight] = useState(440)
   const [isSoundMuted, setIsSoundMuted] = useState(!feedback.getPreferences().soundEnabled)
   const sheet = useRef<HTMLDivElement>(null)
+  const printRoot = useRef<HTMLDivElement>(null)
+  const [printDocument, setPrintDocument] = useState<Document | null>(null)
+  const activatePrintRoot = () => {
+    const target = printRoot.current
+    if (!target) return
+    // Keep the synchronous user gesture for Safari; never print automatically.
+    target.ownerDocument.querySelectorAll('.wf-receipt-print-root[data-active]').forEach(node => node.removeAttribute('data-active'))
+    target.setAttribute('data-active', 'true')
+  }
+  const printReceipt = () => {
+    activatePrintRoot()
+    const target = printRoot.current
+    target?.ownerDocument.defaultView?.print()
+  }
   const dialog = useRef<HTMLDialogElement>(null)
   const frame = useRef(0)
   const tearTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
@@ -63,7 +79,13 @@ function ReceiptPrinter(props: ReceiptProps) {
     frame.current = requestAnimationFrame(tick)
   }
   const inspect = () => { clearTimeout(tearTimer.current); setInspectorOpen(true) }
-  useEffect(() => { if (inspectorOpen && !dialog.current?.open) dialog.current?.showModal() }, [inspectorOpen])
+  useEffect(() => {
+    if (!inspectorOpen) return
+    if (!dialog.current?.open) dialog.current?.showModal()
+    activatePrintRoot()
+    const target = printRoot.current
+    return () => target?.removeAttribute('data-active')
+  }, [inspectorOpen])
   const tear = () => {
     if (state.current !== 'completed') return
     sound.playTearSound(); state.current = 'torn'; setPrintState('torn')
@@ -71,6 +93,7 @@ function ReceiptPrinter(props: ReceiptProps) {
   }
   useLayoutEffect(() => {
     if (!sheet.current) return
+    setPrintDocument(sheet.current.ownerDocument)
     // scrollHeight is unaffected by the enclosing 3D projection.
     const measureSheet = () => setPaperHeight(sheet.current!.scrollHeight + 12)
     measureSheet()
@@ -101,8 +124,9 @@ function ReceiptPrinter(props: ReceiptProps) {
       {inspectorOpen && <>
       <div className="inspector-header"><div className="inspector-title"><h3>{es ? 'Recibo desprendido' : 'Collected receipt'}</h3></div><button type="button" className="inspector-close-btn" autoFocus onClick={() => dialog.current?.close()} aria-label={es ? 'Cerrar' : 'Close'}>✕</button></div>
       <div className="inspector-body"><div className="inspector-receipt-wrapper"><ReceiptDetails {...props} /></div></div>
-      <div className="inspector-actions"><button type="button" className="inspector-action-btn secondary" onClick={() => dialog.current?.ownerDocument.defaultView?.print()}>{es ? 'Imprimir / Guardar PDF' : 'Print / Save PDF'}</button><button type="button" className="inspector-action-btn primary" onClick={() => startPrint()}>{es ? 'Reimprimir este recibo' : 'Reprint this receipt'}</button></div>
+      <div className="inspector-actions"><button type="button" className="inspector-action-btn secondary" onClick={printReceipt}>{es ? 'Imprimir / Guardar PDF' : 'Print / Save PDF'}</button><button type="button" className="inspector-action-btn primary" onClick={() => startPrint()}>{es ? 'Reimprimir este recibo' : 'Reprint this receipt'}</button></div>
       </>}
     </dialog>
+    {printDocument && createPortal(<div ref={printRoot} className="wf-receipt-print-root" aria-hidden="true"><ReceiptDetails {...props}/></div>, printDocument.body)}
   </div>
 }

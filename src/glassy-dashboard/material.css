@@ -1,0 +1,235 @@
+/* ==========================================================================
+   Design tokens
+   Every colour, radius, blur and timing in the kit reads from here.
+   Settings → Appearance updates some of these live on <html>.
+   ========================================================================== */
+
+.gd-root {
+  --font: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+  /* Text */
+  --text: rgba(255, 255, 255, 0.96);
+  --text-2: rgba(255, 255, 255, 0.7);
+  --text-3: rgba(255, 255, 255, 0.48);
+  --text-ink: #141416;
+
+  /* Glass material (visionOS-style smoked glass) */
+  --glass-blur: 34px;
+  --glass-sat: 140%;
+  --glass-alpha: 0.36;
+  --glass-rgb: 44, 43, 47;
+  --glass-fill: rgba(var(--glass-rgb), var(--glass-alpha));
+  --glass-deep: rgba(30, 29, 32, 0.66);
+  --glass-shadow: 0 34px 70px -28px rgba(0, 0, 0, 0.42), 0 12px 28px -16px rgba(0, 0, 0, 0.3);
+  --glass-rim: linear-gradient(
+    150deg,
+    rgba(255, 255, 255, 0.46) 0%,
+    rgba(255, 255, 255, 0.1) 28%,
+    rgba(255, 255, 255, 0.03) 55%,
+    rgba(255, 255, 255, 0.18) 100%
+  );
+
+  /* Surfaces that sit inside a glass panel */
+  --surface: rgba(255, 255, 255, 0.07);
+  --surface-2: rgba(255, 255, 255, 0.12);
+  --surface-3: rgba(255, 255, 255, 0.19);
+  --stroke: rgba(255, 255, 255, 0.1);
+  --stroke-2: rgba(255, 255, 255, 0.2);
+  --ink: rgba(12, 12, 14, 0.72);
+  --solid: rgba(255, 255, 255, 0.95);
+
+  /* Palette */
+  --accent: #6aa8ff;
+  --green: #5ee69a;
+  --red: #ff7d7d;
+  --amber: #ffc95c;
+  --blue: #76b4ff;
+  --violet: #9b8cff;
+  --pink: #ff93c9;
+
+  /* Wallpaper */
+  --bg-dim: 0.26;
+
+  /* Shape */
+  --r-xl: 30px;
+  --r-lg: 22px;
+  --r-md: 16px;
+  --r-sm: 12px;
+  --r-full: 999px;
+
+  /* Motion — --motion is a global speed multiplier (0 = no animation) */
+  --motion: 1;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in: cubic-bezier(0.55, 0, 0.75, 0.2);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-dolly: cubic-bezier(0.16, 1, 0.3, 1);
+  --dur-in: calc(780ms * var(--motion));
+  --dur-out: calc(500ms * var(--motion));
+  --stagger: calc(75ms * var(--motion));
+
+  /* Interface size. The app sets `zoom` on <html> to this value
+     (auto-fits the screen, or Settings → Appearance → Interface size).
+     `vh` units get zoomed too, so use --vh for "fill the screen" heights. */
+  --ui-scale: 1;
+  --vh: calc(100vh / var(--ui-scale));
+}
+
+/* ==========================================================================
+   Glass material
+   ========================================================================== */
+
+.g-glass {
+  position: relative;
+  isolation: isolate;
+  min-width: 0;
+  border-radius: var(--radius, var(--r-xl));
+  color: var(--text);
+}
+
+.g-glass__layer {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  pointer-events: none;
+  background: var(--fill, var(--glass-fill));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
+  box-shadow:
+    var(--glass-shadow),
+    inset 0 1px 1px rgba(255, 255, 255, 0.12);
+}
+
+/* Specular rim — bright top-left edge that fades round the panel */
+.g-glass__layer::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: var(--glass-rim);
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+}
+
+/* Soft sheen in the top-left corner */
+.g-glass__layer::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(130% 70% at 0% 0%, rgba(255, 255, 255, 0.09), transparent 60%);
+}
+
+/* ---------- Tones ---------- */
+.g-glass--deep {
+  --fill: var(--glass-deep);
+}
+
+.g-glass--ink {
+  --fill: rgba(12, 12, 14, 0.6);
+}
+
+.g-glass--clear {
+  --fill: rgba(255, 255, 255, 0.1);
+}
+
+.g-glass--tint {
+  --fill: linear-gradient(
+    155deg,
+    color-mix(in srgb, var(--tint) 48%, transparent) 0%,
+    color-mix(in srgb, var(--tint) 24%, transparent) 100%
+  );
+}
+
+/* Nested glass: no second backdrop pass, lighter shadow */
+.g-glass--flat > .g-glass__layer {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  box-shadow:
+    0 14px 30px -20px rgba(0, 0, 0, 0.5),
+    inset 0 1px 1px rgba(255, 255, 255, 0.12);
+}
+
+/* ==========================================================================
+   Panel — a padded glass card with an optional header
+   ========================================================================== */
+
+.g-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 22px;
+}
+
+.g-panel__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 40px;
+}
+
+.g-panel__title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.g-panel__title h2 {
+  overflow: hidden;
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.g-panel__title p {
+  font-size: 12.5px;
+  color: var(--text-2);
+}
+
+.g-panel__actions {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ==========================================================================
+   Empty state
+   ========================================================================== */
+
+.g-empty {
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  padding: 36px 16px;
+  text-align: center;
+}
+
+.g-empty__icon {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--surface-2);
+  border: 1px solid var(--stroke);
+}
+
+.g-empty h3 {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.g-empty p {
+  max-width: 280px;
+  font-size: 13px;
+  color: var(--text-2);
+}

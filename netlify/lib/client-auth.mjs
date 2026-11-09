@@ -109,7 +109,7 @@ export async function requireSiteCapability(siteId, capability) {
 export function errorResponse(error) {
   const requested = Number(error?.status);
   const status = Number.isInteger(requested) && requested >= 400 && requested <= 599 ? requested : 500;
-  if (status >= 500) console.error("client-api", error);
+  if (status >= 500) console.error("client-api", {status});
   return Response.json(
     { ok: false, message: status >= 500 ? "The request could not be completed. Please try again later." : (error?.message || "Request rejected.") },
     { status, headers: { "Cache-Control": "no-store" } },

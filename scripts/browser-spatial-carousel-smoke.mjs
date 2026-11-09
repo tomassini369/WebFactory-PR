@@ -5,14 +5,14 @@ import {chromium,webkit} from 'playwright'
 const fixture=`import React from 'react';import{createRoot}from'react-dom/client';import Highlights from '/src/TemplateHighlights.tsx';import '/src/template-glass.css';
 const image='data:image/svg+xml,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="600" height="500"><rect width="600" height="500" fill="#506477"/></svg>');
 const items=Array.from({length:3},(_,i)=>({id:'item-'+i,name:'Business highlight '+i,image,description:'A full business description. '.repeat(20),price:20+i,badge:'Featured'}));
-const root=createRoot(document.getElementById('root'));window.renderHighlights=(count,lang='en',replace=false)=>root.render(React.createElement('div',{className:'template-site',style:{padding:'24px',minHeight:'1800px',background:document.documentElement.dataset.wfTheme==='dark'?'#171b24':'#f7f8fa'}},React.createElement(Highlights,{items:items.slice(0,count).map(v=>replace?{...v,id:'new-'+v.id}:v),language:lang})));window.renderHighlights(3);`
-const server=await createServer({server:{host:'127.0.0.1',port:5199,strictPort:true},plugins:[{name:'carousel-qa-only',resolveId(id){if(id==='/carousel-qa.js')return '\0carousel-qa'},load(id){if(id==='\0carousel-qa')return fixture},configureServer(s){s.middlewares.use('/carousel-qa',async(req,res,next)=>{if(req.url!=='/')return next();res.setHeader('Content-Type','text/html');res.end(await s.transformIndexHtml('/carousel-qa','<html><head><style>body{margin:0}*{box-sizing:border-box}</style></head><body><div id="root"></div><script type="module" src="/carousel-qa.js"></script></body></html>'))})}}]})
+const root=createRoot(document.getElementById('root'));window.renderHighlights=(count,lang='en',replace=false,missingImage=false)=>root.render(React.createElement('div',{className:'template-site','data-qa-missing-image':missingImage,style:{padding:'24px',minHeight:'1800px',background:document.documentElement.dataset.wfTheme==='dark'?'#171b24':'#f7f8fa'}},React.createElement(Highlights,{items:items.slice(0,count).map(v=>({...v,...(replace?{id:'new-'+v.id}:{}),...(missingImage?{image:''}:{})})),language:lang})));window.renderHighlights(3);`
+const server=await createServer({server:{host:'127.0.0.1',port:5199,strictPort:true},plugins:[{name:'carousel-qa-only',resolveId(id){if(id==='/carousel-qa.js')return '\0carousel-qa'},load(id){if(id==='\0carousel-qa')return fixture},configureServer(s){s.middlewares.use('/carousel-qa',async(req,res,next)=>{if(req.url!=='/')return next();res.setHeader('Content-Type','text/html');res.end(await s.transformIndexHtml('/carousel-qa','<html><head><link rel="icon" href="data:,"><style>body{margin:0}*{box-sizing:border-box}</style></head><body><div id="root"></div><script type="module" src="/carousel-qa.js"></script></body></html>'))})}}]})
 await server.listen()
 let checked=0
 try{
  for(const engine of process.env.QA_SKIP_WEBKIT?[chromium]:[chromium,webkit]){
- const browser=await engine.launch(engine===chromium&&process.env.QA_CHROMIUM_PATH?{executablePath:process.env.QA_CHROMIUM_PATH,args:['--single-process','--no-sandbox']}:undefined)
- const page=await browser.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message))
+ const browser=await engine.launch(engine===chromium&&process.env.QA_CHROMIUM_PATH?{executablePath:process.env.QA_CHROMIUM_PATH,args:['--single-process','--no-sandbox']}:engine===webkit&&process.env.QA_WEBKIT_PATH?{executablePath:process.env.QA_WEBKIT_PATH}:undefined)
+ const page=await browser.newPage();const errors=[],consoleErrors=[];page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')consoleErrors.push(m.text())})
  try{for(const width of [320,390,768,1440])for(const theme of ['light','dark'])for(const lang of ['en','es']){
   await page.setViewportSize({width,height:900})
   await page.goto('http://127.0.0.1:5199/carousel-qa/')
@@ -84,6 +84,15 @@ try{
   await page.evaluate(()=>window.renderHighlights(2));await page.waitForFunction(()=>document.querySelectorAll('.template-spatial-card').length===2);assert.equal(await stage.locator('article').count(),2)
   await page.getByRole('button',{name:'Next highlight',exact:true}).click();assert.equal(await stage.locator('[data-active="true"]').count(),1)
   await page.evaluate(()=>window.renderHighlights(1,'en',true));await page.waitForFunction(()=>document.querySelectorAll('.template-spatial-card').length===1);assert.equal(await active().getAttribute('data-index'),'0');assert.ok(await page.getByRole('button',{name:'Next highlight',exact:true}).isDisabled())
+  // A legitimate product/service may have no photo; preserve controls without empty image URLs.
+  await page.evaluate(()=>window.renderHighlights(1,'en',true,true));await page.waitForFunction(()=>document.querySelector('.template-site')?.dataset.qaMissingImage==='true')
+  assert.equal(await stage.locator('.card-media-img').count(),0)
+  assert.equal(await page.locator('.dock-avatar-img').count(),0)
+  await active().locator('.card-expand-btn').click();await dialog.waitFor()
+  assert.equal(await dialog.locator('.modal-poster-img').count(),0)
+  assert.equal(await dialog.locator('h2').textContent(),'Business highlight 0')
+  await page.keyboard.press('Escape');await dialog.waitFor({state:'hidden'})
+  assert.deepEqual(consoleErrors,[],'A photo-less highlight must not emit React warnings')
   await page.evaluate(()=>window.renderHighlights(0));await stage.waitFor({state:'detached'})
   assert.deepEqual(errors,[])
   checked++
