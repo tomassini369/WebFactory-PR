@@ -11,7 +11,7 @@ existing layout, logos, themes, business colors, permissions and provider paths.
 | API failure shown as no assigned business | Access failures retain an alert and an explicit retry. A genuine empty list remains its own state. No automatic access retries or new account creation are introduced. |
 | Missing weekdays | Show seven days without saving on render; missing days default closed. Save explicitly completes the week, preserving existing English/Spanish keys and break metadata. |
 | Unnamed time inputs | Each open/close input has a day-specific ES/EN accessible name. |
-| DMCA production configuration | Deployment requires the already approved public contact in production/functions. No address or credential values belong in this repository. The owner is configuring the existing variable; final evidence must verify the actual production endpoint. |
+| DMCA production configuration | Deployment requires the already approved public contact in production/functions. Flat contact JSON and the complete response from the existing public endpoint are accepted with the same active-registration/field whitelist. No address or credential values belong in this repository. The owner is configuring the existing variable; final evidence must verify the actual production endpoint. |
 | Preview notice in production | The existing compile-time deployment flag limits the preview-draft banner to review builds. Legal wording, effective dates, routes and OAuth disclosures remain unchanged; this is not a legal approval claim. |
 | False English Builder failures | Upload/publish selectors follow the selected language. Python uses configured executable paths locally or managed Playwright browsers in CI. |
 | Cancelled combined kiosk CI job | Keep skin commerce/booking/keyboard coverage; run settings, customizer and QR matrices in independent engine/suite jobs. Add a separate production/preview release regression job, preserving all existing suites. |
@@ -19,10 +19,10 @@ existing layout, logos, themes, business colors, permissions and provider paths.
 ## Regression evidence
 
 Four targeted booking/time-validation tests failed before the implementation and
-passed after it. Ten added unit regressions cover all starts, late-day blocks,
+passed after it. Twelve added unit regressions cover all starts, late-day blocks,
 late hold creation/conflict protection, strict server hours, legacy invalid
 windows, seven-day defaults, alias precedence and preservation of saved data.
-The complete backend suite passes 863 tests; production TypeScript/build passes.
+The complete backend suite passes 865 tests; production TypeScript/build passes.
 
 New browser regressions exercise list 503/malformed responses, detail 503,
 explicit keyboard retry, a real empty-list fixture, seven weekdays, accessible
