@@ -1,3 +1,4 @@
+import {normalizeHoursWindow} from '../../shared/business-hours.mjs';
 import { sanitizePolicies } from "./publication-review.mjs";
 import { cleanText, validEmail } from "./platform-utils.mjs";
 
@@ -93,11 +94,7 @@ export function sanitizeBuilderRequest(payload) {
   const sanitizedHours = Object.fromEntries(
     Object.entries(hours).slice(0, 14).map(([day, value]) => [
       cleanText(day, 40),
-      {
-        enabled: Boolean(value?.enabled),
-        open: cleanText(value?.open, 10),
-        close: cleanText(value?.close, 10),
-      },
+      normalizeHoursWindow(value),
     ]),
   );
 
