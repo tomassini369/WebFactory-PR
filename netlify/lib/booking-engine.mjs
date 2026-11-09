@@ -1,3 +1,4 @@
+import {isBusinessTime} from '../../shared/business-hours.mjs';
 import {bookingSlotLockKey} from './booking-date-index.mjs';
 import {reservationBlocks} from './booking-reservation-cache.mjs';
 import crypto from "node:crypto";
@@ -70,8 +71,10 @@ function ruleSlots({date,timeZone,service,employee,site,blocks,locationId='',clo
 }
 function slotsForSchedule({ date, schedule, service, site, blocks, timeZone, clock=Date.now }) {
   if (!schedule?.enabled) return [];
-  const dayStart = zonedToUtc(date, schedule.open || '09:00', timeZone);
-  const dayEnd = zonedToUtc(date, schedule.close || '17:00', timeZone);
+  const open=schedule.open || '09:00', close=schedule.close || '17:00';
+  if(!isBusinessTime(open)||!isBusinessTime(close)||open>=close)return [];
+  const dayStart = zonedToUtc(date, open, timeZone);
+  const dayEnd = zonedToUtc(date, close, timeZone);
   const duration = Math.max(5, Number(service.duration || 30));
   const {before,after:buffer} = bookingBuffers(site,service);
   const policy=bookingPolicy(site), now=clock();
@@ -83,7 +86,7 @@ function slotsForSchedule({ date, schedule, service, site, blocks, timeZone, clo
       slots.push({ start: new Date(cursor).toISOString(), end: new Date(cursor + duration * 60_000).toISOString() });
     }
   }
-  return slots.slice(0, 96);
+  return slots;
 }
 const validDate = date => /^\d{4}-\d{2}-\d{2}$/.test(date) && Number.isFinite(Date.parse(date)) && new Date(date).toISOString().slice(0,10)===date;
 export async function availabilityForDate(site, serviceId, employeeId, date, locationId = "", {strictGoogle=true,ignoreReservationId='',fresh=false} = {}) {

@@ -1,3 +1,4 @@
+import {normalizeHoursWindow} from '../../shared/business-hours.mjs';
 import {claimPublicSiteSlug, validatePublicSiteSlug} from '../lib/client-site-slug.mjs';
 import {commercialCapabilities, employeeSiteView} from "../lib/commercial-access.mjs";
 import { sanitizePolicies } from "../lib/publication-review.mjs";
@@ -136,13 +137,13 @@ function sanitizeEmployees(value, catalog, locations = []) {
 }
 
 function sanitizeHours(value = {}) {
+  if(!value||typeof value!=='object'||Array.isArray(value))throw Object.assign(new Error('Hours must be an object.'),{status:400});
   const result = {};
   for (const [day, hours] of Object.entries(value).slice(0, 14)) {
+    const {enabled,open,close}=normalizeHoursWindow(hours);
     result[cleanText(day, 40)] = {
       breaks: Array.isArray(hours?.breaks)?hours.breaks.slice(0,12).map(entry=>({start:cleanText(entry.start,5),end:cleanText(entry.end,5)})).filter(entry=>/^([01]\d|2[0-3]):[0-5]\d$/.test(entry.start)&&/^([01]\d|2[0-3]):[0-5]\d$/.test(entry.end)&&entry.start<entry.end):[],
-      enabled: Boolean(hours?.enabled),
-      open: /^\d{2}:\d{2}$/.test(hours?.open || "") ? hours.open : "09:00",
-      close: /^\d{2}:\d{2}$/.test(hours?.close || "") ? hours.close : "17:00",
+      enabled,open,close,
     };
   }
   return result;

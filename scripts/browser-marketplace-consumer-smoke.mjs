@@ -14,8 +14,10 @@ try{
  for(const width of widths)for(const theme of ['light','dark'])for(const lang of ['es','en']){
   const context=await browser.newContext({viewport:{width,height:900},reducedMotion:'reduce',serviceWorkers:'block',...(engine==='webkit'?{hasTouch:true}:{})})
   await context.addInitScript(({lang,theme})=>{if(window.top===window){localStorage.setItem('webfactory-language',lang);localStorage.setItem('webfactory-theme-v2',theme)}},{lang,theme})
-  const page=await context.newPage(),errors=[],writes=[];let signedIn=false,rejectProfile=true,profile={name:'QA consumer',municipality:'',favorites:[],following:[],revision:0,needsAcceptance:true,restricted:false}
+  const page=await context.newPage(),errors=[],writes=[],assetFailures=[];let signedIn=false,rejectProfile=true,profile={name:'QA consumer',municipality:'',favorites:[],following:[],revision:0,needsAcceptance:true,restricted:false}
   page.on('pageerror',e=>errors.push(e.message))
+  page.on('response',response=>{const url=new URL(response.url());if(url.origin===new URL(origin).origin&&/\.(?:js|css)$/.test(url.pathname)&&response.status()>=400)assetFailures.push({path:url.pathname,status:response.status(),requestId:response.headers()['x-nf-request-id']||null})})
+  page.on('requestfailed',request=>{const url=new URL(request.url());if(url.origin===new URL(origin).origin&&/\.(?:js|css)$/.test(url.pathname))assetFailures.push({path:url.pathname,issue:request.failure()?.errorText||'request_failed'})})
   await page.route('**/.netlify/identity/settings',r=>r.fulfill({json:{disable_signup:false,autoconfirm:false,external:{email:true}}}))
   await page.route('**/.netlify/functions/**',async r=>{
    const path=new URL(r.request().url()).pathname.split('/').at(-1),p=r.request().method()==='POST'?r.request().postDataJSON():null
@@ -33,7 +35,13 @@ try{
    }
    return r.fulfill({status:500,json:{ok:false,message:'Unexpected private request'}})
   })
-  await page.goto(origin+'/',{waitUntil:'domcontentloaded'});await page.locator('.mk-business-card').waitFor();await overflow(page)
+  await page.goto(origin+'/',{waitUntil:'domcontentloaded'});
+  try{await page.locator('.mk-business-card').waitFor()}catch(error){
+   await page.screenshot({path:`${artifact}/load-failure-${width}-${theme}-${lang}-${engine}.png`,fullPage:true}).catch(()=>{});
+   const rendered=await page.locator('body').innerText({timeout:2000}).catch(()=>'Page unavailable');
+   console.error('CONSUMER_LOAD_FAILURE',JSON.stringify({engine,width,theme,lang,pageErrors:errors,assetFailures,rendered:rendered.slice(0,1800)}));throw error;
+  }
+  await overflow(page)
   assert.equal(await page.locator('.mk-business-info h3').innerText(),lang==='es'?fixture.nameEs:fixture.nameEn)
   await page.locator('.mk-view-business').click();await page.locator('.mk-profile-intro').waitFor();assert.equal(new URL(page.url()).pathname,'/negocios/qa-fixture');await overflow(page)
   await page.locator('.mk-gallery-open').click();assert(await page.locator('dialog').evaluate(n=>n.open));await page.keyboard.press('Escape');assert(!await page.locator('dialog').evaluate(n=>n.open))

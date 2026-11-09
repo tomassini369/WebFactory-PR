@@ -1,6 +1,8 @@
 const headers={'Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer'};
 export function publicContact(raw){
  let input;try{input=JSON.parse(raw||'')}catch{return null}
+ // The public endpoint exposes only this same whitelist; accept its complete response for configuration transfer.
+ if(input?.ok===true&&input.contact&&typeof input.contact==='object'&&!Array.isArray(input.contact))input=input.contact;
  if(input?.status!=='active'||!/^DMCA-\d+$/.test(input.registration||''))return null;
  const fields={name:180,organization:180,address:500,phone:80,email:320,registration:40};const result={status:'active'};
  for(const [key,max]of Object.entries(fields)){if(typeof input[key]!=='string'||!input[key].trim()||input[key].length>max)return null;result[key]=input[key].trim()}

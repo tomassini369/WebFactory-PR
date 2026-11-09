@@ -411,7 +411,7 @@ export default function LegalPage({kind}:{kind:LegalKind}){
     <header className="legal-top"><a href="/" className="legal-logo"><AdaptiveLogo alt="WebFactory PR"/></a><nav><a href="/templates">Templates</a><a href="/builder">Builder</a><a href="/client-admin">Log In</a><div className="legal-lang"><button className={lang==='en'?'active':''} onClick={()=>setLang('en')}>EN</button><button className={lang==='es'?'active':''} onClick={()=>setLang('es')}>ES</button></div><ThemeToggle/></nav></header>
     <section className="legal-hero"><div><p>WEBFACTORY PR · LEGAL</p><h1>{page.title}</h1><span>{kind === 'copyright' ? '' : kind === 'privacy' ? privacyUpdated[lang] : kind === 'refund' ? updated[lang].replace('October 4', 'October 2').replace('4 de octubre', '2 de octubre') : updated[lang]}</span><p>{page.intro}</p></div></section>
     <article className="legal-content">
-      <p role="note">{legalRevision[lang]}</p>
+      {__WF_PREVIEW_REVIEW__&&<p role="note">{legalRevision[lang]}</p>}
       {[...page.sections,...supplement].map(([title,paragraphs])=><section key={title}><h2>{title}</h2>{paragraphs.map((paragraph,index)=><p key={index}>{paragraph}</p>)}</section>)}
       {kind==='copyright'&&<><DmcaPublicContact lang={lang}/><ContentClaimForm lang={lang}/></>}
       <p><a href="/copyright">{lang==='es'?'Copyright y reclamaciones de contenido':'Copyright and content complaints'}</a></p>
