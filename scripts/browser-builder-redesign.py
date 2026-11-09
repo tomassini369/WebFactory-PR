@@ -42,7 +42,9 @@ def verify_save_button(button):
 rows=[]
 with sync_playwright() as p:
  for engine in ['chromium','webkit']:
-  opts={'headless':True,'executable_path':'/usr/bin/chromium' if engine=='chromium' else '/workspace/.playwright/webkit-2336/pw_run.sh'}
+  opts={'headless':True}
+  executable=os.environ.get('QA_CHROMIUM_PATH' if engine=='chromium' else 'QA_WEBKIT_PATH')
+  if executable:opts['executable_path']=executable
   if engine=='chromium':opts['args']=['--no-sandbox']
   if base.startswith('https:'):opts['proxy']={'server':os.environ['HTTPS_PROXY']}
   browser=getattr(p,engine).launch(**opts)
@@ -95,9 +97,9 @@ with sync_playwright() as p:
      if args.faults and i==1:control['hold']=True
      photo.nth(i).set_input_files({'name':f'fixture-{i}.png','mimeType':'image/png','buffer':PNG})
      if args.faults and i==1:
-      page.locator('.wf-builder-nav button').last.click();expect(page.get_by_role('button',name='Subiendo imágenes…')).to_be_disabled();assert len(held)==1
+      page.locator('.wf-builder-nav button').last.click();expect(page.get_by_role('button',name='Subiendo imágenes…' if lang=='es' else 'Uploading images…')).to_be_disabled();assert len(held)==1
       key=f'sites/fixture-redesign/upload-{len(uploads)}.png';uploads.append(key);control['hold']=False;held.pop().fulfill(json={'ok':True,'assetKey':key,'imageUrl':f'/.netlify/functions/client-asset?siteId=fixture-redesign&key={key}'})
-      expect(page.get_by_role('button',name='Guardar y publicar',exact=True)).to_be_enabled();page.locator('.wf-builder-nav button').first.click()
+      expect(page.get_by_role('button',name='Guardar y publicar' if lang=='es' else 'Save and publish',exact=True)).to_be_enabled();page.locator('.wf-builder-nav button').first.click()
      expect(photo.nth(i)).to_be_enabled()
     assert len(uploads)==3
     page.locator('.wf-builder-nav button').nth(3).click();page.locator('.wf-catalog-tile').first.click()

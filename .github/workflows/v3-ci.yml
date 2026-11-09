@@ -367,8 +367,7 @@ jobs:
 
   kiosk-skins:
     runs-on: ubuntu-24.04
-    # Classic also runs the full appearance/customizer/QR matrix. The previous
-    # 20-minute job deadline cancelled those checks; per-action limits remain.
+    # Appearance suites run independently below so every skin keeps its full coverage.
     timeout-minutes: 35
     strategy:
       fail-fast: false
@@ -394,14 +393,6 @@ jobs:
           node scripts/browser-kiosk-bookings-smoke.mjs
           node scripts/browser-kiosk-keyboard-smoke.mjs
           QA_ENGINE=webkit QA_WIDTHS=1024,1440 QA_PORT=5363 node scripts/browser-kiosk-keyboard-smoke.mjs
-      - name: Verify appearance configurator and preview isolation
-        if: matrix.skin == 'classic'
-        env:
-          QA_ENGINE: ${{ matrix.engine }}
-        run: |
-          node scripts/browser-kiosk-skins-settings-smoke.mjs
-          node scripts/browser-kiosk-customizer-smoke.mjs
-          node scripts/browser-kiosk-qr-smoke.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -411,6 +402,90 @@ jobs:
             /tmp/webfactory-kiosk-skins/
             /tmp/webfactory-kiosk-customizer/
             /tmp/webfactory-kiosk-qr/
+
+  # Keep each full appearance matrix independent of commerce and of the other matrices.
+  kiosk-appearance:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        engine: [chromium, webkit]
+        suite: [skins-settings, customizer, qr]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: WF_DESIGN_PREVIEW=1 npm run build
+      - run: npx playwright install --with-deps ${{ matrix.engine }}
+      - name: Verify full appearance suite with isolated providers
+        env:
+          QA_ENGINE: ${{ matrix.engine }}
+        run: node scripts/browser-kiosk-${{ matrix.suite }}-smoke.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: kiosk-appearance-${{ matrix.suite }}-${{ matrix.engine }}
+          path: |
+            /tmp/webfactory-kiosk-skins/
+            /tmp/webfactory-kiosk-customizer/
+            /tmp/webfactory-kiosk-qr/
+
+  release-regressions:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: npm ci
+      - run: python -m pip install playwright==1.62.0
+      - run: npx playwright install --with-deps chromium webkit
+      - name: Build actual production variant
+        env:
+          CONTEXT: production
+        run: npm run build
+      - name: Check access recovery, hours and production legal publication
+        run: |
+          for engine in chromium webkit; do
+            QA_ENGINE="$engine" QA_PORT=5460 node scripts/browser-platform-audit-fixes.mjs
+            QA_ENGINE="$engine" QA_PORT=5461 QA_EXPECT_PREVIEW=0 node scripts/browser-legal-publication-smoke.mjs
+          done
+      - name: Check Builder uploads, revisions and English/Spanish failure handling
+        shell: bash
+        run: |
+          npm run preview -- --host 127.0.0.1 --port 5444 > /tmp/builder-audit-preview.log 2>&1 &
+          preview_pid=$!
+          trap 'kill "$preview_pid" 2>/dev/null || true' EXIT
+          for attempt in {1..30}; do
+            if curl -fsS http://127.0.0.1:5444/ -o /dev/null; then break; fi
+            sleep 1
+          done
+          python scripts/browser-builder-redesign.py --base http://127.0.0.1:5444 --widths 390 1440 --faults --out /tmp/builder-audit-regressions
+      - name: Keep preview-only notices in review deployments
+        env:
+          CONTEXT: deploy-preview
+        run: |
+          npm run build
+          for engine in chromium webkit; do
+            QA_ENGINE="$engine" QA_PORT=5461 QA_EXPECT_PREVIEW=1 node scripts/browser-legal-publication-smoke.mjs
+          done
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: release-regressions
+          path: |
+            /tmp/webfactory-platform-audit-fixes/
+            /tmp/builder-audit-regressions/
+            /tmp/builder-audit-preview.log
 
   kiosk-bookings:
     runs-on: ubuntu-24.04
