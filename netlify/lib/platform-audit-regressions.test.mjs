@@ -32,7 +32,7 @@ test('long-day availability still excludes existing bookings instead of trimming
 });
 test('new business creation rejects the same invalid clock windows as the existing-site editor',async()=>{
  const {sanitizeBuilderRequest}=await import('./builder-request.mjs');
- const request=hours=>({draftId:'synthetic-audit-draft-0001',orderData:{business:{name:'Synthetic business'},client:{name:'Synthetic owner',email:'owner@example.invalid'},hours}});
+ const request=hours=>({draftId:'synthetic-audit-draft-0001',orderData:{business:{name:'Synthetic business'},client:{name:'Synthetic owner',email:'owner@example.invalid'},payments:{methods:{inPerson:true}},hours}});
  for(const [open,close] of [['09:00','25:00'],['99:00','99:59'],['17:00','09:00']])assert.throws(()=>sanitizeBuilderRequest(request({Monday:{enabled:true,open,close}})),{status:400});
  const hours={Monday:{enabled:true,open:'09:00',close:'17:00'}};assert.deepEqual(sanitizeBuilderRequest(request(hours)).hours,hours);
 });
