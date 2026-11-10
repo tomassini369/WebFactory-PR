@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import {usePortalLanguage} from './portal-language'
 import './legal.css'
-import {legalRevision,legalSupplement,copyrightCopy} from './legal-supplement'
+import {legalSupplement,copyrightCopy} from './legal-supplement'
 import ContentClaimForm from './ContentClaimForm'
 import DmcaPublicContact from './DmcaPublicContact'
 import { AdaptiveLogo, ThemeToggle } from './theme'
@@ -162,7 +162,7 @@ const copy={
           'Connecting ChatGPT is optional and requires an eligible ChatGPT account, a WebFactory account and explicit authorization. OpenAI controls supported devices, plans and connection availability; its terms and applicable charges are separate. WebFactory does not promise that every portal function is available in chat.',
           'A business authorization is limited to its selected business and current access rights. Platform-wide administration requires a separately authorized platform administrator. Do not use the connection to access another business without authorization, expose credentials, change passwords or modify platform source code.',
           'Read access can return authorized information. Execute access can perform supported writes. The user remains responsible for checking the requested business, amounts, recipients and action. When a sensitive action returns a required confirmation phrase, execution is authorized only after the user supplies that exact phrase in chat. A model response alone is not proof of completion; rely on the recorded MCP result and verification status.',
-          'AI suggestions can be incomplete or inaccurate. Business owners remain responsible for content, communications and operations they request or confirm. Salary calculations and accounting exports organize supplied records; they do not file tax returns, send payroll payments or replace professional accounting or employment advice. Confirm hours, rates, classifications and tax treatment independently.',
+          'AI suggestions can be incomplete or inaccurate. Business owners remain responsible for content, communications and operations they request or confirm. Accounting reports and exports organize supplied records; they do not file tax returns or replace professional accounting or tax advice. Verify records and tax treatment independently.',
           'You may revoke a connection or only its Execute permission in WebFactory at /chatgpt. Revocation blocks further use of that authorization but does not undo completed actions or delete conversations already held by ChatGPT.'
         ]],
         ['19. Contact',[
@@ -356,7 +356,7 @@ const copy={
           'Conectar ChatGPT es opcional y requiere una cuenta elegible de ChatGPT, una cuenta WebFactory y autorización explícita. OpenAI controla los dispositivos, planes y disponibilidad de conexiones; sus términos y cargos aplicables son independientes. WebFactory no promete que toda función del portal esté disponible en el chat.',
           'La autorización de negocio se limita al negocio seleccionado y sus permisos vigentes. Administrar toda la plataforma requiere un administrador de plataforma autorizado por separado. No uses la conexión para entrar a otro negocio sin autorización, exponer credenciales, cambiar contraseñas o modificar código fuente de la plataforma.',
           'El acceso de lectura puede devolver información autorizada. Execute puede realizar escrituras compatibles. El usuario sigue siendo responsable de comprobar negocio, cantidades, destinatarios y acción solicitada. Cuando una acción sensible devuelve una frase de confirmación requerida, solo se autoriza la ejecución después de que el usuario escriba exactamente esa frase en el chat. Una respuesta del modelo por sí sola no demuestra que la acción terminó; utiliza el resultado registrado del MCP y su estado de verificación.',
-          'Las sugerencias de IA pueden ser incompletas o incorrectas. El dueño del negocio sigue siendo responsable del contenido, comunicaciones y operaciones que solicite o confirme. Los cálculos de salarios y exportaciones contables organizan registros provistos; no radican planillas, envían pagos de nómina ni sustituyen asesoría profesional contable o laboral. Verifica independientemente horas, tarifas, clasificaciones y tratamiento contributivo.',
+          'Las sugerencias de IA pueden ser incompletas o incorrectas. El dueño del negocio sigue siendo responsable del contenido, comunicaciones y operaciones que solicite o confirme. Los reportes y exportaciones contables organizan registros provistos; no radican planillas ni sustituyen asesoría profesional contable o contributiva. Verifica independientemente los registros y el tratamiento contributivo.',
           'Puedes revocar la conexión o solamente su permiso Execute en WebFactory en /chatgpt. Revocar impide seguir usando esa autorización, pero no revierte acciones completadas ni elimina conversaciones ya guardadas por ChatGPT.'
         ]],
         ['19. Contacto',[
@@ -411,7 +411,6 @@ export default function LegalPage({kind}:{kind:LegalKind}){
     <header className="legal-top"><a href="/" className="legal-logo"><AdaptiveLogo alt="WebFactory PR"/></a><nav><a href="/templates">Templates</a><a href="/builder">Builder</a><a href="/client-admin">Log In</a><div className="legal-lang"><button className={lang==='en'?'active':''} onClick={()=>setLang('en')}>EN</button><button className={lang==='es'?'active':''} onClick={()=>setLang('es')}>ES</button></div><ThemeToggle/></nav></header>
     <section className="legal-hero"><div><p>WEBFACTORY PR · LEGAL</p><h1>{page.title}</h1><span>{kind === 'copyright' ? '' : kind === 'privacy' ? privacyUpdated[lang] : kind === 'refund' ? updated[lang].replace('October 4', 'October 2').replace('4 de octubre', '2 de octubre') : updated[lang]}</span><p>{page.intro}</p></div></section>
     <article className="legal-content">
-      {__WF_PREVIEW_REVIEW__&&<p role="note">{legalRevision[lang]}</p>}
       {[...page.sections,...supplement].map(([title,paragraphs])=><section key={title}><h2>{title}</h2>{paragraphs.map((paragraph,index)=><p key={index}>{paragraph}</p>)}</section>)}
       {kind==='copyright'&&<><DmcaPublicContact lang={lang}/><ContentClaimForm lang={lang}/></>}
       <p><a href="/copyright">{lang==='es'?'Copyright y reclamaciones de contenido':'Copyright and content complaints'}</a></p>
