@@ -1,3 +1,5 @@
+import { KitchenPanel } from './KitchenPanel'
+import type { KitchenChange, KitchenDisplay } from '../netlify/lib/kitchen-display.mjs'
 import {businessHoursRows,completeBusinessHours} from '../shared/business-hours.mjs'
 import {readRememberedEmail, rememberEmail} from './remembered-email'
 import {portalAccessCopy} from './portal-access-copy'
@@ -36,7 +38,7 @@ import {BookingWaitlistManager} from './BookingWaitlist'
 import BookingSeriesPanel from './BookingSeriesPanel'
 import { AthConnection } from './AthConnection'
 import { StripeConnection } from './StripeConnection'
-import { useEffect, useMemo, useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import { acceptInvite, getUser, handleAuthCallback, logout, onAuthChange, updateUser, type User } from './portal-auth'
 import { login, requestPasswordRecovery } from './portal-auth'
 import './client-admin.css'
@@ -46,7 +48,7 @@ import { PortalPanel, PortalPanelProvider } from './PortalPanel'
 import { AdaptiveLogo, ThemeToggle } from './theme'
 import { feedback } from './feedback/feedback'
 import { withAuthRetry } from './auth-retry'
-import { AccountLifecyclePanel, AnalyticsPanel, CustomersPanel, InventoryAdjustmentPanel, InventoryMovementsPanel, InventoryStatusPanel, IntegrationManagementPanel, MarketingPanel, MemberRolesPanel, PaymentLinksPanel, PayoutsPanel, PosPanel, ReceiptsPanel, ReviewAutomationPanel, SettingsPanel, TransactionPanel, WebsitePanel, KitchenPanel } from './ClientAdminV3Panels'
+import { AccountLifecyclePanel, AnalyticsPanel, CustomersPanel, InventoryAdjustmentPanel, InventoryMovementsPanel, InventoryStatusPanel, IntegrationManagementPanel, MarketingPanel, MemberRolesPanel, PaymentLinksPanel, PayoutsPanel, PosPanel, ReceiptsPanel, ReviewAutomationPanel, SettingsPanel, TransactionPanel, WebsitePanel } from './ClientAdminV3Panels'
 import BusinessControlCenter from './BusinessControlCenter'
 import TeamEditor from './ProfessionalEditor'
 import EmployeeWorkspace from './EmployeeWorkspace'
@@ -60,8 +62,8 @@ const PracticeBuilder=lazy(()=>import('./WebFactoryBuilder'))
 type CatalogItem={id:string;type:'product'|'service';name:string;nameEn?:string;nameEs?:string;description:string;descriptionEn?:string;descriptionEs?:string;price:number;active:boolean;inventory:number|null;requiresAppointment:boolean;duration:number;bufferMinutes:number;imageAssetKey?:string;taxable?:boolean;taxRateOverride?:number|null}
 type Employee={id:string;name:string;role:string;roleEn?:string;roleEs?:string;active:boolean;serviceIds:string[];locationIds?:string[];calendarId:string;dailyLimit:number;schedule:Record<string,DayHours>;timeOff:Array<{start:string;end:string;note:string}>}
 type DayHours={enabled:boolean;open:string;close:string}
-type ClientSite={siteId:string;slug:string;status:string;revision:number;business:Record<string,any>;design:{mode?:'template_base'|'custom';templateSlug?:string;templateCategory?:string;templateName?:string;templateRoute?:string;preserveTemplateStructure?:boolean;style:string;primary:string;secondary:string};catalog:CatalogItem[];employees:Employee[];members?:Array<{email:string;role:string}>;hours:Record<string,DayHours>;paymentRules:any;googleCalendar:any;businessEmail?:{provider:string;connected:boolean;connectedEmail:string;connectedAt?:string;disconnectedAt?:string};taxConfig?:any;reviewSettings?:any;settings:{locale:string;timezone:string;currency:string};servicePlan?:{code:string;name:string;billingModel:'subscription'|'complimentary';billingStatus:string;subscriptionStatus:string;migrationEligible:boolean;activatedAt:string;trialStartedAt?:string;trialEndsAt?:string;currentPeriodEnd:string;cancelAtPeriodEnd:boolean}}
-type Transaction={balanceAttempt?:{attempt:string};balanceReconciliation?:{state:string;reason?:string};transactionId:string;kind:'order'|'booking';paymentProvider?:string;customer:{name:string;email:string;phone:string};items:Array<{name:string;quantity:number;unitAmount:number}>;amountTotal:number;refundedAmount?:number;paymentStatus:string;status:string;createdAt:string;paidAt?:string;start?:string;queueNumber?:string;kitchenStatus?:string;locationName?:string;locationId?:string}
+type ClientSite={siteId:string;slug:string;status:string;revision:number;business:Record<string,any>;kitchenDisplays?:KitchenDisplay[];design:{mode?:'template_base'|'custom';templateSlug?:string;templateCategory?:string;templateName?:string;templateRoute?:string;preserveTemplateStructure?:boolean;style:string;primary:string;secondary:string};catalog:CatalogItem[];employees:Employee[];members?:Array<{email:string;role:string}>;hours:Record<string,DayHours>;paymentRules:any;googleCalendar:any;businessEmail?:{provider:string;connected:boolean;connectedEmail:string;connectedAt?:string;disconnectedAt?:string};taxConfig?:any;reviewSettings?:any;settings:{locale:string;timezone:string;currency:string};servicePlan?:{code:string;name:string;billingModel:'subscription'|'complimentary';billingStatus:string;subscriptionStatus:string;migrationEligible:boolean;activatedAt:string;trialStartedAt?:string;trialEndsAt?:string;currentPeriodEnd:string;cancelAtPeriodEnd:boolean}}
+type Transaction={balanceAttempt?:{attempt:string};balanceReconciliation?:{state:string;reason?:string};transactionId:string;kind:'order'|'booking';paymentProvider?:string;customer:{name:string;email:string;phone:string};items:Array<{id?:string;name:string;quantity:number;unitAmount:number}>;amountTotal:number;refundedAmount?:number;paymentStatus:string;status:string;createdAt:string;paidAt?:string;start?:string;queueNumber?:string;kitchenStatus?:string;kitchenRevision?:number;locationName?:string;locationId?:string}
 type BillingInfo={readiness:{enabled:boolean;monthlyPriceConfigured:boolean;annualPriceConfigured:boolean;webhookConfigured:boolean;ready:boolean};entitlement:{public:boolean;reason:string;trialEndsAt?:string};servicePlan:ClientSite['servicePlan']}
 type Tab='profile'|'appearance'|'overview'|'training'|'website'|'redesign'|'locations'|'share'|'kitchen'|'orders'|'bookings'|'customers'|'catalog'|'team'|'payments'|'pos'|'marketing'|'analytics'|'integrations'|'security'|'settings'|'billing'
 type Language='es'|'en'
@@ -138,9 +140,15 @@ export default function ClientAdminPage({practiceStartTab}:{practiceStartTab?:st
   const [menuOpen,setMenuOpen]=useState(false);const [lang,setLang]=usePortalLanguage();const [user,setUser]=useState<User|null>(()=>practice?.user||initialSession||null);const [loading,setLoading]=useState(!practice&&initialSession!==null);const [resetToken,setResetToken]=useState('');const [inviteToken,setInviteToken]=useState('');const [newPassword,setNewPassword]=useState('');const [authMessage,setAuthMessage]=useState('')
   const [sites,setSites]=useState<Array<{siteId:string;slug:string;businessName:string;status:string}>>([]);const [site,setSite]=useState<ClientSite|null>(()=>practice?structuredClone(practice.site):null);const [membership,setMembership]=useState<any>(()=>practice?.membership||null);const [tab,setTab]=useState<Tab>((practiceStartTab as Tab)||'overview');const [busy,setBusy]=useState(false);const [message,setMessage]=useState('');const [error,setError]=useState('');const [commerce,setCommerce]=useState<{orders:Transaction[];bookings:Transaction[]}>({orders:[],bookings:[]});const [calendars,setCalendars]=useState<Array<{id:string;summary:string;primary:boolean}>>([]);const [googleConfigured,setGoogleConfigured]=useState(false);const [billing,setBilling]=useState<BillingInfo|null>(null)
 
-  const openSite=async(siteId:string,returnToIntegrations=false)=>{if(!confirmLeaveDrafts())return;const detail=await api(`/.netlify/functions/client-admin?siteId=${encodeURIComponent(siteId)}`);const nextOperations=posOperations({operations:detail.posOperations});if(!detail.site?.siteId||!detail.membership?.role)throw new Error(lang==='es'?'No se pudo validar el acceso al negocio.':'Business access could not be validated.');setSite(detail.site);setOperations(nextOperations);setMembership(detail.membership||null);let remembered:Tab='overview';try{const candidate=sessionStorage.getItem('wf-section:'+siteId) as Tab;const safe=['overview','website','catalog','team','locations','orders','bookings','customers','analytics','settings'];const capability=candidate==='team'||candidate==='locations'?'employees':candidate;if(safe.includes(candidate)&&(!detail.membership?.capabilities||detail.membership.capabilities.includes(capability)))remembered=candidate}catch{}setTab(returnToIntegrations?'integrations':remembered);setMessage('');setError('')}
+  const commerceScope = useRef(practice?.site.siteId || '')
+  const commerceRequest = useRef(0)
+  const [commerceLoaded, setCommerceLoaded] = useState(false)
+  const [kitchenSyncError, setKitchenSyncError] = useState(false)
+  const [kitchenActionError, setKitchenActionError] = useState('')
+
+  const openSite=async(siteId:string,returnToIntegrations=false)=>{if(!confirmLeaveDrafts())return;const detail=await api(`/.netlify/functions/client-admin?siteId=${encodeURIComponent(siteId)}`);const nextOperations=posOperations({operations:detail.posOperations});if(!detail.site?.siteId||!detail.membership?.role)throw new Error(lang==='es'?'No se pudo validar el acceso al negocio.':'Business access could not be validated.');if(commerceScope.current!==siteId){commerceScope.current=siteId;setCommerce({orders:[],bookings:[]});setCommerceLoaded(false);setKitchenSyncError(false);setKitchenActionError('')}setSite(detail.site);setOperations(nextOperations);setMembership(detail.membership||null);let remembered:Tab='overview';try{const candidate=sessionStorage.getItem('wf-section:'+siteId) as Tab;const safe=['overview','website','catalog','team','locations','orders','bookings','customers','analytics','settings'];const capability=candidate==='team'||candidate==='locations'?'employees':candidate;if(safe.includes(candidate)&&(!detail.membership?.capabilities||detail.membership.capabilities.includes(capability)))remembered=candidate}catch{}setTab(returnToIntegrations?'integrations':remembered);setMessage('');setError('')}
   const loadSites=async()=>{setAccessReady(false);setAccessError('');try{const result=await api('/.netlify/functions/client-admin');if(!Array.isArray(result.sites))throw new Error(lang==='es'?'No se pudo validar la lista de negocios.':'The business list could not be validated.');setSites(result.sites);if(result.sites.length){const returnParams=new URLSearchParams(location.search);const returnSite=returnParams.get('siteId');const integrationReturn=returnParams.has('stripe')||returnParams.has('google')||returnParams.has('businessEmail');const preferred=returnSite&&result.sites.some((entry:any)=>entry.siteId===returnSite)?returnSite:site&&result.sites.some((entry:any)=>entry.siteId===site.siteId)?site.siteId:result.sites[0].siteId;await openSite(preferred,integrationReturn);if(integrationReturn){if(returnParams.get('businessEmail')==='permission_required')setError(lang==='es'?'Google no concedió permiso para enviar correo. Autoriza el envío de Gmail para recibir confirmaciones con código de reserva y PIN.':'Google did not grant email sending permission. Allow Gmail sending to deliver confirmations with the Booking ID and PIN.');else if(returnParams.get('businessEmail')==='error')setError(lang==='es'?'No se pudo completar la autorización del email del negocio. La conexión de Calendar es independiente.':'Business email authorization could not be completed. Calendar is connected separately.');history.replaceState({},'',location.pathname)}}else{setSite(null);setMembership(null)}}catch(e){const message=e instanceof Error?e.message:'Unable to load business access.';setAccessError(message);setError(message);throw e}finally{setAccessReady(true)}}
-  useEffect(()=>{if(practice)return;document.title='Portal administrativo | WebFactory PR';let active=true;const unsub=onAuthChange((_event,current)=>{if(!active)return;setUser(current);if(!current){setAccessReady(false);setAccessError('');setSite(null);setSites([]);setMembership(null);setCommerce({orders:[],bookings:[]});setBilling(null);setCalendars([]);setTab('overview');setError('');setMessage('')}else if(_event==='login_remote'){void loadSites().catch(()=>setError('Unable to refresh business access.'))}});(async()=>{try{const callback=await handleAuthCallback();if(!active)return;if(callback?.type==='recovery'){setResetToken('recovery');return}if(callback?.type==='invite'&&callback.token){setInviteToken(callback.token);return}const current=initialSession!==undefined?initialSession:await getUser();if(!active)return;setUser(current);if(current)await loadSites()}catch(e){if(active)setError(e instanceof Error?e.message:'No se pudo abrir el portal.')}finally{if(active)setLoading(false)}})();return()=>{active=false;unsub()}},[])
+  useEffect(()=>{if(practice)return;document.title='Portal administrativo | WebFactory PR';let active=true;const unsub=onAuthChange((_event,current)=>{if(!active)return;setUser(current);if(!current){commerceScope.current='';setCommerceLoaded(false);setAccessReady(false);setAccessError('');setSite(null);setSites([]);setMembership(null);setCommerce({orders:[],bookings:[]});setBilling(null);setCalendars([]);setTab('overview');setError('');setMessage('')}else if(_event==='login_remote'){void loadSites().catch(()=>setError('Unable to refresh business access.'))}});(async()=>{try{const callback=await handleAuthCallback();if(!active)return;if(callback?.type==='recovery'){setResetToken('recovery');return}if(callback?.type==='invite'&&callback.token){setInviteToken(callback.token);return}const current=initialSession!==undefined?initialSession:await getUser();if(!active)return;setUser(current);if(current)await loadSites()}catch(e){if(active)setError(e instanceof Error?e.message:'No se pudo abrir el portal.')}finally{if(active)setLoading(false)}})();return()=>{active=false;unsub()}},[])
   useEffect(()=>{if(practice&&site)practice.draft(site)},[practice,site])
   useEffect(()=>{if(practice){practice.setUi('portalTab',tab);practice.emit('navigation.changed',{tab})}},[practice,tab])
   useEffect(()=>practice?.subscribe(event=>{if(event.name==='coach.navigate'){setTab(event.detail.tab);setMenuOpen(false)}}),[practice])
@@ -162,13 +170,64 @@ export default function ClientAdminPage({practiceStartTab}:{practiceStartTab?:st
       return {ok:false,message}
     }finally{setBusy(false)}
   }
-  const loadCommerce=async()=>{if(!site)return;const result=await api(`/.netlify/functions/client-commerce-admin?siteId=${encodeURIComponent(site.siteId)}`);setCommerce({orders:result.orders,bookings:result.bookings})}
+  const loadCommerce = async () => {
+    if (!site) return
+    const siteId = site.siteId
+    const request = ++commerceRequest.current
+    const current = () => commerceScope.current === siteId && request === commerceRequest.current
+    try {
+      const result = await api(`/.netlify/functions/client-commerce-admin?siteId=${encodeURIComponent(siteId)}`)
+      if (!current()) return
+      setCommerce({ orders: result.orders, bookings: result.bookings })
+      setCommerceLoaded(true)
+      setKitchenSyncError(false)
+    } catch (error) {
+      if (!current()) return
+      if (tab === 'kitchen') setKitchenSyncError(true)
+      else throw error
+    }
+  }
+  const updateKitchenOrder = async (record: Transaction, change: KitchenChange) => {
+    if (!site || busy) return false
+    setBusy(true)
+    setKitchenActionError('')
+    try {
+      await api('/.netlify/functions/client-commerce-admin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          siteId: site.siteId, kind: 'order', transactionId: record.transactionId, action: 'kitchen_status',
+          expectedKitchenRevision: record.kitchenRevision ?? 0, ...change,
+        }),
+      })
+      await loadCommerce()
+      feedback.success()
+      return true
+    } catch (error) {
+      if (commerceScope.current === site.siteId) setKitchenActionError(error instanceof Error ? error.message : (lang === 'es' ? 'No se pudo actualizar la orden.' : 'Unable to update the order.'))
+      feedback.error()
+      await loadCommerce()
+      return false
+    } finally {
+      setBusy(false)
+    }
+  }
+  const saveKitchenDisplays = async (displays: KitchenDisplay[]) => {
+    if (!site) return
+    const siteId = site.siteId
+    const result = await api('/.netlify/functions/client-admin', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ siteId, section: 'kitchenDisplays', value: displays, revision: site.revision }),
+    })
+    if (commerceScope.current === siteId) setSite(result.site)
+  }
   const loadCalendar=async()=>{if(!site)return;const result=await api(`/.netlify/functions/google-calendar-status?siteId=${encodeURIComponent(site.siteId)}`);setCalendars(result.calendars||[]);setGoogleConfigured(result.configured);if(result.message)setError(result.message)}
   const loadBilling=async()=>{if(!site)return;const result=await api(`/.netlify/functions/subscription-readiness?siteId=${encodeURIComponent(site.siteId)}`);setBilling(result)}
   useEffect(()=>{if(trainingCourse&&!practice)return;if(['overview','orders','bookings','analytics','kitchen'].includes(tab))loadCommerce().catch(e=>setError(e.message));if(tab==='integrations'&&!practice)loadCalendar().catch(e=>setError(e.message));if(tab==='billing'&&!practice)loadBilling().catch(e=>setError(e.message))},[tab,site?.siteId,trainingCourse])
   useEffect(()=>{if(tab!=='kitchen'||!user||trainingCourse)return;let pending=false;const refresh=async()=>{if(pending||document.visibilityState!=='visible')return;pending=true;try{await loadCommerce()}catch{}finally{pending=false}};const timer=window.setInterval(refresh,4000);return()=>window.clearInterval(timer)},[tab,site?.siteId,user,trainingCourse])
   const resetPassword=async()=>{const es=lang==='es';if(newPassword.length<15)return setError(es?'Usa una contraseña de al menos 15 caracteres.':'Use a password of at least 15 characters.');setBusy(true);try{let current:User|null;if(inviteToken){const invited=await acceptInvite(inviteToken,newPassword);if(!invited.email)throw new Error(es?'La invitación no contiene un email válido.':'The invitation does not contain a valid email.');current=invited}else{current=await updateUser({password:newPassword})}setResetToken('');setInviteToken('');setAuthMessage(es?'Contraseña guardada.':'Password saved.');setUser(current);if(current)await loadSites()}catch(e){setError(e instanceof Error?e.message:(es?'No se pudo guardar la contraseña.':'The password could not be saved.'))}finally{setBusy(false)}}
-  const signOut=async()=>{if(practice){practice.emit('exit.requested');return}if(!confirmLeaveDrafts())return;try{await logout();setUser(null);setSite(null);setSites([]);setMembership(null);setCommerce({orders:[],bookings:[]});setBilling(null);setCalendars([]);setTab('overview');setError('');setMessage('')}catch{setError(lang==='es'?'No se pudo confirmar el cierre de sesión. Inténtalo de nuevo.':'Sign out could not be confirmed. Please try again.')}}
+  const signOut=async()=>{if(practice){practice.emit('exit.requested');return}if(!confirmLeaveDrafts())return;try{await logout();commerceScope.current='';setCommerceLoaded(false);setUser(null);setSite(null);setSites([]);setMembership(null);setCommerce({orders:[],bookings:[]});setBilling(null);setCalendars([]);setTab('overview');setError('');setMessage('')}catch{setError(lang==='es'?'No se pudo confirmar el cierre de sesión. Inténtalo de nuevo.':'Sign out could not be confirmed. Please try again.')}}
   const transactionAction=async(record:Transaction,action:string)=>{if(!site||busy)return;const es=lang==='es';const [actionName,kitchenStatus]=action.split(':');const payload:any={siteId:site.siteId,kind:record.kind,transactionId:record.transactionId,action:actionName,...(kitchenStatus?{kitchenStatus}:{})};if(['review_booking_balance','close_booking_balance'].includes(actionName)){
       if(actionName==='close_booking_balance'&&!confirm(es?'¿Cerrar este checkout solo si el servidor confirma que no hay un pago pendiente ni realizado? La cita se conserva; después podrás cancelarla o registrar el pago presencial.':'Close this checkout only if the server confirms no payment is pending or received? The booking is preserved; you can then cancel it or record an in-person payment.'))return;
       setBusy(true);setError('');setMessage('');
@@ -221,7 +280,12 @@ export default function ClientAdminPage({practiceStartTab}:{practiceStartTab?:st
       {tab==='redesign'&&(practice?<Suspense fallback={<p role="status">{lang==='es'?'Abriendo Builder…':'Opening Builder…'}</p>}><PracticeBuilder lang={lang}/></Suspense>:<Panel title={lang==='es'?'Rediseña tu website':'Redesign your website'} text={lang==='es'?'Cambia el diseño, el template, la marca y la categoría de tu negocio desde Builder.':'Change your design, template, brand and business category in Builder.'}>{['active','trialing','trial','complimentary'].includes(site.servicePlan?.subscriptionStatus||'')?<a className="ca-primary-link" href={`/builder?edit=${encodeURIComponent(site.siteId)}`}>{lang==='es'?'Abrir Builder para rediseñar ↗':'Open Builder to redesign ↗'}</a>:<p>{lang==='es'?'Activa tu suscripción para rediseñar la página.':'Activate your subscription to redesign the website.'}</p>}</Panel>)}
       {tab==='locations'&&<LocationEditor key={site.siteId} site={site} lang={lang} onSave={locations=>save('business',{...site.business,locations})} busy={busy}/>}
       {tab==='share'&&<BusinessQrPanel siteId={site.siteId} slug={site.slug} businessName={site.business?.name||site.business?.nameEn||site.slug} lang={lang} revision={site.revision} accent={site.design?.secondary||site.design?.primary||'#3C86F6'}/>}
-      {tab==='kitchen'&&<KitchenPanel records={commerce.orders} lang={lang} busy={busy} locations={site.business.locations||[]} timeZone={site.settings?.timezone||'America/Puerto_Rico'} onStatus={(record,status)=>transactionAction(record,`kitchen_status:${status}`)}/>}
+      {tab==='kitchen'&&<KitchenPanel key={site.siteId} records={commerce.orders} lang={lang} busy={busy}
+        locations={site.business.locations||[]} timeZone={site.settings?.timezone||'America/Puerto_Rico'}
+        products={site.catalog.filter(item=>item.type==='product').map(item=>({id:item.id,name:(lang==='es'?item.nameEs:item.nameEn)||item.name}))}
+        displays={site.kitchenDisplays||[]} canManage={!practice&&['owner','admin'].includes(membership?.role)}
+        loaded={commerceLoaded} syncError={kitchenSyncError} actionError={kitchenActionError} onRefresh={()=>void loadCommerce()}
+        onChange={updateKitchenOrder} onSave={saveKitchenDisplays}/>}
       {tab==='orders'&&['owner','admin'].includes(membership?.role)&&<TransactionPanel records={commerce.orders} kind="order" lang={lang} onAction={transactionAction} busy={busy}/>}
       {tab==='orders'&&membership?.role==='employee'&&<EmployeeWorkspace site={site} membership={membership} commerce={commerce} lang={lang} onAction={transactionAction} ordersOnly/>}
       {tab==='bookings'&&['owner','admin'].includes(membership?.role)&&<><BookingCalendar records={commerce.bookings} siteId={site.siteId} hours={site.hours} locations={site.business.locations||[]} owner onAction={transactionAction} busy={busy} lang={lang} timeZone={site.settings?.timezone} employees={site.employees}/><TransactionPanel records={commerce.bookings} kind="booking" lang={lang} timeZone={site.settings?.timezone} googleConnected={site.googleCalendar?.connected} employees={site.employees} canReconcileBalance={Boolean(membership?.capabilities?.includes('payments'))} onAction={transactionAction} busy={busy}/></>}

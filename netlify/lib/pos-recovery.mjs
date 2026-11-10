@@ -1,3 +1,4 @@
+import {paidPosKitchenFields} from './kitchen-display.mjs';
 import { clientCommerceStore,commerceKey,getClientSite } from './client-store.mjs';
 import { withBookingLock } from './booking-lock.mjs';
 import { findStockOperation } from './inventory-archive.mjs';
@@ -27,7 +28,12 @@ export async function recoverPosOrder(siteId,transactionId){
     record={...record,inventoryAppliedAt:applied.operation.appliedAt,inventoryOperationId:applied.operation.id,inventoryNeedsReview:false,commerceEmailNeedsReview:Boolean((record.customer?.email&&!record.customerEmailSent)||(site.business?.email&&!record.businessEmailSent)),customerEmailPending:false,businessEmailPending:false,status:'completed',posRecoveredAt:record.posRecoveredAt||new Date().toISOString(),updatedAt:new Date().toISOString()};
     const receipt=createReceiptRecord({siteId,transaction:record});record.receiptId=receipt.receiptId;
     await putV3Record(siteId,'receipts',receipt.receiptId,receipt);
-    await store.setJSON(commerceKey(siteId,'orders',transactionId),record);
+    const orderKey=commerceKey(siteId,'orders',transactionId);
+    const existingOrder=await store.get(orderKey,{type:'json'});
+    if (existingOrder?.queueNumber) {
+      for (const field of ['queueNumber','kitchenStatus','kitchenPaused','kitchenEtaTime','kitchenRevision','locationName']) record[field]=existingOrder[field];
+    } else Object.assign(record,paidPosKitchenFields(site,record));
+    await store.setJSON(orderKey,record);
     const response={ok:true,record,receiptId:receipt.receiptId};
     if(marker)await store.setJSON(commerceKey(siteId,'pos-attempts',record.posAttemptId),{...marker,status:'completed',transactionId,receiptId:receipt.receiptId,response,updatedAt:new Date().toISOString()});
     await store.setJSON(key,record);

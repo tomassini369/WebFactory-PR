@@ -1,3 +1,4 @@
+import {kitchenOrderPatch} from '../../netlify/lib/kitchen-display.mjs'
 import {posCapabilities} from '../../netlify/lib/pos-capabilities.mjs'
 import {validatePublicSiteSlug} from '../../netlify/lib/client-site-slug.mjs'
 import {accountingReport} from '../../netlify/lib/business-accounting.mjs'
@@ -87,7 +88,7 @@ export function createPracticeRuntime(options) {
    requireCapability(body.action==='kitchen_status'?'kitchen':body.kind==='booking'?'bookings':'orders')
    const row=(body.kind==='booking'?state.bookings:state.orders).find(row=>row.transactionId===body.transactionId)
    if(!row)throw fail('Practice record missing. / Registro de práctica no encontrado.',404)
-   if(body.action==='kitchen_status'){row.kitchenStatus=body.kitchenStatus;emit('order.prepared',row)}
+   if(body.action==='kitchen_status'){Object.assign(row,kitchenOrderPatch(row,body,site.settings?.timezone));if(body.kitchenStatus)emit('order.prepared',row)}
    else if(['complete','cancel','check_in','confirm'].includes(body.action)){row.status=body.action==='complete'?'completed':body.action==='cancel'?'cancelled':'confirmed';if(body.action==='check_in')row.checkedInAt=timestamp();emit(body.kind==='booking'?'booking.updated':'order.updated',row)}
    else throw fail('This operation is excluded from practice. / Operación excluida de práctica.',403)
    return {ok:true}
