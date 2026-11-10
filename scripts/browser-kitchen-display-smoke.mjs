@@ -96,10 +96,12 @@ try {
       await card.getByLabel(es?'Hora manual':'Custom time').fill('15:37')
       await card.getByRole('button',{name:es?'Guardar hora':'Save time',exact:true}).click()
       await card.locator('.kds-eta').getByText('15:37',{exact:true}).waitFor()
-      await panel.getByRole('button',{name:es?'Lista':'List',exact:true}).click()
+      await panel.getByRole('button',{name:es?'Vista de lista':'List view',exact:true}).click()
       await panel.locator('.kds-list').waitFor()
       const previousReads = reads
+      const refresh = page.waitForResponse(response => response.url().includes('client-commerce-admin') && response.request().method() === 'GET')
       await panel.getByRole('button',{name:es?'Actualizar órdenes':'Refresh orders',exact:true}).click()
+      await refresh
       assert(reads > previousReads)
       if (role === 'owner') {
         await panel.getByText(es?'Administrar estaciones':'Manage stations',{exact:true}).click()

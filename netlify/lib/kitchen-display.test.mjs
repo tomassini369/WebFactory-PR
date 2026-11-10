@@ -49,6 +49,7 @@ test('kitchen actions persist on paid scoped orders and stale ETA retries do not
   assert.equal(rows.get(orderKey).kitchenStatus, 'received');
   assert.equal((await send({ kitchenStatus:'preparing' }, 1)).status, 200);
   assert.equal(rows.get(orderKey).kitchenPaused, false);
+  assert.equal((await send({ kitchenEtaMinutes:15 })).status, 409);
   assert.equal((await send({ kitchenEtaMinutes:15 }, 2)).status, 200);
   assert.equal(rows.get(orderKey).kitchenEtaTime, '00:10');
   assert.equal((await send({ kitchenEtaMinutes:15 }, 2)).status, 409);

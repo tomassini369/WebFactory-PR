@@ -227,7 +227,7 @@ export function KitchenPanel<T extends KitchenOrder>({ records, lang, busy, loca
       </label>}
       <div className="kds-actions" role="group" aria-label={t('Vista de cocina', 'Kitchen view')}>
         <button type="button" aria-pressed={view === 'board'} onClick={() => setView('board')}><LayoutGrid size={17} aria-hidden="true"/>{t('Tablero', 'Board')}</button>
-        <button type="button" aria-pressed={view === 'list'} onClick={() => setView('list')}><List size={17} aria-hidden="true"/>{t('Lista', 'List')}</button>
+        <button type="button" aria-pressed={view === 'list'} onClick={() => setView('list')}><List size={17} aria-hidden="true"/>{t('Vista de lista', 'List view')}</button>
         <button type="button" onClick={onRefresh} aria-label={t('Actualizar órdenes', 'Refresh orders')}><RefreshCw size={17} aria-hidden="true"/></button>
       </div>
     </div>

@@ -26,7 +26,8 @@ export function isKitchenOrder(order) {
 export function kitchenOrderPatch(order, input, timeZone = 'America/Puerto_Rico') {
   if (!isKitchenOrder(order)) throw invalid('Kitchen updates are only available for paid food orders. / Cocina requiere una orden de comida pagada.', 409);
   const revision = order.kitchenRevision ?? 0;
-  if (input.expectedKitchenRevision !== undefined && input.expectedKitchenRevision !== revision) {
+  const expected = input.expectedKitchenRevision;
+  if ((input.kitchenEtaMinutes !== undefined || expected !== undefined) && expected !== revision) {
     throw invalid('This order changed. Refresh the board and try again. / La orden cambió. Actualiza el tablero e inténtalo de nuevo.', 409);
   }
   const actions = [input.kitchenStatus, input.kitchenPause, input.kitchenEtaMinutes, input.kitchenEtaTime];
