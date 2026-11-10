@@ -1,3 +1,5 @@
+"$schema" = "https://open-api.netlify.com/netlify.schema.json"
+
 [build]
   command = "npm run build"
   publish = "dist"
@@ -202,12 +204,12 @@
 
 [[redirects]]
   from = "/templates"
-  to = "/index.html"
+  to = "/templates/index.html"
   status = 200
 
 [[redirects]]
   from = "/templates/"
-  to = "/index.html"
+  to = "/templates/index.html"
   status = 200
 
 [[redirects]]
@@ -242,32 +244,32 @@
 
 [[redirects]]
   from = "/privacy"
-  to = "/index.html"
+  to = "/privacy/index.html"
   status = 200
 
 [[redirects]]
   from = "/privacy/"
-  to = "/index.html"
+  to = "/privacy/index.html"
   status = 200
 
 [[redirects]]
   from = "/terms"
-  to = "/index.html"
+  to = "/terms/index.html"
   status = 200
 
 [[redirects]]
   from = "/terms/"
-  to = "/index.html"
+  to = "/terms/index.html"
   status = 200
 
 [[redirects]]
   from = "/refund-policy"
-  to = "/index.html"
+  to = "/refund-policy/index.html"
   status = 200
 
 [[redirects]]
   from = "/refund-policy/"
-  to = "/index.html"
+  to = "/refund-policy/index.html"
   status = 200
 
 [[redirects]]
