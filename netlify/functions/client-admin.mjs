@@ -3,13 +3,14 @@ import {claimPublicSiteSlug, validatePublicSiteSlug} from '../lib/client-site-sl
 import {commercialCapabilities, employeeSiteView} from "../lib/commercial-access.mjs";
 import { sanitizePolicies } from "../lib/publication-review.mjs";
 import {normalizeBookingPolicy} from '../lib/booking-policy.mjs';
+import { normalizeKitchenDisplays } from '../lib/kitchen-display.mjs';
 import { readPosOperations } from '../lib/pos-operations.mjs';
 import { assertSameOrigin, authorizedSites, errorResponse, requireSiteAccess } from "../lib/client-auth.mjs";
 import { clientAssetStore, clientSiteStore, patchClientSite, publicClientSite, renameClientSiteSlug } from "../lib/client-store.mjs";
 import { cleanText, validEmail } from "../lib/platform-utils.mjs";
 import { normalizeTaxConfig } from "../lib/webfactory-v3-domain.mjs";
 
-const allowedSections = new Set(["slug", "business", "design", "features", "catalog", "employees", "hours", "paymentRules", "settings", "taxConfig", "members", "reviewSettings"]);
+const allowedSections = new Set(["slug", "business", "design", "features", "catalog", "employees", "hours", "paymentRules", "settings", "taxConfig", "members", "reviewSettings", "kitchenDisplays"]);
 
 function color(value, fallback) {
   const result = cleanText(value, 20);
@@ -202,6 +203,7 @@ export function normalizeClientSection(site, section, incoming, user, membership
       for (const feature of allowedFeatures) if (payload.value?.[feature] !== undefined) value[feature] = Boolean(payload.value[feature]);
     }
     if (section === "catalog") value = sanitizeCatalog(payload.value);
+    if (section === "kitchenDisplays") value = normalizeKitchenDisplays(payload.value, site);
     if (section === "employees") {
       if (!Array.isArray(payload.value)) throw Object.assign(new Error("Professionals must be a list."),{status:400});
       for (const professional of payload.value) {
@@ -340,8 +342,8 @@ export default async (req) => {
     }
     const value = normalizeClientSection(site, section, payload.value, user, membership);
 
-    if(['catalog','employees'].includes(section)&&!Number.isInteger(payload.revision))throw Object.assign(new Error('Reload the portal before editing the catalog.'),{status:409});
-    const updated = await patchClientSite(site.siteId, { [section]: value },['catalog','employees'].includes(section)?{expectedRevision:payload.revision}:{});
+    if(['catalog','employees','kitchenDisplays'].includes(section)&&!Number.isInteger(payload.revision))throw Object.assign(new Error('Reload the portal before saving these settings.'),{status:409});
+    const updated = await patchClientSite(site.siteId, { [section]: value },['catalog','employees','kitchenDisplays'].includes(section)?{expectedRevision:payload.revision}:{});
     return Response.json({ ok: true, site: updated, publicSite: publicClientSite(updated) }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
     if (typeof error?.code === 'string' && /^SLUG_[A-Z_]+$/.test(error.code)) return Response.json({ ok: false, code: error.code, message: error.status >= 500 ? 'The change could not be confirmed. Reload before retrying.' : error.message }, { status: error.status, headers: { 'Cache-Control': 'no-store' } });

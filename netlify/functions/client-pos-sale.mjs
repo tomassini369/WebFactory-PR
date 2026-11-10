@@ -1,3 +1,4 @@
+import {paidPosKitchenFields} from '../lib/kitchen-display.mjs';
 import {catalogPriceCents} from '../lib/catalog-price.mjs';
 import {assertPosLocation} from "../lib/commercial-access.mjs";
 import { requirePosAdjustments } from '../lib/pos-permissions.mjs';
@@ -174,6 +175,7 @@ export function createPosSaleHandler({ authorize = requireSiteCapability, getSto
       record.reviewRequestId = reviewRequestId;
     }
 
+    Object.assign(record, paidPosKitchenFields(site, record));
     await clientCommerceStore().setJSON(commerceKey(site.siteId, "orders", transactionId), record);
     await clientCommerceStore().setJSON(commerceKey(site.siteId, "transactions", transactionId), record);
 

@@ -1,4 +1,5 @@
 import {canAccessCommerce, assertCommerceAction, employeeCommerceRecord, isBusinessOwner} from "../lib/commercial-access.mjs";
+import { kitchenOrderPatch } from '../lib/kitchen-display.mjs';
 import {bookingPolicy} from '../lib/booking-policy.mjs';
 import {bookingBalance} from '../lib/kiosk-bookings.mjs';
 import {reconcileBookingBalance} from '../lib/booking-balance-reconciliation.mjs';
@@ -102,10 +103,7 @@ export function createCommerceAdminHandler({authorizeAccess=requireSiteAccess,au
       return Response.json({ok:true,record:recovered},{headers:{'Cache-Control':'no-store'}});
     }
     if (payload.action === "kitchen_status") {
-      if (kind !== "orders" || !record.queueNumber || !["paid","paid_in_person"].includes(record.paymentStatus) || ["cancelled","refunded","failed"].includes(record.status)) throw Object.assign(new Error("Kitchen updates are only available for paid food orders."), { status: 409 });
-      const kitchenStatus = String(payload.kitchenStatus || "");
-      if (!["received", "preparing", "ready", "completed"].includes(kitchenStatus)) throw Object.assign(new Error("Invalid kitchen status."), { status: 400 });
-      record = { ...record, kitchenStatus, updatedAt: new Date().toISOString() };
+      record = { ...record, ...kitchenOrderPatch(record, payload, site.settings?.timezone), updatedAt: new Date().toISOString() };
     } else if (payload.action === "no_show" && kind === "bookings") {
       if(record.status!=='confirmed'||!Number.isFinite(Date.parse(record.start))||Date.parse(record.start)>Date.now()||record.balanceAttempt&&record.balancePaymentStatus!=='paid') throw Object.assign(new Error('Only started, confirmed appointments with no pending balance checkout may be marked absent.'),{status:409});
       record={...record,status:'no_show',noShowAt:new Date().toISOString(),updatedAt:new Date().toISOString()};

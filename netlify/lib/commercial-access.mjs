@@ -33,7 +33,7 @@ export function assertCommerceAction(site, member, record, action) {
 // salary data must never reach an employee browser, even in a hidden panel.
 export function employeeCommerceRecord(record, member) {
   if (isBusinessOwner(member)) return record;
-  const keys = ['transactionId','siteId','kind','employeeId','serviceId','locationId','locationName','start','end','status','paymentStatus','createdAt','updatedAt','completedAt','queueNumber','kitchenStatus','cashReceiptPending'];
+  const keys = ['transactionId','siteId','kind','employeeId','serviceId','locationId','locationName','start','end','status','paymentStatus','createdAt','updatedAt','completedAt','queueNumber','kitchenStatus','kitchenPaused','kitchenEtaTime','kitchenRevision','paidAt','channel','source','posRecoveryNeeded','cashReceiptPending'];
   const result = Object.fromEntries(keys.filter(key => record[key] !== undefined).map(key => [key,record[key]]));
   result.customer = {name: record.customer?.name || '', ...(record.kind === 'booking' ? {email:record.customer?.email || '',phone:record.customer?.phone || ''} : {})};
   result.items = (record.items || []).map(item => ({id:item.id,name:item.name,quantity:item.quantity, ...(member.permissions?.collect === true ? {unitAmount:item.unitAmount} : {})}));
@@ -46,7 +46,11 @@ export function employeeSiteView(site, member) {
   const pos = member.permissions?.pos === true;
   return {siteId:site.siteId,slug:site.slug,status:site.status,revision:site.revision,
     business:{name:site.business?.name,nameEn:site.business?.nameEn,nameEs:site.business?.nameEs,category:site.business?.category,logoAssetKey:site.business?.logoAssetKey,locations:(site.business?.locations || []).filter(location => member.locationIds?.includes(location.id)).map(({id,name,hours})=>({id,name,hours}))},
-    design:{primary:site.design?.primary,secondary:site.design?.secondary},
+    design:{primary:site.design?.primary,secondary:site.design?.secondary,templateCategory:site.design?.templateCategory},
+    ...(member.permissions?.kitchen === true ? {
+      kitchenDisplays:(site.kitchenDisplays || []).filter(display => display.enabled && (!display.locationIds.length || display.locationIds.some(id => member.locationIds?.includes(id))))
+        .map(display => ({...display,locationIds:display.locationIds.filter(id => member.locationIds?.includes(id))})),
+    } : {}),
     catalog:(site.catalog || []).filter(item => item.active !== false && (pos || professional?.serviceIds?.includes(item.id))).map(item=>Object.fromEntries(['id','type','name','nameEn','nameEs','description','descriptionEn','descriptionEs','price','active','inventory','trackInventory','allowBackorder','taxable','taxRateOverride','sku','imageAssetKey','requiresAppointment','duration','bufferMinutes'].filter(key=>item[key]!==undefined).map(key=>[key,item[key]]))),
     employees:professional?[{id:professional.id,name:professional.name,role:professional.role,active:professional.active,serviceIds:professional.serviceIds,locationIds:professional.locationIds,schedule:professional.schedule,timeOff:(professional.timeOff || []).map(({start,end})=>({start,end})),dailyLimit:professional.dailyLimit}]:[],
     hours:site.hours || {}, settings:{locale:site.settings?.locale,timezone:site.settings?.timezone,currency:site.settings?.currency},
