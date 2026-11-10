@@ -30,3 +30,23 @@ test('public metadata separates discovery from creating and never overrides tena
  assert.match(publicPageMetadata('/','es').description,/negocios, servicios y productos publicados/)
  for(const path of ['/sites/business','/client-admin','/webfactory-admin','/pay/business/private','/track/private','/kiosk'])assert.equal(publicPageMetadata(path,'es'),null,path)
 })
+
+
+test('public page metadata identifies each independent page in both languages',async()=>{
+ const {publicPageMetadata}=await import('../../src/public-page-metadata.ts')
+ const paths=['/templates','/privacy','/terms','/refund-policy']
+ for(const lang of ['es','en']){
+  const descriptions=new Set()
+  for(const path of paths){
+   const metadata=publicPageMetadata(path,lang)
+   assert.equal(metadata.url,'https://webfactorypr.com'+path)
+   assert.deepEqual(publicPageMetadata(path+'/',lang),metadata)
+   assert.notEqual(metadata.title,publicPageMetadata('/',lang).title)
+   assert.equal(metadata.locale,lang==='es'?'es_PR':'en_US')
+   assert(metadata.description.length>50)
+   descriptions.add(metadata.description)
+  }
+  assert.equal(descriptions.size,paths.length)
+ }
+ for(const path of ['/templates/business','/privacy/unknown','/templates-other','/builder'])assert.equal(publicPageMetadata(path,'es'),null)
+})

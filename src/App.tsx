@@ -71,7 +71,6 @@ function App(){
     if(!/^\/(?:sites|templates)\/[^/]+\/?$/.test(pathname))document.documentElement.lang=lang
   },[lang,pathname])
   useEffect(()=>{
-    if(/^\/templates\/?$/.test(pathname))document.title='WebFactory PR | Plataforma de comercio y reservas'
     updatePublicPageMetadata(pathname,lang)
   },[lang,pathname])
 
