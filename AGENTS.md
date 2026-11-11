@@ -101,3 +101,17 @@ ERP, payroll and advanced HR expansion are canceled. Preserve historical data
 without restoring clock/salary controls or using attendance for booking slots.
 Run the existing browser-workforce entry point as the retirement regression,
 plus the commercial-access, training, POS/kiosk and booking security suites.
+
+## Background refresh and replacing existing code
+
+- Trace the active implementation and its callers before adding a replacement.
+  Fix the active path, migrate its callers, and retire unused paths after tests.
+  Keep compatibility or recovery paths when an active consumer needs them.
+- Measure requests, overlap and latency before changing synchronization. Prefer
+  events for timely updates if the existing infrastructure supports them and
+  reconnection can recover missed state. For browser polling, reuse
+  `src/visible-polling.ts` to serialize requests, pause in hidden/offline tabs,
+  and refresh on return. Stop on unmount and when the operation ends.
+- Preserve required heartbeats, server payment confirmation, tenant permissions,
+  and training isolation. Return only the records the view needs. Compare the
+  same scenario before and after in a browser and in the matching Deploy Preview.

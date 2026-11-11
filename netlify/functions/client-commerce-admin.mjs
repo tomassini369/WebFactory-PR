@@ -38,9 +38,13 @@ async function listRecords(siteId, kind, getStore=clientCommerceStore, visible=(
 export function createCommerceAdminHandler({authorizeAccess=requireSiteAccess,authorizeCapability=requireSiteCapability,getStore=clientCommerceStore,pendingSales=listPosProcessing}={}) {return async (req) => {
   try {
     if (req.method === "GET") {
-      const siteId = new URL(req.url).searchParams.get("siteId") || "";
+      const query=new URL(req.url).searchParams,siteId=query.get('siteId')||'',id=query.get('kioskSale'),kind=query.get('kind');
+      if(id===null&&query.get('view')==='kitchen'){
+        const {site,membership}=await authorizeCapability(siteId,'kitchen');
+        const orders=await listRecords(site.siteId,'orders',getStore,record=>record.kind==='order'&&record.queueNumber&&record.paymentStatus!=='due'&&canAccessCommerce(site,membership,record));
+        return Response.json({ok:true,orders:orders.map(row=>employeeCommerceRecord(row,membership)),bookings:[]},{headers:{'Cache-Control':'private, no-store'}});
+      }
       const { site, membership } = await authorizeAccess(siteId);
-      const query=new URL(req.url).searchParams,id=query.get('kioskSale'),kind=query.get('kind');
       if(id!==null){
         if(!/^[a-zA-Z0-9_-]{1,160}$/.test(id)||!['order','booking'].includes(kind))throw Object.assign(new Error('Invalid kiosk sale.'),{status:400});
         const record=await getStore().get(commerceKey(site.siteId,kind==='booking'?'bookings':'orders',id),{type:'json'});

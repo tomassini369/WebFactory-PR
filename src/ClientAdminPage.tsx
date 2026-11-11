@@ -1,4 +1,5 @@
 import {businessHoursRows,completeBusinessHours} from '../shared/business-hours.mjs'
+import {startVisiblePolling} from './visible-polling'
 import {readRememberedEmail, rememberEmail} from './remembered-email'
 import {portalAccessCopy} from './portal-access-copy'
 import BookingIndexStatus from './BookingIndexStatus'
@@ -36,7 +37,7 @@ import {BookingWaitlistManager} from './BookingWaitlist'
 import BookingSeriesPanel from './BookingSeriesPanel'
 import { AthConnection } from './AthConnection'
 import { StripeConnection } from './StripeConnection'
-import { useEffect, useMemo, useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import { acceptInvite, getUser, handleAuthCallback, logout, onAuthChange, updateUser, type User } from './portal-auth'
 import { login, requestPasswordRecovery } from './portal-auth'
 import './client-admin.css'
@@ -162,11 +163,22 @@ export default function ClientAdminPage({practiceStartTab}:{practiceStartTab?:st
       return {ok:false,message}
     }finally{setBusy(false)}
   }
-  const loadCommerce=async()=>{if(!site)return;const result=await api(`/.netlify/functions/client-commerce-admin?siteId=${encodeURIComponent(site.siteId)}`);setCommerce({orders:result.orders,bookings:result.bookings})}
+  const kitchenRefresh=useRef<(()=>void)|null>(null)
+  const loadCommerce=async(signal?:AbortSignal)=>{if(!site)return;const kitchen=tab==='kitchen'&&!practice;if(kitchen&&!signal){kitchenRefresh.current?.();return}const result=await api(`/.netlify/functions/client-commerce-admin?siteId=${encodeURIComponent(site.siteId)}${kitchen?'&view=kitchen':''}`,{signal});if(!signal?.aborted)setCommerce({orders:result.orders,bookings:result.bookings})}
   const loadCalendar=async()=>{if(!site)return;const result=await api(`/.netlify/functions/google-calendar-status?siteId=${encodeURIComponent(site.siteId)}`);setCalendars(result.calendars||[]);setGoogleConfigured(result.configured);if(result.message)setError(result.message)}
   const loadBilling=async()=>{if(!site)return;const result=await api(`/.netlify/functions/subscription-readiness?siteId=${encodeURIComponent(site.siteId)}`);setBilling(result)}
-  useEffect(()=>{if(trainingCourse&&!practice)return;if(['overview','orders','bookings','analytics','kitchen'].includes(tab))loadCommerce().catch(e=>setError(e.message));if(tab==='integrations'&&!practice)loadCalendar().catch(e=>setError(e.message));if(tab==='billing'&&!practice)loadBilling().catch(e=>setError(e.message))},[tab,site?.siteId,trainingCourse])
-  useEffect(()=>{if(tab!=='kitchen'||!user||trainingCourse)return;let pending=false;const refresh=async()=>{if(pending||document.visibilityState!=='visible')return;pending=true;try{await loadCommerce()}catch{}finally{pending=false}};const timer=window.setInterval(refresh,4000);return()=>window.clearInterval(timer)},[tab,site?.siteId,user,trainingCourse])
+  useEffect(()=>{if(trainingCourse&&!practice)return;if(['overview','orders','bookings','analytics'].includes(tab)||tab==='kitchen'&&practice)loadCommerce().catch(e=>setError(e.message));if(tab==='integrations'&&!practice)loadCalendar().catch(e=>setError(e.message));if(tab==='billing'&&!practice)loadBilling().catch(e=>setError(e.message))},[tab,site?.siteId,trainingCourse])
+  useEffect(()=>{
+    if(tab!=='kitchen'||!site||!user||trainingCourse||practice)return
+    let stopped=false,first=true,loadError=''
+    const polling=startVisiblePolling(async signal=>{
+      try{await loadCommerce(signal);if(!stopped&&loadError){const previous=loadError;setError(current=>current===previous?'':current);loadError=''}}
+      catch(e){if(!stopped&&first){loadError=e instanceof Error?e.message:'Request failed.';setError(loadError)}}
+      finally{first=false}
+    },4000,{timeoutMs:15000})
+    kitchenRefresh.current=polling.refresh
+    return()=>{stopped=true;kitchenRefresh.current=null;polling.stop()}
+  },[tab,site?.siteId,user?.id,trainingCourse,practice])
   const resetPassword=async()=>{const es=lang==='es';if(newPassword.length<15)return setError(es?'Usa una contraseña de al menos 15 caracteres.':'Use a password of at least 15 characters.');setBusy(true);try{let current:User|null;if(inviteToken){const invited=await acceptInvite(inviteToken,newPassword);if(!invited.email)throw new Error(es?'La invitación no contiene un email válido.':'The invitation does not contain a valid email.');current=invited}else{current=await updateUser({password:newPassword})}setResetToken('');setInviteToken('');setAuthMessage(es?'Contraseña guardada.':'Password saved.');setUser(current);if(current)await loadSites()}catch(e){setError(e instanceof Error?e.message:(es?'No se pudo guardar la contraseña.':'The password could not be saved.'))}finally{setBusy(false)}}
   const signOut=async()=>{if(practice){practice.emit('exit.requested');return}if(!confirmLeaveDrafts())return;try{await logout();setUser(null);setSite(null);setSites([]);setMembership(null);setCommerce({orders:[],bookings:[]});setBilling(null);setCalendars([]);setTab('overview');setError('');setMessage('')}catch{setError(lang==='es'?'No se pudo confirmar el cierre de sesión. Inténtalo de nuevo.':'Sign out could not be confirmed. Please try again.')}}
   const transactionAction=async(record:Transaction,action:string)=>{if(!site||busy)return;const es=lang==='es';const [actionName,kitchenStatus]=action.split(':');const payload:any={siteId:site.siteId,kind:record.kind,transactionId:record.transactionId,action:actionName,...(kitchenStatus?{kitchenStatus}:{})};if(['review_booking_balance','close_booking_balance'].includes(actionName)){

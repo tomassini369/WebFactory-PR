@@ -76,6 +76,18 @@ test('HTTP commerce GET scopes bookings by professional and branch before serial
  const paid=await handler(req({siteId:site.siteId,kind:'booking',action:'mark_paid',transactionId:'booking-one'}));assert.equal(paid.status,403);
 });
 
+test('kitchen refresh reads only visible queue orders, without loading bookings or POS recovery',async()=>{
+ const site=fixture(),member={...employee,permissions:{kitchen:true}},prefixes=[];
+ const order={kind:'order',siteId:site.siteId,transactionId:'queue-one',locationId:'one',paymentStatus:'paid',queueNumber:'A1',customer:{name:'Test',email:'private@example.invalid'}};
+ const records=[order,{...order,transactionId:'wrong-branch',locationId:'two'},{...order,transactionId:'unpaid',paymentStatus:'due'},{...order,transactionId:'not-queued',queueNumber:''},{...order,transactionId:'other-tenant',siteId:'other-business'}];
+ const store={list:async({prefix})=>{prefixes.push(prefix);return {blobs:records.map((_,index)=>({key:String(index)}))}},get:async key=>records[Number(key)]};
+ let authorized=true;
+ const handler=createCommerceAdminHandler({authorizeCapability:async(id,capability)=>{assert.equal(id,site.siteId);assert.equal(capability,'kitchen');if(!authorized)throw Object.assign(new Error('Forbidden'),{status:403});return {site,membership:member,user}},authorizeAccess:async()=>assert.fail('Kitchen capability must be checked'),getStore:()=>store,pendingSales:async()=>assert.fail('Kitchen refresh does not need POS recovery')});
+ const request=()=>new Request(`https://example.invalid/api?siteId=${site.siteId}&view=kitchen`);
+ const response=await handler(request()),body=await response.json();assert.equal(response.status,200);assert.deepEqual(prefixes,[`${site.siteId}/orders/`]);assert.deepEqual(body.bookings,[]);assert.deepEqual(body.orders.map(row=>row.transactionId),['queue-one']);assert.equal(body.orders[0].customer.email,undefined);
+ authorized=false;assert.equal((await handler(request())).status,403);assert.equal(prefixes.length,1);
+});
+
 test('availability requests bind authenticated profile and server time; forbidden identities and duplicate retries never create extra requests',async()=>{
  const site=fixture(),member={...employee,permissions:{availabilityRequests:true}},rows=new Map();
  const store={setJSON:async(key,row,{onlyIfNew})=>{if(onlyIfNew&&rows.has(key))return {modified:false};rows.set(key,row);return {modified:true}},get:async key=>rows.get(key),list:async function*({prefix}){yield {blobs:[...rows.keys()].filter(key=>key.startsWith(prefix)).map(key=>({key}))}}};

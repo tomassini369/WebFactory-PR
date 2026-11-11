@@ -1,4 +1,5 @@
 import {formatPhone} from './phone-format'
+import {startVisiblePolling} from './visible-polling'
 import {useWorkspaceFetch,useWorkspacePaused} from './training/workspace-services'
 import {usePractice} from './training/practice-context'
 import { useEffect,useRef, useState, type CSSProperties } from 'react'
@@ -112,20 +113,14 @@ export default function PosWorkspace({site,lang,operator,operations=posOperation
  }
  useEffect(()=>{
   if(practice||workspacePaused||!operations.cashierEnabled)return
-  let active=true
-  const renew=()=>{if(active)void request('/.netlify/functions/client-customer-display',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({siteId:site.siteId,action:'keepalive'})}).catch(()=>{})}
-  renew();const timer=setInterval(renew,300000);window.addEventListener('focus',renew)
-  return()=>{active=false;clearInterval(timer);window.removeEventListener('focus',renew)}
+  const polling=startVisiblePolling(signal=>request('/.netlify/functions/client-customer-display',{method:'POST',signal,headers:{'Content-Type':'application/json'},body:JSON.stringify({siteId:site.siteId,action:'keepalive'})}),300000,{timeoutMs:15000,wakeIntervalMs:5000})
+  return()=>polling.stop()
  },[site.siteId,practice,workspacePaused,operations.cashierEnabled])
  useEffect(()=>{
-  if(!attempt||attempt.kind!=='card')return
-  let stopped=false,timer:ReturnType<typeof setTimeout>
-  const poll=async()=>{if(stopped)return;await verify();if(!stopped)timer=setTimeout(poll,5000)}
-  void poll()
-  const resume=()=>{if(document.visibilityState==='visible')void verify()}
-  window.addEventListener('focus',resume);document.addEventListener('visibilitychange',resume)
-  return()=>{stopped=true;clearTimeout(timer);window.removeEventListener('focus',resume);document.removeEventListener('visibilitychange',resume)}
- },[attempt?.id,attempt?.transactionId])
+  if(!attempt||attempt.kind!=='card'||workspacePaused)return
+  const polling=startVisiblePolling(verify,5000)
+  return()=>polling.stop()
+ },[attempt?.id,attempt?.transactionId,workspacePaused])
  return <PortalPanel className="ca-panel pos-workspace gd-sales" data-card-depth={appearance?.prefs.cardDepth||'soft'} data-button-depth={appearance?.prefs.buttonDepth||'soft'} data-motion={appearance?.prefs.motion===0?'none':'subtle'} style={{'--glass-opacity':`${Math.round((appearance?.prefs.alpha||.76)*100)}%`,'--pos-primary':/^#[a-f\d]{6}$/i.test(site.design?.primary||'')?site.design!.primary:'#0b1529','--pos-brand':brand.background,'--pos-brand-ink':brand.foreground} as CSSProperties}>
   <header className="pos-heading"><div className="pos-identity">{site.business?.logoAssetKey&&<img src={asset(site.business.logoAssetKey)} alt=""/>}<div><small>WEBFACTORY POS 2.0 · {profileCopy.name}</small><h2>{businessName||site.slug}</h2><p>{profileCopy.hint}</p></div></div><div className="pos-operator"><ShieldCheck aria-hidden="true"/><div><small>{t('Sesión activa','Active session')}</small><strong>{operator.name||operator.email}</strong><span>{practice?t('Identidad de práctica · sin sesión de empleado real','Practice identity · no real employee session'):t('Identidad del portal verificada en servidor','Portal identity verified on server')}</span></div></div></header>
   {!operations.cashierEnabled&&<div className="pos-pending" role="status"><strong>{t('POS del cajero deshabilitado','Cashier POS disabled')}</strong><p>{t('El historial y la verificación de pagos pendientes siguen disponibles. Un administrador puede habilitar nuevas ventas desde Ajustes del negocio.','History and pending-payment verification remain available. The Owner can enable new sales in Business settings.')}</p>{canNavigate?.('settings')&&onNavigate&&<button onClick={()=>onNavigate('settings')}>{t('Abrir ajustes del POS','Open POS settings')}</button>}</div>}
