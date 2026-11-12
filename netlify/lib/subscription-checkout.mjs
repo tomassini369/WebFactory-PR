@@ -14,13 +14,13 @@ export async function subscriptionCheckout({store,stripe,siteId,interval,consent
   const pending=previous.sessionId?await stripe.checkout.sessions.retrieve(previous.sessionId):await create(previous);
   if(pending.status==='complete')throw fail('Payment confirmation is in progress. Refresh your plan shortly.');
   if(pending.status==='open'){
-   if(previous.interval===interval)return pending;
+   if(previous.interval===interval && previous.parameters?.line_items?.[0]?.price===price)return pending;
    await stripe.checkout.sessions.expire(pending.id);
   }else if(pending.status!=='expired')throw fail('Subscription checkout is awaiting confirmation.');
  }
  const acceptanceId=crypto.randomUUID();
  await store.setJSON(`${siteId}/billing-consents/${acceptanceId}.json`,{...consent,siteId});
- const metadata={webfactory_site_id:siteId,webfactory_interval:interval,webfactory_consent_id:acceptanceId,webfactory_consent_version:consent.version};
+ const metadata={webfactory_site_id:siteId,webfactory_interval:interval,webfactory_consent_id:acceptanceId,webfactory_consent_version:consent.version,...(consent.tier?{webfactory_tier:consent.tier}:{})};
  const parameters={mode:'subscription',line_items:[{price,quantity:1}],customer_email:consent.acceptedBy,client_reference_id:siteId,metadata,subscription_data:{metadata},success_url:`${base}/client-admin?billing=success`,cancel_url:`${base}/client-admin?billing=cancelled`,integration_identifier:integrationIdentifier()};
  const prepared={interval,acceptanceId,parameters,preparedAt:clock()};
  await store.setJSON(key,prepared);

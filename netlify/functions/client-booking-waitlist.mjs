@@ -1,3 +1,4 @@
+import {isBasicMembership} from "../../shared/membership-plans.mjs";
 import {assertSameOrigin,errorResponse,requireSiteCapability} from '../lib/client-auth.mjs';
 import {isBusinessOwner} from '../lib/commercial-access.mjs';
 import {readWaitlistPage,cancelWaitlist,offerWaitlist} from '../lib/booking-waitlist.mjs';
@@ -9,6 +10,7 @@ export function createWaitlistAdminHandler({authorize=requireSiteCapability,getS
   const raw=req.method==='POST'?await req.text():'';if(raw.length>2000)throw Object.assign(new Error('Request too large.'),{status:413});
   const input=raw?JSON.parse(raw):{},siteId=input.siteId||new URL(req.url).searchParams.get('siteId');
   const {site,membership}=await authorize(siteId,'bookings');if(!isBusinessOwner(membership))throw Object.assign(new Error('Owner access required.'),{status:403});
+ if(isBasicMembership(site))throw Object.assign(new Error("Waitlist requires Standard or Premium."),{status:403});
   const store=getStore();let result={};
   if(req.method==='GET')result=await readWaitlistPage(site,{store,after:new URL(req.url).searchParams.get('after')||''});
   else if(input.action==='cancel')await cancelWaitlist(site.siteId,input.id,{store});

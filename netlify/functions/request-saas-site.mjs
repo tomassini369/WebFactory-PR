@@ -123,10 +123,10 @@ export default async (req) => {
       trialInvite = await clientSiteStore().get(`trial-invites/${inviteHash(trialInviteToken)}.json`, { type: "json" });
       const expired = !trialInvite?.expiresAt || new Date(trialInvite.expiresAt).getTime() <= Date.now();
       if (!trialInvite || trialInvite.status !== "pending" || expired) {
-        throw Object.assign(new Error("This 7-day trial invitation is invalid or expired."), { status: 403 });
+        throw Object.assign(new Error("This trial invitation is invalid or expired."), { status: 403 });
       }
       if (normalizeEmail(trialInvite.email) !== ownerEmail) {
-        throw Object.assign(new Error("Use the email address that received the 7-day trial invitation."), { status: 403 });
+        throw Object.assign(new Error("Use the email address that received the trial invitation."), { status: 403 });
       }
     }
     const requestedSlug = slugify(payload.slug || order.business.name);

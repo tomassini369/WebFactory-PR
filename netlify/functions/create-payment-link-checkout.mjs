@@ -1,3 +1,4 @@
+import {isBasicMembership} from "../../shared/membership-plans.mjs";
 import { clientCommerceStore, commerceKey, getClientSiteBySlug } from "../lib/client-store.mjs";
 import { cleanText, publicBaseUrl, validEmail } from "../lib/platform-utils.mjs";
 import { siteEntitlement } from "../lib/subscription-billing.mjs";
@@ -40,7 +41,7 @@ export default async (req) => {
     const slug = cleanText(payload.slug, 80);
     const token = cleanText(payload.token, 200);
     const site = await getClientSiteBySlug(slug);
-    if (!site || !siteEntitlement(site).public) throw Object.assign(new Error("Payment link is unavailable."), { status: 404 });
+    if (!site || isBasicMembership(site) || !siteEntitlement(site).public) throw Object.assign(new Error("Payment link is unavailable."), { status: 404 });
 
     const link = await findPaymentLink(site.siteId, token);
     if (!link || link.active === false) throw Object.assign(new Error("Payment link is unavailable."), { status: 404 });

@@ -1,10 +1,12 @@
+import {membershipEnabled,membershipTrialDays} from '../../shared/membership-plans.mjs';
 import { emailBrand, emailButton, emailParagraph, renderEmailLayout, renderTextEmail } from './email-design.mjs';
 import { publicBaseUrl } from './platform-utils.mjs';
 
 export function renderInvitationEmail({kind = 'trial', builderUrl, language = 'en'}) {
   const es=language==='es',trial=kind==='trial',brand=emailBrand();
-  const title=trial?(es?'Tu invitación a probar WebFactory por 7 días':'Your WebFactory 7-day trial invitation'):(es?'Tu acceso de cortesía a WebFactory':'Your complimentary WebFactory access');
-  const intro=trial?(es?'Te invitamos a crear tu página y comenzar una prueba gratuita de WebFactory por 7 días.':'You have been invited to build your website and start a free 7-day WebFactory trial.'):(es?'Te invitamos a crear tu página de WebFactory con acceso de cortesía.':'You have been invited to create a WebFactory website with complimentary access.');
+  const trialDays=membershipEnabled()?membershipTrialDays:7;
+  const title=trial?(es?`Tu invitación a probar WebFactory por ${trialDays} días`:`Your WebFactory ${trialDays}-day trial invitation`):(es?'Tu acceso de cortesía a WebFactory':'Your complimentary WebFactory access');
+  const intro=trial?(es?`Te invitamos a crear tu página y comenzar una prueba gratuita de WebFactory por ${trialDays} días.`:`You have been invited to build your website and start a free ${trialDays}-day WebFactory trial.`):(es?'Te invitamos a crear tu página de WebFactory con acceso de cortesía.':'You have been invited to create a WebFactory website with complimentary access.');
   const label=es?'Abrir mi Builder privado':'Open my private Builder';
   const details=trial?(es?'No necesitas tarjeta. La prueba comienza cuando la actives en tu portal después de configurar el negocio.':'No card is required. Your trial starts when you activate it from your client portal after setup.') : '';
   const expiration=es?'Esta invitación vence en 30 días.':'This invitation expires in 30 days.';

@@ -1,3 +1,4 @@
+import {isMembershipId,membershipEnabled,membershipIds,membershipPriceEnv,membershipTrialDays} from "../../shared/membership-plans.mjs";
 import Stripe from 'stripe';
 import {assertSubscriptionBelongsToSite} from './subscription-consent.mjs';
 import { withBookingLock } from "./booking-lock.mjs";
@@ -25,14 +26,17 @@ export function subscriptionBillingReadiness() {
   const monthlyPriceConfigured = env("STRIPE_PRICE_WEBFACTORY_MONTHLY").startsWith("price_");
   const annualPriceConfigured = env("STRIPE_PRICE_WEBFACTORY_ANNUAL").startsWith("price_");
   const webhookConfigured = env("STRIPE_WEBHOOK_SECRET").startsWith("whsec_");
-  const checks = { stripeSecretConfigured, monthlyPriceConfigured, annualPriceConfigured, webhookConfigured };
+  const tiered = membershipEnabled();
+  const tierPriceIds = membershipIds.flatMap(tier=>['monthly','annual'].map(interval=>env(membershipPriceEnv(tier,interval))));
+  const tierPricesConfigured = tierPriceIds.every(id=>id.startsWith('price_')) && new Set(tierPriceIds).size===tierPriceIds.length;
+  const checks = tiered ? {stripeSecretConfigured,tierPricesConfigured,webhookConfigured} : {stripeSecretConfigured,monthlyPriceConfigured,annualPriceConfigured,webhookConfigured};
   const missing = Object.entries(checks)
     .filter(([, configured]) => !configured)
     .map(([name]) => name);
   return {
-    enabled,
+    enabled,tiered,
     ...checks,
-    priceConfigured: monthlyPriceConfigured && annualPriceConfigured,
+    priceConfigured: tiered ? tierPricesConfigured : monthlyPriceConfigured && annualPriceConfigured,
     missing,
     ready: enabled && missing.length === 0,
   };
@@ -40,14 +44,16 @@ export function subscriptionBillingReadiness() {
 
 export function createTrialServicePlan(now = new Date()) {
   const started = new Date(now);
-  const ends = new Date(started.getTime() + 7 * 24 * 60 * 60 * 1000);
+  const tiered=membershipEnabled();
+  const ends = new Date(started.getTime() + (tiered?membershipTrialDays:7) * 24 * 60 * 60 * 1000);
   return {
     code: "webfactory-saas",
     name: "WebFactory Commerce Platform",
     billingModel: "subscription",
     billingStatus: "trial",
     subscriptionStatus: "trial",
-    trialPolicyVersion: "v3-7d",
+    trialPolicyVersion: tiered ? "membership-14d" : "v3-7d",
+    ...(tiered?{tier:"premium"}:{}),
     migrationEligible: false,
     trialStartedAt: started.toISOString(),
     trialEndsAt: ends.toISOString(),
@@ -196,15 +202,26 @@ export function billingStateFor(event, current = {}) {
 export async function billingStateWithReconciliation(event, site, retrieveSubscription) {
   const current=site.servicePlan||{};
   const tied=Number.isSafeInteger(event.created)&&Number.isSafeInteger(current.lastBillingEventCreated)&&event.created===current.lastBillingEventCreated;
-  if(!tied&&current.billingCanonicalReconciliation!==true)return billingStateFor(event,current);
+  const incomingTier=metadataFor(event).webfactory_tier;
+  const verifyTier=Boolean(incomingTier || current.tier);
+  if(!verifyTier&&!tied&&current.billingCanonicalReconciliation!==true)return billingStateFor(event,current);
   const id=subscriptionIdFor(event)||current.stripeSubscriptionId;
   if(typeof id!=='string'||!id)throw Object.assign(new Error('Subscription reconciliation is required.'),{status:503});
   const canonical=await retrieveSubscription(id);
-  const rawCustomer=event.type==='checkout.session.completed'?event.data?.object?.customer:current.stripeCustomerId;
+  const rawCustomer=event.type==='checkout.session.completed'?event.data?.object?.customer:current.stripeCustomerId||event.data?.object?.customer;
   const customer=typeof rawCustomer==='string'?rawCustomer:rawCustomer?.id;
   assertSubscriptionBelongsToSite(canonical,{siteId:site.siteId,servicePlan:{stripeSubscriptionId:id,stripeCustomerId:customer}});
   if(!['active','trialing','past_due','unpaid','paused','canceled','incomplete','incomplete_expired'].includes(canonical.status))throw Object.assign(new Error('Subscription state cannot be verified.'),{status:503});
-  return {...billingStateFor({type:'customer.subscription.updated',created:event.created,data:{object:canonical}},current),lastBillingEvent:event.type,billingCanonicalReconciliation:true,lastBillingReconciledAt:new Date().toISOString()};
+  let tier=current.tier;
+  if(verifyTier){
+    const metadata=canonical.metadata||{};
+    const interval=metadata.webfactory_interval;
+    const items=canonical.items?.data||[];
+    if(!isMembershipId(metadata.webfactory_tier)||!['monthly','annual'].includes(interval)||items.length!==1||items[0].quantity!==1||
+      !env(membershipPriceEnv(metadata.webfactory_tier,interval)).startsWith('price_')||items[0].price?.id!==env(membershipPriceEnv(metadata.webfactory_tier,interval)))throw Object.assign(new Error('Subscription price cannot be verified.'),{status:503});
+    tier=metadata.webfactory_tier;
+  }
+  return {...billingStateFor({type:'customer.subscription.updated',created:event.created,data:{object:canonical}},current),...(tier?{tier}:{}),lastBillingEvent:event.type,billingCanonicalReconciliation:true,lastBillingReconciledAt:new Date().toISOString()};
 }
 
 export async function processSubscriptionBillingEvent(event, {retrieveSubscription=id=>new Stripe(env('STRIPE_SECRET_KEY'),{apiVersion:'2026-07-29.dahlia'}).subscriptions.retrieve(id)} = {}) {

@@ -1,3 +1,4 @@
+import {basicProfessional,isBasicMembership} from "../../shared/membership-plans.mjs";
 import {isBusinessTime} from '../../shared/business-hours.mjs';
 import {bookingSlotLockKey} from './booking-date-index.mjs';
 import {reservationBlocks} from './booking-reservation-cache.mjs';
@@ -35,6 +36,7 @@ async function reservationsForEmployee(siteId,employeeId,startDay,endDay,catalog
 }
 
 function bookingServiceAndEmployee(site, serviceId, employeeId, locationId = "") {
+  if(isBasicMembership(site)&&employeeId!==basicProfessional(site))throw Object.assign(new Error("Professional unavailable for this plan."),{status:404});
   const service = (site.catalog || []).find((item) => item.id === serviceId && item.type === "service" && item.requiresAppointment && item.active !== false);
   const locations = (site.business?.locations || []).filter((location) => location.active !== false);
   const hasLocations = locations.length > 0;

@@ -1,3 +1,4 @@
+import {isBasicMembership,membershipAllowsCapability} from "../../shared/membership-plans.mjs";
 import {catalogPriceCents} from '../lib/catalog-price.mjs';
 import {verifyMerchantCapability} from '../lib/stripe-merchant-capability.mjs';
 import { bookingBalance, kioskBookingCodeKey } from '../lib/kiosk-bookings.mjs';
@@ -71,6 +72,9 @@ export async function performCheckout(req, { kiosk = false, kioskQr = false, bal
     const site = payload.siteId ? await getClientSite(payload.siteId) : await getClientSiteBySlug(payload.slug);
     if (!site) throw Object.assign(new Error("Business site not found."), { status: 404 });
     if (!siteEntitlement(site).public) throw Object.assign(new Error("Business site is not available."), { status: 404 });
+    const basic=isBasicMembership(site);
+    if((kiosk&&!membershipAllowsCapability(site,'pos'))||(basic&&(!payload.booking||balanceBooking)))throw Object.assign(new Error("This action is unavailable on this membership."),{status:403});
+    if(basic)site.paymentRules={...site.paymentRules,bookingPayment:'in_person'};
     const customer = {
       name: cleanText(payload.customer?.name, 180),
       email: cleanText(payload.customer?.email, 320),
@@ -109,7 +113,7 @@ export async function performCheckout(req, { kiosk = false, kioskQr = false, bal
       const service = (site.catalog || []).find((item) => item.id === payload.booking.serviceId && item.type === "service" && item.requiresAppointment && item.active !== false);
       const employee = (site.employees || []).find((member) => member.id === payload.booking.employeeId && member.active !== false && (member.serviceIds || []).includes(service?.id) && (!locations.length || (locationId && (member.locationIds || []).includes(locationId))));
       if (!service || !employee) throw Object.assign(new Error("The selected service or employee is unavailable."), { status: 409 });
-      const fullAmount = catalogPriceCents(service.price);
+      const fullAmount = basic ? 0 : catalogPriceCents(service.price);
       hold = await createBookingHold(site, { ...payload.booking, locationId },{strictGoogle:true});
       const unitAmount = site.paymentRules?.bookingPayment === "deposit"
         ? Math.round(fullAmount * Number(site.paymentRules?.bookingDepositPercent || 25) / 100)
@@ -162,12 +166,12 @@ export async function performCheckout(req, { kiosk = false, kioskQr = false, bal
       ...(series?{seriesId:series.id,seriesOccurrence:series.occurrence}:{}),
       serviceId: balanceBooking?.serviceId || hold?.serviceId || "", employeeId: balanceBooking?.employeeId || hold?.employeeId || "", start: hold?.start || "", end: hold?.end || "",
       ...(hold ? {bufferMinutes:hold.bufferMinutes,bufferBeforeMinutes:hold.bufferBeforeMinutes} : {}),
-      ...(kind==="booking"?{bookingTotalCents,bookingTaxCents}:{}),
+      ...(kind==="booking"?{bookingTotalCents:basic?0:bookingTotalCents,bookingTaxCents:basic?0:bookingTaxCents}:{}),
       ...(balanceBooking?{source:"booking_balance",bookingTransactionId:balanceBooking.transactionId,bookingBalanceAttempt:balanceAttempt}:{}),
       channel: kiosk ? "kiosk" : "storefront", pricesIncludeTax: balanceBooking?Boolean(balanceBooking.pricesIncludeTax):Boolean(site.taxConfig?.pricesIncludeTax),
       subtotal, tax: taxCents, amountTotal: subtotal + ((balanceBooking?balanceBooking.pricesIncludeTax:site.taxConfig?.pricesIncludeTax) ? 0 : taxCents), currency: "usd",
       ...(kind === "booking" ? { language:lang, bookingCode:crypto.randomBytes(4).toString("hex").toUpperCase(), customerCalendarInviteRequested: site.settings?.sendGoogleCalendarInvites === true, confirmationEmailRequested: true, calendarToken: crypto.randomBytes(32).toString("base64url") } : {}),
-      paymentStatus: inPerson ? "due" : "pending", status: inPerson ? (kind==='booking'&&!series&&site.settings?.bookingApproval==='manual'?'pending_approval':'confirmed') : "payment_pending",
+      paymentStatus: basic ? "not_required" : inPerson ? "due" : "pending", status: inPerson ? (kind==='booking'&&!series&&site.settings?.bookingApproval==='manual'?'pending_approval':'confirmed') : "payment_pending",
       createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
     };
 

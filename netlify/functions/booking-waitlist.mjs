@@ -1,3 +1,4 @@
+import {isBasicMembership} from "../../shared/membership-plans.mjs";
 import {assertSameOrigin,errorResponse} from '../lib/client-auth.mjs';
 import {getClientSite,clientCommerceStore,commerceKey} from '../lib/client-store.mjs';
 import {siteEntitlement} from '../lib/subscription-billing.mjs';
@@ -17,7 +18,7 @@ export function createWaitlistPublicHandler({getSite=getClientSite,getStore=clie
   const site=await getSite(siteId);if(!site)throw failure('Unavailable.',404);
   const store=getStore(),token=input.token||url.searchParams.get('token'),invitation=input.invitation||url.searchParams.get('invitation');
   if(req.method==='POST'&&input.action==='join'){
-   if(!siteEntitlement(site).public)throw failure('Unavailable.',404);
+   if(isBasicMembership(site)||!siteEntitlement(site).public)throw failure('Unavailable.',404);
    return Response.json({ok:true,...await join(site,input,{store})},{headers});
   }
   const secret=invitation||token;if(!validWaitlistToken(secret))throw failure('Request unavailable.',404);

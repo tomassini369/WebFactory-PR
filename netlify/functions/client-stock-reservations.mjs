@@ -1,3 +1,4 @@
+import {isBasicMembership} from '../../shared/membership-plans.mjs';
 import { assertSameOrigin,errorResponse,requireSiteCapability } from '../lib/client-auth.mjs';
 import { clientCommerceStore,commerceKey } from '../lib/client-store.mjs';
 import { releaseInventory } from '../lib/inventory-reservations.mjs';
@@ -11,6 +12,7 @@ export default async req=>{
     assertSameOrigin(req);
     const payload=await req.json();
     const {site}=await requireSiteCapability(payload.siteId,'catalog');
+    if (isBasicMembership(site)) throw Object.assign(new Error('Inventory requires Standard or Premium.'), {status:403});
     const result=await withBookingLock(clientCommerceStore(),`locks/commerce/${site.siteId}`,async()=>{
       const key=commerceKey(site.siteId,'transactions',payload.transactionId);
       const record=await clientCommerceStore().get(key,{type:'json'});

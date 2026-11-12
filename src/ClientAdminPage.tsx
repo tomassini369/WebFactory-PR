@@ -1,3 +1,5 @@
+import MembershipPlans from './MembershipPlans'
+import {isMembershipId,membershipConsentVersion,membershipPlans,membershipTrialDays,type MembershipId,type MembershipInterval} from '../shared/membership-plans.mjs'
 import {SiteMusicEditor,SiteSocialEditor} from './SiteMediaEditor'
 import {siteCanPublishMusic} from '../shared/site-music.mjs'
 import {businessHoursRows,completeBusinessHours} from '../shared/business-hours.mjs'
@@ -63,9 +65,9 @@ const PracticeBuilder=lazy(()=>import('./WebFactoryBuilder'))
 type CatalogItem={id:string;type:'product'|'service';name:string;nameEn?:string;nameEs?:string;description:string;descriptionEn?:string;descriptionEs?:string;price:number;active:boolean;inventory:number|null;requiresAppointment:boolean;duration:number;bufferMinutes:number;imageAssetKey?:string;taxable?:boolean;taxRateOverride?:number|null}
 type Employee={id:string;name:string;role:string;roleEn?:string;roleEs?:string;active:boolean;serviceIds:string[];locationIds?:string[];calendarId:string;dailyLimit:number;schedule:Record<string,DayHours>;timeOff:Array<{start:string;end:string;note:string}>}
 type DayHours={enabled:boolean;open:string;close:string}
-type ClientSite={music?:unknown;siteId:string;slug:string;status:string;revision:number;business:Record<string,any>;design:{mode?:'template_base'|'custom';templateSlug?:string;templateCategory?:string;templateName?:string;templateRoute?:string;preserveTemplateStructure?:boolean;style:string;primary:string;secondary:string};catalog:CatalogItem[];employees:Employee[];members?:Array<{email:string;role:string}>;hours:Record<string,DayHours>;paymentRules:any;googleCalendar:any;businessEmail?:{provider:string;connected:boolean;connectedEmail:string;connectedAt?:string;disconnectedAt?:string};taxConfig?:any;reviewSettings?:any;settings:{locale:string;timezone:string;currency:string};servicePlan?:{code:string;name:string;billingModel:'subscription'|'complimentary';billingStatus:string;subscriptionStatus:string;migrationEligible:boolean;activatedAt:string;trialStartedAt?:string;trialEndsAt?:string;currentPeriodEnd:string;cancelAtPeriodEnd:boolean}}
+type ClientSite={music?:unknown;siteId:string;slug:string;status:string;revision:number;business:Record<string,any>;design:{mode?:'template_base'|'custom';templateSlug?:string;templateCategory?:string;templateName?:string;templateRoute?:string;preserveTemplateStructure?:boolean;style:string;primary:string;secondary:string};catalog:CatalogItem[];employees:Employee[];members?:Array<{email:string;role:string}>;hours:Record<string,DayHours>;paymentRules:any;googleCalendar:any;businessEmail?:{provider:string;connected:boolean;connectedEmail:string;connectedAt?:string;disconnectedAt?:string};taxConfig?:any;reviewSettings?:any;settings:{locale:string;timezone:string;currency:string};servicePlan?:{tier?:string;trialPolicyVersion?:string;code:string;name:string;billingModel:'subscription'|'complimentary';billingStatus:string;subscriptionStatus:string;migrationEligible:boolean;activatedAt:string;trialStartedAt?:string;trialEndsAt?:string;currentPeriodEnd:string;cancelAtPeriodEnd:boolean}}
 type Transaction={balanceAttempt?:{attempt:string};balanceReconciliation?:{state:string;reason?:string};transactionId:string;kind:'order'|'booking';paymentProvider?:string;customer:{name:string;email:string;phone:string};items:Array<{name:string;quantity:number;unitAmount:number}>;amountTotal:number;refundedAmount?:number;paymentStatus:string;status:string;createdAt:string;paidAt?:string;start?:string;queueNumber?:string;kitchenStatus?:string;locationName?:string;locationId?:string}
-type BillingInfo={readiness:{enabled:boolean;monthlyPriceConfigured:boolean;annualPriceConfigured:boolean;webhookConfigured:boolean;ready:boolean};entitlement:{public:boolean;reason:string;trialEndsAt?:string};servicePlan:ClientSite['servicePlan']}
+type BillingInfo={readiness:{tiered?:boolean;enabled:boolean;monthlyPriceConfigured:boolean;annualPriceConfigured:boolean;webhookConfigured:boolean;ready:boolean};entitlement:{public:boolean;reason:string;trialEndsAt?:string};servicePlan:ClientSite['servicePlan']}
 type Tab='profile'|'appearance'|'overview'|'training'|'website'|'redesign'|'locations'|'share'|'kitchen'|'orders'|'bookings'|'customers'|'catalog'|'team'|'payments'|'pos'|'marketing'|'analytics'|'integrations'|'security'|'settings'|'billing'
 type Language='es'|'en'
 
@@ -195,7 +197,7 @@ export default function ClientAdminPage({practiceStartTab}:{practiceStartTab?:st
   if(!site&&!accessReady)return <PortalLoadingCard lang={lang}/>
   if(!site)return <main className="ca-page"><header className="ca-top"><PortalReturnHome lang={lang}/><AdaptiveLogo alt="WebFactory PR"/><button onClick={signOut}>{lang==='es'?'Salir':'Sign out'}</button></header><section className="ca-empty">
     <h1>{accessError?(lang==='es'?'No se pudieron cargar tus negocios.':'Your businesses could not be loaded.'):(lang==='es'?'No hay negocios asignados.':'No businesses are assigned.')}</h1>
-    {accessError?<><p role="alert">{accessError}</p><button type="button" className="ca-primary-link" onClick={()=>void loadSites().catch(()=>{})}>{lang==='es'?'Reintentar':'Try again'}</button></>:<><p>{lang==='es'?'Completa el Builder con este mismo email para crear tu website y activar los 7 días gratis.':'Complete the Builder with this same email to create your website and activate the free 7-day trial.'}</p><a className="ca-primary-link" href="/builder">{lang==='es'?'Abrir Builder':'Open Builder'}</a></>}
+    {accessError?<><p role="alert">{accessError}</p><button type="button" className="ca-primary-link" onClick={()=>void loadSites().catch(()=>{})}>{lang==='es'?'Reintentar':'Try again'}</button></>:<><p>{lang==='es'?'Completa el Builder con este mismo email para crear tu website y activar la prueba gratis.':'Complete the Builder with this same email to create your website and activate the free trial.'}</p><a className="ca-primary-link" href="/builder">{lang==='es'?'Abrir Builder':'Open Builder'}</a></>}
   </section></main>
 
   const trainingScope:TrainingScope={siteId:site.siteId,userId:user.id,role:membership?.role||'',capabilities:Array.isArray(membership?.capabilities)?membership.capabilities:[],design:site.design,category:site.business.category,operations}
@@ -272,9 +274,11 @@ function BillingPanel({site,billing,lang,busy,setBusy,setError}:{site:ClientSite
 
   const es=lang==='es'
   const [renewalAccepted,setRenewalAccepted]=useState(false)
+  const [selection,setSelection]=useState<{tier:MembershipId;interval:MembershipInterval}|null>(null)
+  const tiered=billing?.readiness.tiered===true;
   const [canceled,setCanceled]=useState(false)
   const [cancellationEnd,setCancellationEnd]=useState('')
-  useEffect(()=>{setRenewalAccepted(false);setCanceled(false);setCancellationEnd('')},[site.siteId])
+  useEffect(()=>{setSelection(null);setRenewalAccepted(false);setCanceled(false);setCancellationEnd('')},[site.siteId])
   const status=site.servicePlan?.subscriptionStatus||''
   const startTrial=async()=>{
     setBusy(true);setError('')
@@ -283,10 +287,10 @@ function BillingPanel({site,billing,lang,busy,setBusy,setError}:{site:ClientSite
       location.reload()
     }catch(e){setError(e instanceof Error?e.message:(es?'No se pudo iniciar la prueba.':'The trial could not be started.'));setBusy(false)}
   }
-  const choose=async(interval:'monthly'|'annual')=>{
+  const choose=async(interval:MembershipInterval,tier?:MembershipId)=>{
     setBusy(true);setError('')
     try{
-      const result=await api('/.netlify/functions/create-subscription-checkout',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({siteId:site.siteId,interval,renewalAccepted,consentVersion:'2026-10-02'})})
+      const result=await api('/.netlify/functions/create-subscription-checkout',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({siteId:site.siteId,interval,renewalAccepted,consentVersion:tier?membershipConsentVersion:'2026-10-02',...(tier?{tier}:{})})})
       location.assign(result.url)
     }catch(e){setError(e instanceof Error?e.message:(es?'No se pudo abrir la suscripción.':'The subscription checkout could not be opened.'));setBusy(false)}
   }
@@ -302,13 +306,29 @@ function BillingPanel({site,billing,lang,busy,setBusy,setError}:{site:ClientSite
   const remaining=ends?Math.max(0,Date.parse(ends)-Date.now()):0
   const days=Math.ceil(remaining/86400000)
   const active=['active','trialing'].includes(status)
+  const actualTrialDays=site.servicePlan?.trialPolicyVersion==='membership-14d'?membershipTrialDays:7
+  const newTrialDays=tiered?membershipTrialDays:7
+  const showPicker=!active&&status!=='not_started'&&!(status==='trial'&&remaining>0)
+  const chosen=selection?membershipPlans[selection.tier]:null
+  const activeTier=site.servicePlan?.tier
+  const activePlan=isMembershipId(activeTier)?membershipPlans[activeTier]:null
   const complimentary=site.servicePlan?.billingModel==='complimentary'
   return <Panel title={es?'Plan WebFactory':'WebFactory Plan'} text={es?'La prueba gratuita no solicita tarjeta ni genera cargos automáticos.':'The free trial does not require a card or create automatic charges.'}>
     {complimentary?<div className="ca-success">{es?'Tienes acceso exclusivo de cortesía a todos los servicios de WebFactory. Este acceso no tiene fecha de vencimiento ni requiere suscripción.':'You have exclusive complimentary access to all WebFactory services. This access does not expire and requires no subscription.'}</div>:<>
-      {status==='not_started'&&<div className="ca-trial-start"><strong>{es?'Tu website está listo.':'Your website is ready.'}</strong><span>{es?'Inicia tus 7 días gratis cuando estés preparado para publicarlo.':'Start your free 7-day trial when you are ready to publish it.'}</span><button disabled={busy} onClick={startTrial}>{es?'Iniciar 7 días gratis':'Start 7-day free trial'}</button></div>}
-      {status==='trial'&&<div className="ca-warning">{es?`Prueba gratuita de 7 días: quedan aproximadamente ${days} día(s). Al vencer, el website se ocultará hasta seleccionar un plan.`:`7-day free trial: approximately ${days} day(s) remain. When it expires, the website will be hidden until a plan is selected.`}</div>}
-      {active?<div className="ca-success">{es?'Tu suscripción está activa y el website permanece publicado.':'Your subscription is active and the website remains published.'}</div>:status!=='not_started'&&<div className="ca-plans"><article><small>{es?'MENSUAL':'MONTHLY'}</small><strong>$30</strong><span>{es?'USD cada mes · $360 al año':'USD each month · $360 per year'}</span><button disabled={busy||!billing?.readiness.ready||!renewalAccepted} onClick={()=>choose('monthly')}>{es?'Seleccionar mensual':'Select monthly'}</button></article><article><small>{es?'ANUAL':'ANNUAL'}</small><strong>$350</strong><span>{es?'USD cada año · ahorra $10':'USD each year · save $10'}</span><button disabled={busy||!billing?.readiness.ready||!renewalAccepted} onClick={()=>choose('annual')}>{es?'Seleccionar anual':'Select annual'}</button></article></div>}
-      {!active&&status!=='not_started'&&<label className="check ca-renewal-consent"><input type="checkbox" checked={renewalAccepted} onChange={e=>setRenewalAccepted(e.target.checked)}/><span>{es?'Acepto que el plan elegido renueva automáticamente: $30 USD cada mes o $350 USD cada año, hasta cancelar. Puedo detener renovaciones en Plan WebFactory y conservar el periodo pagado.':'I agree the selected plan renews automatically: $30 USD each month or $350 USD each year, until canceled. I can stop renewals in WebFactory Plan and keep the paid period.'} <a href="/terms" target="_blank" rel="noreferrer">{es?'Términos':'Terms'}</a> · <a href="/refund-policy" target="_blank" rel="noreferrer">{es?'Reembolsos':'Refunds'}</a></span></label>}
+      {status==='not_started'&&<div className="ca-trial-start"><strong>{es?'Tu website está listo.':'Your website is ready.'}</strong><span>{es?`Inicia tus ${newTrialDays} días gratis cuando estés preparado para publicarlo.`:`Start your free ${newTrialDays}-day trial when you are ready to publish it.`}</span><button disabled={busy} onClick={startTrial}>{es?`Iniciar ${newTrialDays} días gratis`:`Start ${newTrialDays}-day free trial`}</button></div>}
+      {status==='trial'&&remaining>0&&<div className="ca-warning">{es?`Prueba gratuita de ${actualTrialDays} días: quedan aproximadamente ${days} día(s). Al vencer, el website se ocultará hasta seleccionar un plan.`:`${actualTrialDays}-day free trial: approximately ${days} day(s) remain. When it expires, the website will be hidden until a plan is selected.`}</div>}
+      {active&&activePlan&&<p>{es?'Membresía activa:':'Active membership:'} <strong>{es?activePlan.name:activePlan.nameEn}</strong></p>}
+      {tiered&&showPicker&&<>
+        <MembershipPlans lang={lang} disabled={busy||!billing?.readiness.ready} onIntervalChange={()=>{setSelection(null);setRenewalAccepted(false)}} onSelect={value=>{setSelection(value);setRenewalAccepted(false)}}/>
+        {selection&&chosen&&<div className="ca-actions">
+          <label className="check ca-renewal-consent"><input type="checkbox" checked={renewalAccepted} onChange={event=>setRenewalAccepted(event.target.checked)}/><span>
+          {es?`Acepto que ${chosen.name} renueva automáticamente por $${chosen[selection.interval]} USD ${selection.interval==='monthly'?'al mes':'al año'} hasta cancelar.`:`I agree that ${chosen.nameEn} renews automatically at $${chosen[selection.interval]} USD per ${selection.interval==='monthly'?'month':'year'} until canceled.`} <a href="/terms" target="_blank" rel="noreferrer">{es?'Términos':'Terms'}</a> · <a href="/refund-policy" target="_blank" rel="noreferrer">{es?'Reembolsos':'Refunds'}</a>
+          </span></label>
+          <button disabled={!renewalAccepted||busy||!billing?.readiness.ready} onClick={()=>void choose(selection.interval,selection.tier)}>{es?'Continuar a Stripe':'Continue to Stripe'}</button>
+        </div>}
+      </>}
+      {active?<div className="ca-success">{es?'Tu suscripción está activa y el website permanece publicado.':'Your subscription is active and the website remains published.'}</div>:!tiered&&status!=='not_started'&&<div className="ca-plans"><article><small>{es?'MENSUAL':'MONTHLY'}</small><strong>$30</strong><span>{es?'USD cada mes · $360 al año':'USD each month · $360 per year'}</span><button disabled={busy||!billing?.readiness.ready||!renewalAccepted} onClick={()=>choose('monthly')}>{es?'Seleccionar mensual':'Select monthly'}</button></article><article><small>{es?'ANUAL':'ANNUAL'}</small><strong>$350</strong><span>{es?'USD cada año · ahorra $10':'USD each year · save $10'}</span><button disabled={busy||!billing?.readiness.ready||!renewalAccepted} onClick={()=>choose('annual')}>{es?'Seleccionar anual':'Select annual'}</button></article></div>}
+      {!tiered&&!active&&status!=='not_started'&&<label className="check ca-renewal-consent"><input type="checkbox" checked={renewalAccepted} onChange={e=>setRenewalAccepted(e.target.checked)}/><span>{es?'Acepto que el plan elegido renueva automáticamente: $30 USD cada mes o $350 USD cada año, hasta cancelar. Puedo detener renovaciones en Plan WebFactory y conservar el periodo pagado.':'I agree the selected plan renews automatically: $30 USD each month or $350 USD each year, until canceled. I can stop renewals in WebFactory Plan and keep the paid period.'} <a href="/terms" target="_blank" rel="noreferrer">{es?'Términos':'Terms'}</a> · <a href="/refund-policy" target="_blank" rel="noreferrer">{es?'Reembolsos':'Refunds'}</a></span></label>}
       {(active||status==='past_due')&&<div className="ca-actions">{site.servicePlan?.cancelAtPeriodEnd||canceled?<p role="status">{es?'Renovación cancelada. El acceso continúa hasta finalizar el periodo pagado.':'Renewal canceled. Access continues through the paid period.'} {(cancellationEnd||site.servicePlan?.currentPeriodEnd)&&new Date(cancellationEnd||site.servicePlan!.currentPeriodEnd).toLocaleDateString(es?'es-PR':'en-US')}</p>:<button disabled={busy} onClick={cancelRenewal}>{es?'Cancelar futuras renovaciones':'Cancel future renewals'}</button>}</div>}
       {billing&&!billing.readiness.ready&&status!=='not_started'&&<p className="ca-note">{es?'Las ofertas todavía están en preparación y no pueden generar cargos.':'The plans are still being prepared and cannot create charges.'}</p>}
     </>}

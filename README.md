@@ -30,6 +30,8 @@ After the trial, continued public availability requires an active WebFactory sub
 
 ## Pricing
 
+The current production offer is listed below. For the new Basic, Standard and Premium offer, including the 14-day trial and Stripe release configuration, see [WebFactory memberships](docs/membership-billing.md).
+
 - Monthly: $30 USD.
 - Annual: $350 USD.
 - Annual savings versus 12 monthly payments: $10 USD.

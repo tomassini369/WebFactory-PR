@@ -1,3 +1,4 @@
+import {isBasicMembership} from "../../shared/membership-plans.mjs";
 import { assertSameOrigin, errorResponse, requireSiteAccess } from "../lib/client-auth.mjs";
 import { patchClientSite, normalizeEmail } from "../lib/client-store.mjs";
 import { publicBaseUrl } from "../lib/platform-utils.mjs";
@@ -30,6 +31,7 @@ export default async(req)=>{
     assertSameOrigin(req);
     const payload=await req.json();
     const {user,site,membership}=await requireSiteAccess(payload.siteId,["owner"]);
+    if(isBasicMembership(site))throw Object.assign(new Error("Merchant payments require Standard or Premium."),{status:403});
     if(!["owner","admin"].includes(membership.role||""))throw Object.assign(new Error("Only the owner can connect Stripe."),{status:403});
     assertStripeWriteAllowed({ requestUrl: req.url });
 

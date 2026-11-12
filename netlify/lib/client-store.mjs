@@ -1,3 +1,4 @@
+import {basicProfessional,isBasicMembership} from "../../shared/membership-plans.mjs";
 import {publicSiteMusic} from "../../shared/site-music.mjs";
 import {normalizeSocialLinks} from "../../shared/social-links.mjs";
 import {withOrderTurnIndex} from './order-turn-index.mjs';
@@ -131,6 +132,7 @@ export async function sitesForEmail(email) {
 
 export function publicClientSite(site) {
   if (!site) return null;
+  const basic=isBasicMembership(site);
   return {
     siteId: site.siteId,
     slug: site.slug,
@@ -167,7 +169,7 @@ export function publicClientSite(site) {
     },
     design: normalizeSiteDesign(site.design || {}),
     music: publicSiteMusic(site),
-    features: { ...site.features, calendar: Boolean(site.features?.calendar && site.googleCalendar?.connected) },
+    features: { ...site.features, ...(basic?{cart:false}:{}), calendar: Boolean(site.features?.calendar && site.googleCalendar?.connected) },
     catalog: (site.catalog || []).filter((item) => item.active !== false).map((item) => ({
       id: item.id,
       type: item.type,
@@ -186,7 +188,7 @@ export function publicClientSite(site) {
         ? `/.netlify/functions/client-asset?siteId=${encodeURIComponent(site.siteId)}&key=${encodeURIComponent(item.imageAssetKey)}`
         : "",
     })),
-    employees: (site.employees || []).filter((member) => member.active !== false).map((member) => ({
+    employees: (site.employees || []).filter((member) => member.active !== false && (!basic||member.id===basicProfessional(site))).map((member) => ({
       id: member.id,
       name: member.name,
       role: member.role,
@@ -196,16 +198,18 @@ export function publicClientSite(site) {
       locationIds: member.locationIds || [],
     })),
     hours: site.hours || {},
+    settings: {timezone: site.settings?.timezone, waitlistEnabled: !basic && site.settings?.waitlistEnabled === true},
     paymentRules: {
-      methods: site.paymentRules?.methods || {},
+      bookingWithoutPayment: basic,
+      methods: basic ? {} : site.paymentRules?.methods || {},
       productPayment: site.paymentRules?.productPayment || "online",
-      bookingPayment: site.paymentRules?.bookingPayment || "full",
+      bookingPayment: basic ? "in_person" : site.paymentRules?.bookingPayment || "full",
       bookingDepositPercent: Number(site.paymentRules?.bookingDepositPercent || 25),
       allowTips: Boolean(site.paymentRules?.allowTips),
       stripeReady: site.paymentRules?.stripeCapabilityStatus === "active",
-      stripeAvailable: Boolean(site.paymentRules?.methods?.stripe && site.paymentRules?.stripeConnectedAccountId),
+      stripeAvailable: !basic && Boolean(site.paymentRules?.methods?.stripe && site.paymentRules?.stripeConnectedAccountId),
       athPublicPath: site.paymentRules?.ath?.publicPath || "",
-      athReady: Boolean(site.paymentRules?.methods?.ath && site.paymentRules?.ath?.credentialsConfigured && site.paymentRules?.ath?.credentialVersion),
+      athReady: !basic && Boolean(site.paymentRules?.methods?.ath && site.paymentRules?.ath?.credentialsConfigured && site.paymentRules?.ath?.credentialVersion),
       inPersonInstructions: site.paymentRules?.inPerson?.instructions || "",
     },
   };

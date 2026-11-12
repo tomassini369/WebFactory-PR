@@ -134,3 +134,30 @@ test('after canonical reconciliation later delivered snapshots cannot undo the n
  const result=await billingStateWithReconciliation(event,site,async()=>{reads++;return{id:'sub_a',customer:'cus_a',metadata:{webfactory_site_id:'tenant_a'},status:'canceled'}});
  assert.equal(reads,1);assert.equal(result.subscriptionStatus,'canceled');assert.equal(result.billingCanonicalReconciliation,true);
 });
+
+test("a membership trial grants Premium for 14 days and a verified Stripe price assigns the paid tier", async t => {
+  const previousNetlify = globalThis.Netlify;
+  const values = {
+    WEBFACTORY_TIERED_PLANS_ENABLED: "true",
+    STRIPE_PRICE_WEBFACTORY_BASIC_ANNUAL: "price_basic_annual",
+  };
+  globalThis.Netlify = {env:{get:key=>values[key]}};
+  t.after(() => { globalThis.Netlify = previousNetlify; });
+  const servicePlan = createTrialServicePlan(new Date("2026-09-21T12:00:00Z"));
+  assert.equal(servicePlan.tier, "premium");
+  assert.equal(servicePlan.trialEndsAt, "2026-10-05T12:00:00.000Z");
+  assert.equal(siteEntitlement({servicePlan}, new Date(servicePlan.trialEndsAt)).public, false);
+
+  const metadata = {webfactory_site_id:"site_a",webfactory_tier:"basic",webfactory_interval:"annual"};
+  const site = {siteId:"site_a",servicePlan};
+  const event = {type:"checkout.session.completed",data:{object:{customer:"cus_a",subscription:"sub_a",metadata}}};
+  const canonical = {id:"sub_a",customer:"cus_a",metadata,status:"active",
+    items:{data:[{quantity:1,price:{id:values.STRIPE_PRICE_WEBFACTORY_BASIC_ANNUAL}}]}};
+  const paidPlan = await billingStateWithReconciliation(event,site,async () => canonical);
+  assert.equal(paidPlan.tier, "basic");
+  assert.equal(siteEntitlement({servicePlan:paidPlan}).public, true);
+
+  await assert.rejects(billingStateWithReconciliation(event,site,async () => ({
+    ...canonical,items:{data:[{quantity:1,price:{id:"price_wrong"}}]},
+  })), {status:503});
+});

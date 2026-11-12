@@ -1,3 +1,4 @@
+import {membershipEnabled} from "../../shared/membership-plans.mjs";
 import { assertSameOrigin, errorResponse, requireSiteAccess } from "../lib/client-auth.mjs";
 import { patchClientSite } from "../lib/client-store.mjs";
 import { createTrialServicePlan } from "../lib/subscription-billing.mjs";
@@ -20,8 +21,11 @@ export default async (req) => {
     if (["active", "trialing"].includes(site.servicePlan?.subscriptionStatus)) {
       throw Object.assign(new Error("This website already has an active subscription."), { status: 409 });
     }
+    if(membershipEnabled() && (site.servicePlan?.trialStartedAt || site.servicePlan?.stripeSubscriptionId || !['','not_started'].includes(site.servicePlan?.subscriptionStatus||''))) {
+      throw Object.assign(new Error("A new trial is not available for this website."), {status:409});
+    }
     const servicePlan = createTrialServicePlan();
-    const updated = await patchClientSite(site.siteId, { servicePlan, status: "trial" });
+    const updated = await patchClientSite(site.siteId, { servicePlan, status: "trial" }, { expectedRevision: site.revision });
     return Response.json({ ok: true, siteId: updated.siteId, status: updated.status, trialEndsAt: servicePlan.trialEndsAt }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
     return errorResponse(error);

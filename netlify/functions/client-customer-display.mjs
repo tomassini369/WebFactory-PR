@@ -1,3 +1,4 @@
+import {membershipAllowsCapability} from '../../shared/membership-plans.mjs';
 import {renewPosSession} from '../lib/mfa-security.mjs';
 import {customerDisplayStore} from '../lib/customer-display-store.mjs';
 import crypto from 'node:crypto';
@@ -27,7 +28,7 @@ export function createCustomerDisplayHandler({authorize=requireSiteCapability,ge
     }
    }else if(!matchesDisplayToken(deviceToken,state.deviceHash))throw displayFail('Screen not paired.',401);
    const site=await getSite(state.siteId);const member=site?.members?.find(x=>String(x.email).toLowerCase()===state.email);
-   if(!site||!membershipHasCapability(member,'pos')||member.userId&&member.userId!==state.actor)throw displayFail('Cashier access revoked / Acceso del cajero revocado.',403);
+   if(!site||!membershipAllowsCapability(site,'pos')||!membershipHasCapability(member,'pos')||member.userId&&member.userId!==state.actor)throw displayFail('Cashier access revoked / Acceso del cajero revocado.',403);
    if(state.persistent!==true)state=await mutateDisplay(store,id,current=>{
     if(!current||current.revoked||displayExpired(current,now))throw displayFail('Screen unavailable.',401);
     return {...current,persistent:true,expiresAt:null};
