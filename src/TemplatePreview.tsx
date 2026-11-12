@@ -6,12 +6,21 @@ import AnimatedOverlay from './AnimatedOverlay'
 import {templateAppearance} from './template-appearance'
 import CatalogCard from './TemplateCatalogCard'
 import TemplateLayout from './TemplateLayout'
+import {TemplateMusic,TemplateSocialLinks,type SocialLink} from './TemplateMedia'
+import {siteCanPublishMusic} from '../shared/site-music.mjs'
+import demoAudioUrl from './demo-media/bright-melodic-edm.mp3?url'
 import TemplateMap from './TemplateMap'
 import { useEffect, useMemo, useState, type CSSProperties } from 'react'
 import { templateBySlug, type TemplateItem } from './templateData'
 import { templateUi, localizeTemplate, type TemplateLanguage, type TemplateUi } from './templateI18n'
 import MonthCalendar from './MonthCalendar'
 import './template-preview.css'
+
+const demoSocialLinks: SocialLink[] = [
+  {id:'instagram',url:'https://www.instagram.com/'},
+  {id:'facebook',url:'https://www.facebook.com/'},
+  {id:'youtube',url:'https://www.youtube.com/'},
+]
 
 type CartLine = { item: TemplateItem; quantity: number }
 
@@ -102,6 +111,11 @@ function TemplateSite({ slug }: { slug: string }) {
 
 
   const {styles,visualStyle}=templateAppearance(baseConfig)
+  const musicDemo=siteCanPublishMusic({design:{templateSlug:config.slug}}) ? {
+    autoplay:false,
+    welcomeId:'bright-melodic-edm',
+    tracks:[{id:'bright-melodic-edm',title:'Bright Melodic EDM',audioUrl:demoAudioUrl,coverUrl:config.heroImage}],
+  } : null
 
   const addToCart = (item: TemplateItem, source?: HTMLElement) => {
     if (!config.cartEnabled || item.appointment || item.purchasable===false) return
@@ -195,7 +209,9 @@ function TemplateSite({ slug }: { slug: string }) {
       <TemplateNotice ui={ui} slug={slug} />
       {buyerReceipt && <BuyerReceipt receipt={buyerReceipt} lang={language} colors={{primary:config.dark,secondary:config.accent}} onClose={()=>setBuyerReceipt(null)}/>}
 
-      <TemplateLayout config={config} ui={ui} language={language} setLanguage={setLanguage} startBooking={startBooking} setCatalogOpen={setCatalogOpen} setCartOpen={setCartOpen} cart={cart} map={<TemplateMap location={config.location} language={language} sample/>} contact={<></>} />
+      <TemplateLayout config={config} ui={ui} language={language} setLanguage={setLanguage} startBooking={startBooking} setCatalogOpen={setCatalogOpen} setCartOpen={setCartOpen} cart={cart} map={<TemplateMap location={config.location} language={language} sample/>} contact={<></>}
+        social={<TemplateSocialLinks links={demoSocialLinks} lang={language}/>}
+        music={musicDemo&&<TemplateMusic music={musicDemo} artist={language==='es'?'Fupi · Pista de demostración':'Fupi · Demo track'} lang={language} allowAutoplay={false}/>} />
 
       <AnimatedOverlay open={Boolean(catalogOpen)}>{catalogOpen && (
         <div className="template-modal-backdrop" role="presentation" style={{visibility:selectedItem || bookingItem || cartOpen ? 'hidden' : undefined}} aria-hidden={Boolean(selectedItem || bookingItem || cartOpen)} onMouseDown={() => setCatalogOpen(false)}>
