@@ -1,16 +1,17 @@
 import crypto from "node:crypto";
-import { clientCommerceStore, commerceKey, getClientSite } from "../lib/client-store.mjs";
+import { clientCommerceStore, clientOrderTurnIndexStore, commerceKey, getClientSite } from "../lib/client-store.mjs";
+
+import {indexedOrderTurnKeys} from "../lib/order-turn-index.mjs";
 
 const TURN_CACHE_MS = 10_000;
 const TURN_CACHE_GROUPS = 32;
 
-async function readTurns(store, siteId, locationId, formatter, day) {
-  const { blobs = [] } = await store.list({ prefix: `${siteId}/orders/` });
+async function readTurns(store, keys, siteId, locationId, formatter, day) {
   const paid = [];
-  for (let index = 0; index < blobs.length; index += 40) {
-    const batch = await Promise.all(blobs.slice(index, index + 40).map(blob => store.get(blob.key, { type: "json" })));
+  for (let index = 0; index < keys.length; index += 40) {
+    const batch = await Promise.all(keys.slice(index, index + 40).map(key => store.get(key, { type: "json" })));
     for (const candidate of batch) {
-      if (candidate?.queueNumber && candidate.paymentStatus !== "due" && candidate.locationId === locationId && formatter.format(new Date(candidate.paidAt || candidate.createdAt)) === day) paid.push(candidate);
+      if (candidate?.queueNumber && (!candidate.siteId || candidate.siteId === siteId) && candidate.paymentStatus !== "due" && candidate.locationId === locationId && formatter.format(new Date(candidate.paidAt || candidate.createdAt)) === day) paid.push(candidate);
     }
   }
   paid.sort((a, b) => Date.parse(a.paidAt || a.createdAt) - Date.parse(b.paidAt || b.createdAt) || String(a.transactionId).localeCompare(String(b.transactionId)));
@@ -21,7 +22,7 @@ async function readTurns(store, siteId, locationId, formatter, day) {
   return turns;
 }
 
-export function createPublicOrderTrackingHandler({ getStore = clientCommerceStore, getSite = getClientSite, clock = Date.now } = {}) {
+export function createPublicOrderTrackingHandler({ getStore = clientCommerceStore, getSite = getClientSite, getIndex = clientOrderTurnIndexStore, clock = Date.now } = {}) {
   // In-process cache for computed ranks only. The order and its access token are still checked on every request.
   const snapshots = new Map();
   function startSnapshot(key, load) {
@@ -41,7 +42,17 @@ export function createPublicOrderTrackingHandler({ getStore = clientCommerceStor
     const formatter = new Intl.DateTimeFormat("en-CA", { timeZone, year: "numeric", month: "2-digit", day: "2-digit" });
     const day = formatter.format(new Date(record.paidAt));
     const key = JSON.stringify([siteId, typeof record.locationId, record.locationId, timeZone, day]);
-    const load = () => readTurns(store, siteId, record.locationId, formatter, day);
+    const load = async () => {
+      let keys;
+      try { keys = await indexedOrderTurnKeys(getIndex(), siteId, record.locationId, record.paidAt); }
+      catch { /* Preserve tracking if index storage is unavailable. */ }
+      const canonicalKey = commerceKey(siteId, 'orders', record.transactionId);
+      if (!keys?.includes(canonicalKey)) {
+        const result = await store.list({prefix: `${siteId}/orders/`});
+        keys = (result.blobs || []).map(blob => blob.key);
+      }
+      return readTurns(store, keys, siteId, record.locationId, formatter, day);
+    };
     const cached = snapshots.get(key);
     const reusable = cached && (cached.pending || cached.expiresAt > clock());
     const entry = reusable ? cached : startSnapshot(key, load);
@@ -66,7 +77,7 @@ export function createPublicOrderTrackingHandler({ getStore = clientCommerceStor
     const record = await store.get(commerceKey(pointer.siteId, "orders", pointer.transactionId), { type: "json" })
       || await store.get(commerceKey(pointer.siteId, "bookings", pointer.transactionId), { type: "json" })
       || await store.get(commerceKey(pointer.siteId, "transactions", pointer.transactionId), { type: "json" });
-    if (!record || record.trackingHash !== hash) return Response.json({ ok: false, message: "Order not found." }, { status: 404 });
+    if (!record || (record.siteId && record.siteId !== pointer.siteId) || record.trackingHash !== hash) return Response.json({ ok: false, message: "Order not found." }, { status: 404 });
     let turnNumber = 0;
     if (record.kind === "order" && record.queueNumber && record.paidAt) {
       const site = await getSite(pointer.siteId);

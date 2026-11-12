@@ -1,3 +1,4 @@
+import {withOrderTurnIndex} from './order-turn-index.mjs';
 import {indexedCommerceStore} from './booking-date-index.mjs';
 import { availableInventory, reservedQuantity } from './inventory-availability.mjs';
 import crypto from "node:crypto";
@@ -18,7 +19,8 @@ function scopedStore(name) {
 
 export const clientSiteStore = () => scopedStore("webfactory-client-sites");
 export const clientAssetStore = () => scopedStore("webfactory-client-assets");
-export const clientCommerceStore = () => indexedCommerceStore(scopedStore("webfactory-client-commerce"));
+export const clientOrderTurnIndexStore = () => scopedStore("webfactory-order-turn-index");
+export const clientCommerceStore = () => indexedCommerceStore(withOrderTurnIndex(scopedStore("webfactory-client-commerce"), clientOrderTurnIndexStore));
 export const clientEventStore = () => scopedStore("webfactory-client-events");
 export const clientBackupStore = () => scopedStore("webfactory-client-backups");
 export const clientOAuthStore = () => scopedStore("webfactory-client-oauth");

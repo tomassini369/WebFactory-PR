@@ -241,6 +241,7 @@ export default function ClientAdminPage({practiceStartTab}:{practiceStartTab?:st
       {tab==='settings'&&<PortalPanel className="ca-panel"><BookingPolicySettings site={site} lang={lang} onSave={save} busy={busy}/></PortalPanel>}
       {tab==='bookings'&&['owner','admin'].includes(membership?.role)&&<BookingWaitlistManager site={site} lang={lang} onSave={save} busy={busy}/>}
       {tab==='bookings'&&['owner','admin'].includes(membership?.role)&&<BookingSeriesPanel site={site} lang={lang}/>}
+      {tab==='kitchen'&&!practice&&['owner','admin'].includes(membership?.role)&&<BookingIndexStatus key={site.siteId+':turn-index'} siteId={site.siteId} lang={lang} area="turns"/>}
       {tab==='bookings'&&['owner','admin'].includes(membership?.role)&&<BookingIndexStatus key={site.siteId+':booking-index'} siteId={site.siteId} lang={lang}/>}
       {tab==='bookings'&&['owner','admin'].includes(membership?.role)&&<BookingAttendance key={site.siteId+':booking-attendance'} siteId={site.siteId} lang={lang} timeZone={site.settings?.timezone}/>}
       {tab==='customers'&&<CustomersPanel siteId={site.siteId} lang={lang}/>}
