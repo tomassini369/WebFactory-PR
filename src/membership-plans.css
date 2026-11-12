@@ -3,16 +3,14 @@
   border-radius: 28px;
   background: conic-gradient(
     from 290deg at 50% 50%,
-    #fb7185 0deg,
-    #f43f5e 35deg,
-    #c026d3 80deg,
-    #8b5cf6 135deg,
-    #4f46e5 175deg,
-    #2563eb 205deg,
-    #00d2ff 245deg,
-    #06b6d4 280deg,
-    #fb923c 320deg,
-    #fb7185 360deg
+    #3c86f6 0deg,
+    #285fa6 35deg,
+    #285fa6 105deg,
+    #3c86f6 155deg,
+    #78a7e4 225deg,
+    #4d96f3 270deg,
+    #285fa6 315deg,
+    #3c86f6 360deg
   );
   width: 360px;
   max-width: 100%;
