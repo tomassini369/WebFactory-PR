@@ -1,3 +1,4 @@
+import {startVisiblePolling} from './visible-polling'
 import {readRememberedEmail, rememberEmail} from './remembered-email'
 import {portalAccessCopy} from './portal-access-copy'
 import {confirmLeaveDrafts} from './interaction-state'
@@ -18,7 +19,7 @@ import { MfaSettings } from './MfaAccess'
 import BackupRecovery from './BackupRecovery'
 import BackupScheduleHealth from './BackupScheduleHealth'
 import ReviewProcessingHealth from './ReviewProcessingHealth'
-import { useEffect, useMemo, useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import { acceptInvite, getUser, handleAuthCallback, logout, onAuthChange, type User } from './portal-auth'
 import { login, requestPasswordRecovery } from './portal-auth'
 import './webfactory-admin.css'
@@ -41,7 +42,7 @@ const adminCopy={
 }
 
 
-const api=()=>withAuthRetry(async()=>{const response=await fetch('/.netlify/functions/webfactory-admin-overview',{credentials:'include',cache:'no-store'});const result=await response.json();if(!response.ok||result.ok===false)throw new Error(result.message||'No se pudo cargar el Control Center.');return result as AdminData})
+const api=(signal?:AbortSignal)=>withAuthRetry(async()=>{const response=await fetch('/.netlify/functions/webfactory-admin-overview',{credentials:'include',cache:'no-store',signal});const result=await response.json();if(!response.ok||result.ok===false)throw new Error(result.message||'No se pudo cargar el Control Center.');return result as AdminData})
 const createTrialInvite=(email:string)=>withAuthRetry(async()=>{const response=await fetch('/.netlify/functions/create-trial-invite',{method:'POST',credentials:'include',cache:'no-store',headers:{'Content-Type':'application/json'},body:JSON.stringify({email})});const result=await response.json();if(!response.ok||result.ok===false)throw new Error(result.message||'The trial invitation could not be sent.');return result as {email:string;expiresAt:string}})
 const createComplimentaryInvite=(email:string)=>withAuthRetry(async()=>{const response=await fetch('/.netlify/functions/create-complimentary-invite',{method:'POST',credentials:'include',cache:'no-store',headers:{'Content-Type':'application/json'},body:JSON.stringify({email})});const result=await response.json();if(!response.ok||result.ok===false)throw new Error(result.message||'The complimentary invitation could not be sent.');return result})
 const deleteClientSite=(siteId:string,confirmation:string)=>withAuthRetry(async()=>{const response=await fetch('/.netlify/functions/admin-delete-client-site',{method:'POST',credentials:'include',cache:'no-store',headers:{'Content-Type':'application/json'},body:JSON.stringify({siteId,confirmation})});const result=await response.json();if(!response.ok||result.ok===false)throw new Error(result.message||'The client page could not be deleted.');return result})
@@ -87,9 +88,29 @@ export default function WebFactoryAdminPage(){
   const [accessReady,setAccessReady]=useState(false)
   const [menuOpen,setMenuOpen]=useState(false);const [lang,setLang]=usePortalLanguage();const [user,setUser]=useState<User|null>(initialSession||null);const [data,setData]=useState<AdminData|null>(null);const [loading,setLoading]=useState(initialSession!==null);const [refreshing,setRefreshing]=useState(false);const [error,setError]=useState('');const [actionMessage,setActionMessage]=useState('');const [tab,setTab]=useState<Tab>('overview');const [query,setQuery]=useState('');const [inviteToken,setInviteToken]=useState('');const [newPassword,setNewPassword]=useState('');const [acceptingInvite,setAcceptingInvite]=useState(false);const [provisioning,setProvisioning]=useState(false);const [revoking,setRevoking]=useState('');const [deleting,setDeleting]=useState('');const [qrClient,setQrClient]=useState<ClientRow|null>(null);const [newClient,setNewClient]=useState({ownerEmail:'',accessType:'trial'})
   const navigate=(next:Tab)=>{if(next!==tab&&!confirmLeaveDrafts())return;setTab(next);setMenuOpen(false);document.querySelector('.gd-admin-work')?.scrollTo({top:0,behavior:'instant'})}
-  const load=async(silent=false)=>{if(!silent)setRefreshing(true);setError('');try{setData(await api())}catch(e){setError(e instanceof Error?e.message:'No se pudo cargar el Control Center.')}finally{setRefreshing(false);setAccessReady(true)}}
+  const lastOverviewLoad=useRef(0)
+  const load=async(silent=false,signal?:AbortSignal)=>{
+    lastOverviewLoad.current=Date.now()
+    if(!silent)setRefreshing(true)
+    setError('')
+    try{
+      const overview=await api(signal)
+      if(!signal?.aborted)setData(overview)
+    }catch(e){
+      if(!signal?.aborted)setError(e instanceof Error?e.message:'No se pudo cargar el Control Center.')
+    }finally{
+      if(!signal?.aborted){setRefreshing(false);setAccessReady(true)}
+    }
+  }
   useEffect(()=>{document.title='WebFactory Control Center';let active=true;const unsubscribe=onAuthChange((_event,current)=>{if(!active)return;setUser(current);if(!current){setAccessReady(false);setData(null);setError('');setActionMessage('')}else if(_event==='login_remote'){void load().catch(()=>setError('Unable to refresh administrative access.'))}});(async()=>{try{const callback=await handleAuthCallback();if(!active)return;if(callback?.type==='invite'&&callback.token){setInviteToken(callback.token);return}const current=initialSession!==undefined?initialSession:await getUser();if(!active)return;setUser(current);if(current)await load()}catch(e){if(active)setError(e instanceof Error?e.message:'No se pudo abrir el Control Center.')}finally{if(active)setLoading(false)}})();return()=>{active=false;unsubscribe()}},[])
-  useEffect(()=>{if(!user)return;const timer=window.setInterval(()=>load(true),5*60*1000);return()=>window.clearInterval(timer)},[user])
+  useEffect(()=>{
+    if(!user?.id)return
+    const interval=5*60*1000
+    const polling=startVisiblePolling(async signal=>{
+      if(Date.now()-lastOverviewLoad.current>=interval)await load(true,signal)
+    },interval,{immediate:false})
+    return polling.stop
+  },[user?.id])
   const clients=useMemo(()=>{const term=query.trim().toLowerCase();return !term?(data?.clients||[]):(data?.clients||[]).filter(client=>[client.businessName,client.ownerEmail,client.slug,client.siteId].some(value=>value.toLowerCase().includes(term)))},[data,query])
   const signOut=async()=>{try{await logout();setUser(null);setData(null);setError('')}catch{setError(lang==='es'?'No se pudo confirmar el cierre de sesión. Inténtalo de nuevo.':'Sign out could not be confirmed. Please try again.')}}
   const createAccess=async(event:FormEvent)=>{event.preventDefault();setProvisioning(true);setError('');setActionMessage('');try{if(newClient.accessType==='complimentary'){await createComplimentaryInvite(newClient.ownerEmail);setActionMessage(lang==='es'?'Invitación gratuita enviada. El invitado completará su negocio directamente en el Builder.':'Complimentary invitation sent. The invitee will complete the business directly in the Builder.')}else{const result=await createTrialInvite(newClient.ownerEmail);setActionMessage(lang==='es'?`Invitación de 7 días enviada a ${result.email}. El destinatario completará su website en el Builder; el trial comienza al activarlo desde el portal.`:`7-day trial invitation sent to ${result.email}. The invitee will complete the website in Builder; the trial starts when activated from the portal.`)}setNewClient({...newClient,ownerEmail:''});feedback.success()}catch(e){setError(e instanceof Error?e.message:(lang==='es'?'No se pudo crear el acceso.':'The access could not be created.'));feedback.error()}finally{setProvisioning(false)}}

@@ -17,14 +17,15 @@ export default async (req) => {
   if (record.kind === "order" && record.queueNumber && record.paidAt) {
     const site = await getClientSite(pointer.siteId);
     const timeZone = site?.settings?.timezone || "America/Puerto_Rico";
-    const localDay = (date) => new Intl.DateTimeFormat("en-CA", { timeZone, year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(date));
+    const formatter = new Intl.DateTimeFormat("en-CA", { timeZone, year: "numeric", month: "2-digit", day: "2-digit" });
+    let orderDay;
     const list = await store.list({ prefix: `${pointer.siteId}/orders/` });
     const paid = [];
     const blobs = list.blobs || [];
     for (let index = 0; index < blobs.length; index += 40) {
       const batch = await Promise.all(blobs.slice(index, index + 40).map((blob) => store.get(blob.key, { type: "json" })));
       for (const candidate of batch) {
-        if (candidate?.queueNumber && candidate.paymentStatus !== "due" && candidate.locationId === record.locationId && localDay(candidate.paidAt || candidate.createdAt) === localDay(record.paidAt)) paid.push(candidate);
+        if (candidate?.queueNumber && candidate.paymentStatus !== "due" && candidate.locationId === record.locationId && formatter.format(new Date(candidate.paidAt || candidate.createdAt)) === (orderDay ??= formatter.format(new Date(record.paidAt)))) paid.push(candidate);
       }
     }
     paid.sort((a, b) => Date.parse(a.paidAt || a.createdAt) - Date.parse(b.paidAt || b.createdAt) || String(a.transactionId).localeCompare(String(b.transactionId)));

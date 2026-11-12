@@ -179,14 +179,14 @@ export default function ClientStorefront({slug,previewSite,previewLanguage='en'}
   }
   useEffect(()=>{
     if(previewSite||!booking?.employeeId||!site)return
-    let active=true
+    const controller=new AbortController()
     setCalendarLoading(true)
-    fetch('/.netlify/functions/booking-month-availability',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({siteId:site.siteId,serviceId:booking.serviceId,employeeId:booking.employeeId,month:bookingMonth,locationId:booking.locationId})})
+    fetch('/.netlify/functions/booking-month-availability',{method:'POST',signal:controller.signal,headers:{'Content-Type':'application/json'},body:JSON.stringify({siteId:site.siteId,serviceId:booking.serviceId,employeeId:booking.employeeId,month:bookingMonth,locationId:booking.locationId})})
       .then(async response=>{const result=await response.json();if(!response.ok)throw new Error(result.message);return result.available as Record<string,number>})
-      .then(available=>{if(active){setAvailableDates(available);setError('')}})
-      .catch(e=>{if(active){setAvailableDates({});setError(e instanceof Error?e.message:'No se pudo consultar el calendario.')}})
-      .finally(()=>{if(active)setCalendarLoading(false)})
-    return()=>{active=false}
+      .then(available=>{if(!controller.signal.aborted){setAvailableDates(available);setError('')}})
+      .catch(e=>{if(!controller.signal.aborted){setAvailableDates({});setError(e instanceof Error?e.message:'No se pudo consultar el calendario.')}})
+      .finally(()=>{if(!controller.signal.aborted)setCalendarLoading(false)})
+    return()=>controller.abort()
   },[booking?.serviceId,booking?.employeeId,booking?.locationId,bookingMonth,site])
   const checkout=async(event:FormEvent)=>{
     event.preventDefault()
