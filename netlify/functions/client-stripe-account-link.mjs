@@ -1,3 +1,4 @@
+import {isBasicMembership} from "../../shared/membership-plans.mjs";
 import { assertSameOrigin, errorResponse, requireSiteAccess } from "../lib/client-auth.mjs";
 import { publicBaseUrl } from "../lib/platform-utils.mjs";
 import { assertStripeWriteAllowed } from "../lib/stripe-runtime.mjs";
@@ -10,6 +11,7 @@ export default async (req) => {
     assertSameOrigin(req);
     const { siteId } = await req.json();
     const { site } = await requireSiteAccess(siteId, ["owner"]);
+    if(isBasicMembership(site))throw Object.assign(new Error("Merchant payments require Standard or Premium."),{status:403});
     const accountId = site.paymentRules?.stripeConnectedAccountId;
     if (!accountId) throw Object.assign(new Error("Stripe has not been connected for this business."), { status: 409 });
     assertStripeWriteAllowed({ requestUrl: req.url });

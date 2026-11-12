@@ -1,3 +1,4 @@
+import {membershipPlans,membershipTrialDays} from "../shared/membership-plans.mjs";
 import { useEffect } from 'react'
 import {usePortalLanguage} from './portal-language'
 import './legal.css'
@@ -5,6 +6,10 @@ import {legalRevision,legalSupplement,copyrightCopy} from './legal-supplement'
 import ContentClaimForm from './ContentClaimForm'
 import DmcaPublicContact from './DmcaPublicContact'
 import { AdaptiveLogo, ThemeToggle } from './theme'
+
+const tieredOffer=import.meta.env.VITE_WEBFACTORY_TIERED_PLANS_ENABLED==='true'
+const offerPrices=Object.values(membershipPlans).map(plan=>`${plan.name} $${plan.monthly}/mes o $${plan.annual}/año`).join(' · ')
+const offerPricesEn=Object.values(membershipPlans).map(plan=>`${plan.nameEn} $${plan.monthly}/month or $${plan.annual}/year`).join(' · ')
 
 type LegalKind='privacy'|'terms'|'refund'|'copyright'
 
@@ -101,8 +106,8 @@ const copy={
           'Features may depend on third-party availability, account approval, configuration, browser/device support, or the selected business settings.'
         ]],
         ['3. Trial and subscription pricing',[
-          'The current public offering includes a 7-day free trial with no card required. After the trial, continued public availability requires an active WebFactory subscription.',
-          'Current standard pricing is $30 USD per month or $350 USD per year unless a different written offer is shown at checkout. WebFactory currently charges no commission on the sales processed by a client business through its website.',
+          tieredOffer ? `New businesses can try Premium free for ${membershipTrialDays} days without a card. The trial does not renew automatically. To keep the website publicly available after the trial, choose a plan and authorize payment.` : 'The current public offering includes a 7-day free trial with no card required. After the trial, continued public availability requires an active WebFactory subscription.',
+          tieredOffer ? `Published membership prices in USD are ${offerPricesEn}, unless a different written offer is shown at checkout. WebFactory currently charges no commission on sales processed by the business.` : 'Current standard pricing is $30 USD per month or $350 USD per year unless a different written offer is shown at checkout. WebFactory currently charges no commission on the sales processed by a client business through its website.',
         ]],
         ['4. Billing and renewals',[
           'Subscription checkout and recurring billing are processed by Stripe. A paid subscription renews according to the billing interval selected unless it is canceled before the next renewal.',
@@ -176,11 +181,11 @@ const copy={
       title:'Refund Policy',
       intro:'This policy explains refunds for WebFactory subscription fees and separately explains how refunds work for purchases made from businesses that use the WebFactory platform.',
       sections:[
-        ['1. 7-day free trial',[
-          'The current WebFactory subscription offering begins with a 7-day free trial and does not require a payment card to start. The trial is intended to let the business evaluate its website and portal before purchasing a subscription.'
+        [tieredOffer?'1. 14-day Premium trial':'1. 7-day free trial',[
+          tieredOffer ? `The ${membershipTrialDays}-day Premium trial requires no payment card and creates no automatic charge. Businesses choose a paid plan when the trial ends.` : 'The current WebFactory subscription offering begins with a 7-day free trial and does not require a payment card to start. The trial is intended to let the business evaluate its website and portal before purchasing a subscription.'
         ]],
         ['2. WebFactory monthly and annual subscription fees',[
-          'After the free trial, standard WebFactory pricing is $30 USD per month or $350 USD per year. Subscription payments are processed through Stripe.',
+          tieredOffer ? `After the trial, choose a paid membership in USD. ${offerPricesEn}. Stripe processes subscription payments.` : 'After the free trial, standard WebFactory pricing is $30 USD per month or $350 USD per year. Subscription payments are processed through Stripe.',
           'Because access is a digital hosted service made available for the purchased billing period, subscription charges are generally non-refundable after the billing period begins, except where required by applicable law or where WebFactory approves a refund for circumstances such as a duplicate charge, an unauthorized charge confirmed after review, or a material WebFactory billing error.',
           'A request does not guarantee a refund. Approved refunds are returned to the original payment method through Stripe and processing time may depend on Stripe and the customer’s financial institution.'
         ]],
@@ -295,8 +300,8 @@ const copy={
           'Algunas funciones dependen de servicios de terceros, aprobación de cuentas, configuración, navegador/dispositivo y ajustes seleccionados por el negocio.'
         ]],
         ['3. Prueba y precios de suscripción',[
-          'La oferta pública actual incluye una prueba gratis de 7 días sin tarjeta. Luego de la prueba, mantener el website públicamente disponible requiere una suscripción activa.',
-          'El precio estándar actual es $30 USD al mes o $350 USD al año, salvo que se muestre otra oferta escrita en checkout. Actualmente WebFactory no cobra comisión sobre las ventas procesadas por el negocio cliente.',
+          tieredOffer ? `Los negocios nuevos pueden probar Premium gratis por ${membershipTrialDays} días sin tarjeta. La prueba no se renueva automáticamente. Para mantener el website disponible al público al terminar, elige un plan y autoriza el pago.` : 'La oferta pública actual incluye una prueba gratis de 7 días sin tarjeta. Luego de la prueba, mantener el website públicamente disponible requiere una suscripción activa.',
+          tieredOffer ? `Las membresías publicadas en USD son ${offerPrices}, salvo que se muestre otra oferta escrita en checkout. WebFactory actualmente no cobra comisión sobre las ventas del negocio.` : 'El precio estándar actual es $30 USD al mes o $350 USD al año, salvo que se muestre otra oferta escrita en checkout. Actualmente WebFactory no cobra comisión sobre las ventas procesadas por el negocio cliente.',
         ]],
         ['4. Facturación y renovaciones',[
           'El checkout de suscripción y la facturación recurrente se procesan mediante Stripe. La suscripción pagada se renueva según el intervalo seleccionado a menos que se cancele antes de la próxima renovación.',
@@ -370,11 +375,11 @@ const copy={
       title:'Política de Reembolsos',
       intro:'Esta política explica los reembolsos de cargos de suscripción de WebFactory y, por separado, cómo funcionan los reembolsos de compras realizadas a negocios que utilizan la plataforma WebFactory.',
       sections:[
-        ['1. Prueba gratis de 7 días',[
-          'La oferta actual de suscripción comienza con una prueba gratis de 7 días y no requiere tarjeta para comenzar. La prueba permite al negocio evaluar su website y portal antes de adquirir una suscripción.'
+        [tieredOffer?'1. Prueba de Premium de 14 días':'1. Prueba gratis de 7 días',[
+          tieredOffer ? `La prueba de Premium de ${membershipTrialDays} días no requiere tarjeta ni genera un cargo automático. El negocio elige un plan de pago al terminar.` : 'La oferta actual de suscripción comienza con una prueba gratis de 7 días y no requiere tarjeta para comenzar. La prueba permite al negocio evaluar su website y portal antes de adquirir una suscripción.'
         ]],
         ['2. Suscripción mensual y anual de WebFactory',[
-          'Luego de la prueba, el precio estándar es $30 USD al mes o $350 USD al año. Los pagos de suscripción se procesan mediante Stripe.',
+          tieredOffer ? `Después de la prueba, elige una membresía de pago en USD. ${offerPrices}. Stripe procesa los pagos de suscripción.` : 'Luego de la prueba, el precio estándar es $30 USD al mes o $350 USD al año. Los pagos de suscripción se procesan mediante Stripe.',
           'Debido a que el acceso es un servicio digital alojado disponible durante el periodo adquirido, los cargos de suscripción generalmente no son reembolsables una vez comienza el periodo, excepto cuando la ley aplicable lo requiera o WebFactory apruebe un reembolso por circunstancias como un cargo duplicado, un cargo no autorizado confirmado luego de revisión o un error material de facturación de WebFactory.',
           'Una solicitud no garantiza un reembolso. Los reembolsos aprobados regresan al método original mediante Stripe y el tiempo de procesamiento puede depender de Stripe y la institución financiera.'
         ]],

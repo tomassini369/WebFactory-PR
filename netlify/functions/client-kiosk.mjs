@@ -1,3 +1,4 @@
+import {membershipAllowsCapability} from '../../shared/membership-plans.mjs';
 import {kioskOpticsResponse,preserveKioskDistortion,preservePresetDistortions} from '../lib/kiosk-optics-compat.mjs';
 import {cancelPendingCheckout} from '../lib/cancel-pending-checkout.mjs';
 import {manageInPersonOrder} from '../lib/in-person-orders.mjs';
@@ -42,6 +43,7 @@ export function createKioskHandler({ authorize = requireSiteCapability, getStore
       }
       if (['admin', 'appearance', 'appearance_presets', 'configure', 'create', 'revoke'].includes(input.action)) {
         const { site, user, membership } = await authorize(input.siteId, 'settings');
+        if (!membershipAllowsCapability(site, 'pos')) throw kioskFail('Kiosk unavailable / Kiosco no disponible.', 403);
         const actor = displayActor(user), email = String(user.email || '').toLowerCase();
         if (!['owner', 'manager'].includes(membership?.role) || !site.members?.some(x => String(x.email).toLowerCase() === email && ['owner', 'manager'].includes(x.role))) throw kioskFail('Business administrator required / Administrador del negocio requerido.', 403);
         const configKey = kioskConfigKey(site.siteId);
@@ -97,7 +99,7 @@ export function createKioskHandler({ authorize = requireSiteCapability, getStore
       const site = await getSite(state.siteId);
       const issuer = site?.members?.find(x => String(x.email).toLowerCase() === state.email);
       const configuration = await store.get(kioskConfigKey(state.siteId), { type: 'json' });
-      if (!site || site.siteId !== state.siteId || !isAvailable(site) || !membershipHasCapability(issuer, 'settings') || !['owner', 'manager'].includes(issuer.role) || !configuration?.enabled || !configuration.devices?.some(x => x.id === id)) throw kioskFail('Kiosk unavailable / Kiosco no disponible.', 403);
+      if (!site || site.siteId !== state.siteId || !isAvailable(site) || !membershipAllowsCapability(site, 'pos') || !membershipHasCapability(issuer, 'settings') || !['owner', 'manager'].includes(issuer.role) || !configuration?.enabled || !configuration.devices?.some(x => x.id === id)) throw kioskFail('Kiosk unavailable / Kiosco no disponible.', 403);
       const location = (site.business?.locations || []).find(x => x.id === state.locationId && x.active !== false);
       if ((state.locationId || (site.business?.locations || []).some(x => x.active !== false)) && !location || issuer.locationIds?.length && !issuer.locationIds.includes(state.locationId)) throw kioskFail('Location unavailable / Sucursal no disponible.', 403);
       let responseCookie;

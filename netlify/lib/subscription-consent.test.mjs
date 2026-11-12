@@ -22,3 +22,13 @@ test("cancellation validates subscription, customer and tenant from server state
     assert.throws(() => assertSubscriptionBelongsToSite({ ...subscription, ...changed }, site), { status: 403 });
   }
 });
+
+test("membership consent records the server amount for the selected tier and interval", () => {
+  const user = {email:"owner@example.com"};
+  const payload = {tier:"standard",interval:"annual",renewalAccepted:true,consentVersion:"membership-v1",amountUsd:1};
+  const consent = subscriptionConsent(payload,user);
+  assert.equal(consent.tier,"standard");
+  assert.equal(consent.amountUsd,490);
+  assert.throws(() => subscriptionConsent({...payload,tier:"enterprise"},user), {status:400});
+  assert.throws(() => subscriptionConsent({...payload,consentVersion:SUBSCRIPTION_CONSENT_VERSION},user), {status:400});
+});

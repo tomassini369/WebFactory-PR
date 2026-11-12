@@ -1,3 +1,4 @@
+import {isBasicMembership} from '../../shared/membership-plans.mjs';
 import { applyStockOperation,projectStockMovements } from '../lib/inventory-operations.mjs';
 import { assertSameOrigin, errorResponse, requireSiteAccess, requireSiteCapability } from "../lib/client-auth.mjs";
 import { cleanText } from "../lib/platform-utils.mjs";
@@ -71,6 +72,7 @@ export default async (req) => {
 
     if (action === "adjust_inventory") {
       const { site: inventorySite } = await requireSiteCapability(payload.siteId, "catalog");
+    if (isBasicMembership(inventorySite)) throw Object.assign(new Error('Inventory requires Standard or Premium.'), {status:403});
       const itemId = cleanText(payload.itemId, 120);
       const delta = Number(payload.quantityDelta);
       if (!Number.isInteger(delta) || delta === 0) throw Object.assign(new Error("Inventory adjustment must be a non-zero whole number."), { status: 400 });

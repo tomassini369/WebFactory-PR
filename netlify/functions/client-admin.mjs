@@ -1,3 +1,4 @@
+import {membershipAllowsCapability} from "../../shared/membership-plans.mjs";
 import {normalizeTemplateOverrides} from "../../shared/template-overrides.mjs";
 import {normalizeSocialLinks} from "../../shared/social-links.mjs";
 import {normalizeSiteMusic, musicTrackLimit, siteCanPublishMusic} from "../../shared/site-music.mjs";
@@ -324,7 +325,7 @@ export default async (req) => {
         })) }, { headers: { "Cache-Control": "no-store" } });
       }
       const { user, site, membership } = await requireSiteAccess(siteId);
-      return Response.json({ ok: true, user: { id: user.id, email: user.email, name: user.name }, membership: { ...membership, capabilities: commercialCapabilities(membership) }, site: employeeSiteView(site,membership), posOperations: await readPosOperations(site.siteId) }, { headers: { "Cache-Control": "no-store" } });
+      return Response.json({ ok: true, user: { id: user.id, email: user.email, name: user.name }, membership: { ...membership, capabilities: commercialCapabilities(membership).filter(capability=>membershipAllowsCapability(site,capability)) }, site: employeeSiteView(site,membership), posOperations: await readPosOperations(site.siteId) }, { headers: { "Cache-Control": "no-store" } });
     }
 
     if (req.method !== "PATCH") return Response.json({ ok: false, message: "Method not allowed." }, { status: 405 });

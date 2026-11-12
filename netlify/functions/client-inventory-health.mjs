@@ -1,3 +1,4 @@
+import {isBasicMembership} from '../../shared/membership-plans.mjs';
 import { assertSameOrigin,errorResponse,requireSiteCapability } from '../lib/client-auth.mjs';
 import { inventoryHealth,cleanupCompletedPosPointer,snapshotInventoryJournal } from '../lib/inventory-health.mjs';
 import { readAuthPayload } from '../lib/auth-gateway.mjs';
@@ -10,6 +11,7 @@ export default async req=>{
     const payload=req.method==='POST'?await readAuthPayload(req):null;
     const siteId=payload?.siteId||new URL(req.url).searchParams.get('siteId');
     const {site,user}=await requireSiteCapability(siteId,'catalog');
+    if (isBasicMembership(site)) throw Object.assign(new Error('Inventory requires Standard or Premium.'), {status:403});
     let result;
     if(req.method==='GET')result=await inventoryHealth(site);
     else if(payload.action==='cleanup_completed_pos')result=await cleanupCompletedPosPointer(site.siteId,payload.transactionId);

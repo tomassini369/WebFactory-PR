@@ -1,3 +1,4 @@
+import {membershipAllowsCapability} from "../../shared/membership-plans.mjs";
 import {activeMembership, commercialCapabilities, COMMERCIAL_ROLES} from "./commercial-access.mjs";
 import { getUser } from "@netlify/identity";
 import { getClientSite, normalizeEmail, sitesForEmail } from "./client-store.mjs";
@@ -98,7 +99,7 @@ export function membershipHasCapability(membership, capability) { return commerc
 
 export async function requireSiteCapability(siteId, capability) {
   const result = await requireSiteAccess(siteId, COMMERCIAL_ROLES);
-  if (!membershipHasCapability(result.membership, capability)) {
+  if (!membershipHasCapability(result.membership, capability) || !membershipAllowsCapability(result.site,capability)) {
     const error = new Error("This role does not have permission for this action.");
     error.status = 403;
     throw error;
