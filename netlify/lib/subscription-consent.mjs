@@ -1,10 +1,9 @@
 import {isMembershipId,membershipConsentVersion,membershipPlans} from "../../shared/membership-plans.mjs";
-export const SUBSCRIPTION_CONSENT_VERSION = "2026-10-02";
 
 export function subscriptionConsent(payload, user, now = new Date()) {
   const tier=payload.tier;
-  if(tier!==undefined&&!isMembershipId(tier))throw Object.assign(new Error("Invalid membership plan."),{status:400});
-  const version=tier?membershipConsentVersion:SUBSCRIPTION_CONSENT_VERSION;
+  if(!isMembershipId(tier))throw Object.assign(new Error("Invalid membership plan."),{status:400});
+  const version=membershipConsentVersion;
   if (payload.renewalAccepted !== true || payload.consentVersion !== version) {
     throw Object.assign(new Error("Accept the recurring subscription terms before continuing."), { status: 400 });
   }
@@ -13,11 +12,11 @@ export function subscriptionConsent(payload, user, now = new Date()) {
   }
   return {
     version,
-    ...(tier?{tier}:{}),
+    tier,
     acceptedAt: now.toISOString(),
     acceptedBy: user.email,
     interval: payload.interval,
-    amountUsd: tier ? membershipPlans[tier][payload.interval] : payload.interval === "annual" ? 350 : 30,
+    amountUsd: membershipPlans[tier][payload.interval],
     disclosure: "Renews automatically at the selected USD price and interval until canceled. Cancel future renewals in Plan WebFactory; access continues through the paid period. Terms and refund policy apply.",
   };
 }

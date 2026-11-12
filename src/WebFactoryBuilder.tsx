@@ -152,8 +152,7 @@ function useBuilderUpload() {
 }
 
 const PRICE = '$30'
-const tieredOffer = import.meta.env.VITE_WEBFACTORY_TIERED_PLANS_ENABLED==='true'
-const trialDays = tieredOffer ? membershipTrialDays : 7
+const trialDays = membershipTrialDays
 const CATALOG_LIMIT = 100
 const STORAGE_KEY = 'webfactory-v3-builder-draft'
 const DRAFT_ID_KEY = 'webfactory-v2-draft-id'
@@ -688,7 +687,7 @@ function FeaturesStep({state,setState,lang}:{state:BuilderState;setState:Dispatc
           />
         ))}
       </div>
-      {!editing&&<div className="wf-fixed-price"><span>WEBFACTORY COMMERCE PLATFORM</span><strong>{tieredOffer?(lang==='es'?'Desde ':'From '):''}{PRICE} / {lang==='es'?'mes':'month'}</strong><b>{tieredOffer?(lang==='es'?`Planes anuales · ${trialDays} días de Premium gratis`:`Annual plans · ${trialDays} days of Premium free`):(lang==='es'?'o $350 / año · 7 días gratis · sin comisión':'or $350 / year · 7 days free · no sales commission')}</b></div>}
+      {!editing&&<div className="wf-fixed-price"><span>WEBFACTORY COMMERCE PLATFORM</span><strong>{lang==='es'?'Desde ':'From '}{PRICE} / {lang==='es'?'mes':'month'}</strong><b>{lang==='es'?`Planes anuales · ${trialDays} días de Premium gratis`:`Annual plans · ${trialDays} days of Premium free`}</b></div>}
     </div>
   )
 }
@@ -1028,7 +1027,7 @@ function FinalStep({state,setStep,lang,complimentaryInviteToken,trialInviteToken
       <div className="wf-review-grid">
         <article><span>{lang==='es'?'Negocio':'Business'}</span><strong>{state.business.name}</strong><small>{state.business.category}</small><button onClick={()=>setStep(0)}>{lang==='es'?'Editar':'Edit'}</button></article>
         <article><span>{lang==='es'?'Diseño':'Design'}</span><strong>{selectedTemplate ? `${selectedTemplate.category} — ${selectedTemplate.name}` : (lang==='es'?'Personalizado por WebFactory':'Custom by WebFactory')}</strong><small>{state.design.style}</small><div><i style={{background:state.design.primary}}/><i style={{background:state.design.secondary}}/></div><button onClick={()=>setStep(1)}>{lang==='es'?'Editar':'Edit'}</button></article>
-        <article><span>{lang==='es'?'Funciones':'Features'}</span><strong>{enabledFeatures} {lang==='es'?'activas':'active'}</strong><small>{tieredOffer?(lang==='es'?'Premium durante la prueba':'Premium during the trial'):(lang==='es'?'$30 mensual · $350 anual':'$30 monthly · $350 yearly')}</small><button onClick={()=>setStep(2)}>{lang==='es'?'Editar':'Edit'}</button></article>
+        <article><span>{lang==='es'?'Funciones':'Features'}</span><strong>{enabledFeatures} {lang==='es'?'activas':'active'}</strong><small>{lang==='es'?'Premium durante la prueba':'Premium during the trial'}</small><button onClick={()=>setStep(2)}>{lang==='es'?'Editar':'Edit'}</button></article>
         <article><span>{lang==='es'?'Catálogo':'Catalog'}</span><strong>{state.catalog.length} {lang==='es'?'elementos':'items'}</strong><small>{appointmentServices.length} {lang==='es'?'con reservación':'with booking'}</small><button onClick={()=>setStep(3)}>{lang==='es'?'Editar':'Edit'}</button></article>
         <article><span>{lang==='es'?'Equipo':'Team'}</span><strong>{state.team.length} {lang==='es'?'empleados':'team members'}</strong><small>Service + Employee</small><button onClick={()=>setStep(4)}>{lang==='es'?'Editar':'Edit'}</button></article>
         <article><span>{lang==='es'?'Horarios':'Hours'}</span><strong>{Object.values(state.hours).filter((day)=>day.enabled).length} {lang==='es'?'días abiertos':'open days'}</strong><small>{lang==='es'?'Disponibilidad general':'General availability'}</small><button onClick={()=>setStep(5)}>{lang==='es'?'Editar':'Edit'}</button></article>
@@ -1062,7 +1061,7 @@ function FinalStep({state,setStep,lang,complimentaryInviteToken,trialInviteToken
         <p className="wf-after-payment-security">{lang==='es'?'WebFactory nunca te pedirá contraseñas, códigos de seguridad, datos bancarios ni llaves secretas.':'WebFactory will never ask for passwords, security codes, bank details, or secret keys.'}</p>
       </section>
       {created ? <div className="wf-checkout-placeholder success"><div><small>{lang==='es'?'ACCESO ENVIADO':'ACCESS SENT'}</small><strong>{lang==='es'?'Revisa tu email':'Check your email'}</strong><span>{lang==='es'?`Establece tu contraseña, entra al portal y activa los ${trialDays} días gratis cuando estés listo.`:`Set your password, enter the portal, and activate the free ${trialDays} days when you are ready.`}</span></div><a className="wf-builder-access-link" href={created.portalUrl}>{lang==='es'?'Abrir portal administrativo':'Open administrative portal'}</a></div> : <div className="wf-checkout-placeholder">
-        <div><small>{lang==='es'?'SIGUIENTE ETAPA':'NEXT STEP'}</small><strong>{complimentaryInviteToken?(lang==='es'?'Crear website con acceso gratuito':'Create website with complimentary access'):(lang==='es'?`Crear acceso · ${trialDays} días gratis`:`Create access · ${trialDays} days free`)}</strong><span>{complimentaryInviteToken?(lang==='es'?'No se requiere suscripción mientras el acceso complimentary permanezca activo.':'No subscription is required while complimentary access remains active.'):(tieredOffer?(lang==='es'?'Activa la prueba desde tu portal. Al terminar, elige Básico, Standard o Premium.':'Activate the trial from your portal. When it ends, choose Basic, Standard or Premium.'):(lang==='es'?'Activa la prueba desde tu portal. Después puedes elegir $30 al mes o $350 al año.':'Activate the trial from your portal. Then choose $30 monthly or $350 yearly.'))}</span></div>
+        <div><small>{lang==='es'?'SIGUIENTE ETAPA':'NEXT STEP'}</small><strong>{complimentaryInviteToken?(lang==='es'?'Crear website con acceso gratuito':'Create website with complimentary access'):(lang==='es'?`Crear acceso · ${trialDays} días gratis`:`Create access · ${trialDays} days free`)}</strong><span>{complimentaryInviteToken?(lang==='es'?'No se requiere suscripción mientras el acceso complimentary permanezca activo.':'No subscription is required while complimentary access remains active.'):(lang==='es'?'Activa la prueba desde tu portal. Al terminar, elige Básico, Standard o Premium.':'Activate the trial from your portal. When it ends, choose Basic, Standard or Premium.')}</span></div>
         <button disabled={!canCheckout} onClick={startCheckout}>{checkingOut?(lang==='es'?'Preparando acceso…':'Preparing access…'):(lang==='es'?'Crear mi cuenta':'Create my account')}</button>
       </div>}
       {checkoutError && <div className="wf-checkout-warning error">{checkoutError}</div>}
@@ -1263,7 +1262,7 @@ export default function WebFactoryBuilder({lang,editing}:{lang:Language;editing?
                 </button>
               ))}
             </div>
-            {!editing&&<strong>{tieredOffer?(lang==='es'?'Desde ':'From '):''}{PRICE} / {lang==='es'?'mes':'month'}</strong>}
+            {!editing&&<strong>{lang==='es'?'Desde ':'From '}{PRICE} / {lang==='es'?'mes':'month'}</strong>}
           </header>
           <div className="wf-preview-context"><span>{templateConfigs.find(template=>template.slug===state.design.templateSlug)?.name || (lang==='es'?'Diseño personalizado':'Custom design')}</span><small>{device==='mobile'?'390':device==='tablet'?'768':'1280'} px · {lang==='es'?'Vista previa':'Preview'}</small></div>
           <div className="wf-live-stage">

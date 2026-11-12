@@ -19,7 +19,7 @@ const copy = {
     eyebrow: 'BUILT IN PUERTO RICO · FOR YOUR BUSINESS', title: 'Your whole business,', accent: 'one control center.',
     lead: 'Launch a bilingual website, sell products and services, accept bookings, get paid and manage your team, all connected to your Business Control Center.',
     modules: ['Website', 'Commerce', 'Payments', 'Employees', 'Bookings'],
-    start: 'Start 7-day free trial', templates: 'Browse templates', trial: '7 days free · No card · Then $30/month or $350/year',
+    templates: 'Browse templates',
     heroAlt: 'Illustration of the Business Control Center with sample data', sample: 'Sample data', sampleBusiness: 'Sample business', center: 'Business Control Center', scroll: 'Scroll to see it come together',
     tourLabel: 'HOW IT COMES TOGETHER', tourTitle: 'From your first page to your daily operation.', tourText: 'Keep scrolling. The Control Center updates with every step.',
     steps: [
@@ -56,7 +56,6 @@ const copy = {
     ],
     alsoLabel: 'Also included', also: ['Templates', 'Factory AI', 'Training to learn and practice', 'Integrations', 'English + Español', 'Light / Dark'],
     howLabel: 'FROM YOUR IDEA TO YOUR OPERATION', howTitle: 'Start with your business.', how: [['Create', 'Choose your starting point and add your logo, colors and content.'], ['Configure', 'Add products, services, team and your payment methods.'], ['Manage', 'Handle sales and bookings from your portal.']],
-    priceLabel: 'ONE CLEAR PLAN', priceTitle: 'Your platform. Your brand.', perMonth: '/month', annual: 'Or $350 per year', priceText: 'Website, sales, bookings, payments, employees and the Business Control Center.', noCommission: 'No WebFactory commission on your sales.', trialShort: '7 days free · No card',
     faq: [['Can I sell and accept bookings?', 'Yes. Offer products and services with appointments on the same website.'], ['Where do payments go?', 'Stripe and ATH Móvil connect to your business accounts. Payment provider fees apply.'], ['Can I edit my content later?', 'Yes. Manage your catalog, prices, employees and hours from your portal.']],
     finalTitle: 'Ready to put your business in control?', finalText: 'Build your website in the Builder and manage it from day one.',
     footer: 'Your website. Your operation. Your control.', legal: ['Privacy', 'Terms', 'Refunds'], legalNav: 'Legal links',
@@ -66,7 +65,7 @@ const copy = {
     eyebrow: 'CREADO EN PUERTO RICO · PARA TU NEGOCIO', title: 'Todo tu negocio,', accent: 'un centro de control.',
     lead: 'Lanza un website bilingüe, vende productos y servicios, recibe reservas, cobra y administra tu equipo, todo conectado a tu Business Control Center.',
     modules: ['Website', 'Ventas', 'Pagos', 'Empleados', 'Reservas'],
-    start: 'Prueba 7 días gratis', templates: 'Ver templates', trial: '7 días gratis · Sin tarjeta · Luego $30/mes o $350/año',
+    templates: 'Ver templates',
     heroAlt: 'Ilustración del Business Control Center con datos de ejemplo', sample: 'Datos de ejemplo', sampleBusiness: 'Negocio de ejemplo', center: 'Business Control Center', scroll: 'Haz scroll y míralo tomar forma',
     tourLabel: 'CÓMO SE CONECTA TODO', tourTitle: 'De tu primera página a tu operación diaria.', tourText: 'Sigue bajando. El Control Center se actualiza en cada paso.',
     steps: [
@@ -100,7 +99,6 @@ const copy = {
     ],
     alsoLabel: 'También incluye', also: ['Templates', 'Factory AI', 'Training para aprender y practicar', 'Integraciones', 'English + Español', 'Claro / Oscuro'],
     howLabel: 'DE LA IDEA A TU OPERACIÓN', howTitle: 'Empieza con tu negocio.', how: [['Crea', 'Elige tu base y aplica tu logo, colores y contenido.'], ['Configura', 'Añade productos, servicios, equipo y tus métodos de pago.'], ['Administra', 'Gestiona ventas y reservas desde tu portal.']],
-    priceLabel: 'UN PLAN CLARO', priceTitle: 'Tu plataforma. Tu marca.', perMonth: '/mes', annual: 'O $350 al año', priceText: 'Website, ventas, reservas, pagos, empleados y el Business Control Center.', noCommission: 'Sin comisión de WebFactory sobre tus ventas.', trialShort: '7 días gratis · Sin tarjeta',
     faq: [['¿Puedo vender y recibir citas?', 'Sí. Puedes ofrecer productos y servicios con reservaciones en el mismo website.'], ['¿A dónde llegan los pagos?', 'Stripe y ATH Móvil se conectan a las cuentas de tu negocio. Aplican las tarifas del proveedor de pago.'], ['¿Puedo cambiar el contenido después?', 'Sí. Administra catálogo, precios, empleados y horarios desde tu portal.']],
     finalTitle: '¿Listo para tener tu negocio en control?', finalText: 'Crea tu website en el Builder y adminístralo desde el primer día.',
     footer: 'Tu website. Tu operación. Tu control.', legal: ['Privacidad', 'Términos', 'Reembolsos'], legalNav: 'Enlaces legales',
@@ -362,12 +360,8 @@ function HeroVideo({ reduced }: { reduced: boolean }) {
 
 export default function HomePage({ lang, setLang }: { lang: Language, setLang: (value: Language) => void }) {
   const t = copy[lang]
-  const previewPlans=typeof __WF_PREVIEW_REVIEW__!=='undefined'&&__WF_PREVIEW_REVIEW__;
-  const tiered=import.meta.env.VITE_WEBFACTORY_TIERED_PLANS_ENABLED==='true';
-  const showTrialOffer=previewPlans||tiered;
-  const upcomingPlans=!showTrialOffer;
-  const startTrial=showTrialOffer?(lang==='es'?`Prueba Premium gratis por ${membershipTrialDays} días`:`Try Premium free for ${membershipTrialDays} days`):t.start;
-  const trialText=showTrialOffer?(lang==='es'?'Sin tarjeta · Elige tu plan al terminar · Desde $30 al mes':'No card · Choose your plan after the trial · From $30 per month'):t.trial;
+  const startTrial=(lang==='es'?`Prueba Premium gratis por ${membershipTrialDays} días`:`Try Premium free for ${membershipTrialDays} days`);
+  const trialText=(lang==='es'?'Sin tarjeta · Elige tu plan al terminar · Desde $30 al mes':'No card · Choose your plan after the trial · From $30 per month');
   const [menu, setMenu] = useState(false)
   const [plansOpen, setPlansOpen] = useState(() => window.location.hash === '#planes')
   useEffect(() => {
@@ -454,7 +448,7 @@ export default function HomePage({ lang, setLang }: { lang: Language, setLang: (
             <h1>{t.title}<em>{t.accent}</em></h1>
             <p className="wf-lead">{t.lead}</p>
             <ul className="wf-hero-modules" aria-label={t.platformLabel}>{t.modules.map((m, i) => <li key={m} style={{ '--i': i } as CSSProperties}><Icon name={moduleIcons[i]} />{m}</li>)}</ul>
-            <div className="wf-actions"><a className="wf-btn" href={previewPlans&&!tiered?"#planes":"/builder"} onClick={previewPlans&&!tiered?()=>setPlansOpen(true):undefined}>{startTrial}<span aria-hidden="true">↗</span></a><a className="wf-link" href="/templates">{t.templates} →</a></div>
+            <div className="wf-actions"><a className="wf-btn" href="/builder">{startTrial}<span aria-hidden="true">↗</span></a><a className="wf-link" href="/templates">{t.templates} →</a></div>
             <p className="wf-trial">{trialText}</p>
           </div>
 
@@ -463,7 +457,6 @@ export default function HomePage({ lang, setLang }: { lang: Language, setLang: (
       </section>
 
       <section className="wf-section wf-shell wf-home-memberships" id="planes">
-        {upcomingPlans&&<p className="wf-eyebrow">{lang==='es'?'Próximas membresías':'Upcoming memberships'}</p>}
         <button type="button" className="wf-membership-toggle" aria-expanded={plansOpen} aria-controls="wf-home-plan-options" onClick={() => setPlansOpen(open => !open)}>
           <span><strong>{lang==='es'?(plansOpen?'Ocultar planes':'Ver planes'):(plansOpen?'Hide plans':'View plans')}</strong>
             <small>{lang==='es'?`Desde $${membershipPlans.basic.monthly} al mes`:`From $${membershipPlans.basic.monthly} per month`}</small></span>
@@ -471,8 +464,6 @@ export default function HomePage({ lang, setLang }: { lang: Language, setLang: (
         </button>
         <div id="wf-home-plan-options" className="wf-home-plan-options">
           <MembershipPlans lang={lang} disclosed={plansOpen}/>
-          {upcomingPlans&&<p>{lang==='es'?'Puedes comparar estos planes antes de su lanzamiento. Consulta la oferta vigente más abajo.':'Compare these plans ahead of launch. See the current offer below.'}</p>}
-          {previewPlans&&!tiered&&<p style={{textAlign:'center'}}>{lang==='es'?'Vista de revisión de las nuevas membresías.':'Review preview of the new memberships.'}</p>}
         </div>
       </section>
       <section className="wf-tour" id="recorrido" ref={tourRef} aria-labelledby="wf-tour-title">
@@ -512,17 +503,13 @@ export default function HomePage({ lang, setLang }: { lang: Language, setLang: (
         <div className="wf-how">{t.how.map(([title, text], i) => <article key={i} data-reveal style={{ '--i': i } as CSSProperties}><span>0{i + 1}</span><h3>{title}</h3><p>{text}</p></article>)}</div>
       </section>
 
-      <section className="wf-section wf-shell" id={upcomingPlans?"oferta-vigente":undefined}>
-        {upcomingPlans&&<div className="wf-pricing" data-reveal>
-          <div><p className="wf-eyebrow">{t.priceLabel}</p><h2>{t.priceTitle}</h2><p>{t.priceText}</p><span>{t.noCommission}</span></div>
-          <div className="wf-price"><strong>$30<small>{t.perMonth}</small></strong><p>{t.annual}</p><a className="wf-btn" href={previewPlans&&!tiered?"#planes":"/builder"} onClick={previewPlans&&!tiered?()=>setPlansOpen(true):undefined}>{startTrial}<span aria-hidden="true">↗</span></a><small>{t.trialShort}</small></div>
-        </div>}
+      <section className="wf-section wf-shell">
         <div id="faq" className="wf-faq" tabIndex={-1} aria-label="FAQ">{t.faq.map(([q, a]) => <details key={q}><summary>{q}<span aria-hidden="true">+</span></summary><p>{a}</p></details>)}</div>
       </section>
 
       <section className="wf-final wf-shell" data-reveal>
         <h2>{t.finalTitle}</h2><p>{t.finalText}</p>
-        <div className="wf-actions"><a className="wf-btn" href={previewPlans&&!tiered?"#planes":"/builder"} onClick={previewPlans&&!tiered?()=>setPlansOpen(true):undefined}>{startTrial}<span aria-hidden="true">↗</span></a><a className="wf-link" href="/client-admin">{t.login} →</a></div>
+        <div className="wf-actions"><a className="wf-btn" href="/builder">{startTrial}<span aria-hidden="true">↗</span></a><a className="wf-link" href="/client-admin">{t.login} →</a></div>
       </section>
     </main>
 
