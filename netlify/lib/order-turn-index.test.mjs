@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
 import {buildOrderTurnIndexPage, indexedOrderTurnKeys, withOrderTurnIndex} from './order-turn-index.mjs';
 import {createPublicOrderTrackingHandler} from '../functions/public-order-tracking.mjs';
+import {createCommerceAdminHandler} from '../functions/client-commerce-admin.mjs';
 import {createOrderTurnIndexHandler} from '../functions/client-order-turn-index.mjs';
 
 function memory() {
@@ -44,12 +45,12 @@ test('history resumes by batch, stays on fallback while incomplete and indexes n
   await commerce.setJSON(key(first), first);
   await commerce.setJSON(key(last), last);
   assert.equal((await buildOrderTurnIndexPage(commerce, index, shop, {limit: 1})).status, 'building');
-  assert.equal(await indexedOrderTurnKeys(index, shop, branch, last.paidAt), null);
+  assert.equal(await indexedOrderTurnKeys(index, commerce, shop, last.paidAt.slice(0,10), {locationId: branch}), null);
   // Sorts before the backfill cursor but still enters the index via the canonical writer.
   await write.setJSON(key(inserted), inserted);
   assert.equal((await buildOrderTurnIndexPage(commerce, index, shop, {limit: 1})).status, 'ready');
-  assert.deepEqual((await indexedOrderTurnKeys(index, shop, branch, last.paidAt)).sort(), [key(inserted), key(first), key(last)]);
-  assert.equal(await indexedOrderTurnKeys(index, 'other-tenant', branch, last.paidAt), null);
+  assert.deepEqual((await indexedOrderTurnKeys(index, commerce, shop, last.paidAt.slice(0,10), {locationId: branch})).sort(), [key(inserted), key(first), key(last)]);
+  assert.equal(await indexedOrderTurnKeys(index, commerce, 'other-tenant', last.paidAt.slice(0,10), {locationId: branch}), null);
 });
 
 test('cold tracking reads the indexed branch, keeps local-day ordering and preserves authorization', async () => {
@@ -91,7 +92,7 @@ test('cold tracking reads the indexed branch, keeps local-day ordering and prese
   count = commerce.counts();
   const optimized = await (await newHandler()(request())).json();
   assert.deepEqual(optimized, baseline);
-  assert.equal(commerce.counts().scans, count.scans);
+  assert.equal(commerce.counts().scans - count.scans, 3);
   assert.equal(commerce.counts().reads - count.reads, 5);
   const later = order('b', '2026-11-12T05:00:00Z');
   await write.setJSON(key(later), later);
@@ -124,4 +125,51 @@ test('only the owner can prepare the index and the request stays scoped to the a
   role = 'owner';
   assert.equal((await handler(req('https://other.invalid'))).status, 403);
   assert.deepEqual((await (await handler(req())).json()).state, {status:'ready', processed:1});
+});
+
+test('an index write outage preserves the paid order and its reference after recovery', async () => {
+  const commerce = memory(), index = memory();
+  await buildOrderTurnIndexPage(commerce, index, shop);
+  const writer = withOrderTurnIndex(commerce, () => ({setJSON: async () => { throw new Error('index unavailable'); }}));
+  const row = order('paid-during-outage', '2026-11-13T02:00:00Z');
+  assert.equal((await writer.setJSON(key(row), row, {onlyIfNew:true})).modified, true);
+  assert.deepEqual(await commerce.get(key(row)), row);
+  assert.deepEqual(await indexedOrderTurnKeys(index, commerce, shop, '2026-11-12', {locationId:branch}), [key(row)]);
+  await withOrderTurnIndex(commerce, () => index).setJSON(key(row), row);
+  assert.deepEqual(await indexedOrderTurnKeys(index, commerce, shop, '2026-11-12'), [key(row)]);
+});
+
+test('indexed kitchen reads the local day and preserves branch scope, late payments and data masking', async () => {
+  const commerce = memory(), index = memory();
+  const site = {siteId:shop, business:{locations:[{id:branch},{id:'other'}]}, settings:{timezone:'America/Puerto_Rico'}};
+  const membership = {role:'employee', permissions:{kitchen:true}, locationIds:[branch]};
+  const row = {...order('recent', '2026-11-13T02:00:00Z'), createdAt:'2026-11-10T02:00:00Z', customer:{email:'private@example.invalid'}, kitchenStatus:'preparing'};
+  const records = [
+    row,
+    order('other-branch', row.paidAt, shop, 'other'),
+    order('wrong-tenant', row.paidAt, 'foreign'),
+    order('previous-local-day', '2026-11-12T03:55:00Z'),
+    {...order('due', row.paidAt), paymentStatus:'due'},
+    ...Array.from({length:1000}, (_,i) => order('old-'+i, '2026-10-01T02:00:00Z')),
+  ];
+  for (const record of records) await commerce.setJSON(key(record), record);
+  const handler = createCommerceAdminHandler({
+    authorizeCapability: async () => ({site,membership}),
+    getStore: () => commerce,
+    getIndex: () => index,
+    clock: () => Date.parse(row.paidAt),
+  });
+  const read = () => handler(new Request('https://example.invalid/?siteId='+shop+'&view=kitchen'));
+  let before = commerce.counts().reads;
+  const baseline = await (await read()).json();
+  assert.equal(commerce.counts().reads - before, 1004);
+  assert.deepEqual(baseline.orders.map(order => order.transactionId), [row.transactionId]);
+  assert.equal(baseline.orders[0].paidAt, row.paidAt);
+  assert.equal(baseline.orders[0].customer.email, undefined);
+  while ((await buildOrderTurnIndexPage(commerce, index, shop)).status !== 'ready') {}
+  before = commerce.counts().reads;
+  assert.deepEqual(await (await read()).json(), baseline);
+  assert.equal(commerce.counts().reads - before, 3);
+  index.list = () => { throw new Error('index unavailable'); };
+  assert.deepEqual(await (await read()).json(), baseline);
 });

@@ -44,7 +44,7 @@ export function createPublicOrderTrackingHandler({ getStore = clientCommerceStor
     const key = JSON.stringify([siteId, typeof record.locationId, record.locationId, timeZone, day]);
     const load = async () => {
       let keys;
-      try { keys = await indexedOrderTurnKeys(getIndex(), siteId, record.locationId, record.paidAt); }
+      try { keys = await indexedOrderTurnKeys(getIndex(), store, siteId, day, {locationId: record.locationId}); }
       catch { /* Preserve tracking if index storage is unavailable. */ }
       const canonicalKey = commerceKey(siteId, 'orders', record.transactionId);
       if (!keys?.includes(canonicalKey)) {

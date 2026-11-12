@@ -3,9 +3,9 @@ import crypto from 'node:crypto';
 const DAY_MS = 86_400_000;
 const ordersPattern = /^([^/]+)\/orders\/[^/]+\.json$/;
 const json = {type: 'json'};
-const version = 1;
+const version = 2;
 
-export const orderTurnIndexStateKey = siteId => `${siteId}/state-v1.json`;
+export const orderTurnIndexStateKey = siteId => `${siteId}/state-v${version}.json`;
 
 function branchKey(locationId) {
   return crypto.createHash('sha256')
@@ -17,8 +17,9 @@ function dateKey(day) {
   return new Date(day * DAY_MS).toISOString().slice(0, 10);
 }
 
-function indexPrefix(siteId, locationId, utcDay) {
-  return `${siteId}/turns-v1/${branchKey(locationId)}/${dateKey(utcDay)}/`;
+function indexPrefix(siteId, utcDay, fallback = false) {
+  const namespace = fallback ? 'turn-fallback' : 'turns';
+  return `${siteId}/${namespace}-v${version}/${dateKey(utcDay)}/`;
 }
 
 async function* listKeys(store, prefix) {
@@ -28,25 +29,34 @@ async function* listKeys(store, prefix) {
   }
 }
 
-export async function writeOrderTurnReference(getIndex, orderKey, row) {
+function orderTurnReference(orderKey, row) {
   const match = ordersPattern.exec(orderKey);
-  if (!match || !row?.queueNumber || row.paymentStatus === 'due') return;
+  if (!match || !row?.queueNumber || row.paymentStatus === 'due') return null;
   const paid = Date.parse(row.paidAt || row.createdAt);
-  if (!Number.isFinite(paid)) return;
+  if (!Number.isFinite(paid)) return null;
   const siteId = match[1];
   if (row.siteId && row.siteId !== siteId) throw new Error('Order tenant mismatch.');
-  const prefix = indexPrefix(siteId, row.locationId, Math.floor(paid / DAY_MS));
-  const reference = Buffer.from(orderKey).toString('base64url');
-  await getIndex().setJSON(prefix + reference, {version}, {onlyIfNew: true});
+  const utcDay = Math.floor(paid / DAY_MS);
+  const suffix = `${branchKey(row.locationId)}/${Buffer.from(orderKey).toString('base64url')}`;
+  return {
+    key: indexPrefix(siteId, utcDay) + suffix,
+    fallbackKey: indexPrefix(siteId, utcDay, true) + suffix,
+  };
 }
+
+const writeReference = (store, key) => store.setJSON(key, {version}, {onlyIfNew: true});
 
 export function withOrderTurnIndex(store, getIndex) {
   return new Proxy(store, {
     get(target, property) {
       if (property === 'setJSON') {
         return async (key, row, options) => {
-          // Write the reference first. Readers verify the canonical row, so abandoned references are harmless.
-          await writeOrderTurnReference(getIndex, key, row);
+          const reference = orderTurnReference(key, row);
+          if (reference) {
+            // Readers verify the order, so a reference left by a failed order write is harmless.
+            try { await writeReference(getIndex(), reference.key); }
+            catch { await writeReference(target, reference.fallbackKey); }
+          }
           return target.setJSON(key, row, options);
         };
       }
@@ -56,24 +66,29 @@ export function withOrderTurnIndex(store, getIndex) {
   });
 }
 
-export async function indexedOrderTurnKeys(index, siteId, locationId, paidAt) {
+export async function indexedOrderTurnKeys(index, commerce, siteId, localDay, branch) {
   const state = await index.get(orderTurnIndexStateKey(siteId), json);
   if (state?.version !== version || state.siteId !== siteId || state.status !== 'ready') return null;
-  const paid = Date.parse(paidAt);
-  if (!Number.isFinite(paid)) return null;
-  const utcDay = Math.floor(paid / DAY_MS);
+  const time = Date.parse(localDay);
+  if (!Number.isFinite(time)) return null;
+  const utcDay = Math.floor(time / DAY_MS);
+  const suffix = branch ? `${branchKey(branch.locationId)}/` : '';
   const keys = new Set();
-  // Adjacent UTC buckets include the whole local date, even on a longer DST day.
-  const offsets = [-2, -1, 0, 1, 2];
-  for (const offset of offsets) {
-    const prefix = indexPrefix(siteId, locationId, utcDay + offset);
-    for await (const ref of listKeys(index, prefix)) {
-      const key = Buffer.from(ref.slice(prefix.length), 'base64url').toString();
-      if (!key.startsWith(`${siteId}/orders/`) || !ordersPattern.test(key)) return null;
+  async function readBucket(store, prefix) {
+    for await (const ref of listKeys(store, prefix + suffix)) {
+      const key = Buffer.from(ref.slice(ref.lastIndexOf('/') + 1), 'base64url').toString();
+      if (!key.startsWith(`${siteId}/orders/`) || !ordersPattern.test(key)) {
+        throw new Error('Invalid order index reference.');
+      }
       keys.add(key);
     }
   }
-  return [...keys];
+  // Adjacent UTC buckets cover the business's local day across time zones and DST.
+  await Promise.all([-1, 0, 1].flatMap(offset => [
+    readBucket(index, indexPrefix(siteId, utcDay + offset)),
+    readBucket(commerce, indexPrefix(siteId, utcDay + offset, true)),
+  ]));
+  return [...keys].sort();
 }
 
 export async function buildOrderTurnIndexPage(commerce, index, siteId, {limit = 100, clock = Date.now} = {}) {
@@ -90,7 +105,8 @@ export async function buildOrderTurnIndexPage(commerce, index, siteId, {limit = 
   keys.sort();
   for (const key of keys.slice(0, limit)) {
     const row = await commerce.get(key, json);
-    if (row) await writeOrderTurnReference(() => index, key, row);
+    const reference = orderTurnReference(key, row);
+    if (reference) await writeReference(index, reference.key);
     state.after = key;
     state.processed++;
     if (clock() - started > 15_000) break;
