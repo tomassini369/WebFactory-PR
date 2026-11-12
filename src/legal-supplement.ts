@@ -4,6 +4,13 @@ type Section=readonly [string,readonly string[]]
 export const legalSupplement:Record<'en'|'es',Record<'privacy'|'terms'|'refund',readonly Section[]>>={
  en:{
  privacy:[
+ ['Public websites, social links and music',[
+ 'Businesses can publish links to social profiles and other destinations. Visitors who open a link leave the website for a service that applies its own privacy practices. The links and icons themselves do not connect the visitor’s account to WebFactory.',
+ 'Eligible artist and DJ sites can publish uploaded MP3 files, cover images and track titles. These files and playback settings are stored for the business and the published tracks and covers are available to site visitors. A track can start automatically if the business enables that option and the visitor’s browser allows it. Gallery templates use example links and demo audio.'
+ ]],
+ ['Order tracking, kitchen and business records',[
+ 'An order tracking link can reveal item names and quantities, order and payment status, kitchen status, queue or turn number, location and timestamps. Anyone with the link can view the corresponding status, so share it only with the intended recipient. Tracking, order preparation and reporting use the records associated with the business. Access to operational views depends on the account’s business membership and permissions.'
+ ]],
  ['Booking requests, waitlists and attendance',[
  'When a business enables its waitlist, it collects your name, email, preferred service, professional, location and date range with specific consent for opening notifications. An invitation does not hold or confirm an appointment. You can cancel requests and notifications through the private link. Requests expire within 30 days; expiry processing removes the contact from the request. Processing is incremental, so expiration is not a promise of instantaneous deletion from all systems or backups.',
  'The business Owner can consult completed appointments, no-shows and late cancellations by the email used in that business. Different email addresses are not automatically merged. Appointment and payment history can remain separately from waitlist contact information. Private booking and invitation links grant limited access: do not publish them.'
@@ -26,6 +33,10 @@ export const legalSupplement:Record<'en'|'es',Record<'privacy'|'terms'|'refund',
  ]]
  ],
  terms:[
+ ['Templates, external links and audio playback',[
+ 'The gallery demonstrates template layouts with example content. Businesses can choose a template, customize their website, publish external links, and manage their own content. On eligible artist and DJ sites, authorized owners can manage uploaded tracks, optional covers and the starting track. Browser settings can block automatic playback.',
+ 'The business is responsible for the links and materials it publishes, including the audio and cover art, and for having permission to make them publicly available. Gallery audio and links are examples.'
+ ]],
  ['Marketplace consumer use and commercial responsibility',[
  'Marketplace consumer accounts require age 18 or older, explicit Terms/Privacy acceptance and an authenticated account. Public browsing remains available without registration. Do not impersonate another person, submit a child’s personal data to create an account, scrape private profiles or use favorites as a source for unsolicited messages.',
  'Listings and catalog prices are supplied by participating businesses. A listing is not a WebFactory endorsement, license verification or guarantee of availability. The seller is responsible for its products/services, permits, taxes, disclosures, cancellations and customer support. Check the business’s own terms and final server-calculated total before paying.',
@@ -53,6 +64,13 @@ export const legalSupplement:Record<'en'|'es',Record<'privacy'|'terms'|'refund',
  },
  es:{
  privacy:[
+ ['Sitios públicos, enlaces sociales y música',[
+ 'Los negocios pueden publicar enlaces a perfiles sociales y otros destinos. Al abrir un enlace, el visitante pasa a un servicio que aplica sus propias prácticas de privacidad. Los enlaces y sus iconos no conectan por sí solos la cuenta del visitante a WebFactory.',
+ 'Los sitios elegibles de artistas y DJ pueden publicar archivos MP3, portadas y títulos de pistas. Estos archivos y ajustes de reproducción se almacenan para el negocio, y las pistas y portadas publicadas están disponibles para los visitantes. Una pista puede comenzar automáticamente si el negocio activa esa opción y el navegador del visitante lo permite. Los templates de la galería usan enlaces de ejemplo y audio de demostración.'
+ ]],
+ ['Seguimiento de pedidos, Cocina y registros del negocio',[
+ 'Un enlace de seguimiento puede mostrar los nombres y cantidades de los artículos, el estado del pedido y del pago, el estado de preparación, el número de fila o turno, la localidad y las fechas y horas. Cualquier persona con el enlace puede consultar ese estado. Compártelo solo con el destinatario previsto. El seguimiento, la preparación de pedidos y los informes usan los registros del negocio. El acceso a las vistas operativas depende de la membresía y los permisos de la cuenta.'
+ ]],
  ['Solicitudes de citas, lista de espera y asistencia',[
  'Cuando el negocio habilita la lista de espera, recopila nombre, email, servicio, profesional, localidad y fechas preferidas con consentimiento específico para avisos de disponibilidad. Una invitación no retiene ni confirma una cita. Puedes cancelar la solicitud y los avisos desde el enlace privado. La solicitud vence en un máximo de 30 días; al procesar el vencimiento se elimina el contacto de la solicitud. El procesamiento es incremental: el vencimiento no promete eliminación instantánea de todos los sistemas ni backups.',
  'El Dueño puede consultar citas completadas, ausencias y cancelaciones tardías usando el email utilizado en ese negocio. No se combinan automáticamente emails diferentes. El historial de citas y pagos puede conservarse separado del contacto de la lista de espera. Los enlaces privados de citas e invitaciones conceden acceso limitado: no los publiques.'
@@ -75,6 +93,10 @@ export const legalSupplement:Record<'en'|'es',Record<'privacy'|'terms'|'refund',
  ]]
  ],
  terms:[
+ ['Templates, enlaces externos y reproducción de audio',[
+ 'La galería muestra diseños con contenido de ejemplo. Los negocios pueden elegir un template, personalizar su sitio, publicar enlaces externos y administrar su contenido. En los sitios elegibles de artistas y DJ, los dueños autorizados pueden gestionar las pistas subidas, las portadas opcionales y la canción inicial. La configuración del navegador puede bloquear la reproducción automática.',
+ 'El negocio es responsable de los enlaces y materiales que publica, incluidos el audio y las portadas, y de contar con permiso para ponerlos a disposición del público. El audio y los enlaces de la galería son ejemplos.'
+ ]],
  ['Uso del Marketplace y responsabilidad comercial',[
  'Las cuentas de consumidores del Marketplace requieren 18 años o más, aceptación explícita de Términos/Privacidad y autenticación. La navegación pública continúa sin registro. No suplantes personas, no envíes datos de menores para crear cuentas, no extraigas perfiles privados ni uses favoritos para mensajes no solicitados.',
  'Los negocios participantes suministran las fichas y precios de catálogo. Una ficha no equivale a recomendación de WebFactory, verificación de permisos ni garantía de disponibilidad. El vendedor responde por productos/servicios, permisos, impuestos, divulgaciones, cancelaciones y atención al cliente. Revisa sus términos y el total definitivo calculado por el servidor antes de pagar.',
@@ -117,6 +139,7 @@ legalSupplement.es.refund=[...legalSupplement.es.refund,['Compra de espacios pat
 
 export const copyrightCopy={
  en:{title:'Copyright and content complaints',intro:'Report a specific intellectual-property concern. The designated-agent contact section below provides the configured registration details. Agent registration alone does not establish statutory safe-harbor eligibility.',sections:[
+ ['Audio, cover art and other website content',['If a complaint concerns an uploaded recording or cover image, identify the business website, track title and the URL where the material appears. Identify the recording, artwork or other work you claim was used without permission.']],
  ['How to report',['Contact the designated agent shown below with the subject Copyright complaint, identify the business and exact content URL, describe your work and the alleged infringement, and provide your name, contact email, mailing address and electronic or physical signature. Include a good-faith statement that the use is not authorized by the rights holder, its agent or law, and a statement under penalty of perjury that the information is accurate and you are the rights holder or authorized to act. Identify representative works if necessary. Do not send passwords, card details or unnecessary identity documents.']],
  ['Review and restriction',['WebFactory reviews whether the notice identifies specific material and contains the necessary statements. It may request clarification, preserve restricted evidence, notify the affected account and restrict material through authorized administration tools. Staff record reasons and action history. Submission does not automatically remove content or establish infringement; incomplete or abusive claims may be rejected. Repeated substantiated infringement may lead to account restriction or termination after review.']],
  ['Counter-notifications',['If your material is restricted because of an alleged copyright infringement, provide the removed material and original URL, your name, address, phone and signature, a statement under penalty of perjury that removal resulted from mistake or misidentification, consent to the jurisdiction of the appropriate U.S. federal district court (or, outside the U.S., a district where the service provider may be found), and acceptance of service from the original complainant or agent. A counter-notice may be shared with the claimant and can expose you to litigation. Obtain legal advice if unsure.']],
@@ -124,6 +147,7 @@ export const copyrightCopy={
  ['Designated-agent status',['Use the designated-agent details below for formal copyright notices. Check the official directory for current registration status. Directory registration does not certify unconditional legal protection; required notice handling and other statutory conditions remain separate.']]
  ]},
  es:{title:'Copyright y reclamaciones de contenido',intro:'Reporta una preocupación específica sobre propiedad intelectual. La sección del agente designado más abajo muestra los datos configurados del registro. Registrar un agente no establece por sí solo elegibilidad para una protección legal.',sections:[
+ ['Audio, portadas y otros contenidos del sitio',['Si la reclamación trata de una grabación subida o de una portada, identifica el sitio del negocio, el título de la pista y la URL donde aparece el material. Identifica la grabación, imagen u otra obra que alegas se usó sin autorización.']],
  ['Cómo reportar',['Escribe al agente designado mostrado abajo con el asunto Reclamación de copyright, identifica el negocio y la URL exacta del contenido, describe la obra y presunta infracción e incluye nombre, email, dirección postal y firma física o electrónica. Incluye una declaración de buena fe de que el uso no está autorizado por el titular, su agente ni la ley, y una declaración bajo pena de perjurio de que la información es correcta y eres titular o estás autorizado a actuar. Identifica obras representativas cuando corresponda. No envíes contraseñas, tarjetas ni documentos de identidad innecesarios.']],
  ['Revisión y restricción',['WebFactory revisa si el aviso identifica material específico y contiene las declaraciones necesarias. Puede solicitar aclaraciones, preservar evidencia restringida, notificar a la cuenta afectada y restringir contenido mediante administración autorizada. El personal registra motivos e historial de acciones. Enviar un reporte no retira contenido automáticamente ni prueba una infracción; avisos incompletos o abusivos pueden rechazarse. Infracciones repetidas fundamentadas pueden resultar en restricción o terminación de la cuenta tras revisión.']],
  ['Contranotificaciones',['Si se restringe tu contenido por presunta infracción de copyright, identifica el material retirado y su URL original e incluye nombre, dirección, teléfono y firma; declaración bajo pena de perjurio de que el retiro resulta de error o identificación equivocada; consentimiento a la jurisdicción del tribunal federal de distrito correspondiente en Estados Unidos (o, si resides fuera, un distrito donde pueda encontrarse al proveedor); y aceptación de notificación judicial del reclamante original o su agente. La contranotificación puede compartirse con el reclamante y exponerte a litigio. Obtén asesoría legal si tienes dudas.']],
