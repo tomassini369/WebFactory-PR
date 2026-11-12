@@ -1,12 +1,13 @@
 import './client-storefront.css'
 import { useEffect, useState } from 'react'
+import {startVisiblePolling} from './visible-polling'
 
 type Order={kind:string;items:Array<{name:string;quantity:number}>;status:string;paymentStatus:string;kitchenStatus:string;queueNumber:string;turnNumber:number;locationName:string;updatedAt:string;paidAt:string}
 
 export default function OrderTrackingPage({token}:{token:string}){
   const [copied,setCopied]=useState(false)
   const [order,setOrder]=useState<Order|null>(null);const [error,setError]=useState('');const es=document.documentElement.lang==='es'
-  useEffect(()=>{let active=true;const load=()=>fetch(`/.netlify/functions/public-order-tracking?token=${encodeURIComponent(token)}`,{cache:'no-store'}).then(async r=>{const x=await r.json();if(!r.ok)throw new Error(x.message);if(active){setOrder(x.order);setError('')}}).catch(e=>{if(active)setError(e instanceof Error?e.message:'Could not load order.')});void load();const timer=window.setInterval(load,5000);return()=>{active=false;window.clearInterval(timer)}},[token])
+  useEffect(()=>{let active=true;const polling=startVisiblePolling(signal=>fetch(`/.netlify/functions/public-order-tracking?token=${encodeURIComponent(token)}`,{cache:'no-store',signal}).then(async r=>{const x=await r.json();if(!r.ok)throw new Error(x.message);if(active){setOrder(x.order);setError('')}}).catch(e=>{if(active)setError(e instanceof Error?e.message:'Could not load order.')}),5000,{timeoutMs:15000});return()=>{active=false;polling.stop()}},[token])
   const copy=async()=>{try{await navigator.clipboard.writeText(location.href);setCopied(true)}catch{setError(es?'No se pudo copiar el enlace.':'Could not copy the link.')}}
   const share=async()=>{if(navigator.share){try{await navigator.share({title:es?'Seguimiento de pedido':'Order tracking',url:location.href})}catch{}}else await copy()}
   const kitchenLabel:Record<string,{es:string;en:string}>={received:{es:'Recibida',en:'Received'},preparing:{es:'En preparación',en:'Preparing'},ready:{es:'Lista para recoger',en:'Ready for pickup'},completed:{es:'Entregada',en:'Completed'}}

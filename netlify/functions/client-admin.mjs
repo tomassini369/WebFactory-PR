@@ -1,3 +1,6 @@
+import {normalizeTemplateOverrides} from "../../shared/template-overrides.mjs";
+import {normalizeSocialLinks} from "../../shared/social-links.mjs";
+import {normalizeSiteMusic, musicTrackLimit, siteCanPublishMusic} from "../../shared/site-music.mjs";
 import {normalizeHoursWindow} from '../../shared/business-hours.mjs';
 import {claimPublicSiteSlug, validatePublicSiteSlug} from '../lib/client-site-slug.mjs';
 import {commercialCapabilities, employeeSiteView} from "../lib/commercial-access.mjs";
@@ -9,7 +12,7 @@ import { clientAssetStore, clientSiteStore, patchClientSite, publicClientSite, r
 import { cleanText, validEmail } from "../lib/platform-utils.mjs";
 import { normalizeTaxConfig } from "../lib/webfactory-v3-domain.mjs";
 
-const allowedSections = new Set(["slug", "business", "design", "features", "catalog", "employees", "hours", "paymentRules", "settings", "taxConfig", "members", "reviewSettings"]);
+const allowedSections = new Set(["slug", "business", "design", "features", "catalog", "employees", "hours", "paymentRules", "settings", "taxConfig", "members", "reviewSettings", "music"]);
 
 function color(value, fallback) {
   const result = cleanText(value, 20);
@@ -42,8 +45,10 @@ function sanitizeBusiness(value = {}, current = {}) {
     phone: cleanText(value.phone ?? current.phone, 80),
     whatsapp: cleanText(value.whatsapp ?? current.whatsapp, 80),
     email: cleanText(value.email ?? current.email, 320),
+    address: cleanText(value.address ?? current.address, 500),
     mapsUrl: cleanText(value.mapsUrl ?? current.mapsUrl, 1500),
     locations,
+    ...(value.socialLinks === undefined ? {} : {socialLinks:normalizeSocialLinks(value.socialLinks)}),
     instagram: cleanText(value.instagram ?? current.instagram, 300),
     facebook: cleanText(value.facebook ?? current.facebook, 300),
     x: cleanText(value.x ?? current.x, 300),
@@ -192,6 +197,7 @@ export function normalizeClientSection(site, section, incoming, user, membership
         preserveTemplateStructure: true,
         mode: "template_base",
       } : payload.value?.templateSlug === "" ? { templateSlug: "", templateName: "", templateCategory: "", templateRoute: "", preserveTemplateStructure: false, mode: "custom" } : {}),
+      templateOverrides: normalizeTemplateOverrides(payload.value?.templateOverrides ?? site.design?.templateOverrides),
       style: ["Modern", "Luxury", "Minimal", "Bold"].includes(payload.value?.style) ? payload.value.style : site.design?.style,
       primary: color(payload.value?.primary, site.design?.primary || "#0B1529"),
       secondary: color(payload.value?.secondary, site.design?.secondary || "#3C86F6"),
@@ -338,6 +344,13 @@ export default async (req) => {
       const updated = await renameClientSiteSlug(site.siteId, payload.value, payload.revision);
       return Response.json({ ok: true, site: updated, publicSite: publicClientSite(updated) }, { headers: { "Cache-Control": "no-store" } });
     }
+    if (section === "music") {
+      if (!siteCanPublishMusic(site)) throw Object.assign(new Error("Music is available for artist and DJ websites."),{status:400});
+      if (!Number.isSafeInteger(payload.revision) || payload.revision!==site.revision) throw Object.assign(new Error("Reload before editing the music library."),{status:409});
+      const value=await validateMusic(payload.value,site.siteId);
+      const updated=await patchClientSite(site.siteId,{music:value},{expectedRevision:payload.revision});
+      return Response.json({ok:true,site:updated},{headers:{"Cache-Control":"no-store"}});
+    }
     const value = normalizeClientSection(site, section, payload.value, user, membership);
 
     if(['catalog','employees'].includes(section)&&!Number.isInteger(payload.revision))throw Object.assign(new Error('Reload the portal before editing the catalog.'),{status:409});
@@ -349,3 +362,21 @@ export default async (req) => {
   }
 };
 
+
+
+async function validateMusic(input,siteId) {
+  const value = normalizeSiteMusic(input,siteId);
+  const bad = message => Object.assign(new Error(message),{status:400});
+  if (!Array.isArray(input?.tracks) || input.tracks.length>musicTrackLimit || value.tracks.length!==input.tracks.length) throw bad("Check the track names and audio files.");
+  const store=clientAssetStore();
+  await Promise.all(value.tracks.map(async (row,index) => {
+    const audio=await store.getMetadata(row.audioKey);
+    if (audio?.metadata?.contentType!=="audio/mpeg") throw bad("Upload the audio again.");
+    if (input.tracks[index].coverKey && !row.coverKey) throw bad("Invalid track cover.");
+    if (row.coverKey) {
+      const cover=await store.getMetadata(row.coverKey);
+      if (!/^image\/(jpeg|png|webp|gif)$/.test(cover?.metadata?.contentType||"")) throw bad("Upload the cover again.");
+    }
+  }));
+  return value;
+}

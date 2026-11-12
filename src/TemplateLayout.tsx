@@ -10,11 +10,11 @@ import TemplateHighlights from './TemplateHighlights'
 type Props = {
  config: TemplateConfig; ui: {[K in keyof TemplateUi]: TemplateUi[K] extends string ? string : TemplateUi[K]}; language: TemplateLanguage; setLanguage: (language: TemplateLanguage) => void;
  startBooking: (item?: TemplateItem, employeeId?: string) => void; setCatalogOpen: (open: boolean) => void; setCartOpen: (open: boolean) => void;
- cart: Array<{quantity: number}>; contact?: ReactNode; map?: ReactNode; footer?: ReactNode; extraSections?: ReactNode;
+ cart: Array<{quantity: number}>; contact?: ReactNode; map?: ReactNode; footer?: ReactNode; extraSections?: ReactNode; social?: ReactNode; music?: ReactNode;
  catalogEnabled?: boolean; mainClass?: string; sectionOrder?: string[]; logoUrl?: string; locationHref?: string; phoneHref?: string;
 }
 /** The product layout. Demo, Builder and live storefront all render this component. */
-export default function TemplateLayout({config,ui,language,setLanguage,startBooking,setCatalogOpen,setCartOpen,cart,contact,map,footer,extraSections,catalogEnabled=true,mainClass='',sectionOrder,logoUrl,locationHref,phoneHref}: Props) {
+export default function TemplateLayout({config,ui,language,setLanguage,startBooking,setCatalogOpen,setCartOpen,cart,contact,map,footer,extraSections,social,music,catalogEnabled=true,mainClass='',sectionOrder,logoUrl,locationHref,phoneHref}: Props) {
  const [menuOpen,setMenuOpen] = useState(false)
  const sectionStyle = (key:string): CSSProperties | undefined => sectionOrder ? {order:sectionOrder.includes(key)?sectionOrder.indexOf(key)+2:99} : undefined
  return <>      <header className="template-header">
@@ -58,6 +58,7 @@ export default function TemplateLayout({config,ui,language,setLanguage,startBook
             {(config.location || locationHref) && <div><small>{ui.location}</small>{locationHref ? <a href={locationHref} target="_blank" rel="noreferrer">{config.location || 'Google Maps ↗'}</a> : <strong>{config.location}</strong>}</div>}
             {config.hours && <div><small>{ui.hours}</small><strong>{config.hours}</strong></div>}
             {config.phone && <div><small>{ui.call}</small>{phoneHref ? <a href={phoneHref}>{config.phone}</a> : <strong>{config.phone}</strong>}</div>}
+            {social}
           </aside>
         </section>
 
@@ -70,9 +71,11 @@ export default function TemplateLayout({config,ui,language,setLanguage,startBook
             <p>{ui.catalogIntro}</p>
           </div>
           <TemplateHighlights items={config.items} language={language}/>
+          {music}
         </section>
 
         }
+        {!catalogEnabled && music}
         {config.employees.length > 0 && (
           <section className="template-section template-team-section" id="team" style={sectionStyle("team")}>
             <div className="template-section-heading">

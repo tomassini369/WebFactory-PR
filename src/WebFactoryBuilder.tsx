@@ -1,3 +1,6 @@
+import {SocialLinksEditor} from './SiteMediaEditor'
+import {businessSocialLinks} from '../shared/social-links.mjs'
+import type {SocialLink, PublicMusic} from './TemplateMedia'
 import {usePractice} from './training/practice-context'
 import {useWorkspaceFetch} from './training/workspace-services'
 import {templateCapabilities,usesTemplateCapabilities} from './templateCapabilities'
@@ -78,6 +81,7 @@ type PaymentConfiguration = {
 }
 
 export type BuilderState = {
+  music?:PublicMusic
   business: {
     policies?: {privacy:string;terms:string;refund:string}
     name: string
@@ -90,8 +94,10 @@ export type BuilderState = {
     descriptionEn?: string
     descriptionEs?: string
     phone: string
+    socialLinks?: SocialLink[]
     whatsapp: string
     email: string
+    address?: string
     mapsUrl: string
     instagram: string
     facebook: string
@@ -111,6 +117,7 @@ export type BuilderState = {
     templateSlug: string
     customLayout: 'split' | 'centered' | 'editorial' | 'showcase'
     sectionOrder: string[]
+    templateOverrides?: Array<'style'|'primary'|'secondary'>
     style: BuilderStyle
     primary: string
     secondary: string
@@ -381,7 +388,7 @@ function Preview({state,device,lang}:{state:BuilderState;device:Device;lang:Lang
   const previewSite: StorefrontSite = {
     siteId:'builder-preview',slug:state.business.slug || 'preview',
     business:{...state.business,logoUrl:state.business.logo,heroUrl:state.business.hero,galleryUrls:state.business.gallery},
-    design:state.design,features:state.features,
+    design:state.design,features:state.features,music:state.music,
     catalog:state.catalog.map(item=>({...item,imageUrl:item.image||'',inventory:null})),employees:state.team,
     hours:state.hours,paymentRules:state.payments,settings:{locale:lang,timezone:editing?.timezone||'America/Puerto_Rico'},
   }
@@ -393,7 +400,7 @@ function BusinessStep({state,setState,lang,lockedEmail}:{state:BuilderState;setS
   const editing=useContext(EditingContext)
   const [uploadingLogo,setUploadingLogo] = useState(false)
   const [uploadError,setUploadError] = useState('')
-  const [optionalOpen,setOptionalOpen] = useState(()=>Boolean(state.business.instagram||state.business.facebook||state.business.x||state.business.mapsUrl||state.business.logoAssetKey||state.business.heroAssetKey||state.business.galleryAssets?.length))
+  const [optionalOpen,setOptionalOpen] = useState(()=>Boolean(state.business.socialLinks?.length||state.business.instagram||state.business.facebook||state.business.x||state.business.mapsUrl||state.business.logoAssetKey||state.business.heroAssetKey||state.business.galleryAssets?.length))
   const setBusiness = <K extends keyof BuilderState['business']>(key:K, value:BuilderState['business'][K]) =>
     setState((current)=>({...current,business:{...current.business,[key]:value}}))
 
@@ -477,16 +484,12 @@ function BusinessStep({state,setState,lang,lockedEmail}:{state:BuilderState;setS
       </div>
       <div className="wf-field-grid">
         <Field label={lang==='es'?'Teléfono':'Phone'} value={state.business.phone} onChange={(v)=>setBusiness('phone',v)} />
-        <Field label="WhatsApp" value={state.business.whatsapp} onChange={(v)=>setBusiness('whatsapp',v)} />
         <Field label={lang==='es'?'Email del cliente':'Customer email'} type="email" value={state.business.email} disabled={Boolean(lockedEmail)} onChange={(v)=>setBusiness('email',v)} />
       </div>
       <details className="wf-builder-disclosure" open={optionalOpen} onToggle={event=>setOptionalOpen(event.currentTarget.open)}>
         <summary>{lang==='es'?'Ubicación, redes y fotos':'Location, social links and photos'}<span>{lang==='es'?'Opcional':'Optional'}</span></summary>
-      <div className="wf-field-grid">
-        <Field label="Instagram" value={state.business.instagram} onChange={(v)=>setBusiness('instagram',v)} placeholder="https://instagram.com/..." />
-        <Field label="Facebook" value={state.business.facebook} onChange={(v)=>setBusiness('facebook',v)} placeholder="https://facebook.com/..." />
-        <Field label="X" value={state.business.x} onChange={(v)=>setBusiness('x',v)} placeholder="https://x.com/..." />
-      </div>
+      <SocialLinksEditor links={businessSocialLinks(state.business,state.features)} lang={lang} onChange={socialLinks=>setBusiness('socialLinks',socialLinks)}/>
+      <Field label={lang==='es'?'Dirección pública':'Public address'} value={state.business.address||''} onChange={value=>setBusiness('address',value)} />
       <label className="wf-field wf-maps-field">
         <span>{lang==='es'?'Enlace de Google Maps':'Google Maps link'}</span>
         <input
@@ -544,7 +547,7 @@ function templateDefaults(current:BuilderState,template:typeof templateConfigs[n
 function DesignStep({state,setState,lang}:{state:BuilderState;setState:Dispatch<SetStateAction<BuilderState>>;lang:Language}) {
   const editing=useContext(EditingContext)
   const setDesign = <K extends keyof BuilderState['design']>(key:K, value:BuilderState['design'][K]) =>
-    setState((current)=>({...current,design:{...current.design,[key]:value}}))
+    setState((current)=>({...current,design:{...current.design,[key]:value,templateOverrides:key==='style'||key==='primary'||key==='secondary'?[...new Set([...(current.design.templateOverrides||[]),key as 'style'|'primary'|'secondary'])]:current.design.templateOverrides}}))
   const selectedTemplate = templateConfigs.find((template)=>template.slug===state.design.templateSlug)
   const selectedTemplateGroup = selectedTemplate ? templateGroupForCategory(selectedTemplate.category) : undefined
   const [templateGroupId,setTemplateGroupId] = useState(selectedTemplateGroup?.id || templateGroups[0]?.id || '')
@@ -559,6 +562,7 @@ function DesignStep({state,setState,lang}:{state:BuilderState;setState:Dispatch<
       design:{
         ...current.design,
         templateSlug:slug,
+        templateOverrides:[],
         ...(template ? {primary:template.dark,secondary:template.accent,style:({modern:'Modern',luxury:'Luxury',minimal:'Minimal',bold:'Bold'} as const)[templateVisualStyle(template.category)]} : {}),
       },
     }))
@@ -568,7 +572,7 @@ function DesignStep({state,setState,lang}:{state:BuilderState;setState:Dispatch<
     if (!selectedTemplate) return
     setState((current)=>({
       ...current,
-      design:{...current.design,primary:selectedTemplate.dark,secondary:selectedTemplate.accent},
+      design:{...current.design,primary:selectedTemplate.dark,secondary:selectedTemplate.accent,templateOverrides:current.design.templateOverrides?.filter(key=>key==='style')},
     }))
   }
 
@@ -655,7 +659,7 @@ function DesignStep({state,setState,lang}:{state:BuilderState;setState:Dispatch<
           ['#191970','#FF6B35'],
           ['#17352B','#B4D59C'],
         ].map(([primary,secondary])=>(
-          <button key={primary+secondary} onClick={()=>setState((current)=>({...current,design:{...current.design,primary,secondary}}))}>
+          <button key={primary+secondary} onClick={()=>setState((current)=>({...current,design:{...current.design,primary,secondary,templateOverrides:[...new Set([...(current.design.templateOverrides||[]),'primary' as const,'secondary' as const])]}}))}>
             <i style={{background:primary}}/><i style={{background:secondary}}/>
           </button>
         ))}
@@ -671,7 +675,7 @@ function FeaturesStep({state,setState,lang}:{state:BuilderState;setState:Dispatc
       <div className="wf-step-intro"><small>{lang==='es'?'PASO 3 · FUNCIONES':'STEP 3 · FEATURES'}</small><h3>{lang==='es'?'Activa exactamente lo que tu negocio necesita.':'Enable exactly what your business needs.'}</h3><p>{lang==='es'?'Cada interruptor controla una función real del website. Si lo apagas, esa función no debe aparecer en la página publicada.':'Each switch controls a real website capability. If you turn it off, that capability should not appear on the published site.'}</p></div>
       <div className="wf-guidance"><b>{lang==='es'?'Cómo funciona':'How it works'}</b><span>{lang==='es'?'Al comenzar con un Template, sus funciones iniciales corresponden al tipo de negocio. Puedes cambiarlas aquí o luego desde el portal.':'When starting with a Template, its initial capabilities match the business type. You can change these options here or later from the portal.'}</span></div>
       <div className="wf-feature-grid">
-        {Object.entries(featureLabels[lang]).map(([key,label])=>(
+        {Object.entries(featureLabels[lang]).filter(([key])=>key!=='social'&&key!=='whatsapp').map(([key,label])=>(
           <Toggle
             key={key}
             label={label}
@@ -1124,7 +1128,7 @@ export default function WebFactoryBuilder({lang,editing}:{lang:Language;editing?
       setState((current)=>({
         ...current,
         ...(editing?{}:templateDefaults(current,template)),
-        design:{...current.design,templateSlug:template.slug,primary:template.dark,secondary:template.accent,style:({modern:'Modern',luxury:'Luxury',minimal:'Minimal',bold:'Bold'} as const)[templateVisualStyle(template.category)]},
+        design:{...current.design,templateSlug:template.slug,templateOverrides:[],primary:template.dark,secondary:template.accent,style:({modern:'Modern',luxury:'Luxury',minimal:'Minimal',bold:'Bold'} as const)[templateVisualStyle(template.category)]},
       }))
       setStep(1)
     }

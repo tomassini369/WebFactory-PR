@@ -12,7 +12,8 @@ import {renderBookingEmail} from "../lib/booking-email-template.mjs";
 import {finishBookingChange} from "../lib/booking-management.mjs";
 import { syncBookingCalendar, bookingCanSync } from "../lib/booking-calendar.mjs";
 import { assertSameOrigin, errorResponse, requireSiteAccess, requireSiteCapability, membershipHasCapability } from "../lib/client-auth.mjs";
-import { clientCommerceStore, commerceKey } from "../lib/client-store.mjs";
+import {indexedOrderTurnKeys} from "../lib/order-turn-index.mjs";
+import { clientCommerceStore, clientOrderTurnIndexStore, commerceKey } from "../lib/client-store.mjs";
 import { deleteGoogleEvent } from "../lib/google-calendar.mjs";
 import { createReceiptRecord, createInventoryMovement } from "../lib/webfactory-v3-domain.mjs";
 import { getV3Record, putV3Record } from "../lib/webfactory-v3-store.mjs";
@@ -22,8 +23,8 @@ import { assertStripeWriteAllowed } from "../lib/stripe-runtime.mjs";
 
 function env(name) { return globalThis.Netlify?.env?.get(name) || ""; }
 
-async function listRecords(siteId, kind, getStore=clientCommerceStore, visible=()=>true) {
-  const pages=getStore().list({prefix:`${siteId}/${kind}/`,paginate:true});
+async function listRecords(siteId, kind, getStore=clientCommerceStore, visible=()=>true, keys=null) {
+  const pages=keys === null ? getStore().list({prefix:`${siteId}/${kind}/`,paginate:true}) : {blobs:keys.map(key=>({key}))};
   let records=[];
   for await (const page of pages[Symbol.asyncIterator]?pages:[await pages]) {
     for(let index=0;index<(page.blobs || []).length;index+=40) {
@@ -35,12 +36,28 @@ async function listRecords(siteId, kind, getStore=clientCommerceStore, visible=(
   return records;
 }
 
-export function createCommerceAdminHandler({authorizeAccess=requireSiteAccess,authorizeCapability=requireSiteCapability,getStore=clientCommerceStore,pendingSales=listPosProcessing}={}) {return async (req) => {
+export function createCommerceAdminHandler({authorizeAccess=requireSiteAccess,authorizeCapability=requireSiteCapability,getStore=clientCommerceStore,pendingSales=listPosProcessing,getIndex=clientOrderTurnIndexStore,clock=Date.now}={}) {return async (req) => {
   try {
     if (req.method === "GET") {
-      const siteId = new URL(req.url).searchParams.get("siteId") || "";
+      const query=new URL(req.url).searchParams,siteId=query.get('siteId')||'',id=query.get('kioskSale'),kind=query.get('kind');
+      if(id===null&&query.get('view')==='kitchen'){
+        const {site,membership}=await authorizeCapability(siteId,'kitchen');
+        const now=new Date(clock());
+        const dateFormat=new Intl.DateTimeFormat('en-CA',{timeZone:site.settings?.timezone||'America/Puerto_Rico',year:'numeric',month:'2-digit',day:'2-digit'});
+        const today=dateFormat.format(now);
+        const visible=record=>{
+          if(record.kind!=='order'||!record.queueNumber||record.paymentStatus==='due'||!canAccessCommerce(site,membership,record))return false;
+          const paid=Date.parse(record.paidAt||record.createdAt);
+          return Number.isFinite(paid)&&dateFormat.format(paid)===today;
+        };
+        const commerce=getStore();
+        let keys=null;
+        try { keys=await indexedOrderTurnKeys(getIndex(),commerce,site.siteId,today); }
+        catch { /* The canonical order history remains available if the index fails. */ }
+        const orders=await listRecords(site.siteId,'orders',()=>commerce,visible,keys);
+        return Response.json({ok:true,orders:orders.map(row=>({...employeeCommerceRecord(row,membership),paidAt:row.paidAt})),bookings:[]},{headers:{'Cache-Control':'private, no-store'}});
+      }
       const { site, membership } = await authorizeAccess(siteId);
-      const query=new URL(req.url).searchParams,id=query.get('kioskSale'),kind=query.get('kind');
       if(id!==null){
         if(!/^[a-zA-Z0-9_-]{1,160}$/.test(id)||!['order','booking'].includes(kind))throw Object.assign(new Error('Invalid kiosk sale.'),{status:400});
         const record=await getStore().get(commerceKey(site.siteId,kind==='booking'?'bookings':'orders',id),{type:'json'});

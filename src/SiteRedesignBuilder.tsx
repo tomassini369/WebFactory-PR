@@ -1,21 +1,25 @@
+import {publicSiteMusic} from '../shared/site-music.mjs'
 import {useEffect, useMemo, useState} from 'react'
 import WebFactoryBuilder, {initialState, type BuilderState, type BuilderAsset} from './WebFactoryBuilder'
 import {useWorkspaceFetch} from './training/workspace-services'
-import {templateConfigs,templateVisualStyle} from './templateData'
+import {templateConfigs} from './templateData'
+import {templateAppearance} from './template-appearance'
 import {usePractice} from './training/practice-context'
 
 type Lang='es'|'en'
 export function existingBuilderState(site:any):BuilderState {
   const defaults=structuredClone(initialState)
   const template=templateConfigs.find(template=>template.slug===site.design?.templateSlug)
-  const style=template?({modern:'Modern',luxury:'Luxury',minimal:'Minimal',bold:'Bold'} as const)[templateVisualStyle(template.category)]:defaults.design.style
+  const {visualStyle,primary,accent}=templateAppearance(template,site.design)
+  const style=visualStyle.charAt(0).toUpperCase()+visualStyle.slice(1) as BuilderState['design']['style']
   const featureDefaults=Object.fromEntries(Object.keys(defaults.features).map(key=>[key,['products','services','cart'].includes(key)]))
   const closedDays=Object.fromEntries(Object.entries(defaults.hours).map(([day,hours])=>[day,{...hours,enabled:false}]))
   const url=(key:string)=>key?`/.netlify/functions/client-asset?siteId=${encodeURIComponent(site.siteId)}&key=${encodeURIComponent(key)}`:''
   return {
     ...defaults,
+    music:publicSiteMusic(site),
     business:{...defaults.business,...site.business,slug:site.slug,logo:url(site.business?.logoAssetKey),hero:url(site.business?.heroAssetKey),gallery:(site.business?.galleryAssetKeys||[]).map(url),galleryAssets:(site.business?.galleryAssetKeys||[]).map((assetKey:string)=>({assetKey,fileName:'',contentType:''}))},
-    design:{...defaults.design,style,primary:template?.dark||defaults.design.primary,secondary:template?.accent||defaults.design.secondary,...site.design},features:{...featureDefaults,...site.features},
+    design:{...defaults.design,...site.design,style,primary,secondary:accent},features:{...featureDefaults,...site.features},
     catalog:(site.catalog||[]).filter((item:any)=>item.active!==false).map((item:any)=>({...item,image:url(item.imageAssetKey)})),
     team:(site.employees||[]).filter((member:any)=>member.active!==false),
     hours:{...closedDays,...site.hours},
@@ -52,7 +56,8 @@ export default function SiteRedesignBuilder({siteId,lang}:{siteId:string;lang:La
   const publish=async(value:BuilderState)=>{
     if(practice)throw new Error(es?'Training no publica cambios.':'Training does not publish changes.')
     const template=templateConfigs.find(template=>template.slug===value.design.templateSlug)
-    const changes={...value,design:{...value.design,templateName:template?.name||'',templateCategory:template?.category||''}}
+    const {music:_music,...builderValue}=value
+    const changes={...builderValue,design:{...value.design,templateName:template?.name||'',templateCategory:template?.category||''}}
     setSaving(true)
     try{
       const result=await request('/.netlify/functions/client-admin',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({siteId,revision:site.revision,section:'builder',value:changes})})

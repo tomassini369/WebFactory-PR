@@ -3,7 +3,7 @@ import {withBookingLock} from "./booking-lock.mjs";
 import {deleteStorePrefix} from "./store-maintenance.mjs";
 import { purgeAccountSecurity } from "./mfa-security.mjs";
 import { admin } from "@netlify/identity";
-import { clientAssetStore, clientBackupStore, clientCommerceStore, clientEventStore, clientOAuthStore, clientSiteStore, emailHash, getClientSite, normalizeEmail, saveClientSite, siteKey, slugify } from "./client-store.mjs";
+import { clientAssetStore, clientBackupStore, clientCommerceStore, clientOrderTurnIndexStore, clientEventStore, clientOAuthStore, clientSiteStore, emailHash, getClientSite, normalizeEmail, saveClientSite, siteKey, slugify } from "./client-store.mjs";
 
 function env(name){return globalThis.Netlify?.env?.get(name)||"";}
 
@@ -129,6 +129,7 @@ async function purgeClientSiteRecords(siteId,{cancelSubscription=true}={}){
   }
 
   const deletedCommerce=await deletePrefix(clientCommerceStore(),`${site.siteId}/`);
+  await deletePrefix(clientOrderTurnIndexStore(), `${site.siteId}/`);
   const deletedAssets=await deletePrefix(clientAssetStore(),`sites/${site.siteId}/`);
   await deletePrefix(clientEventStore(),`${site.siteId}/`);
   await deletePrefix(clientBackupStore(),`snapshots/${site.siteId}/`);
