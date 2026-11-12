@@ -8,8 +8,10 @@ import { AdaptiveLogo, ThemeToggle } from './theme'
 
 type LegalKind='privacy'|'terms'|'refund'|'copyright'
 
-const updated={en:'Effective: September 21, 2026 · Last updated: October 4, 2026',es:'Vigente: 21 de septiembre de 2026 · Última actualización: 4 de octubre de 2026'}
-const privacyUpdated={en:'Effective: September 21, 2026 · Last updated: October 23, 2026',es:'Vigente: 21 de septiembre de 2026 · Última actualización: 23 de octubre de 2026'}
+const legalDates={
+  en:{effective:'Effective: September 21, 2026',updated:'Last updated: November 12, 2026',refund:'Last updated: October 2, 2026'},
+  es:{effective:'Vigente: 21 de septiembre de 2026',updated:'Última actualización: 12 de noviembre de 2026',refund:'Última actualización: 2 de octubre de 2026'},
+} as const
 
 const copy={
   en:{
@@ -406,10 +408,12 @@ export default function LegalPage({kind}:{kind:LegalKind}){
   const [lang,setLang]=usePortalLanguage()
   const page=kind==='copyright'?copyrightCopy[lang]:copy[lang][kind]
   const supplement=kind==='copyright'?[]:legalSupplement[lang][kind]
+  const dates=legalDates[lang]
+  const revision=kind==='copyright'?dates.updated:`${dates.effective} · ${kind==='refund'?dates.refund:dates.updated}`
   useEffect(()=>{document.documentElement.lang=lang;document.title=`${page.title} | WebFactory PR`},[lang,page.title])
   return <main className="legal-page">
     <header className="legal-top"><a href="/" className="legal-logo"><AdaptiveLogo alt="WebFactory PR"/></a><nav><a href="/templates">Templates</a><a href="/builder">Builder</a><a href="/client-admin">Log In</a><div className="legal-lang"><button className={lang==='en'?'active':''} onClick={()=>setLang('en')}>EN</button><button className={lang==='es'?'active':''} onClick={()=>setLang('es')}>ES</button></div><ThemeToggle/></nav></header>
-    <section className="legal-hero"><div><p>WEBFACTORY PR · LEGAL</p><h1>{page.title}</h1><span>{kind === 'copyright' ? '' : kind === 'privacy' ? privacyUpdated[lang] : kind === 'refund' ? updated[lang].replace('October 4', 'October 2').replace('4 de octubre', '2 de octubre') : updated[lang]}</span><p>{page.intro}</p></div></section>
+    <section className="legal-hero"><div><p>WEBFACTORY PR · LEGAL</p><h1>{page.title}</h1><span>{revision}</span><p>{page.intro}</p></div></section>
     <article className="legal-content">
       {__WF_PREVIEW_REVIEW__&&<p role="note">{legalRevision[lang]}</p>}
       {[...page.sections,...supplement].map(([title,paragraphs])=><section key={title}><h2>{title}</h2>{paragraphs.map((paragraph,index)=><p key={index}>{paragraph}</p>)}</section>)}

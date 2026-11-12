@@ -18,6 +18,8 @@ try{
    const note=page.locator('.legal-content>p[role=note]');assert.equal(await note.count(),expectPreview?1:0,`${path} preview notice follows deployment context`);
    if(expectPreview)assert.match(await note.innerText(),lang==='es'?/Borrador de preview/:/Preview draft/);
    else assert(!await page.locator('.legal-content').innerText().then(text=>text.includes('These additions are not published production policies.')||text.includes('Estas adiciones no son políticas publicadas en producción.')));
+   const policyText=await page.locator('.legal-content > section').allTextContents();
+   for(const section of policyText)assert.doesNotMatch(section,/\bpreview\b|avisos de borrador/i,`${path} policy body contains preview copy`);
    if(path==='/copyright'){await page.getByRole('link',{name:'agent@example.invalid',exact:true}).waitFor();assert.match(await page.locator('.legal-content').innerText(),/DMCA-123/)}
    assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));assert.deepEqual(errors,[]);console.log('PASS legal publication context and configured contact',engine,width,theme,lang,path,expectPreview?'preview':'production');
   }
