@@ -235,3 +235,26 @@
  .wf-memberships .pricing-card {padding:22px;}
  .wf-memberships .membership-nav {display:flex;}
 }
+
+.wf-membership-toggle {display:none;}
+@media(max-width:960px) {
+ .wf-home-memberships {scroll-margin-top:128px;}
+ .wf-home-memberships .wf-membership-toggle {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+  width:100%;
+  min-height:54px;
+  padding:10px 16px;
+  border:1px solid var(--hp-line);
+  border-radius:12px;
+  background:var(--hp-panel);
+  color:var(--hp-text);
+  text-align:start;
+ }
+ .wf-membership-toggle small {display:block;color:var(--hp-muted);margin-top:2px;}
+ .wf-membership-toggle svg {flex:none;color:var(--hp-blue);}
+ .wf-membership-toggle[aria-expanded="true"] svg {transform:rotate(180deg);}
+ .wf-membership-toggle[aria-expanded="false"] + .wf-home-plan-options {display:none;}
+}

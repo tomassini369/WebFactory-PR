@@ -9,7 +9,7 @@ import './home-craft-phase2.css'
 import { useSelectionPill } from './useSelectionPill'
 import MarketplaceReturn from './MarketplaceReturn'
 import MembershipPlans from './MembershipPlans'
-import {membershipTrialDays} from '../shared/membership-plans.mjs'
+import {membershipPlans,membershipTrialDays} from '../shared/membership-plans.mjs'
 
 type Language = 'en' | 'es'
 
@@ -368,6 +368,14 @@ export default function HomePage({ lang, setLang }: { lang: Language, setLang: (
   const startTrial=showPlans?(lang==='es'?`Prueba Premium gratis por ${membershipTrialDays} días`:`Try Premium free for ${membershipTrialDays} days`):t.start;
   const trialText=showPlans?(lang==='es'?'Sin tarjeta · Elige tu plan al terminar · Desde $30 al mes':'No card · Choose your plan after the trial · From $30 per month'):t.trial;
   const [menu, setMenu] = useState(false)
+  const [plansOpen, setPlansOpen] = useState(() => window.location.hash === '#planes')
+  useEffect(() => {
+    const revealLinkedPlans = () => {
+      if (window.location.hash === '#planes') setPlansOpen(true)
+    }
+    window.addEventListener('hashchange', revealLinkedPlans)
+    return () => window.removeEventListener('hashchange', revealLinkedPlans)
+  }, [])
   const [step, setStep] = useState(0)
   const [scrolled, setScrolled] = useState(false)
   const reduced = usePrefersReducedMotion()
@@ -424,7 +432,7 @@ export default function HomePage({ lang, setLang }: { lang: Language, setLang: (
     <header className={'wf-h-header' + (scrolled ? ' scrolled' : '')}>
       <div className="wf-h-header-inner">
         <a href="/" className="wf-h-logo"><AdaptiveLogo alt="WebFactory PR" /></a>
-        <nav id="wf-main-nav" className={menu ? 'open' : ''} aria-label={t.mainNav}><a href="/" onClick={() => setMenu(false)}>{t.marketplaceNav}</a>{t.nav.map((label, i) => <a key={label} href={nav[i]} onClick={() => setMenu(false)}>{label}</a>)}<a href="/templates" onClick={() => setMenu(false)}>{t.templatesNav}</a></nav>
+        <nav id="wf-main-nav" className={menu ? 'open' : ''} aria-label={t.mainNav}><a href="/" onClick={() => setMenu(false)}>{t.marketplaceNav}</a>{t.nav.map((label, i) => <a key={label} href={nav[i]} onClick={() => { setMenu(false); if (nav[i] === '#planes') setPlansOpen(true) }}>{label}</a>)}<a href="/templates" onClick={() => setMenu(false)}>{t.templatesNav}</a></nav>
         <div className="wf-h-actions">
           <MarketplaceReturn lang={lang}/>
           <div className="wf-h-languages" role="group" aria-label="Language / Idioma"><button aria-pressed={lang === 'en'} onClick={() => setLang('en')}>EN</button><button aria-pressed={lang === 'es'} onClick={() => setLang('es')}>ES</button></div>
@@ -445,7 +453,7 @@ export default function HomePage({ lang, setLang }: { lang: Language, setLang: (
             <h1>{t.title}<em>{t.accent}</em></h1>
             <p className="wf-lead">{t.lead}</p>
             <ul className="wf-hero-modules" aria-label={t.platformLabel}>{t.modules.map((m, i) => <li key={m} style={{ '--i': i } as CSSProperties}><Icon name={moduleIcons[i]} />{m}</li>)}</ul>
-            <div className="wf-actions"><a className="wf-btn" href={previewPlans&&!tiered?"#planes":"/builder"}>{startTrial}<span aria-hidden="true">↗</span></a><a className="wf-link" href="/templates">{t.templates} →</a></div>
+            <div className="wf-actions"><a className="wf-btn" href={previewPlans&&!tiered?"#planes":"/builder"} onClick={previewPlans&&!tiered?()=>setPlansOpen(true):undefined}>{startTrial}<span aria-hidden="true">↗</span></a><a className="wf-link" href="/templates">{t.templates} →</a></div>
             <p className="wf-trial">{trialText}</p>
           </div>
 
@@ -453,7 +461,17 @@ export default function HomePage({ lang, setLang }: { lang: Language, setLang: (
         <a className="wf-scroll-cue" href="#recorrido"><span aria-hidden="true" />{t.scroll}</a>
       </section>
 
-      {showPlans&&<section className="wf-section wf-shell" id="planes"><MembershipPlans lang={lang}/>{previewPlans&&!tiered&&<p style={{textAlign:'center'}}>{lang==='es'?'Vista de revisión de las nuevas membresías.':'Review preview of the new memberships.'}</p>}</section>}
+      {showPlans&&<section className="wf-section wf-shell wf-home-memberships" id="planes">
+        <button type="button" className="wf-membership-toggle" aria-expanded={plansOpen} aria-controls="wf-home-plan-options" onClick={() => setPlansOpen(open => !open)}>
+          <span><strong>{lang==='es'?(plansOpen?'Ocultar planes':'Ver planes'):(plansOpen?'Hide plans':'View plans')}</strong>
+            <small>{lang==='es'?`Desde $${membershipPlans.basic.monthly} al mes`:`From $${membershipPlans.basic.monthly} per month`}</small></span>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+        </button>
+        <div id="wf-home-plan-options" className="wf-home-plan-options">
+          <MembershipPlans lang={lang} disclosed={plansOpen}/>
+          {previewPlans&&!tiered&&<p style={{textAlign:'center'}}>{lang==='es'?'Vista de revisión de las nuevas membresías.':'Review preview of the new memberships.'}</p>}
+        </div>
+      </section>}
       <section className="wf-tour" id="recorrido" ref={tourRef} aria-labelledby="wf-tour-title">
         <div className="wf-shell">
           <div className="wf-heading" data-reveal><p className="wf-eyebrow">{t.tourLabel}</p><h2 id="wf-tour-title">{t.tourTitle}</h2><p>{t.tourText}</p></div>
@@ -494,14 +512,14 @@ export default function HomePage({ lang, setLang }: { lang: Language, setLang: (
       <section className="wf-section wf-shell" id={showPlans?undefined:"planes"}>
         {!showPlans&&<div className="wf-pricing" data-reveal>
           <div><p className="wf-eyebrow">{t.priceLabel}</p><h2>{t.priceTitle}</h2><p>{t.priceText}</p><span>{t.noCommission}</span></div>
-          <div className="wf-price"><strong>$30<small>{t.perMonth}</small></strong><p>{t.annual}</p><a className="wf-btn" href={previewPlans&&!tiered?"#planes":"/builder"}>{startTrial}<span aria-hidden="true">↗</span></a><small>{t.trialShort}</small></div>
+          <div className="wf-price"><strong>$30<small>{t.perMonth}</small></strong><p>{t.annual}</p><a className="wf-btn" href={previewPlans&&!tiered?"#planes":"/builder"} onClick={previewPlans&&!tiered?()=>setPlansOpen(true):undefined}>{startTrial}<span aria-hidden="true">↗</span></a><small>{t.trialShort}</small></div>
         </div>}
         <div id="faq" className="wf-faq" tabIndex={-1} aria-label="FAQ">{t.faq.map(([q, a]) => <details key={q}><summary>{q}<span aria-hidden="true">+</span></summary><p>{a}</p></details>)}</div>
       </section>
 
       <section className="wf-final wf-shell" data-reveal>
         <h2>{t.finalTitle}</h2><p>{t.finalText}</p>
-        <div className="wf-actions"><a className="wf-btn" href={previewPlans&&!tiered?"#planes":"/builder"}>{startTrial}<span aria-hidden="true">↗</span></a><a className="wf-link" href="/client-admin">{t.login} →</a></div>
+        <div className="wf-actions"><a className="wf-btn" href={previewPlans&&!tiered?"#planes":"/builder"} onClick={previewPlans&&!tiered?()=>setPlansOpen(true):undefined}>{startTrial}<span aria-hidden="true">↗</span></a><a className="wf-link" href="/client-admin">{t.login} →</a></div>
       </section>
     </main>
 

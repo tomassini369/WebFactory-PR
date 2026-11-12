@@ -1,4 +1,4 @@
-import {useLayoutEffect,useRef,useState} from 'react'
+import {useCallback,useLayoutEffect,useRef,useState} from 'react'
 import {motion,useReducedMotion} from 'framer-motion'
 import {membershipIds,membershipPlans,membershipTrialDays,type MembershipId,type MembershipInterval} from '../shared/membership-plans.mjs'
 import './membership-plans.css'
@@ -100,21 +100,22 @@ const descriptions = {
 type Language='en'|'es';
 type Selection={tier:MembershipId;interval:MembershipInterval};
 
-export default function MembershipPlans({lang,onSelect,onIntervalChange,disabled=false}:{lang:Language;onSelect?:(selection:Selection)=>void;onIntervalChange?:()=>void;disabled?:boolean}){
+export default function MembershipPlans({lang,onSelect,onIntervalChange,disabled=false,disclosed=true}:{lang:Language;onSelect?:(selection:Selection)=>void;onIntervalChange?:()=>void;disabled?:boolean;disclosed?:boolean}){
  const es=lang==='es'
  const reduced=useReducedMotion()
  const rail=useRef<HTMLDivElement>(null)
  const [interval,setInterval]=useState<MembershipInterval>('monthly')
  const [active,setActive]=useState(1)
+ const activeIndex=useRef(1)
  const [hovered,setHovered]=useState<MembershipId|null>(null)
  const [expanded,setExpanded]=useState<MembershipId|null>(null)
- const center=(index:number,smooth=false)=>{
+ const center=useCallback((index:number,smooth=false)=>{
   const container=rail.current
   const card=container?.children[index] as HTMLElement|undefined
   if(!container||!card||container.scrollWidth<=container.clientWidth)return
   container.scrollTo({left:card.offsetLeft-(container.clientWidth-card.offsetWidth)/2,behavior:smooth&&!reduced?'smooth':'instant'})
- }
- useLayoutEffect(()=>{center(1)},[])
+ },[reduced])
+ useLayoutEffect(()=>{if(disclosed)center(activeIndex.current)},[disclosed,center])
  const changeInterval=(next:MembershipInterval)=>{
   if(next===interval)return
   setInterval(next)
@@ -122,6 +123,7 @@ export default function MembershipPlans({lang,onSelect,onIntervalChange,disabled
  }
  const navigate=(index:number)=>{
   if(index<0||index>=membershipIds.length)return
+  activeIndex.current=index
   setActive(index);center(index,true)
  }
  const track=()=>{
@@ -129,7 +131,8 @@ export default function MembershipPlans({lang,onSelect,onIntervalChange,disabled
   if(!container||container.scrollWidth<=container.clientWidth)return
   const midpoint=container.scrollLeft+container.clientWidth/2
   const distances=Array.from(container.children,node=>Math.abs((node as HTMLElement).offsetLeft+(node as HTMLElement).offsetWidth/2-midpoint))
-  setActive(distances.indexOf(Math.min(...distances)))
+  activeIndex.current=distances.indexOf(Math.min(...distances))
+  setActive(activeIndex.current)
  }
  return <div className="wf-memberships">
   {!onSelect&&<header><h2>{es?'Planes desde $30 al mes':'Plans from $30 per month'}</h2><p>{es?`${membershipTrialDays} días de Premium gratis. Al terminar, elige tu plan mensual o anual.`:`${membershipTrialDays} days of Premium free. Choose your monthly or annual plan when the trial ends.`}</p></header>}
