@@ -1,15 +1,15 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { billingStateWithReconciliation, billingEventIgnoreReason, billingStateFor, createComplimentaryServicePlan, createSubscriptionRequiredServicePlan, createTrialServicePlan, siteEntitlement } from "./subscription-billing.mjs";
+import { billingStateWithReconciliation, billingEventIgnoreReason, billingStateFor, createComplimentaryServicePlan, createSubscriptionRequiredServicePlan, createTrialServicePlan, siteEntitlement, subscriptionBillingReadiness } from "./subscription-billing.mjs";
 
-test("new trials last exactly 7 days", () => {
+test("new trials last exactly 14 days without billing configuration", () => {
   const started = new Date("2026-09-21T12:00:00.000Z");
   const plan = createTrialServicePlan(started);
   assert.equal(plan.trialStartedAt, "2026-09-21T12:00:00.000Z");
-  assert.equal(plan.trialEndsAt, "2026-09-28T12:00:00.000Z");
-  assert.equal(plan.trialPolicyVersion, "v3-7d");
-  assert.equal(siteEntitlement({ servicePlan: plan }, new Date("2026-09-28T11:59:59.999Z")).public, true);
-  assert.equal(siteEntitlement({ servicePlan: plan }, new Date("2026-09-28T12:00:00.000Z")).public, false);
+  assert.equal(plan.trialEndsAt, "2026-10-05T12:00:00.000Z");
+  assert.equal(plan.trialPolicyVersion, "membership-14d");
+  assert.equal(siteEntitlement({ servicePlan: plan }, new Date("2026-10-05T11:59:59.999Z")).public, true);
+  assert.equal(siteEntitlement({ servicePlan: plan }, new Date("2026-10-05T12:00:00.000Z")).public, false);
 });
 
 test("complimentary access is active without expiration or Stripe subscription", () => {
@@ -160,4 +160,27 @@ test("a membership trial grants Premium for 14 days and a verified Stripe price 
   await assert.rejects(billingStateWithReconciliation(event,site,async () => ({
     ...canonical,items:{data:[{quantity:1,price:{id:"price_wrong"}}]},
   })), {status:503});
+});
+
+test("old Stripe prices do not open checkout for new memberships", t => {
+  const previous = globalThis.Netlify;
+  const values = {
+    WEBFACTORY_SUBSCRIPTION_ENABLED: "true",
+    WEBFACTORY_TIERED_PLANS_ENABLED: "true",
+    STRIPE_SECRET_KEY: "configured",
+    STRIPE_WEBHOOK_SECRET: "whsec_fixture",
+    STRIPE_PRICE_WEBFACTORY_MONTHLY: "price_legacy_monthly",
+    STRIPE_PRICE_WEBFACTORY_ANNUAL: "price_legacy_annual",
+  };
+  globalThis.Netlify = {env:{get:key=>values[key]}};
+  t.after(() => { globalThis.Netlify = previous; });
+  assert.equal(subscriptionBillingReadiness().ready,false);
+  for (const tier of ["BASIC","STANDARD","PREMIUM"]) {
+    for (const interval of ["MONTHLY","ANNUAL"]) {
+      values[`STRIPE_PRICE_WEBFACTORY_${tier}_${interval}`] = `price_${tier}_${interval}`;
+    }
+  }
+  assert.equal(subscriptionBillingReadiness().ready,true);
+  values.WEBFACTORY_TIERED_PLANS_ENABLED = "false";
+  assert.equal(subscriptionBillingReadiness().ready,false);
 });

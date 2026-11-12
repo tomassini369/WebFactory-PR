@@ -23,20 +23,18 @@ export function subscriptionBillingEnabled() {
 export function subscriptionBillingReadiness() {
   const enabled = subscriptionBillingEnabled();
   const stripeSecretConfigured = Boolean(env("STRIPE_SECRET_KEY"));
-  const monthlyPriceConfigured = env("STRIPE_PRICE_WEBFACTORY_MONTHLY").startsWith("price_");
-  const annualPriceConfigured = env("STRIPE_PRICE_WEBFACTORY_ANNUAL").startsWith("price_");
   const webhookConfigured = env("STRIPE_WEBHOOK_SECRET").startsWith("whsec_");
-  const tiered = membershipEnabled();
+  const tierCheckoutEnabled = membershipEnabled();
   const tierPriceIds = membershipIds.flatMap(tier=>['monthly','annual'].map(interval=>env(membershipPriceEnv(tier,interval))));
   const tierPricesConfigured = tierPriceIds.every(id=>id.startsWith('price_')) && new Set(tierPriceIds).size===tierPriceIds.length;
-  const checks = tiered ? {stripeSecretConfigured,tierPricesConfigured,webhookConfigured} : {stripeSecretConfigured,monthlyPriceConfigured,annualPriceConfigured,webhookConfigured};
+  const checks = {stripeSecretConfigured,tierPricesConfigured,webhookConfigured,tierCheckoutEnabled};
   const missing = Object.entries(checks)
     .filter(([, configured]) => !configured)
     .map(([name]) => name);
   return {
-    enabled,tiered,
+    enabled,
     ...checks,
-    priceConfigured: tiered ? tierPricesConfigured : monthlyPriceConfigured && annualPriceConfigured,
+    priceConfigured: tierPricesConfigured,
     missing,
     ready: enabled && missing.length === 0,
   };
@@ -44,16 +42,15 @@ export function subscriptionBillingReadiness() {
 
 export function createTrialServicePlan(now = new Date()) {
   const started = new Date(now);
-  const tiered=membershipEnabled();
-  const ends = new Date(started.getTime() + (tiered?membershipTrialDays:7) * 24 * 60 * 60 * 1000);
+  const ends = new Date(started.getTime() + membershipTrialDays * 24 * 60 * 60 * 1000);
   return {
     code: "webfactory-saas",
     name: "WebFactory Commerce Platform",
     billingModel: "subscription",
     billingStatus: "trial",
     subscriptionStatus: "trial",
-    trialPolicyVersion: tiered ? "membership-14d" : "v3-7d",
-    ...(tiered?{tier:"premium"}:{}),
+    trialPolicyVersion: "membership-14d",
+    tier: "premium",
     migrationEligible: false,
     trialStartedAt: started.toISOString(),
     trialEndsAt: ends.toISOString(),

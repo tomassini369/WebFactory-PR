@@ -34,12 +34,11 @@ export default async (req) => {
       throw Object.assign(new Error("Only the business owner can select a subscription."), { status: 403 });
     }
     const readiness = subscriptionBillingReadiness();
-    if(!readiness.tiered&&site.servicePlan?.trialPolicyVersion==="membership-14d")throw Object.assign(new Error("Membership checkout is unavailable."),{status:503});
-    if(readiness.tiered ? !isMembershipId(payload.tier) : payload.tier!==undefined)throw Object.assign(new Error("Choose an available membership plan."),{status:400});
+    if(!isMembershipId(payload.tier))throw Object.assign(new Error("Choose an available membership plan."),{status:400});
     const consent = subscriptionConsent(payload, user);
     const trialPending = plan => plan?.subscriptionStatus==='not_started' ||
       (plan?.subscriptionStatus==='trial' && Date.parse(plan.trialEndsAt)>Date.now());
-    if(readiness.tiered && trialPending(site.servicePlan))throw Object.assign(new Error("Choose a membership when your trial ends."),{status:409});
+    if(trialPending(site.servicePlan))throw Object.assign(new Error("Choose a membership when your trial ends."),{status:409});
     if (!readiness.ready) throw Object.assign(new Error("WebFactory subscriptions are not enabled yet."), { status: 503 });
     if (site.servicePlan?.billingModel !== "subscription") {
       throw Object.assign(new Error("This website is not enrolled in the subscription model."), { status: 409 });
@@ -49,9 +48,7 @@ export default async (req) => {
     }
 
     assertStripeWriteAllowed({ requestUrl: req.url });
-    const price = readiness.tiered ? env(membershipPriceEnv(consent.tier,interval)) : interval === "annual"
-      ? env("STRIPE_PRICE_WEBFACTORY_ANNUAL")
-      : env("STRIPE_PRICE_WEBFACTORY_MONTHLY");
+    const price = env(membershipPriceEnv(consent.tier,interval));
     const stripe = new Stripe(env("STRIPE_SECRET_KEY"), { apiVersion: "2026-07-29.dahlia" });
     const base = publicBaseUrl();
     const configuredPrice = await stripe.prices.retrieve(price);
@@ -62,7 +59,7 @@ export default async (req) => {
     const store = clientEventStore();
     const session = await withBookingLock(store, `locks/subscription-checkout/${site.siteId}`, async () => {
       const current = await getClientSite(site.siteId);
-      if(!current||current.servicePlan?.billingModel!=="subscription"||readiness.tiered&&trialPending(current.servicePlan))throw Object.assign(new Error("Subscription checkout is not available for this website."),{status:409});
+      if(!current||current.servicePlan?.billingModel!=="subscription"||trialPending(current.servicePlan))throw Object.assign(new Error("Subscription checkout is not available for this website."),{status:409});
       if (["active", "trialing"].includes(current?.servicePlan?.subscriptionStatus)) {
         throw Object.assign(new Error("This website already has an active subscription."), { status: 409 });
       }

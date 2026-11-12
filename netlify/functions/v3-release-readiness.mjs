@@ -30,8 +30,7 @@ export default async(req)=>{
     checks,
     subscription:{
       enabled:subscription.enabled,
-      monthlyPriceConfigured:subscription.monthlyPriceConfigured,
-      annualPriceConfigured:subscription.annualPriceConfigured,
+      tierPricesConfigured:subscription.tierPricesConfigured,
       webhookConfigured:subscription.webhookConfigured,
     },
     commerce,

@@ -8,7 +8,7 @@ The plan catalog in `shared/membership-plans.mjs` supplies the landing page, the
 | Standard | 49 | 490 |
 | Premium | 79 | 790 |
 
-With tiered billing enabled, new trials grant Premium for 14 days without a card. The owner chooses a tier and billing interval after the trial, accepts the displayed renewal terms and completes Stripe Checkout. The signed webhook reconciles the Stripe subscription and its Price ID before assigning the paid tier. Stripe Connect and merchant customer payments remain separate from the WebFactory subscription.
+New trials grant Premium for 14 days without a card. The owner chooses a tier and billing interval after the trial, accepts the displayed renewal terms and completes Stripe Checkout. The signed webhook reconciles the Stripe subscription and its Price ID before assigning the paid tier. Stripe Connect and merchant customer payments remain separate from the WebFactory subscription.
 
 ## Deploy Preview and release
 
@@ -17,6 +17,7 @@ With tiered billing enabled, new trials grant Premium for 14 days without a card
   - `STRIPE_PRICE_WEBFACTORY_BASIC_MONTHLY` and `STRIPE_PRICE_WEBFACTORY_BASIC_ANNUAL`
   - `STRIPE_PRICE_WEBFACTORY_STANDARD_MONTHLY` and `STRIPE_PRICE_WEBFACTORY_STANDARD_ANNUAL`
   - `STRIPE_PRICE_WEBFACTORY_PREMIUM_MONTHLY` and `STRIPE_PRICE_WEBFACTORY_PREMIUM_ANNUAL`
-- Set `WEBFACTORY_TIERED_PLANS_ENABLED=true` for Functions and `VITE_WEBFACTORY_TIERED_PLANS_ENABLED=true` for the site build once the six prices and webhook are configured. Unconfigured Deploy Previews show the comparison for review.
+- Set `WEBFACTORY_TIERED_PLANS_ENABLED=true` for Functions after the six prices and webhook have been verified. Without billing configuration the trial and plan comparison are available, but checkout is disabled. The old offer cannot be purchased through the checkout endpoint.
 - Verify a new 14-day trial, expiration, selection and recorded consent for the exact interval and amount, duplicate checkout recovery, signed webhook activation and cancellation. Verify direct endpoint access for each tier as well as the portal and storefront.
+- Before cutover, expire any still-open Checkout Sessions for the retired offer. Leave existing paid subscriptions and their renewal events intact.
 - Existing legacy subscriptions retain their current prices and access. This release does not add a self-service paid-plan change or per-location Stripe add-on. Confirm the supported scope before marketing either feature.

@@ -1,15 +1,15 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { subscriptionConsent, assertSubscriptionBelongsToSite, SUBSCRIPTION_CONSENT_VERSION } from "./subscription-consent.mjs";
+import { subscriptionConsent, assertSubscriptionBelongsToSite } from "./subscription-consent.mjs";
 
 test("billing requires explicit acceptance of the current renewal disclosure", () => {
   const user = { email: "owner@example.com" };
   for (const renewalAccepted of [false, undefined, "true"]) {
-    assert.throws(() => subscriptionConsent({ interval: "monthly", renewalAccepted, consentVersion: SUBSCRIPTION_CONSENT_VERSION }, user), { status: 400 });
+    assert.throws(() => subscriptionConsent({ tier:"basic", interval: "monthly", renewalAccepted, consentVersion: "membership-v1" }, user), { status: 400 });
   }
-  assert.throws(() => subscriptionConsent({ interval: "annual", renewalAccepted: true, consentVersion: "outdated" }, user), { status: 400 });
-  const consent = subscriptionConsent({ interval: "annual", renewalAccepted: true, consentVersion: SUBSCRIPTION_CONSENT_VERSION }, user, new Date("2026-10-02T00:00:00Z"));
-  assert.equal(consent.amountUsd, 350);
+  assert.throws(() => subscriptionConsent({ tier:"basic", interval: "annual", renewalAccepted: true, consentVersion: "outdated" }, user), { status: 400 });
+  const consent = subscriptionConsent({ tier:"basic", interval: "annual", renewalAccepted: true, consentVersion: "membership-v1" }, user, new Date("2026-10-02T00:00:00Z"));
+  assert.equal(consent.amountUsd, 300);
   assert.equal(consent.acceptedBy, user.email);
   assert.equal(consent.acceptedAt, "2026-10-02T00:00:00.000Z");
 });
@@ -30,5 +30,6 @@ test("membership consent records the server amount for the selected tier and int
   assert.equal(consent.tier,"standard");
   assert.equal(consent.amountUsd,490);
   assert.throws(() => subscriptionConsent({...payload,tier:"enterprise"},user), {status:400});
-  assert.throws(() => subscriptionConsent({...payload,consentVersion:SUBSCRIPTION_CONSENT_VERSION},user), {status:400});
+  assert.throws(() => subscriptionConsent({...payload,tier:undefined},user), {status:400});
+  assert.throws(() => subscriptionConsent({...payload,consentVersion:"2026-10-02"},user), {status:400});
 });

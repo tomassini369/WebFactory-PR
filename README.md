@@ -4,12 +4,11 @@ Official WebFactory PR business platform.
 
 ## Current product
 
-Repository audit: current source and production model use WebFactory V3 only — 7-day trial, subscription billing, complimentary access, Templates, current portals and V3 commerce/operations. Pre-V3 order, package and demo compatibility code has been removed.
+Repository audit: current source and production model use WebFactory V3 only — 14-day trial, subscription billing, complimentary access, Templates, current portals and V3 commerce/operations. Pre-V3 order, package and demo compatibility code has been removed.
 
 **WebFactory Business Platform — subscription SaaS**
 
-- 7-day free trial with no card.
-- $30 USD monthly or $350 USD yearly.
+- 14-day free trial with no card.
 - Multi-tenant business website plus private administration portal.
 - Products and services, bookings, employees, CRM, receipts, inventory, analytics, payment links, QR payments and browser/PWA POS.
 - Stripe Billing for WebFactory subscriptions.
@@ -24,17 +23,13 @@ Only the current subscription and complimentary-access models are supported.
 
 ## Trial and publishing
 
-The Builder can create and preview a business before payment. A new business remains private until the owner starts the 7-day free trial or receives complimentary access.
+The Builder can create and preview a business before payment. A new business remains private until the owner starts the 14-day free trial or receives complimentary access.
 
 After the trial, continued public availability requires an active WebFactory subscription.
 
 ## Pricing
 
-The current production offer is listed below. For the new Basic, Standard and Premium offer, including the 14-day trial and Stripe release configuration, see [WebFactory memberships](docs/membership-billing.md).
-
-- Monthly: $30 USD.
-- Annual: $350 USD.
-- Annual savings versus 12 monthly payments: $10 USD.
+Basic, Standard and Premium are available monthly or annually. See [WebFactory memberships](docs/membership-billing.md) for pricing and billing configuration.
 
 The browser never supplies an authoritative subscription price. The server selects the configured Stripe Price ID.
 
@@ -66,8 +61,8 @@ The browser never supplies an authoritative subscription price. The server selec
 ## Subscription environment variables
 
 - `STRIPE_SECRET_KEY`
-- `STRIPE_PRICE_WEBFACTORY_MONTHLY`
-- `STRIPE_PRICE_WEBFACTORY_ANNUAL`
+- [Six membership Stripe Price IDs](docs/membership-billing.md)
+- `WEBFACTORY_TIERED_PLANS_ENABLED=true` after checkout verification
 - `STRIPE_WEBHOOK_SECRET`
 - `STRIPE_CONNECT_WEBHOOK_SECRET`
 - `WEBFACTORY_SUBSCRIPTION_ENABLED=true`
