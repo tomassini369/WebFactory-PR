@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { createTrialEnforcementHandler } from "./enforce-client-trials.mjs";
+import { createTrialEnforcementHandler } from "../functions/enforce-client-trials.mjs";
 
 test("a payment that wins the trial-expiry race stays active while other expired trials are updated", async () => {
   const clock = () => Date.parse("2026-11-12T19:00:00Z");
