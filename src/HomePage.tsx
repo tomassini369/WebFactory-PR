@@ -364,9 +364,10 @@ export default function HomePage({ lang, setLang }: { lang: Language, setLang: (
   const t = copy[lang]
   const previewPlans=typeof __WF_PREVIEW_REVIEW__!=='undefined'&&__WF_PREVIEW_REVIEW__;
   const tiered=import.meta.env.VITE_WEBFACTORY_TIERED_PLANS_ENABLED==='true';
-  const showPlans=previewPlans||tiered;
-  const startTrial=showPlans?(lang==='es'?`Prueba Premium gratis por ${membershipTrialDays} días`:`Try Premium free for ${membershipTrialDays} days`):t.start;
-  const trialText=showPlans?(lang==='es'?'Sin tarjeta · Elige tu plan al terminar · Desde $30 al mes':'No card · Choose your plan after the trial · From $30 per month'):t.trial;
+  const showTrialOffer=previewPlans||tiered;
+  const upcomingPlans=!showTrialOffer;
+  const startTrial=showTrialOffer?(lang==='es'?`Prueba Premium gratis por ${membershipTrialDays} días`:`Try Premium free for ${membershipTrialDays} days`):t.start;
+  const trialText=showTrialOffer?(lang==='es'?'Sin tarjeta · Elige tu plan al terminar · Desde $30 al mes':'No card · Choose your plan after the trial · From $30 per month'):t.trial;
   const [menu, setMenu] = useState(false)
   const [plansOpen, setPlansOpen] = useState(() => window.location.hash === '#planes')
   useEffect(() => {
@@ -461,7 +462,8 @@ export default function HomePage({ lang, setLang }: { lang: Language, setLang: (
         <a className="wf-scroll-cue" href="#recorrido"><span aria-hidden="true" />{t.scroll}</a>
       </section>
 
-      {showPlans&&<section className="wf-section wf-shell wf-home-memberships" id="planes">
+      <section className="wf-section wf-shell wf-home-memberships" id="planes">
+        {upcomingPlans&&<p className="wf-eyebrow">{lang==='es'?'Próximas membresías':'Upcoming memberships'}</p>}
         <button type="button" className="wf-membership-toggle" aria-expanded={plansOpen} aria-controls="wf-home-plan-options" onClick={() => setPlansOpen(open => !open)}>
           <span><strong>{lang==='es'?(plansOpen?'Ocultar planes':'Ver planes'):(plansOpen?'Hide plans':'View plans')}</strong>
             <small>{lang==='es'?`Desde $${membershipPlans.basic.monthly} al mes`:`From $${membershipPlans.basic.monthly} per month`}</small></span>
@@ -469,9 +471,10 @@ export default function HomePage({ lang, setLang }: { lang: Language, setLang: (
         </button>
         <div id="wf-home-plan-options" className="wf-home-plan-options">
           <MembershipPlans lang={lang} disclosed={plansOpen}/>
+          {upcomingPlans&&<p>{lang==='es'?'Puedes comparar estos planes antes de su lanzamiento. Consulta la oferta vigente más abajo.':'Compare these plans ahead of launch. See the current offer below.'}</p>}
           {previewPlans&&!tiered&&<p style={{textAlign:'center'}}>{lang==='es'?'Vista de revisión de las nuevas membresías.':'Review preview of the new memberships.'}</p>}
         </div>
-      </section>}
+      </section>
       <section className="wf-tour" id="recorrido" ref={tourRef} aria-labelledby="wf-tour-title">
         <div className="wf-shell">
           <div className="wf-heading" data-reveal><p className="wf-eyebrow">{t.tourLabel}</p><h2 id="wf-tour-title">{t.tourTitle}</h2><p>{t.tourText}</p></div>
@@ -509,8 +512,8 @@ export default function HomePage({ lang, setLang }: { lang: Language, setLang: (
         <div className="wf-how">{t.how.map(([title, text], i) => <article key={i} data-reveal style={{ '--i': i } as CSSProperties}><span>0{i + 1}</span><h3>{title}</h3><p>{text}</p></article>)}</div>
       </section>
 
-      <section className="wf-section wf-shell" id={showPlans?undefined:"planes"}>
-        {!showPlans&&<div className="wf-pricing" data-reveal>
+      <section className="wf-section wf-shell" id={upcomingPlans?"oferta-vigente":undefined}>
+        {upcomingPlans&&<div className="wf-pricing" data-reveal>
           <div><p className="wf-eyebrow">{t.priceLabel}</p><h2>{t.priceTitle}</h2><p>{t.priceText}</p><span>{t.noCommission}</span></div>
           <div className="wf-price"><strong>$30<small>{t.perMonth}</small></strong><p>{t.annual}</p><a className="wf-btn" href={previewPlans&&!tiered?"#planes":"/builder"} onClick={previewPlans&&!tiered?()=>setPlansOpen(true):undefined}>{startTrial}<span aria-hidden="true">↗</span></a><small>{t.trialShort}</small></div>
         </div>}
