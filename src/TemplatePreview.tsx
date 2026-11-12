@@ -3,12 +3,12 @@ import type { ReceiptRecord } from './ReceiptPaper'
 import PortalReturnHome from './PortalReturnHome'
 import { useFlyToCart } from './useFlyToCart'
 import AnimatedOverlay from './AnimatedOverlay'
-import {templateButtonInk} from './templateVisual'
+import {templateAppearance} from './template-appearance'
 import CatalogCard from './TemplateCatalogCard'
 import TemplateLayout from './TemplateLayout'
 import TemplateMap from './TemplateMap'
 import { useEffect, useMemo, useState, type CSSProperties } from 'react'
-import { templateBySlug, templateVisualStyle, type TemplateItem } from './templateData'
+import { templateBySlug, type TemplateItem } from './templateData'
 import { templateUi, localizeTemplate, type TemplateLanguage, type TemplateUi } from './templateI18n'
 import MonthCalendar from './MonthCalendar'
 import './template-preview.css'
@@ -101,15 +101,7 @@ function TemplateSite({ slug }: { slug: string }) {
   }
 
 
-  const styles = {
-    '--template-accent': config.accent,
-    '--template-button-ink':templateButtonInk(config.accent),
-    '--template-accent-2': config.accent2,
-    '--template-dark': config.dark,
-    '--template-dark-ink': templateButtonInk(config.dark),
-    '--template-cream-ink': templateButtonInk(config.cream),
-    '--template-cream': config.cream,
-  } as CSSProperties
+  const {styles,visualStyle}=templateAppearance(baseConfig)
 
   const addToCart = (item: TemplateItem, source?: HTMLElement) => {
     if (!config.cartEnabled || item.appointment || item.purchasable===false) return
@@ -199,7 +191,7 @@ function TemplateSite({ slug }: { slug: string }) {
   }
 
   return (
-    <div className={`template-site visual-${templateVisualStyle(config.category)}`} style={styles}>
+    <div className={`template-site visual-${visualStyle}`} style={styles}>
       <TemplateNotice ui={ui} slug={slug} />
       {buyerReceipt && <BuyerReceipt receipt={buyerReceipt} lang={language} colors={{primary:config.dark,secondary:config.accent}} onClose={()=>setBuyerReceipt(null)}/>}
 

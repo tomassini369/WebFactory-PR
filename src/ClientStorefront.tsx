@@ -3,14 +3,18 @@ import type { ReceiptRecord } from './ReceiptPaper'
 import AnimatedOverlay from './AnimatedOverlay'
 import { useFlyToCart } from './useFlyToCart'
 import { BusinessPolicies, CustomerDataNotice } from './BusinessPolicies'
-import {templateButtonInk} from './templateVisual'
+import {templateAppearance} from './template-appearance'
+import {TemplateMusic, TemplateSocialLinks, type PublicMusic} from './TemplateMedia'
+import {businessSocialLinks} from '../shared/social-links.mjs'
+import {siteCanPublishMusic} from '../shared/site-music.mjs'
+import {localizeTemplate} from './templateI18n'
 import CatalogCard from './TemplateCatalogCard'
 import TemplateLayout from './TemplateLayout'
 import TemplateMap from './TemplateMap'
 import { templateUi } from './templateI18n'
 import type { TemplateConfig, TemplateItem } from './templateData'
 import { useEffect, useMemo, useState, type CSSProperties, type FormEvent } from 'react'
-import { templateBySlug, templateVisualStyle } from './templateData'
+import { templateBySlug } from './templateData'
 import MonthCalendar from './MonthCalendar'
 import './template-preview.css'
 import './client-storefront.css'
@@ -18,22 +22,14 @@ import './client-storefront.css'
 type Item={id:string;type:'product'|'service';name:string;nameEn?:string;nameEs?:string;description:string;descriptionEn?:string;descriptionEs?:string;price:number;inventory:number|null;requiresAppointment:boolean;duration:number;imageUrl:string}
 type Employee={id:string;name:string;role:string;roleEn?:string;roleEs?:string;serviceIds:string[];locationIds?:string[]}
 type Location={id:string;name:string;address:string;phone:string;mapsUrl:string;hours:any}
-export type StorefrontSite={siteId:string;slug:string;business:any;design:any;features:Record<string,boolean>;catalog:Item[];employees:Employee[];hours:any;paymentRules:any;settings:any}
+export type StorefrontSite={siteId:string;slug:string;business:any;design:any;features:Record<string,boolean>;catalog:Item[];employees:Employee[];hours:any;paymentRules:any;settings:any;music?:PublicMusic}
 type CartLine={id:string;quantity:number}
 const money=(value:number)=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(value)
-const digits=(value:string)=>String(value||'').replace(/\D/g,'')
 const currentMonth=(timeZone='America/Puerto_Rico')=>{
   const parts=new Intl.DateTimeFormat('en-CA',{timeZone,year:'numeric',month:'2-digit'}).formatToParts(new Date()).reduce((acc,part)=>({...acc,[part.type]:part.value}),{} as Record<string,string>)
   return `${parts.year}-${parts.month}`
 }
 const currentDate=(timeZone='America/Puerto_Rico')=>new Intl.DateTimeFormat('en-CA',{timeZone,year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date())
-const socialUrl=(value:string,network:'instagram'|'facebook'|'x')=>{
-  const raw=String(value||'').trim()
-  if(!raw)return ''
-  if(/^https?:\/\//i.test(raw))return raw
-  const handle=raw.replace(/^@/,'')
-  return network==='instagram'?`https://instagram.com/${handle}`:network==='facebook'?`https://facebook.com/${handle}`:`https://x.com/${handle}`
-}
 const formatHours=(hours:any,lang:'es'|'en')=>{
   const active=Object.entries(hours||{}).filter(([,value]:any)=>value?.enabled)
   if(!active.length)return ''
@@ -251,37 +247,23 @@ export default function ClientStorefront({slug,previewSite,previewLanguage='en'}
   const itemDescription=(item:Item)=>lang==='es'?(item.descriptionEs||item.descriptionEn||item.description):(item.descriptionEn||item.description||item.descriptionEs||'')
   const employeeRole=(employee:Employee)=>lang==='es'?(employee.roleEs||employee.roleEn||employee.role):(employee.roleEn||employee.role||employee.roleEs||'')
   const template=templateBySlug(site.design?.templateSlug||'')
-  const whatsapp=digits(site.business.whatsapp)
-  const instagram=socialUrl(site.business.instagram,'instagram')
-  const facebook=socialUrl(site.business.facebook,'facebook')
-  const xUrl=socialUrl(site.business.x,'x')
+  const socialLinks=businessSocialLinks(site.business,site.features)
+  const musicEligible=siteCanPublishMusic(site)
+  const templateCopy=template?localizeTemplate(template,lang):undefined
   const heroImage=site.business.heroUrl||template?.heroImage||visibleCatalog.find(item=>item.imageUrl)?.imageUrl||''
   const galleryImages:string[]=site.business.galleryUrls?.length?site.business.galleryUrls:(template?.gallery||[])
   const hours=formatHours(site.hours,lang)
   const initials=(name:string)=>name.split(/\s+/).slice(0,2).map((part:string)=>part[0]||'').join('').toUpperCase()
-  const styles={
-    '--template-accent':site.design?.secondary||template?.accent||'#3C86F6',
-    '--template-button-ink':templateButtonInk(site.design?.secondary||template?.accent||'#3C86F6'),
-    '--template-accent-2':template?.accent2||site.design?.secondary||'#4D96F3',
-    '--template-dark':site.design?.primary||template?.dark||'#0B1529',
-    '--template-dark-ink':templateButtonInk(site.design?.primary||template?.dark||'#0B1529'),
-    '--template-cream-ink':templateButtonInk(template?.cream||'#F3F6FB'),
-    '--template-cream':template?.cream||'#F3F6FB',
-    '--cs-primary':site.design?.primary||template?.dark||'#0B1529',
-    '--cs-accent':site.design?.secondary||template?.accent||'#3C86F6',
-  } as CSSProperties
-
-  const preferredStyle=String(site.design?.style || '').toLowerCase()
-  const visualStyle=['modern','luxury','minimal','bold'].includes(preferredStyle)?preferredStyle:template?templateVisualStyle(template.category):'modern'
+  const {styles,visualStyle,primary,accent,accent2,cream}=templateAppearance(template,site.design)
 
   const layoutConfig: TemplateConfig = {
     slug: template?.slug || 'custom', category: businessCategory || '', name: businessName, shortName: businessName,
     kicker: site.business.kicker || businessCategory || '', headline: site.business.headline || businessName,
     description: businessDescription || '', heroImage, gallery: galleryImages, location: site.business.address || '', phone: site.features.calls ? site.business.phone || '' : '', hours,
-    accent: styles['--template-accent' as keyof CSSProperties] as string, accent2: template?.accent2 || '', dark: site.design?.primary || template?.dark || '#0B1529', cream: template?.cream || '#F3F6FB',
+    accent, accent2, dark:primary, cream,
     features: [], items: visibleCatalog.map(item=>({id:item.id,type:item.type,name:itemName(item),description:itemDescription(item),price:item.price,image:item.imageUrl,appointment:item.requiresAppointment,employees:site.employees.filter(employee=>employee.serviceIds.includes(item.id)).map(employee=>employee.name)})),
     employees: site.features.bookings ? site.employees.map(employee=>({id:employee.id,name:employee.name,role:employeeRole(employee),initials:initials(employee.name),services:employee.serviceIds.map(id=>site.catalog.find(item=>item.id===id)).filter((item):item is Item=>Boolean(item)).map(itemName)})) : [],
-    bookingLabel: t.book, bookingEnabled: Boolean(site.features.bookings && visibleCatalog.some(item=>item.requiresAppointment)), cartEnabled: site.features.cart!==false,
+    bookingLabel: templateCopy?.bookingLabel||t.book, bookingEnabled: Boolean(site.features.bookings && visibleCatalog.some(item=>item.requiresAppointment)), cartEnabled: site.features.cart!==false,
     aboutTitle: site.business.aboutTitle || businessName, aboutText: site.business.aboutText || businessDescription || '', trust: [],
   }
   const layoutUi = {...templateUi[lang], catalogIntro:businessDescription, teamIntro:lang==='es'?'Conoce a nuestro equipo y sus servicios.':'Meet our team and explore their services.', aboutTemplate: t.about, livePreview: lang==='es'?'RESERVACIONES Y COMPRAS':'BOOKINGS AND SHOPPING', templateMode: businessName, bookingPreview:lang==='es'?'Reserva tu próxima visita':'Book your next visit', commercePreview: t.catalog, interactHint:businessDescription, availabilityReady:lang==='es'?'Consulta los horarios disponibles':'Explore available times', commerceReady:t.catalog}
@@ -289,19 +271,17 @@ export default function ClientStorefront({slug,previewSite,previewLanguage='en'}
 
   return <div className={`template-site client-template template-${site.design?.templateSlug||'custom'} visual-${visualStyle}`} style={styles}>
     {receiptStatus&&<div className="cs-tracking-banner" role="status">{receiptStatus}</div>}
-    {buyerReceipt&&<BuyerReceipt receipt={buyerReceipt} lang={lang} colors={{primary:site.design?.primary||template?.dark,secondary:site.design?.secondary||template?.accent}} timeZone={receiptTimeZone||site.settings?.timezone} onClose={()=>setBuyerReceipt(null)}/>}
+    {buyerReceipt&&<BuyerReceipt receipt={buyerReceipt} lang={lang} colors={{primary,secondary:accent}} timeZone={receiptTimeZone||site.settings?.timezone} onClose={()=>setBuyerReceipt(null)}/>}
     <TemplateLayout config={layoutConfig} ui={layoutUi} language={lang} setLanguage={setLang} startBooking={startLayoutBooking} setCatalogOpen={setCatalog} setCartOpen={open=>{setBooking(null);setCheckoutOpen(open)}} cart={cart} logoUrl={site.business.logoUrl} locationHref={site.features.maps?site.business.mapsUrl:undefined} phoneHref={site.features.calls&&site.business.phone?`tel:${site.business.phone}`:undefined} catalogEnabled={site.features.products!==false||site.features.services!==false}
+      social={<TemplateSocialLinks links={socialLinks} lang={lang}/>}
+      music={musicEligible&&site.music?.tracks.length?<TemplateMusic key={site.siteId+':'+site.music.welcomeId} music={site.music} artist={businessName} lang={lang} allowAutoplay={!previewSite}/>:undefined}
       map={site.features.maps && (site.business.address || site.business.mapsUrl) ? <TemplateMap location={site.business.address||''} mapsUrl={site.business.mapsUrl} language={lang}/> : undefined}
       extraSections={locations.length>0&&<section className="template-section cs-locations" id="locations"><div className="template-section-heading"><div><small>{lang==='es'?'VISÍTANOS':'VISIT US'}</small><h2>{lang==='es'?'Nuestras localidades':'Our locations'}</h2></div></div><div className="cs-location-grid">{locations.map(location=><article key={location.id}><h3>{location.name}</h3>{location.address&&<p>{location.address}</p>}{location.phone&&<a href={`tel:${location.phone}`}>{location.phone}</a>}{location.mapsUrl&&<p><a href={location.mapsUrl} target="_blank" rel="noreferrer">Google Maps ↗</a></p>}</article>)}</div></section>}
       contact={<div className="cs-contact-grid">
           <div className="cs-contact-links">
             {site.features.calls&&site.business.phone&&<a href={`tel:${site.business.phone}`}>☎ {site.business.phone}</a>}
             {site.business.email&&<a href={`mailto:${site.business.email}`}>✉ {site.business.email}</a>}
-            {site.features.whatsapp&&whatsapp&&<a href={`https://wa.me/${whatsapp}`} target="_blank" rel="noreferrer">WhatsApp ↗</a>}
             {site.features.maps&&site.business.mapsUrl&&<a href={site.business.mapsUrl} target="_blank" rel="noreferrer">Google Maps ↗</a>}
-            {site.features.social&&instagram&&<a href={instagram} target="_blank" rel="noreferrer">Instagram ↗</a>}
-            {site.features.social&&facebook&&<a href={facebook} target="_blank" rel="noreferrer">Facebook ↗</a>}
-            {site.features.social&&xUrl&&<a href={xUrl} target="_blank" rel="noreferrer">X ↗</a>}
           </div>
           {site.features.form&&<form className="cs-contact-form" onSubmit={submitContact}>
             <input aria-label={lang==='es'?'Nombre':'Name'} autoComplete="name" maxLength={180} placeholder={lang==='es'?'Nombre':'Name'} value={contact.name} onChange={e=>setContact({...contact,name:e.target.value})} required/>

@@ -1,3 +1,5 @@
+import {normalizeSocialLinks} from "../../shared/social-links.mjs";
+import {normalizeTemplateOverrides} from "../../shared/template-overrides.mjs";
 import {normalizeHoursWindow} from '../../shared/business-hours.mjs';
 import { sanitizePolicies } from "./publication-review.mjs";
 import { cleanText, validEmail } from "./platform-utils.mjs";
@@ -154,7 +156,9 @@ export function sanitizeBuilderRequest(payload) {
       phone: cleanText(b.phone, 80),
       whatsapp: cleanText(b.whatsapp, 80),
       email: cleanText(b.email || customerEmail, 320),
+      address: cleanText(b.address, 500),
       mapsUrl: cleanText(b.mapsUrl, 1500),
+      ...(Array.isArray(b.socialLinks) ? {socialLinks:normalizeSocialLinks(b.socialLinks)} : {}),
       instagram: cleanText(b.instagram, 300),
       facebook: cleanText(b.facebook, 500),
       x: cleanText(b.x, 500),
@@ -177,6 +181,7 @@ export function sanitizeBuilderRequest(payload) {
       templateName: template?.name || "",
       templateRoute: template ? `/templates/${requestedTemplateSlug}` : "",
       preserveTemplateStructure: Boolean(template),
+      templateOverrides: normalizeTemplateOverrides(d.templateOverrides),
       customLayout: ["split","centered","editorial","showcase"].includes(d.customLayout) ? d.customLayout : "split",
       sectionOrder: Array.isArray(d.sectionOrder) ? d.sectionOrder.filter((section) => ["catalog","team","about","gallery","contact"].includes(section)).slice(0,5) : ["catalog","team","about","gallery","contact"],
       style: ["Modern","Luxury","Minimal","Bold"].includes(d.style) ? d.style : "Modern",

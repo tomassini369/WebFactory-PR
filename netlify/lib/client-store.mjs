@@ -1,3 +1,5 @@
+import {publicSiteMusic} from "../../shared/site-music.mjs";
+import {normalizeSocialLinks} from "../../shared/social-links.mjs";
 import {withOrderTurnIndex} from './order-turn-index.mjs';
 import {indexedCommerceStore} from './booking-date-index.mjs';
 import { availableInventory, reservedQuantity } from './inventory-availability.mjs';
@@ -146,8 +148,10 @@ export function publicClientSite(site) {
       phone: site.business?.phone || "",
       whatsapp: site.business?.whatsapp || "",
       email: site.business?.email || "",
+      address: site.business?.address || "",
       mapsUrl: site.business?.mapsUrl || "",
       locations: (site.business?.locations || []).filter((location) => location.active !== false).map((location) => ({ id: location.id, name: location.name, address: location.address, phone: location.phone, mapsUrl: location.mapsUrl, hours: location.hours || {} })),
+      ...(Array.isArray(site.business?.socialLinks) ? {socialLinks:normalizeSocialLinks(site.business.socialLinks)} : {}),
       instagram: site.business?.instagram || "",
       facebook: site.business?.facebook || "",
       x: site.business?.x || "",
@@ -162,6 +166,7 @@ export function publicClientSite(site) {
         : [],
     },
     design: normalizeSiteDesign(site.design || {}),
+    music: publicSiteMusic(site),
     features: { ...site.features, calendar: Boolean(site.features?.calendar && site.googleCalendar?.connected) },
     catalog: (site.catalog || []).filter((item) => item.active !== false).map((item) => ({
       id: item.id,
