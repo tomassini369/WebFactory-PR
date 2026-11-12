@@ -9,8 +9,7 @@ export function GlassCarousel({
   onChangeIndex,
   onExpandMovie,
   onOpenMenu,
-  onPlaySound,
-}: {movies:Highlight[]; activeIndex:number; onChangeIndex:(index:number)=>void; onExpandMovie:(item:Highlight)=>void; onOpenMenu:(item:Highlight)=>void; onPlaySound?:()=>void}) {
+}: {movies:Highlight[]; activeIndex:number; onChangeIndex:(index:number)=>void; onExpandMovie:(item:Highlight)=>void; onOpenMenu:(item:Highlight)=>void}) {
   const rail=useRef<HTMLDivElement>(null)
   const reduced=useReducedMotion()
   const [xOffset, setXOffset] = useState(310)
@@ -50,10 +49,8 @@ export function GlassCarousel({
     const swipeThreshold = 45
     if (info.offset.x > swipeThreshold) {
       onChangeIndex((activeIndex - 1 + total) % total)
-      if (onPlaySound) onPlaySound()
     } else if (info.offset.x < -swipeThreshold) {
       onChangeIndex((activeIndex + 1) % total)
-      if (onPlaySound) onPlaySound()
     }
   }
 
@@ -81,7 +78,6 @@ export function GlassCarousel({
               xOffset={xOffset}
               onSelect={(idx) => {
                 onChangeIndex(idx)
-                if (onPlaySound) onPlaySound()
               }}
               onExpand={onExpandMovie}
               onOpenMenu={onOpenMenu}

@@ -1,6 +1,5 @@
 import { useRef } from 'react';
 import type { ReactNode } from 'react';
-import { sound } from './audio';
 
 export default function SlotPrinter({
   children,
@@ -10,12 +9,9 @@ export default function SlotPrinter({
   printProgress, // 0 to 100
   onStartPrint,
   onTearReceipt,
-  onFeedPaper,
   onReset,
-  isSoundMuted = false,
-  onToggleSound,
   onOpenInspector,
-}: { children: ReactNode; maxPaperHeight: number; lang: 'es' | 'en'; printState: string; printProgress: number; onStartPrint: () => void; onTearReceipt: () => void; onFeedPaper: () => void; onReset: () => void; isSoundMuted?: boolean; onToggleSound: () => void; onOpenInspector: () => void }) {
+}: { children: ReactNode; maxPaperHeight: number; lang: 'es' | 'en'; printState: string; printProgress: number; onStartPrint: () => void; onTearReceipt: () => void; onReset: () => void; onOpenInspector: () => void }) {
   const paperContainerRef = useRef<HTMLDivElement>(null);
 
   const isPrinting = printState === 'printing';
@@ -158,10 +154,7 @@ export default function SlotPrinter({
             className={`console-btn btn-primary-print ${
               isPrinting ? 'is-printing-btn' : ''
             }`}
-            onClick={() => {
-              sound.playButtonBeep(1400, 0.05);
-              onStartPrint();
-            }}
+            onClick={onStartPrint}
             disabled={isPrinting}
           >
             <span className="btn-icon-wrapper">
@@ -209,10 +202,7 @@ export default function SlotPrinter({
             className={`console-btn btn-action-tear ${
               isCompleted ? 'is-ready-to-tear' : ''
             }`}
-            onClick={() => {
-              sound.playButtonBeep(880, 0.04);
-              onTearReceipt();
-            }}
+            onClick={onTearReceipt}
             disabled={!isCompleted}
             title={isCompleted ? 'Tear Receipt across cutter' : 'Print first to tear'}
           >
@@ -235,41 +225,13 @@ export default function SlotPrinter({
             <span className="btn-label-text">{es ? "DESPRENDER" : "TEAR"}</span>
           </button>
 
-          {/* Feed Paper Button */}
-          <button
-            type="button"
-            className="console-btn btn-action-feed"
-            onClick={() => {
-              sound.playButtonBeep(620, 0.03);
-              onFeedPaper();
-            }}
-            disabled={isPrinting}
-            title="Advance paper"
-          >
-            <span className="btn-icon-wrapper">
-              <svg
-                width="15"
-                height="15"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.2"
-              >
-                <path d="M12 5v14M19 12l-7 7-7-7" />
-              </svg>
-            </span>
-            <span className="btn-label-text">{es ? "AVANZAR" : "FEED"}</span>
-          </button>
 
           {/* Reset / Preset Cycle Button */}
           <button
             type="button"
             className="console-btn btn-action-reset"
             disabled={isPrinting}
-            onClick={() => {
-              sound.playButtonBeep(520, 0.04);
-              onReset();
-            }}
+            onClick={onReset}
             title={es ? "Reiniciar este recibo" : "Reset this receipt"}
           >
             <span className="btn-icon-wrapper">
@@ -288,43 +250,6 @@ export default function SlotPrinter({
             <span className="btn-label-text">{es ? "REINICIAR" : "RESET"}</span>
           </button>
 
-          {/* Audio Mute / Unmute Button */}
-          <button
-            type="button"
-            className={`console-btn btn-action-audio ${isSoundMuted ? 'muted' : ''}`}
-            onClick={onToggleSound}
-            title={isSoundMuted ? 'Unmute Audio' : 'Mute Audio'}
-          >
-            <span className="btn-icon-wrapper">
-              {isSoundMuted ? (
-                <svg
-                  width="15"
-                  height="15"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                >
-                  <path d="M11 5L6 9H2v6h4l5 4V5z" />
-                  <line x1="23" y1="9" x2="17" y2="15" />
-                  <line x1="17" y1="9" x2="23" y2="15" />
-                </svg>
-              ) : (
-                <svg
-                  width="15"
-                  height="15"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                >
-                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
-                  <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07" />
-                </svg>
-              )}
-            </span>
-            <span className="btn-label-text">{isSoundMuted ? (es ? 'SILENCIO' : 'MUTED') : 'AUDIO'}</span>
-          </button>
         </div>
       </div>
     </div>

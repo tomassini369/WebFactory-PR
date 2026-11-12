@@ -12,7 +12,7 @@ Production remains unchanged.
   Undo and a browse-products empty-state action. The Builder iframe renders the
   same ClientStorefront component, so the behavior is shared with real websites.
 - Template demonstration carts also support Undo.
-- Subtle press feedback, keyboard focus, reduced-motion support; sounds default off
+- Subtle press feedback, keyboard focus, reduced-motion support; haptic feedback on supported devices
   while respecting explicit saved preferences.
 - Copy buttons in payment links/POS, storefront tracking and tracking page report
   actual success or failure. Failures offer retry/manual-copy guidance.

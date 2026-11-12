@@ -3,7 +3,6 @@ import { createPortal } from 'react-dom'
 import './receipt-print.css'
 import ReceiptDetails from './receipt-original/Receipt'
 import SlotPrinter from './receipt-original/SlotPrinter'
-import { sound } from './receipt-original/audio'
 import { feedback } from './feedback/feedback'
 import './receipt-original/original.css'
 import './receipt-original/integration.css'
@@ -31,7 +30,6 @@ function ReceiptPrinter(props: ReceiptProps) {
   const [printState, setPrintState] = useState('printing')
   const [printProgress, setPrintProgress] = useState(0)
   const [paperHeight, setPaperHeight] = useState(440)
-  const [isSoundMuted, setIsSoundMuted] = useState(!feedback.getPreferences().soundEnabled)
   const sheet = useRef<HTMLDivElement>(null)
   const printRoot = useRef<HTMLDivElement>(null)
   const [printDocument, setPrintDocument] = useState<Document | null>(null)
@@ -50,21 +48,17 @@ function ReceiptPrinter(props: ReceiptProps) {
   const dialog = useRef<HTMLDialogElement>(null)
   const frame = useRef(0)
   const tearTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
-  const feedTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const state = useRef(printState)
   const reduced = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches
   const clear = () => {
     cancelAnimationFrame(frame.current)
     clearTimeout(tearTimer.current)
-    clearTimeout(feedTimer.current)
-    sound.stopPrintSound()
   }
   const startPrint = (userAction = true) => {
     clear()
     dialog.current?.close()
     if (reduced()) { state.current = 'completed'; setPrintState('completed'); setPrintProgress(100); return }
     state.current = 'printing'; setPrintState('printing'); setPrintProgress(0)
-    if (userAction) sound.startPrintSound()
     const start = performance.now()
     const tick = (now: number) => {
       // The original 18ms / 0.72% feed takes 2.5 seconds.
@@ -72,8 +66,8 @@ function ReceiptPrinter(props: ReceiptProps) {
       setPrintProgress(progress)
       if (progress < 100) frame.current = requestAnimationFrame(tick)
       else {
-        state.current = 'completed'; setPrintState('completed'); sound.stopPrintSound()
-        if (userAction) { sound.playCutterSound(); sound.playSuccessChime() }
+        state.current = 'completed'; setPrintState('completed')
+        if (userAction) feedback.success()
       }
     }
     frame.current = requestAnimationFrame(tick)
@@ -88,7 +82,7 @@ function ReceiptPrinter(props: ReceiptProps) {
   }, [inspectorOpen])
   const tear = () => {
     if (state.current !== 'completed') return
-    sound.playTearSound(); state.current = 'torn'; setPrintState('torn')
+    state.current = 'torn'; setPrintState('torn')
     tearTimer.current = setTimeout(inspect, reduced() ? 0 : 1100)
   }
   useLayoutEffect(() => {
@@ -105,18 +99,12 @@ function ReceiptPrinter(props: ReceiptProps) {
     const media = window.matchMedia('(prefers-reduced-motion: reduce)')
     const onMotion = () => { if (media.matches) { clear(); state.current = 'completed'; setPrintState('completed'); setPrintProgress(100) } }
     media.addEventListener('change', onMotion)
-    const unsubscribe = feedback.subscribe(p => {
-      sound.isMuted = !p.soundEnabled; setIsSoundMuted(!p.soundEnabled)
-      if (!p.soundEnabled) sound.stopPrintSound()
-    })
-    return () => { clear(); unsubscribe(); media.removeEventListener('change', onMotion) }
+    return () => { clear(); media.removeEventListener('change', onMotion) }
   }, [])
   return <div className="wf-original-receipt" data-print-state={printState} style={{'--receipt-brand-primary':brandColor(props.colors?.primary,'#17263b'),'--receipt-brand-secondary':brandColor(props.colors?.secondary,'#3c86f6')} as CSSProperties}>
     <SlotPrinter lang={props.lang} maxPaperHeight={paperHeight} printState={printState} printProgress={printProgress}
       onStartPrint={() => startPrint()} onTearReceipt={tear} onOpenInspector={inspect}
-      onFeedPaper={() => { if (state.current === 'printing') return; sound.startPrintSound(); feedTimer.current = setTimeout(() => sound.stopPrintSound(), 200) }}
-      onReset={() => { clear(); state.current = 'idle'; setPrintState('idle'); setPrintProgress(0) }}
-      isSoundMuted={isSoundMuted} onToggleSound={() => { const enabled = !feedback.getPreferences().soundEnabled; sound.isMuted = !enabled; feedback.setSoundEnabled(enabled); setIsSoundMuted(!enabled); if (enabled) feedback.unlockAudio() }}>
+      onReset={() => { clear(); state.current = 'idle'; setPrintState('idle'); setPrintProgress(0) }}>
       <div ref={sheet}><ReceiptDetails {...props} /></div>
     </SlotPrinter>
     <span className="wf-receipt-status" role="status">{printState === 'printing' ? (es ? 'Imprimiendo recibo' : 'Printing receipt') : printState === 'torn' ? (es ? 'Recibo desprendido' : 'Receipt detached') : printState === 'idle' ? (es ? 'Listo para imprimir' : 'Ready to print') : (es ? 'Recibo listo' : 'Receipt ready')}</span>

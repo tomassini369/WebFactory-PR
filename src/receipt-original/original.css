@@ -423,12 +423,6 @@
 }
 
 /* Audio button */
-.wf-original-receipt .btn-action-audio.muted {
-  color: #ef4444;
-  border-color: #fca5a5;
-  background: #fef2f2;
-}
-
 /* ==========================================================================
    MODAL INSPECTOR
    ========================================================================== */
