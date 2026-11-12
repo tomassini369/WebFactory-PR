@@ -63,7 +63,7 @@ export default async (req) => {
       if (["active", "trialing"].includes(current?.servicePlan?.subscriptionStatus)) {
         throw Object.assign(new Error("This website already has an active subscription."), { status: 409 });
       }
-      return subscriptionCheckout({store,stripe,siteId:site.siteId,interval,consent,price,base,integrationIdentifier});
+      return subscriptionCheckout({store,stripe,siteId:site.siteId,site:current,interval,consent,price,base,integrationIdentifier});
     });
     return Response.json({ ok: true, url: session.url }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {

@@ -149,6 +149,10 @@ export function billingEventIgnoreReason(event, plan = {}) {
   const customer = typeof object.customer === "string" ? object.customer : object.customer?.id;
   if (event.type !== "checkout.session.completed" && plan.stripeCustomerId && customer && customer !== plan.stripeCustomerId) return "customer_mismatch";
   const subscription = subscriptionIdFor(event);
+  // After reactivation, a delayed Checkout event from the old subscription
+  // must not replace the active subscription bound to the tenant.
+  if (event.type === "checkout.session.completed" && ["active", "trialing"].includes(plan.subscriptionStatus) &&
+      plan.stripeSubscriptionId && subscription !== plan.stripeSubscriptionId) return "subscription_mismatch";
   if (event.type !== "checkout.session.completed" && plan.stripeSubscriptionId && subscription && subscription !== plan.stripeSubscriptionId) return "subscription_mismatch";
   return "";
 }

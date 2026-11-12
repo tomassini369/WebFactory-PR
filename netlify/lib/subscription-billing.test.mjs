@@ -184,3 +184,10 @@ test("old Stripe prices do not open checkout for new memberships", t => {
   values.WEBFACTORY_TIERED_PLANS_ENABLED = "false";
   assert.equal(subscriptionBillingReadiness().ready,false);
 });
+
+test("delayed checkout for a replaced subscription cannot overwrite the active plan", () => {
+  const event = {type:"checkout.session.completed",created:200,data:{object:{subscription:"sub_old",customer:"cus_old"}}};
+  const current = {billingModel:"subscription",subscriptionStatus:"active",stripeSubscriptionId:"sub_new",lastBillingEventCreated:200};
+  assert.equal(billingEventIgnoreReason(event,current),"subscription_mismatch");
+  assert.equal(billingEventIgnoreReason(event,{...current,subscriptionStatus:"canceled"}),"");
+});
