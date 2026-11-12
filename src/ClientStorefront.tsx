@@ -83,21 +83,27 @@ export default function ClientStorefront({slug,previewSite,previewLanguage='en'}
     let active=true
     let initial=true
     let loadedAt=0
-    const load=()=>fetch(`/.netlify/functions/public-client-site?slug=${encodeURIComponent(slug)}`).then(async r=>{
-      const x=await r.json()
-      if(!r.ok)throw new Error(x.message)
-      if(!active)return
-      loadedAt=Date.now()
-      setError('')
-      setSite(x.site)
-      if(initial){setLang(x.site.settings?.locale==='es'?'es':'en');initial=false}
-      document.title=x.site.business.nameEn||x.site.business.name||x.site.business.nameEs||'WebFactory'
-    }).catch(e=>{if(active)setError(e instanceof Error?e.message:'No se pudo actualizar la página.')})
+    let loading=false
+    const controller=new AbortController()
+    const load=()=>{
+      if(loading)return
+      loading=true
+      return fetch(`/.netlify/functions/public-client-site?slug=${encodeURIComponent(slug)}`,{signal:controller.signal}).then(async r=>{
+        const x=await r.json()
+        if(!r.ok)throw new Error(x.message)
+        if(!active)return
+        loadedAt=Date.now()
+        setError('')
+        setSite(x.site)
+        if(initial){setLang(x.site.settings?.locale==='es'?'es':'en');initial=false}
+        document.title=x.site.business.nameEn||x.site.business.name||x.site.business.nameEs||'WebFactory'
+      }).catch(e=>{if(active)setError(e instanceof Error?e.message:'No se pudo actualizar la página.')}).finally(()=>{loading=false})
+    }
     const refresh=()=>{if(document.visibilityState==='visible'&&Date.now()-loadedAt>60000)void load()}
     void load()
     window.addEventListener('focus',refresh)
     document.addEventListener('visibilitychange',refresh)
-    return()=>{active=false;window.removeEventListener('focus',refresh);document.removeEventListener('visibilitychange',refresh)}
+    return()=>{active=false;controller.abort();window.removeEventListener('focus',refresh);document.removeEventListener('visibilitychange',refresh)}
   },[slug,previewSite,previewLanguage])
   useEffect(()=>{if(previewSite)return;const token=new URLSearchParams(location.search).get('tracking');if(token){const tracking=`${location.origin}/track/${encodeURIComponent(token)}`;setTrackingUrl(tracking);const url=new URL(location.href);url.searchParams.delete('tracking');history.replaceState({},'',url.pathname+url.search+url.hash)}},[previewSite])
 
