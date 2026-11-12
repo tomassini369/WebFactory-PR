@@ -29,3 +29,35 @@ test('completed checkout cannot be duplicated and unknown recovery beyond idempo
  const g=fixture();g.lose();await assert.rejects(subscriptionCheckout(g.args));
  await assert.rejects(subscriptionCheckout({...g.args,clock:()=>100000+24*3600000}),{status:503});assert.equal(g.calls.length,1);
 });
+
+function completedCheckoutFixture(status='canceled', tenant='tenant_a') {
+ const f=fixture();
+ const site={siteId:'tenant_a',servicePlan:{subscriptionStatus:'canceled',stripeSubscriptionId:'sub_old',stripeCustomerId:'cus_old'}};
+ f.args.stripe.subscriptions={retrieve:async id=>{
+  assert.equal(id,'sub_old');
+  return {id,customer:'cus_old',status,metadata:{webfactory_site_id:tenant}};
+ }};
+ return {...f,site};
+}
+
+test('a Stripe-confirmed canceled subscription can purchase again and reuse its new session',async()=>{
+ const f=completedCheckoutFixture();
+ const first=await subscriptionCheckout(f.args);
+ Object.assign([...f.sessions.values()][0],{status:'complete',subscription:'sub_old'});
+ const args={...f.args,site:f.site,interval:'annual',price:'price_annual'};
+ const next=await subscriptionCheckout(args);
+ assert.notEqual(next.id,first.id);
+ assert.equal((await subscriptionCheckout(args)).id,next.id);
+ assert.equal(f.calls.length,2);
+ assert.equal(f.calls[1].parameters.line_items[0].price,'price_annual');
+});
+
+test('a completed checkout cannot be replaced while its subscription is active or belongs to another tenant',async()=>{
+ for(const [status,tenant,expected] of [['active','tenant_a',409],['canceled','tenant_b',403]]){
+  const f=completedCheckoutFixture(status,tenant);
+  await subscriptionCheckout(f.args);
+  Object.assign([...f.sessions.values()][0],{status:'complete',subscription:{id:'sub_old'}});
+  await assert.rejects(subscriptionCheckout({...f.args,site:f.site}),{status:expected});
+  assert.equal(f.calls.length,1);
+ }
+});
