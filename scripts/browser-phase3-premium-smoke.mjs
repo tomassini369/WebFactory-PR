@@ -15,10 +15,11 @@ await mkdir(output,{recursive:true})
 const user={id:'phase3-fixture',email:'phase3@example.invalid',app_metadata:{roles:['admin']},user_metadata:{},mfa:{required:false}}
 const site={siteId:'phase3-fixture',slug:'phase3-fixture',status:'published',revision:1,business:{name:'Presentation QA fixture',category:'Barber'},design:{primary:'#0B1529',secondary:'#3C86F6',style:'Modern'},catalog:[],employees:[],hours:{},members:[],settings:{locale:'en',timezone:'America/Puerto_Rico',currency:'USD'},paymentRules:{},googleCalendar:{},features:{},servicePlan:{code:'complimentary',billingModel:'complimentary'}}
 const admin={generatedAt:new Date().toISOString(),administrator:{name:'Presentation QA fixture',email:user.email},summary:{clients:0,publishedSites:0,connectedStripe:0,blockers:0},capacity:{level:'healthy',safeClientCapacity:0,activeClients:0,estimatedOpenings:0,utilizationPercent:0,model:'Isolated fixture'},integrations:{configured:0,total:0,configuration:[]},operations:{transactionStatuses:{},pendingTransactions:[],stripeWebhookEvents:0,clientWebhookEvents:0},clients:[],subscriptionBilling:{missing:[],ready:false},resources:{netlify:{plan:'QA',utilizationPercent:null,dashboardUrl:'/',source:'Fixture'},storage:{},runtime:{}}}
-const now=new Date().toISOString()
-const records=[{transactionId:'qa-order',kind:'order',customer:{name:'Isolated fixture',email:'customer@example.invalid'},amountTotal:1234567,refundedAmount:10000,paymentStatus:'partially_refunded',status:'confirmed',createdAt:now},{transactionId:'qa-booking',kind:'booking',customer:{name:'Isolated fixture',email:'customer@example.invalid'},amountTotal:20000,paymentStatus:'paid',status:'confirmed',createdAt:now,start:new Date(Date.now()+86400000).toISOString()}]
+const now='2026-11-12T02:30:00.000Z'
+const records=[{transactionId:'qa-order',kind:'order',customer:{name:'Isolated fixture',email:'customer@example.invalid'},amountTotal:1234567,refundedAmount:10000,paymentStatus:'partially_refunded',status:'confirmed',createdAt:now},{transactionId:'qa-booking',kind:'booking',customer:{name:'Isolated fixture',email:'customer@example.invalid'},amountTotal:20000,paymentStatus:'paid',status:'confirmed',createdAt:now,start:new Date(Date.parse(now)+86400000).toISOString()}]
 const revenue={available:true,complete:true,mode:'test',netCents:1244567,capturedCents:1254567,refundedCents:10000,paymentCount:2,last7DaysCents:1244567,days:Array.from({length:7},(_,i)=>({date:`2026-10-0${i+1}`,netCents:i===6?1244567:0}))}
 const page=await browser.newPage({hasTouch:engine===webkit,isMobile:engine===webkit})
+await page.clock.setFixedTime(new Date(now))
 const errors=[]
 page.on('pageerror',error=>errors.push(error.message))
 await page.route('**/.netlify/functions/**',async route=>{
@@ -29,7 +30,7 @@ await page.route('**/.netlify/functions/**',async route=>{
   }
   let payload={ok:true,orders:[],bookings:[],customers:[],entries:[],movements:[],policies:{},report:{}}
   if(name==='portal-session')payload={ok:true,user}
-  if(name==='client-admin')payload=url.searchParams.has('siteId')?{ok:true,site,membership:{role:'owner'}}:{ok:true,sites:[{siteId:site.siteId,slug:site.slug,businessName:site.business.name,status:'published'}]}
+  if(name==='client-admin')payload=url.searchParams.has('siteId')?{ok:true,site,membership:{role:'owner'},posOperations:{cashierEnabled:true,displayEnabled:false,profile:'auto',revision:1}}:{ok:true,sites:[{siteId:site.siteId,slug:site.slug,businessName:site.business.name,status:'published'}]}
   if(name==='client-commerce-admin')payload={ok:true,orders:[records[0]],bookings:[records[1]]}
   if(name==='webfactory-admin-overview')payload={ok:true,...admin}
   if(name==='webfactory-admin-revenue')payload={ok:true,revenue}
@@ -46,14 +47,24 @@ try {
       await page.locator('.portal-language button').filter({hasText:new RegExp('^'+lang.toUpperCase()+'$')}).click()
       if(await page.locator('html').getAttribute('data-wf-theme')!==theme)await page.locator('.wf-theme-toggle').click()
       const chart=page.locator('.wf-data-chart')
-      await chart.locator('button').last().click()
+      const days=chart.locator('button')
+      const todayIndex=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].indexOf(new Intl.DateTimeFormat('en-US',{timeZone:site.settings.timezone,weekday:'short'}).format(new Date(now)))
+      const dayWithSales=path==='client-admin'?days.nth(todayIndex):days.last()
+      if(path==='client-admin') {
+        const labels=await days.locator('small').allTextContents()
+        const expected=Array.from({length:7},(_,index)=>new Intl.DateTimeFormat(lang==='es'?'es-PR':'en-US',{timeZone:'UTC',weekday:'short'}).format(Date.UTC(2024,0,7+index)))
+        assert.deepEqual(labels,expected)
+        assert.equal(await days.locator('small').first().evaluate(el=>getComputedStyle(el).whiteSpace),'nowrap')
+      }
+      await dayWithSales.click()
       assert.equal(await chart.locator('button[aria-pressed=true]').count(),1)
       assert.match(await chart.locator('.wf-data-chart-detail strong').innerText(),/12,445.67/)
-      await chart.locator('button').last().press('ArrowLeft')
-      assert.equal(await chart.locator('button').nth(5).getAttribute('aria-pressed'),'true')
-      await chart.locator('button').nth(5).press('End')
-      assert.equal(await chart.locator('button').last().getAttribute('aria-pressed'),'true')
+      await dayWithSales.press('End')
+      assert.equal(await days.last().getAttribute('aria-pressed'),'true')
+      await days.last().press('ArrowLeft')
+      assert.equal(await days.nth(5).getAttribute('aria-pressed'),'true')
       if(path==='client-admin') {
+        await dayWithSales.click()
         const filter=page.locator('.bcc-chart-filter select')
         await filter.selectOption('booking')
         assert.equal(await chart.locator('.wf-data-chart-detail strong').innerText(),'$200.00')
