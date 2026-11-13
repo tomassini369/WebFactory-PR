@@ -7,6 +7,7 @@ import './template-polish.css'
 import './template-evolution.css'
 import './template-glass.css'
 import './template-team.css'
+import './template-sonido-vivo.css'
 import {mountAtlas} from './vendor/atlas-runtime.mjs'
 import TemplateHighlights from './TemplateHighlights'
 
