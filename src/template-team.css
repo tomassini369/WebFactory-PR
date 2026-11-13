@@ -1,15 +1,18 @@
 .template-site .team-carousel { margin: 24px auto 0; max-width: 850px; }
 .template-site .team-carousel-stage {
   display: grid;
-  grid-template-columns: 1fr min(57%, 395px) 1fr;
+  grid-template-columns: minmax(0,1fr);
   align-items: center;
   isolation: isolate;
   perspective: 1050px;
   touch-action: pan-y;
+  overflow: clip;
+  padding-block: 6px 24px;
 }
-.template-site .team-carousel-stage[data-count="1"] { grid-template-columns: 1fr min(100%, 380px) 1fr; }
 .template-site .team-card {
-  grid-row: 1;
+  grid-area: 1 / 1;
+  justify-self: center;
+  width: min(57%, 395px);
   position: relative;
   overflow: hidden;
   min-width: 0;
@@ -18,13 +21,10 @@
   background: color-mix(in srgb, var(--template-cream) 92%, var(--template-accent));
   color: var(--template-dark);
   box-shadow: 0 14px 24px -18px var(--template-dark);
-  transition: transform .28s ease;
 }
-.template-site .team-card[data-position="0"] { grid-column: 2; z-index: 2; }
-.template-site .team-card[data-position="-1"] { grid-column: 1 / 3; justify-self: start; transform: rotateY(19deg) scale(.88); transform-origin: left center; }
-.template-site .team-card[data-position="1"] { grid-column: 2 / 4; justify-self: end; transform: rotateY(-19deg) scale(.88); transform-origin: right center; }
-.template-site .team-card:not([data-position="0"]) { width: 70%; border-color: color-mix(in srgb, var(--template-accent) 28%, transparent); }
-.template-site .team-card:not([data-position="0"]) img { filter: grayscale(1); }
+.template-site .team-carousel-stage[data-count="1"] .team-card { width: min(100%,380px); }
+.template-site .team-card[data-active="false"] { border-color: color-mix(in srgb, var(--template-accent) 28%, transparent); }
+.template-site .team-atlas-mono { width: 100%; height: 100%; filter: grayscale(1); opacity: 0; pointer-events: none; }
 .template-site .team-card-portrait {
   display: grid;
   place-items: center;

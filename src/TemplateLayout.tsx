@@ -1,4 +1,4 @@
-import { useRef, useState, type ReactNode, type CSSProperties } from 'react'
+import { useLayoutEffect, useRef, useState, type ReactNode, type CSSProperties } from 'react'
 import type { TemplateConfig, TemplateItem } from './templateData'
 import type { TemplateLanguage, TemplateUi } from './templateI18n'
 import './template-preview.css'
@@ -6,6 +6,7 @@ import './template-polish.css'
 import './template-evolution.css'
 import './template-glass.css'
 import './template-team.css'
+import {mountAtlas} from './vendor/atlas-runtime.mjs'
 import TemplateHighlights from './TemplateHighlights'
 
 type Props = {
@@ -148,49 +149,46 @@ function TeamCards({config,language,label,teamBooking,startBooking}: Pick<Props,
  const count=people.length
  const [index,setIndex]=useState(config.slug==='sonido-vivo-artist'&&count===3?1:0)
  const current=Math.min(index,count-1)
- const touchStart=useRef<{x:number;y:number}|null>(null)
+ const stage=useRef<HTMLDivElement>(null)
+ const engine=useRef<ReturnType<typeof mountAtlas>|null>(null)
+ const membership=people.map(person=>person.id).join('|')
  const es=language==='es'
- const advance=(direction:number)=>setIndex((current+direction+count)%count)
- const cards=count===1?[{position:0,member:current}]:[
-  ...(count>2?[{position:-1,member:(current+count-1)%count}]:[]),
-  {position:0,member:current},{position:1,member:(current+1)%count},
- ]
+ useLayoutEffect(()=>{
+  if(!stage.current||count<2)return
+  const runtime=mountAtlas(stage.current,current,setIndex)
+  engine.current=runtime
+  return ()=>{runtime.destroy();engine.current=null}
+ },[count,membership])
+ const advance=(direction:number)=>engine.current?.advance(direction)
  return <div className="team-carousel" role="group" aria-label={es?'Integrantes del equipo':'Team members'} onKeyDown={event=>{
   if(count<2)return
   if(event.key==='ArrowLeft'||event.key==='ArrowRight'){event.preventDefault();advance(event.key==='ArrowLeft'?-1:1)}
  }}>
-  <div className="team-carousel-stage" data-count={count}
-   onTouchStart={event=>{touchStart.current={x:event.touches[0].clientX,y:event.touches[0].clientY}}}
-   onTouchCancel={()=>{touchStart.current=null}}
-   onTouchEnd={event=>{
-    const start=touchStart.current;touchStart.current=null
-    if(!start||count<2)return
-    const dx=event.changedTouches[0].clientX-start.x,dy=event.changedTouches[0].clientY-start.y
-    if(Math.abs(dx)>45&&Math.abs(dx)>Math.abs(dy))advance(dx<0?1:-1)
-   }}>
-   {cards.map(({position,member})=>{
-    const person=people[member]
+  <div ref={stage} className="team-carousel-stage" data-count={count}>
+   {people.map((person,member)=>{
+    const active=member===current
     const matching=config.items.find(item=>item.appointment&&(item.employeeIds?.includes(person.id)??item.employees?.some(name=>person.name.startsWith(name))))
     const canBook=config.bookingEnabled&&(teamBooking||matching)
-    return <article key={person.id} className="team-card" data-position={position}>
+    return <article key={person.id} className="team-card" data-active={active} inert={!active&&count>3&&Math.min(Math.abs(member-current),count-Math.abs(member-current))>1}>
      <div className="team-card-portrait" aria-hidden="true">
       <span>{person.initials}</span>
-      {person.photoUrl&&<img src={person.photoUrl} alt="" loading="lazy" decoding="async" onError={event=>{event.currentTarget.hidden=true}}/>}
+      {person.photoUrl&&<img src={person.photoUrl} alt="" loading="lazy" draggable={false} decoding="async" onError={event=>{event.currentTarget.hidden=true}}/>}
+      <div className="team-atlas-mono">{person.photoUrl&&<img src={person.photoUrl} alt="" loading="lazy" draggable={false} decoding="async" onError={event=>{event.currentTarget.hidden=true}}/>}</div>
      </div>
      <div className="team-card-copy">
       {person.role&&<small>{person.role}</small>}
       <h3>{person.name}</h3>
-      {position===0&&person.services.length>0&&<ul className="team-card-services">{person.services.map(service=><li key={service}>{service}</li>)}</ul>}
-      {position===0&&canBook&&<button className="team-card-book" type="button" onClick={()=>teamBooking?startBooking():startBooking(matching,person.id)}>{label}</button>}
+      {active&&person.services.length>0&&<ul className="team-card-services">{person.services.map(service=><li key={service}>{service}</li>)}</ul>}
+      {active&&canBook&&<button className="team-card-book" type="button" onClick={()=>teamBooking?startBooking():startBooking(matching,person.id)}>{label}</button>}
      </div>
-     {position!==0&&<button className="team-card-select" type="button" aria-label={person.name} onClick={()=>setIndex(member)}/>}
+     {!active&&<button className="team-card-select" type="button" aria-label={person.name} onClick={()=>engine.current?.goTo(member)}/>}
     </article>
    })}
   </div>
   {count>1&&<div className="team-card-controls">
    <button className="team-card-arrow" type="button" aria-label={es?'Integrante anterior':'Previous team member'} onClick={()=>advance(-1)}>‹</button>
    <div className="team-card-dots">
-    {people.map((person,i)=><button key={person.id} type="button" aria-label={person.name} aria-current={i===current?'true':undefined} onClick={()=>setIndex(i)}/>)}
+    {people.map((person,i)=><button key={person.id} type="button" aria-label={person.name} aria-current={i===current?'true':undefined} onClick={()=>engine.current?.goTo(i)}/>)}
    </div>
    <button className="team-card-arrow" type="button" aria-label={es?'Siguiente integrante':'Next team member'} onClick={()=>advance(1)}>›</button>
   </div>}
