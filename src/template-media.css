@@ -1,11 +1,18 @@
-.template-hero-meta .template-social{min-width:0;padding:0}
+.template-site .template-hero-meta > .template-social {
+  grid-column: 1 / -1;
+  min-width: 0;
+  padding-inline: 16px;
+  border-top: 1px solid color-mix(in srgb, var(--template-dark-ink, #fff) 20%, transparent);
+}
+.template-site .template-hero-meta > .template-social:only-child { border-top: 0; }
 .template-social summary,.template-music-tracks summary{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:44px;cursor:pointer;list-style:none;font-weight:750}
 .template-social summary::-webkit-details-marker,.template-music-tracks summary::-webkit-details-marker{display:none}
 .template-social[open] summary svg,.template-music-tracks[open] summary svg{transform:rotate(180deg)}
 .template-social ul,.template-music-tracks ol{list-style:none;margin:0;padding:0}
-.template-social ul{display:flex;flex-wrap:wrap;gap:6px;padding-bottom:8px}
+.template-social summary { justify-content: center; text-align: center; }
+.template-social summary svg { flex: none; }
+.template-social ul { display:flex; justify-content:center; flex-wrap:wrap; gap:8px; padding:0 0 12px; }
 .template-social a{display:grid;place-items:center;width:44px;height:44px;border-radius:50%;border:1px solid currentColor;color:inherit}
-.template-site .template-hero-meta:has(.template-social){grid-template-columns:repeat(4,minmax(0,1fr))}
 .template-music{box-sizing:border-box;width:min(100%,740px);margin:32px auto 0;padding:clamp(14px,3vw,24px);color:var(--template-dark-ink,#fff);background:var(--template-dark,#211a2c);border:1px solid color-mix(in srgb,currentColor 24%,transparent);border-radius:22px}
 .template-music-top{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
 .template-music-cover{display:grid;place-items:center;flex:none;width:58px;height:58px;border-radius:10px;overflow:hidden;background:var(--template-accent);color:var(--template-button-ink,#111)}
@@ -32,4 +39,3 @@
 .wf-media-editor select option{color:CanvasText;background:Canvas}
 .wf-media-editor fieldset{min-width:0;border:1px solid color-mix(in srgb,currentColor 25%,transparent);border-radius:12px;padding:12px;display:grid;gap:10px}
 .wf-media-actions{display:flex;flex-wrap:wrap;gap:8px}
-@media(max-width:760px){.template-site .template-hero-meta:has(.template-social){grid-template-columns:minmax(0,1fr)}}
