@@ -7,7 +7,7 @@
   perspective: 1050px;
   touch-action: pan-y;
   overflow: clip;
-  padding-block: 8px 16px;
+  padding-block: 24px 16px;
 }
 .template-site .team-card {
   grid-area: 1 / 1;
@@ -17,14 +17,26 @@
   position: relative;
   overflow: hidden;
   min-width: 0;
-  border: 2px solid color-mix(in srgb, var(--template-accent) 75%, transparent);
+  --team-card-border: var(--template-accent);
+  border: 2px solid var(--team-card-border);
   border-radius: 22px;
   background: color-mix(in srgb, var(--template-cream) 92%, var(--template-accent));
   color: var(--template-dark);
   box-shadow: 0 14px 24px -18px var(--template-dark);
 }
 .template-site .team-carousel-stage[data-count="1"] .team-card { width: min(100%,280px); }
-.template-site .team-card[data-active="false"] { border-color: color-mix(in srgb, var(--template-accent) 28%, transparent); }
+.template-site .team-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  box-shadow: inset 0 0 0 1px var(--team-card-border);
+  border-radius: 20px;
+  pointer-events: none;
+}
+.template-site .team-card[data-active="false"] {
+  --team-card-border: color-mix(in srgb, var(--template-accent) 48%, var(--template-cream));
+}
 .template-site .team-atlas-mono { width: 100%; height: 100%; filter: grayscale(1); opacity: 0; pointer-events: none; }
 .template-site .team-card-portrait {
   display: grid;
