@@ -1,65 +1,55 @@
-.template-site .template-team-cards {
-  display: flex;
-  gap: 18px;
-  overflow-x: auto;
-  overscroll-behavior-x: contain;
-  scroll-snap-type: x mandatory;
-  margin: 32px 0 0;
-  padding: 4px 4px 14px;
-  list-style: none;
-}
-
-.template-site .template-team-cards > li {
-  flex: 0 0 calc((100% - 36px) / 3);
-  min-width: 0;
-  scroll-snap-align: start;
-}
-
-.template-site .template-team-cards > li:first-child { margin-inline-start: auto; }
-.template-site .template-team-cards > li:last-child { margin-inline-end: auto; }
-.template-site .template-team-cards > li:only-child { flex-basis: min(100%, 380px); }
-
-.template-site .team-card {
-  display: flex;
-  flex-direction: column;
+.template-site .team-carousel { margin: 24px auto 0; max-width: 850px; }
+.template-site .team-carousel-stage {
+  display: grid;
+  grid-template-columns: 1fr min(57%, 395px) 1fr;
   align-items: center;
-  height: 100%;
-  box-sizing: border-box;
-  gap: 10px;
-  padding: clamp(16px, 3vw, 26px);
-  border: 1px solid color-mix(in srgb, var(--template-accent) 60%, transparent);
-  border-radius: 22px;
-  background: color-mix(in srgb, var(--template-cream) 95%, var(--template-accent));
-  color: var(--template-dark);
-  text-align: center;
-  overflow-wrap: anywhere;
+  isolation: isolate;
+  perspective: 1050px;
+  touch-action: pan-y;
 }
-
+.template-site .team-carousel-stage[data-count="1"] { grid-template-columns: 1fr min(100%, 380px) 1fr; }
+.template-site .team-card {
+  grid-row: 1;
+  position: relative;
+  overflow: hidden;
+  min-width: 0;
+  border: 2px solid color-mix(in srgb, var(--template-accent) 75%, transparent);
+  border-radius: 22px;
+  background: color-mix(in srgb, var(--template-cream) 92%, var(--template-accent));
+  color: var(--template-dark);
+  box-shadow: 0 14px 24px -18px var(--template-dark);
+  transition: transform .28s ease;
+}
+.template-site .team-card[data-position="0"] { grid-column: 2; z-index: 2; }
+.template-site .team-card[data-position="-1"] { grid-column: 1 / 3; justify-self: start; transform: rotateY(19deg) scale(.88); transform-origin: left center; }
+.template-site .team-card[data-position="1"] { grid-column: 2 / 4; justify-self: end; transform: rotateY(-19deg) scale(.88); transform-origin: right center; }
+.template-site .team-card:not([data-position="0"]) { width: 70%; border-color: color-mix(in srgb, var(--template-accent) 28%, transparent); }
+.template-site .team-card:not([data-position="0"]) img { filter: grayscale(1); }
 .template-site .team-card-portrait {
   display: grid;
   place-items: center;
-  width: min(100%, 116px);
-  aspect-ratio: 1;
-  border-radius: 22px;
+  aspect-ratio: 1.08;
   overflow: hidden;
+  border-radius: 19px;
   background: var(--template-dark);
-  color: #fff;
-  font-size: 2rem;
+  color: white;
+  font-size: clamp(1.6rem, 6vw, 3rem);
   font-weight: 800;
 }
-.template-site .has-photo .team-card-portrait { width: 100%; }
 .template-site .team-card-portrait > * { grid-area: 1 / 1; }
 .template-site .team-card-portrait img { width: 100%; height: 100%; object-fit: cover; }
-.template-site .team-card small { color: color-mix(in srgb, var(--template-accent) 60%, var(--template-dark)); font-weight: 800; text-transform: uppercase; letter-spacing: .09em; }
-.template-site .team-card h3 { margin: 0; }
-.template-site .team-card-services { display: flex; justify-content: center; flex-wrap: wrap; gap: 6px; list-style: none; margin: 0; padding: 0; }
-.template-site .team-card-services li { border: 1px solid color-mix(in srgb, var(--template-dark) 18%, transparent); border-radius: 999px; padding: 5px 10px; font-size: .82rem; }
-.template-site .team-card > button { min-height: 44px; width: 100%; margin-top: auto; }
-.template-site .team-card-controls { display: none; justify-content: center; gap: 12px; }
-.template-site .team-card-controls.many { display: flex; }
-.template-site .team-card-controls button { width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--template-accent); color: var(--template-dark); background: var(--template-cream); font-size: 1.5rem; }
-
-@media (max-width: 760px) {
-  .template-site .template-team-cards > li { flex-basis: min(84%, 380px); }
-  .template-site .team-card-controls { display: flex; }
-}
+.template-site .team-card-copy { padding: clamp(10px, 2vw, 22px); overflow-wrap: anywhere; }
+.template-site .team-card small { color: color-mix(in srgb, var(--template-accent) 60%, var(--template-dark)); font-weight: 800; text-transform: uppercase; letter-spacing: .07em; font-size: .72rem; }
+.template-site .team-card h3 { margin: 4px 0 10px; font-size: clamp(.95rem, 4vw, 2rem); line-height: 1.15; }
+.template-site .team-card-services { display: flex; flex-wrap: wrap; gap: 5px; list-style: none; margin: 0; padding: 0; }
+.template-site .team-card-services li { border: 1px solid color-mix(in srgb, var(--template-dark) 18%, transparent); border-radius: 999px; padding: 4px 7px; font-size: .67rem; }
+.template-site .team-card-book { display: block; min-height: 44px; width: 100%; margin-top: 8px; border: 0; background: transparent; color: color-mix(in srgb, var(--template-accent) 65%, var(--template-dark)); font-weight: 850; }
+.template-site .team-card-select { position: absolute; inset: 0; width: 100%; border: 0; background: transparent; }
+.template-site .team-card-controls,.template-site .team-card-dots { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; }
+.template-site .team-card-controls { gap: 12px; margin-top: 14px; }
+.template-site .team-card-controls button { border: 0; color: var(--template-dark); width: 44px; height: 44px; }
+.template-site .team-card-arrow { border-radius: 50%; background: color-mix(in srgb,var(--template-cream) 85%,var(--template-accent)); font-size: 1.5rem; }
+.template-site .team-card-dots button { display: grid; place-items: center; background: transparent; padding: 0; }
+.template-site .team-card-dots button::after { content: ""; width: 10px; height: 10px; border-radius: 50%; background: color-mix(in srgb,var(--template-accent) 25%,var(--template-cream)); }
+.template-site .team-card-dots button[aria-current]::after { background: var(--template-accent); }
+@media(prefers-reduced-motion:reduce) { .template-site .team-card { transition: none; } }
