@@ -1,0 +1,77 @@
+.template-site.template-sonido-vivo-artist {
+  --sonido-ink: #f5eff6;
+  --sonido-muted: #c2b5cb;
+  --sonido-panel: #1d1626;
+  --sonido-line: #44364e;
+}
+.template-site.template-sonido-vivo-artist .template-header {
+  background: #100c16;
+  border-color: var(--sonido-line);
+  box-shadow: none;
+  color: var(--sonido-ink);
+}
+.template-site.template-sonido-vivo-artist :is(.template-brand, .template-header nav a) {
+  color: var(--sonido-ink);
+}
+.template-site.template-sonido-vivo-artist :is(.template-languages, .template-menu-button, .template-header nav.open) {
+  background: var(--sonido-panel);
+  border-color: var(--sonido-line);
+  color: var(--sonido-ink);
+}
+.template-site.template-sonido-vivo-artist .template-languages button {
+  color: var(--sonido-muted);
+}
+.template-site.template-sonido-vivo-artist .template-languages button.active {
+  background: #100c16;
+  color: var(--sonido-ink);
+  box-shadow: inset 0 0 0 1px var(--template-accent);
+}
+.template-site.template-sonido-vivo-artist :is(.template-catalog, .template-team-section) {
+  background: #100c16;
+  color: var(--sonido-ink);
+}
+.template-site.template-sonido-vivo-artist .template-team-section {
+  background: radial-gradient(ellipse at 50% 52%, #281735, #100c16 75%);
+}
+.template-site.template-sonido-vivo-artist :is(.template-catalog, .template-team-section) .template-section-heading p {
+  color: var(--sonido-muted);
+}
+.template-site.template-sonido-vivo-artist .team-card {
+  background: var(--sonido-panel);
+  color: var(--sonido-ink);
+}
+.template-site.template-sonido-vivo-artist .team-card[data-active="false"] {
+  --team-card-border: #71617f;
+}
+.template-site.template-sonido-vivo-artist .team-card small {
+  color: var(--sonido-muted);
+}
+.template-site.template-sonido-vivo-artist .team-card-services li {
+  border-color: #5e4b6b;
+}
+.template-site.template-sonido-vivo-artist .team-card-book {
+  color: var(--template-accent);
+}
+.template-site.template-sonido-vivo-artist .team-card-arrow {
+  background: var(--sonido-panel);
+  color: var(--sonido-ink);
+  border: 1px solid var(--sonido-line);
+}
+.template-site.template-sonido-vivo-artist .team-card-dots button:not([aria-current])::after {
+  background: #63546e;
+}
+.template-site.template-sonido-vivo-artist :is(.template-story, .template-gallery, .template-contact, .template-footer) {
+  background: #100c16;
+  color: var(--sonido-ink);
+}
+.template-site.template-sonido-vivo-artist :is(.template-story-copy p, .template-trust-row span, .template-contact > div:first-child p, .template-contact-grid small, .template-footer span) {
+  color: var(--sonido-muted);
+}
+.template-site.template-sonido-vivo-artist .template-contact-grid article {
+  background: var(--sonido-panel);
+  border-color: var(--sonido-line);
+  box-shadow: none;
+}
+.template-site.template-sonido-vivo-artist .template-footer {
+  border-top: 1px solid var(--sonido-line);
+}

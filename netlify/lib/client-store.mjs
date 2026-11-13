@@ -1,3 +1,4 @@
+import {teamPhotoUrl} from "../../shared/team-photo.mjs";
 import {basicProfessional,isBasicMembership} from "../../shared/membership-plans.mjs";
 import {publicSiteMusic} from "../../shared/site-music.mjs";
 import {normalizeSocialLinks} from "../../shared/social-links.mjs";
@@ -130,6 +131,12 @@ export async function sitesForEmail(email) {
   return (await currentIndexedSites(clientSiteStore(),email)).map(site=>({...site,revision:Number(site.revision||0),design:normalizeSiteDesign(site.design||{})}));
 }
 
+export function publicTeamMembers(site) {
+  const restricted = isBasicMembership(site) && site.settings?.teamBookingEnabled !== true;
+  const professional = restricted ? basicProfessional(site) : null;
+  return (site.employees || []).filter(member => member.active !== false && member.name?.trim() && (!restricted || member.id === professional));
+}
+
 export function publicClientSite(site) {
   if (!site) return null;
   const basic=isBasicMembership(site);
@@ -188,9 +195,10 @@ export function publicClientSite(site) {
         ? `/.netlify/functions/client-asset?siteId=${encodeURIComponent(site.siteId)}&key=${encodeURIComponent(item.imageAssetKey)}`
         : "",
     })),
-    employees: (site.employees || []).filter((member) => member.active !== false && (!basic||member.id===basicProfessional(site))).map((member) => ({
+    employees: publicTeamMembers(site).map((member) => ({
       id: member.id,
       name: member.name,
+      photoUrl: teamPhotoUrl(site.siteId,member.photoAssetKey),
       role: member.role,
       roleEn: member.roleEn || member.role || "",
       roleEs: member.roleEs || "",
@@ -198,7 +206,7 @@ export function publicClientSite(site) {
       locationIds: member.locationIds || [],
     })),
     hours: site.hours || {},
-    settings: {timezone: site.settings?.timezone, waitlistEnabled: !basic && site.settings?.waitlistEnabled === true},
+    settings: {timezone: site.settings?.timezone, teamBookingEnabled: site.settings?.teamBookingEnabled === true, waitlistEnabled: !basic && site.settings?.waitlistEnabled === true},
     paymentRules: {
       bookingWithoutPayment: basic,
       methods: basic ? {} : site.paymentRules?.methods || {},

@@ -1,3 +1,4 @@
+import {teamBookingId} from '../../shared/team-booking.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
@@ -37,7 +38,7 @@ test('branded email localizes fields, uses actual location/professional and reje
  const f=fixture(t), r={...f.record,locationId:'one'};const mail=renderBookingEmail(f.site,r);assert.match(mail.html,/Nova &lt;Fade&gt;/);assert.match(mail.html,/logo.png/);assert.match(mail.text,/Alex Rivera/);assert.match(mail.text,/Camuy/);assert.match(mail.text,/ABC12345/);assert.match(mail.html,/Administrar reserva/);assert.match(mail.html,/Añadir al calendario/);assert.match(mail.html,/Cómo llegar/);assert.ok(!mail.html.includes('Write a review'));assert.match(renderBookingEmail(f.site,{...r,language:'en'}).html,/Manage booking/);assert.equal(safeWebUrl('javascript:alert(1)'), '');assert.equal(safeWebUrl('https://secret:secret@example.invalid'),'');
 });
 test('private management page is read only, requires token and shields it from referrers; cross-origin posts are refused',async t=>{
- const f=fixture(t);await f.prepare();assert.equal((await manage(get('txn-manage'))).status,404);const res=await manage(get(f.token));assert.equal(res.status,200);assert.equal(res.headers.get('referrer-policy'),'no-referrer');assert.match(await res.text(),/Administrar reserva/);assert.equal(f.mails.length,0);assert.equal((await manage(post(f.token,{action:'cancel',acknowledged:'yes',version:bookingVersion(f.record)},'https://evil.invalid'))).status,403);assert.equal((await f.store.get(f.key,{type:'json'})).status,'confirmed');
+ const f=fixture(t);await f.prepare();assert.equal((await manage(get('txn-manage'))).status,404);const res=await manage(get(f.token));assert.equal(res.status,200);assert.equal(res.headers.get('referrer-policy'),'origin');assert.match(await res.text(),/Administrar reserva/);assert.equal(f.mails.length,0);assert.equal((await manage(post(f.token,{action:'cancel',acknowledged:'yes',version:bookingVersion(f.record)},'https://evil.invalid'))).status,403);assert.equal((await f.store.get(f.key,{type:'json'})).status,'confirmed');
 });
 test('customer cancellation commits local state, preserves payment, notifies both and cannot be replayed or revived by stale transaction retry',async t=>{
  const f=fixture(t);await f.prepare();const body={action:'cancel',acknowledged:'yes',version:bookingVersion(f.record)};const res=await manage(post(f.token,body));assert.equal(res.status,303);let r=await f.store.get(f.key,{type:'json'});assert.equal(r.status,'cancelled');assert.equal(r.paymentStatus,'paid');assert.equal(f.mails.length,2);assert.match(f.mails[0].text,/no realiza un reembolso/);assert.equal((await manage(post(f.token,body))).status,409);assert.equal(f.mails.length,2);assert.equal(f.calls.length,0);await f.store.setJSON(commerceKey(f.site.siteId,'transactions',r.transactionId),f.record);await retry();r=await f.store.get(f.key,{type:'json'});assert.equal(r.status,'cancelled');assert.equal(f.mails.length,2);
@@ -102,4 +103,82 @@ test('daily, monthly and locked confirmation enforce daily caps, time off, appoi
 test('Google failure blocks daily, monthly and final confirmation equally',async t=>{
  const f=fixture(t);await f.prepare();f.site.googleCalendar={connected:true};f.site.employees[0].calendarId='external-calendar';
  for(const operation of [()=>availabilityForDate(f.site,'haircut','alex',f.date,'one'),()=>availabilityForMonth(f.site,'haircut','alex',f.date.slice(0,7),'one'),()=>createBookingHold(f.site,{serviceId:'haircut',employeeId:'alex',locationId:'one',start:f.date+'T15:00:00Z'},{strictGoogle:false})])await assert.rejects(operation(),{status:503});
+});
+
+test('shared agenda deduplicates hours and assigns an eligible professional under the existing booking lock',async t=>{
+ const {bookingAvailabilityForDate,bookingAvailabilityForMonth,reserveBookingSlot}=await import('./booking-engine.mjs');
+ const f=fixture(t);await f.prepare();
+ const [alex]=f.site.employees;
+ f.site.employees.push({...alex,id:'mia',name:'Mia',schedule:{Monday:{enabled:true,open:'09:30',close:'17:30'}}},
+  {...alex,id:'inactive',active:false},{...alex,id:'other',locationIds:['other']});
+ f.site.hours.Lunes.close='18:00';
+ await f.prepare();
+ const slots=await bookingAvailabilityForDate(f.site,'haircut','any',f.date,'one');
+ assert.equal(new Set(slots.map(slot=>slot.start)).size,slots.length);
+ const monthly=await bookingAvailabilityForMonth(f.site,'haircut','any',f.date.slice(0,7),'one');
+ assert.equal(monthly[f.date],slots.length);
+ const selection={serviceId:'haircut',employeeId:'any',locationId:'one',start:f.date+'T13:30:00Z'};
+ assert.equal((await reserveBookingSlot(f.site,selection)).employeeId,'alex');
+ assert.equal((await reserveBookingSlot(f.site,selection)).employeeId,'mia');
+ await assert.rejects(reserveBookingSlot(f.site,selection),{status:409});
+ await assert.rejects(reserveBookingSlot(f.site,{...selection,employeeId:'other'}),{status:404});
+});
+
+test('one team agenda uses business hours, blocks both branches and preserves capacity after switching modes',async t=>{
+ const {bookingAvailabilityForDate,bookingAvailabilityForMonth,reserveBookingSlot}=await import('./booking-engine.mjs');
+ const f=fixture(t);
+ f.site.settings.teamBookingEnabled=true;
+ f.site.employees[0].schedule={Monday:{enabled:false}};
+ f.site.business.locations.push({id:'two',name:'Local 2'});
+ f.site.catalog.push({...f.site.catalog[0],id:'consult'});
+ await f.prepare();
+ const selection={serviceId:'haircut',employeeId:teamBookingId,locationId:'one',start:f.date+'T13:30:00Z'};
+ const slots=await bookingAvailabilityForDate(f.site,'haircut',teamBookingId,f.date,'one');
+ assert.equal(slots[0].start,new Date(selection.start).toISOString());
+ assert.equal((await bookingAvailabilityForMonth(f.site,'haircut',teamBookingId,f.date.slice(0,7),'one'))[f.date],slots.length);
+ const results=await Promise.allSettled([reserveBookingSlot(f.site,selection),reserveBookingSlot(f.site,{...selection,serviceId:'consult',locationId:'two'})]);
+ const [held]=results.filter(result=>result.status==='fulfilled');
+ assert.equal(results.filter(result=>result.status==='fulfilled').length,1);
+ assert.equal(held.value.employeeId,teamBookingId);
+ assert.equal(results.find(result=>result.status==='rejected').reason.status,409);
+ f.site.settings.teamBookingEnabled=false;
+ f.site.employees[0].schedule={};
+ await f.prepare();
+ await assert.rejects(reserveBookingSlot(f.site,selection),{status:409});
+ await assert.rejects(reserveBookingSlot(f.site,{...selection,employeeId:'any'}),{status:409});
+ assert.equal((await reserveBookingSlot(f.site,{...selection,employeeId:'any',start:f.date+'T14:00:00Z'})).employeeId,'alex');
+});
+
+test('team agenda checks the selected Google Calendar without consulting individual calendars',async t=>{
+ const {bookingAvailabilityForDate}=await import('./booking-engine.mjs');
+ const f=fixture(t);
+ f.site.googleCalendar.connected=true;
+ f.site.settings={...f.site.settings,teamBookingEnabled:true,teamBookingCalendarId:'band'};
+ f.site.employees[0].calendarId='personal';
+ await f.prepare();
+ await clientOAuthStore().setJSON(`tokens/${f.site.siteId}.json`,{encrypted:encryptToken({access_token:'test',expires_at:Date.now()+3600000})});
+ t.mock.method(globalThis,'fetch',async(url,options)=>{
+  assert.match(String(url),/freeBusy/);
+  assert.deepEqual(JSON.parse(options.body).items,[{id:'band'}]);
+  return Response.json({calendars:{band:{busy:[{start:f.date+'T13:30:00Z',end:f.date+'T14:00:00Z'}]}}});
+ });
+ const slots=await bookingAvailabilityForDate(f.site,'haircut',teamBookingId,f.date,'one');
+ assert.equal(slots[0].start,f.date+'T14:00:00.000Z');
+});
+
+test('confirmed team bookings sync to the shared Google Calendar',async t=>{
+ const f=fixture(t);
+ f.site.googleCalendar.connected=true;
+ f.site.settings.teamBookingCalendarId='band';
+ await f.prepare();
+ await clientOAuthStore().setJSON(`tokens/${f.site.siteId}.json`,{encrypted:encryptToken({access_token:'test',expires_at:Date.now()+3600000})});
+ t.mock.method(globalThis,'fetch',async(url,options)=>{
+  assert.match(String(url),/calendars\/band\/events/);
+  assert.equal(options.method,'POST');
+  assert.match(JSON.parse(options.body).description,/Nova/);
+  return Response.json({id:'team-event'});
+ });
+ const synced=await syncBookingCalendar(f.site,{...f.record,employeeId:teamBookingId});
+ assert.equal(synced.googleCalendarId,'band');
+ assert.equal(synced.googleEventId,'team-event');
 });

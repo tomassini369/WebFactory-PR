@@ -12,6 +12,12 @@ The same business siteId, catalog, photos, location, inventory, tax calculation,
 
 Cashier POS, Customer Display, Workforce, Builder, portals and PR #101 remain separate. The new screen uses `pos-domain` for catalog labels, quantity limits, estimated totals and accessible business accent colors. Tenant primary colors tint the light/dark canvas and surfaces. No new database or UI dependency is introduced. On phones and tablets a cart jump control avoids scrolling through a long catalog to reach checkout; it hides when the existing order panel is in view. Up to 20 distinct cart lines match the server contract. On this public ordering route, the Netlify preview collaboration drawer is hidden so it cannot cover customer controls.
 
+## Team booking calendar
+
+The business owner can enable one calendar for the entire team under **Dashboard → Team → Booking calendar**. The website, cashier POS and kiosk share availability. The business and selected location set opening hours. A single booking occupies the whole team, including across services and locations. Individual profiles remain visible on the website.
+
+Optionally select a writable Google Calendar from the business connection. Existing appointments keep their original assignment. Turning the setting off restores individual availability while existing team bookings continue blocking their scheduled times.
+
 ## Checkout safety
 
 Each paired screen has one server-generated sale ID. Atomic ETag writes freeze a canonical request and a server-generated 256-bit idempotency key before invoking the existing checkout-attempt guard. Client tenant IDs, branch IDs, prices and payment-confirmed flags never determine the order. Repeated or concurrent submissions cannot create another checkout for the active sale. Reload and resume retain the same attempt. Server time limits each device to 20 new orders per minute; exact resumes and polling do not consume another order slot. Completed attempts retain their response; personal request data is removed from the device record after response commit.

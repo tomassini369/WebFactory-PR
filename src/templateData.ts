@@ -20,6 +20,7 @@ export type TemplateItem = {
   duration?: number
   deposit?: number
   employees?: string[]
+  employeeIds?: string[]
   badge?: string
   groupCapacity?: number
   purchasable?: boolean
@@ -29,6 +30,7 @@ export type TemplateEmployee = {
   id: string
   name: string
   role: string
+  photoUrl?: string
   initials: string
   services: string[]
 }
@@ -100,8 +102,8 @@ export const templateConfigs: TemplateConfig[] = [
       {id:'north-4',type:'product',name:'Pomada para cabello',price:24,description:'Pomada de styling presentada junto a accesorios de barbería, como aparece en la imagen.',image:pexels(9511913),badge:'Retail'}
     ],
     employees: [
-      {id:'carlos',name:'Carlos Rivera',role:'Master Barber',initials:'CR',services:['Corte de cabello con tijera','Corte profesional','Recorte de barba']},
-      {id:'jose',name:'José Medina',role:'Barber',initials:'JM',services:['Corte de cabello con tijera','Recorte de barba']}
+      {id:'carlos',name:'Carlos Rivera',photoUrl:'/images/team-demo/m1.webp',role:'Master Barber',initials:'CR',services:['Corte de cabello con tijera','Corte profesional','Recorte de barba']},
+      {id:'jose',name:'José Medina',photoUrl:'/images/team-demo/m2.webp',role:'Barber',initials:'JM',services:['Corte de cabello con tijera','Recorte de barba']}
     ],
     bookingLabel: 'Reservar cita', cartEnabled: true, bookingEnabled: true,
     aboutTitle: 'Service + Employee + Time en acción.',
@@ -123,8 +125,8 @@ export const templateConfigs: TemplateConfig[] = [
       {id:'aura-4',type:'product',name:'Serum facial',price:38,description:'Botella de serum para cuidado de la piel presentada como producto cosmético.',image:pexels(13946076),badge:'Shop'}
     ],
     employees: [
-      {id:'sofia',name:'Sofía Morales',role:'Lead Esthetician',initials:'SM',services:['Tratamiento facial relajante','Facial con equipo profesional']},
-      {id:'camila',name:'Camila Reyes',role:'Beauty Specialist',initials:'CR',services:['Tratamiento facial relajante','Diseño de cejas']}
+      {id:'sofia',name:'Sofía Morales',photoUrl:'/images/team-demo/w1.webp',role:'Lead Esthetician',initials:'SM',services:['Tratamiento facial relajante','Facial con equipo profesional']},
+      {id:'camila',name:'Camila Reyes',photoUrl:'/images/team-demo/w2.webp',role:'Beauty Specialist',initials:'CR',services:['Tratamiento facial relajante','Diseño de cejas']}
     ],
     bookingLabel: 'Book treatment', cartEnabled: true, bookingEnabled: true,
     aboutTitle: 'Una experiencia de reserva tan cuidada como la marca.',
@@ -146,8 +148,8 @@ export const templateConfigs: TemplateConfig[] = [
       {id:'bal-4',type:'product',name:'Vela aromática en vidrio',price:28,description:'Vela aromática artesanal presentada en recipiente de vidrio, como se observa en la imagen.',image:pexels(1652095),badge:'Studio shop'}
     ],
     employees: [
-      {id:'elena',name:'Elena Ortiz',role:'Yoga Instructor',initials:'EO',services:['Clase grupal de yoga y respiración','Yoga en estudio']},
-      {id:'nadia',name:'Nadia Torres',role:'Wellness Therapist',initials:'NT',services:['Yoga en estudio','Masaje relajante']}
+      {id:'elena',name:'Elena Ortiz',photoUrl:'/images/team-demo/w3.webp',role:'Yoga Instructor',initials:'EO',services:['Clase grupal de yoga y respiración','Yoga en estudio']},
+      {id:'nadia',name:'Nadia Torres',photoUrl:'/images/team-demo/w4.webp',role:'Wellness Therapist',initials:'NT',services:['Yoga en estudio','Masaje relajante']}
     ],
     bookingLabel: 'Reserve your spot', cartEnabled: true, bookingEnabled: true, groupBooking: true,
     aboutTitle: 'Services and classes by appointment.',
@@ -188,8 +190,8 @@ export const templateConfigs: TemplateConfig[] = [
       {id:'sum-4',type:'service',name:'Consulta introductoria',price:0,displayPrice:'Free',description:'Conversación inicial uno a uno para conocer las necesidades del cliente.',image:pexels(7979435),appointment:true,duration:20,employees:['Andrea','Miguel'],purchasable:false}
     ],
     employees: [
-      {id:'andrea',name:'Andrea Vázquez',role:'Principal Consultant',initials:'AV',services:['Consulta de negocio','Revisión de documentos y operaciones','Consulta introductoria']},
-      {id:'miguel',name:'Miguel Santos',role:'Growth Advisor',initials:'MS',services:['Consulta de negocio','Reunión de estrategia de equipo','Consulta introductoria']}
+      {id:'andrea',name:'Andrea Vázquez',photoUrl:'/images/team-demo/w5.webp',role:'Principal Consultant',initials:'AV',services:['Consulta de negocio','Revisión de documentos y operaciones','Consulta introductoria']},
+      {id:'miguel',name:'Miguel Santos',photoUrl:'/images/team-demo/m3.webp',role:'Growth Advisor',initials:'MS',services:['Consulta de negocio','Reunión de estrategia de equipo','Consulta introductoria']}
     ],
     bookingLabel: 'Schedule consultation', cartEnabled: false, bookingEnabled: true,
     aboutTitle: 'Professional services without a generic contact page.',
@@ -211,8 +213,8 @@ export const templateConfigs: TemplateConfig[] = [
       {id:'isla-4',type:'service',name:'Consulta con agente',price:0,displayPrice:'Free consultation',description:'Reunión profesional con asesor para conversar sobre compra, propiedades y próximos pasos.',image:pexels(7979435),appointment:true,duration:30,employees:['Valeria','Diego'],purchasable:false}
     ],
     employees: [
-      {id:'valeria',name:'Valeria León',role:'Real Estate Advisor',initials:'VL',services:['Casa moderna con jardín','Apartamento moderno con vista urbana','Consulta con agente']},
-      {id:'diego',name:'Diego Font',role:'Property Advisor',initials:'DF',services:['Apartamento moderno con vista urbana','Casa mediterránea con jardín','Consulta con agente']}
+      {id:'valeria',name:'Valeria León',photoUrl:'/images/team-demo/w6.webp',role:'Real Estate Advisor',initials:'VL',services:['Casa moderna con jardín','Apartamento moderno con vista urbana','Consulta con agente']},
+      {id:'diego',name:'Diego Font',photoUrl:'/images/team-demo/m4.webp',role:'Property Advisor',initials:'DF',services:['Apartamento moderno con vista urbana','Casa mediterránea con jardín','Consulta con agente']}
     ],
     bookingLabel: 'Schedule a viewing', cartEnabled: false, bookingEnabled: true,
     aboutTitle: 'Listings that lead directly to action.',
@@ -234,8 +236,8 @@ export const templateConfigs: TemplateConfig[] = [
       {id:'atelier-4',type:'class',name:'Taller creativo privado',price:120,description:'Sesión creativa para grupo pequeño trabajando con materiales artísticos alrededor de una mesa.',image:pexels(6925189),appointment:true,duration:120,deposit:40,employees:['Lucía','Marcos']}
     ],
     employees: [
-      {id:'lucia',name:'Lucía Ferrer',role:'Founder & Maker',initials:'LF',services:['Taller de fabricación de velas','Taller creativo privado']},
-      {id:'marcos',name:'Marcos Gil',role:'Workshop Host',initials:'MG',services:['Taller creativo privado']}
+      {id:'lucia',name:'Lucía Ferrer',photoUrl:'/images/team-demo/w7.webp',role:'Founder & Maker',initials:'LF',services:['Taller de fabricación de velas','Taller creativo privado']},
+      {id:'marcos',name:'Marcos Gil',photoUrl:'/images/team-demo/m5.webp',role:'Workshop Host',initials:'MG',services:['Taller creativo privado']}
     ],
     bookingLabel: 'Book a workshop', cartEnabled: true, bookingEnabled: true, groupBooking: true,
     aboutTitle: 'One site, two revenue streams.',
@@ -257,8 +259,8 @@ export const templateConfigs: TemplateConfig[] = [
       {id:'aqua-4',type:'product',name:'Kit de cuidado',price:39,description:'Productos básicos para mantener el acabado entre visitas.',image:pexels(11139243),badge:'Shop'}
     ],
     employees: [
-      {id:'aqua-luis',name:'Luis Vega',role:'Detail Specialist',initials:'LV',services:['Lavado Express','Full Detail']},
-      {id:'aqua-mara',name:'Mara Cruz',role:'Wash Specialist',initials:'MC',services:['Lavado Express','Ceramic Boost']}
+      {id:'aqua-luis',name:'Luis Vega',photoUrl:'/images/team-demo/m6.webp',role:'Detail Specialist',initials:'LV',services:['Lavado Express','Full Detail']},
+      {id:'aqua-mara',name:'Mara Cruz',photoUrl:'/images/team-demo/w8.webp',role:'Wash Specialist',initials:'MC',services:['Lavado Express','Ceramic Boost']}
     ],
     bookingLabel: 'Reservar lavado', cartEnabled: true, bookingEnabled: true,
     aboutTitle: 'Un car wash que también vende conveniencia.',
@@ -280,8 +282,8 @@ export const templateConfigs: TemplateConfig[] = [
       {id:'verde-4',type:'service',name:'Visita para cotización',price:0,displayPrice:'Cotización gratis',description:'Evaluación presencial para trabajos especiales.',image:pexels(1458694),appointment:true,duration:30,employees:['Javier'],purchasable:false}
     ],
     employees: [
-      {id:'verde-javier',name:'Javier Soto',role:'Landscape Lead',initials:'JS',services:['Recorte de patio','Mantenimiento de jardín','Visita para cotización']},
-      {id:'verde-noel',name:'Noel Díaz',role:'Outdoor Care Technician',initials:'ND',services:['Recorte de patio','Limpieza de patio']}
+      {id:'verde-javier',name:'Javier Soto',photoUrl:'/images/team-demo/m7.webp',role:'Landscape Lead',initials:'JS',services:['Recorte de patio','Mantenimiento de jardín','Visita para cotización']},
+      {id:'verde-noel',name:'Noel Díaz',photoUrl:'/images/team-demo/m8.webp',role:'Outdoor Care Technician',initials:'ND',services:['Recorte de patio','Limpieza de patio']}
     ],
     bookingLabel: 'Agendar servicio', cartEnabled: false, bookingEnabled: true,
     aboutTitle: 'Mantenimiento exterior organizado por zona y horario.',
@@ -294,14 +296,18 @@ export const templateConfigs: TemplateConfig[] = [
     description: 'Template para artista musical con paquetes de presentación, fechas reservables, depósitos y contacto para eventos privados.',
     heroImage: pexels(1763075), gallery: [pexels(1190297), pexels(164829), pexels(167636)],
     location: 'Puerto Rico', phone: '(787) 555-0203', hours: 'Bookings · By availability',
-    accent: '#A855F7', accent2: '#E2B7FF', dark: '#120A1D', cream: '#FAF5FF',
+    accent: '#C084FC', accent2: '#E2B7FF', dark: '#120A1D', cream: '#FAF5FF',
     features: ['Artist booking', 'Event packages', 'Deposits', 'Social media'],
     items: [
-      {id:'music-1',type:'service',name:'Set acústico',price:450,description:'Presentación íntima para restaurantes, lounges y eventos pequeños.',image:pexels(1190297),appointment:true,duration:90,deposit:100,employees:['Alex'],badge:'Popular'},
-      {id:'music-2',type:'service',name:'Full Live Performance',price:1200,description:'Presentación completa para actividades privadas y eventos.',image:pexels(1763075),appointment:true,duration:180,deposit:300,employees:['Alex'],badge:'Featured'},
+      {id:'music-1',type:'service',name:'Set acústico',price:450,description:'Presentación íntima para restaurantes, lounges y eventos pequeños.',image:pexels(1190297),appointment:true,duration:90,deposit:100,employees:['Alex','Mia'],badge:'Popular'},
+      {id:'music-2',type:'service',name:'Full Live Performance',price:1200,description:'Presentación completa para actividades privadas y eventos.',image:pexels(1763075),appointment:true,duration:180,deposit:300,employees:['Alex','Mia','Diego'],badge:'Featured'},
       {id:'music-3',type:'service',name:'Meet & Plan',price:0,displayPrice:'Consulta gratis',description:'Llamada para coordinar repertorio, horario y requisitos técnicos.',image:pexels(164829),appointment:true,duration:30,employees:['Alex'],purchasable:false}
     ],
-    employees: [{id:'music-alex',name:'Alex Rivera',role:'Performing Artist',initials:'AR',services:['Set acústico','Full Live Performance','Meet & Plan']}],
+    employees: [
+      {id:'music-mia',name:'Mia Torres',photoUrl:'/images/team-demo/music-mia.webp',role:'Vocalist',initials:'MT',services:['Set acústico','Full Live Performance']},
+      {id:'music-alex',name:'Alex Rivera',photoUrl:'/images/team-demo/music-alex.webp',role:'Performing Artist',initials:'AR',services:['Set acústico','Full Live Performance','Meet & Plan']},
+      {id:'music-diego',name:'Diego Cruz',photoUrl:'/images/team-demo/music-diego.webp',role:'Percussionist',initials:'DC',services:['Full Live Performance']},
+    ],
     bookingLabel: 'Consultar fecha', cartEnabled: false, bookingEnabled: true,
     aboutTitle: 'Booking artístico sin cadenas de mensajes.',
     aboutText: 'Este template convierte paquetes musicales en opciones claras con disponibilidad, depósito y contacto directo para producción.',
@@ -322,8 +328,8 @@ export const templateConfigs: TemplateConfig[] = [
       {id:'motor-4',type:'service',name:'Evaluación de reparación mayor',price:95,description:'Evaluación para trabajos de motor, suspensión o transmisión.',image:pexels(8985454),appointment:true,duration:90,employees:['Carlos'],badge:'Advanced'}
     ],
     employees: [
-      {id:'motor-carlos',name:'Carlos Méndez',role:'Master Technician',initials:'CM',services:['Diagnóstico general','Frenos','Evaluación de reparación mayor']},
-      {id:'motor-edwin',name:'Edwin López',role:'Service Technician',initials:'EL',services:['Diagnóstico general','Cambio de aceite']}
+      {id:'motor-carlos',name:'Carlos Méndez',photoUrl:'/images/team-demo/m1.webp',role:'Master Technician',initials:'CM',services:['Diagnóstico general','Frenos','Evaluación de reparación mayor']},
+      {id:'motor-edwin',name:'Edwin López',photoUrl:'/images/team-demo/m2.webp',role:'Service Technician',initials:'EL',services:['Diagnóstico general','Cambio de aceite']}
     ],
     bookingLabel: 'Reservar diagnóstico', cartEnabled: false, bookingEnabled: true,
     aboutTitle: 'Un taller con agenda clara desde el primer contacto.',
@@ -345,8 +351,8 @@ export const templateConfigs: TemplateConfig[] = [
       {id:'care-4',type:'service',name:'Consulta familiar',price:0,displayPrice:'Consulta gratis',description:'Coordinación inicial de horarios y tipo de apoyo requerido.',image:pexels(4473870),appointment:true,duration:30,employees:['María','Elena'],purchasable:false}
     ],
     employees: [
-      {id:'care-maria',name:'María Torres',role:'Childcare Provider',initials:'MT',services:['Consulta de cuido infantil','Cuido infantil por hora','Consulta familiar']},
-      {id:'care-elena',name:'Elena Ramos',role:'Family Care Provider',initials:'ER',services:['Cuido infantil por hora','Acompañamiento para envejecientes','Consulta familiar']}
+      {id:'care-maria',name:'María Torres',photoUrl:'/images/team-demo/w1.webp',role:'Childcare Provider',initials:'MT',services:['Consulta de cuido infantil','Cuido infantil por hora','Consulta familiar']},
+      {id:'care-elena',name:'Elena Ramos',photoUrl:'/images/team-demo/w2.webp',role:'Family Care Provider',initials:'ER',services:['Cuido infantil por hora','Acompañamiento para envejecientes','Consulta familiar']}
     ],
     bookingLabel: 'Coordinar consulta', cartEnabled: false, bookingEnabled: true,
     aboutTitle: 'Coordinación clara para servicios sensibles.',
@@ -368,8 +374,8 @@ export const templateConfigs: TemplateConfig[] = [
       {id:'bar-4',type:'service',name:'Event consultation',price:0,displayPrice:'Free consultation',description:'Consulta para estimar invitados, tiempo y necesidades del evento.',image:pexels(1267361),appointment:true,duration:30,employees:['Sara'],purchasable:false}
     ],
     employees: [
-      {id:'bar-nico',name:'Nico Rivera',role:'Lead Bartender',initials:'NR',services:['Bartender Solo','Mobile Bar Experience','Wedding Bar Service']},
-      {id:'bar-sara',name:'Sara León',role:'Event Coordinator',initials:'SL',services:['Mobile Bar Experience','Wedding Bar Service','Event consultation']}
+      {id:'bar-nico',name:'Nico Rivera',photoUrl:'/images/team-demo/m3.webp',role:'Lead Bartender',initials:'NR',services:['Bartender Solo','Mobile Bar Experience','Wedding Bar Service']},
+      {id:'bar-sara',name:'Sara León',photoUrl:'/images/team-demo/w3.webp',role:'Event Coordinator',initials:'SL',services:['Mobile Bar Experience','Wedding Bar Service','Event consultation']}
     ],
     bookingLabel: 'Consultar evento', cartEnabled: false, bookingEnabled: true,
     aboutTitle: 'Paquetes de evento listos para cotizar y reservar.',
@@ -391,8 +397,8 @@ export const templateConfigs: TemplateConfig[] = [
       {id:'cat-4',type:'service',name:'Degustación / consulta',price:75,description:'Sesión para revisar menú, cantidades y necesidades del evento.',image:pexels(262978),appointment:true,duration:60,employees:['Ana']}
     ],
     employees: [
-      {id:'cat-ana',name:'Ana Morales',role:'Executive Chef',initials:'AM',services:['Paquete íntimo · hasta 20 personas','Paquete celebración · hasta 50 personas','Paquete evento grande · hasta 100 personas','Degustación / consulta']},
-      {id:'cat-luis',name:'Luis Pérez',role:'Event Operations',initials:'LP',services:['Paquete celebración · hasta 50 personas','Paquete evento grande · hasta 100 personas']}
+      {id:'cat-ana',name:'Ana Morales',photoUrl:'/images/team-demo/w4.webp',role:'Executive Chef',initials:'AM',services:['Paquete íntimo · hasta 20 personas','Paquete celebración · hasta 50 personas','Paquete evento grande · hasta 100 personas','Degustación / consulta']},
+      {id:'cat-luis',name:'Luis Pérez',photoUrl:'/images/team-demo/m4.webp',role:'Event Operations',initials:'LP',services:['Paquete celebración · hasta 50 personas','Paquete evento grande · hasta 100 personas']}
     ],
     bookingLabel: 'Consultar fecha', cartEnabled: false, bookingEnabled: true, groupBooking: true,
     aboutTitle: 'Menús, capacidad y fechas en una sola experiencia.',
@@ -414,8 +420,8 @@ export const templateConfigs: TemplateConfig[] = [
       {id:'dj-4',type:'service',name:'Consulta musical',price:0,displayPrice:'Consulta gratis',description:'Reunión para definir estilo musical, tiempos y detalles del evento.',image:pexels(167636),appointment:true,duration:30,employees:['Marco'],purchasable:false}
     ],
     employees: [
-      {id:'dj-marco',name:'Marco Rivera',role:'Lead DJ',initials:'MR',services:['DJ Essential','DJ + Lighting','Wedding Experience','Consulta musical']},
-      {id:'dj-javi',name:'Javi Soto',role:'Event Production',initials:'JS',services:['DJ + Lighting','Wedding Experience']}
+      {id:'dj-marco',name:'Marco Rivera',photoUrl:'/images/team-demo/m5.webp',role:'Lead DJ',initials:'MR',services:['DJ Essential','DJ + Lighting','Wedding Experience','Consulta musical']},
+      {id:'dj-javi',name:'Javi Soto',photoUrl:'/images/team-demo/m6.webp',role:'Event Production',initials:'JS',services:['DJ + Lighting','Wedding Experience']}
     ],
     bookingLabel: 'Consultar fecha', cartEnabled: false, bookingEnabled: true,
     aboutTitle: 'Paquetes de entretenimiento listos para reservar.',
@@ -437,8 +443,8 @@ export const templateConfigs: TemplateConfig[] = [
       {id:'build-4',type:'service',name:'Consulta de proyecto',price:95,description:'Sesión para revisar ideas, prioridades y próximos pasos.',image:pexels(209266),appointment:true,duration:45,employees:['Rafael']}
     ],
     employees: [
-      {id:'build-rafael',name:'Rafael Ortiz',role:'Project Lead',initials:'RO',services:['Visita para estimado','Remodelación interior','Consulta de proyecto']},
-      {id:'build-luis',name:'Luis Vega',role:'Construction Specialist',initials:'LV',services:['Remodelación interior','Construcción liviana']}
+      {id:'build-rafael',name:'Rafael Ortiz',photoUrl:'/images/team-demo/m7.webp',role:'Project Lead',initials:'RO',services:['Visita para estimado','Remodelación interior','Consulta de proyecto']},
+      {id:'build-luis',name:'Luis Vega',photoUrl:'/images/team-demo/m8.webp',role:'Construction Specialist',initials:'LV',services:['Remodelación interior','Construcción liviana']}
     ],
     bookingLabel: 'Solicitar estimado', cartEnabled: false, bookingEnabled: true,
     aboutTitle: 'Del primer contacto al proyecto organizado.',
@@ -460,8 +466,8 @@ export const templateConfigs: TemplateConfig[] = [
       {id:'clean-4',type:'service',name:'Consulta de frecuencia',price:0,displayPrice:'Gratis',description:'Consulta para organizar mantenimiento semanal o quincenal.',image:pexels(4099264),appointment:true,duration:20,employees:['Mia'],purchasable:false}
     ],
     employees: [
-      {id:'clean-ana',name:'Ana López',role:'Cleaning Lead',initials:'AL',services:['Limpieza básica','Deep Cleaning','Move In / Move Out']},
-      {id:'clean-mia',name:'Mia Torres',role:'Home Care Specialist',initials:'MT',services:['Limpieza básica','Move In / Move Out','Consulta de frecuencia']}
+      {id:'clean-ana',name:'Ana López',photoUrl:'/images/team-demo/w5.webp',role:'Cleaning Lead',initials:'AL',services:['Limpieza básica','Deep Cleaning','Move In / Move Out']},
+      {id:'clean-mia',name:'Mia Torres',photoUrl:'/images/team-demo/w6.webp',role:'Home Care Specialist',initials:'MT',services:['Limpieza básica','Move In / Move Out','Consulta de frecuencia']}
     ],
     bookingLabel: 'Reservar limpieza', cartEnabled: false, bookingEnabled: true,
     aboutTitle: 'Limpieza residencial con horarios claros.',
@@ -483,8 +489,8 @@ export const templateConfigs: TemplateConfig[] = [
       {id:'roof-4',type:'service',name:'Visita para cotización',price:0,displayPrice:'Cotización gratis',description:'Visita para medir área y preparar un estimado.',image:pexels(2219024),appointment:true,duration:45,employees:['Joel'],purchasable:false}
     ],
     employees: [
-      {id:'roof-joel',name:'Joel Santiago',role:'Roofing Specialist',initials:'JS',services:['Inspección de techo','Sellado preventivo','Visita para cotización']},
-      {id:'roof-eric',name:'Eric Ramos',role:'Repair Technician',initials:'ER',services:['Sellado preventivo','Reparación de filtración']}
+      {id:'roof-joel',name:'Joel Santiago',photoUrl:'/images/team-demo/m1.webp',role:'Roofing Specialist',initials:'JS',services:['Inspección de techo','Sellado preventivo','Visita para cotización']},
+      {id:'roof-eric',name:'Eric Ramos',photoUrl:'/images/team-demo/m2.webp',role:'Repair Technician',initials:'ER',services:['Sellado preventivo','Reparación de filtración']}
     ],
     bookingLabel: 'Solicitar inspección', cartEnabled: false, bookingEnabled: true,
     aboutTitle: 'Inspecciones y estimados sin complicaciones.',
@@ -506,8 +512,8 @@ export const templateConfigs: TemplateConfig[] = [
       {id:'plumb-4',type:'service',name:'Instalación de fixture',price:165,displayPrice:'Desde $165',description:'Instalación de grifería, lavamanos u otros fixtures.',image:pexels(8486974),appointment:true,duration:120,deposit:35,employees:['Miguel','Leo']}
     ],
     employees: [
-      {id:'plumb-miguel',name:'Miguel Cruz',role:'Licensed Plumber',initials:'MC',services:['Diagnóstico de plomería','Reparación de fuga','Instalación de fixture']},
-      {id:'plumb-leo',name:'Leo Rivera',role:'Plumbing Technician',initials:'LR',services:['Diagnóstico de plomería','Destape de tubería','Instalación de fixture']}
+      {id:'plumb-miguel',name:'Miguel Cruz',photoUrl:'/images/team-demo/m3.webp',role:'Licensed Plumber',initials:'MC',services:['Diagnóstico de plomería','Reparación de fuga','Instalación de fixture']},
+      {id:'plumb-leo',name:'Leo Rivera',photoUrl:'/images/team-demo/m4.webp',role:'Plumbing Technician',initials:'LR',services:['Diagnóstico de plomería','Destape de tubería','Instalación de fixture']}
     ],
     bookingLabel: 'Reservar plomero', cartEnabled: false, bookingEnabled: true,
     aboutTitle: 'Servicios de plomería organizados por problema.',
@@ -529,8 +535,8 @@ export const templateConfigs: TemplateConfig[] = [
       {id:'elec-4',type:'service',name:'Visita para panel / proyecto',price:0,displayPrice:'Cotización',description:'Evaluación para trabajos mayores o paneles.',image:pexels(8005397),appointment:true,duration:45,employees:['Iván'],purchasable:false}
     ],
     employees: [
-      {id:'elec-ivan',name:'Iván Morales',role:'Electrician',initials:'IM',services:['Diagnóstico eléctrico','Instalación de lámpara o abanico','Visita para panel / proyecto']},
-      {id:'elec-raul',name:'Raúl Pérez',role:'Electrical Technician',initials:'RP',services:['Diagnóstico eléctrico','Reparación de circuito']}
+      {id:'elec-ivan',name:'Iván Morales',photoUrl:'/images/team-demo/m5.webp',role:'Electrician',initials:'IM',services:['Diagnóstico eléctrico','Instalación de lámpara o abanico','Visita para panel / proyecto']},
+      {id:'elec-raul',name:'Raúl Pérez',photoUrl:'/images/team-demo/m6.webp',role:'Electrical Technician',initials:'RP',services:['Diagnóstico eléctrico','Reparación de circuito']}
     ],
     bookingLabel: 'Reservar electricista', cartEnabled: false, bookingEnabled: true,
     aboutTitle: 'Servicios eléctricos con visitas programadas.',
@@ -552,8 +558,8 @@ export const templateConfigs: TemplateConfig[] = [
       {id:'body-4',type:'service',name:'Cotización de colisión',price:0,displayPrice:'Cotización',description:'Evaluación para reparación de daños por choque.',image:pexels(8985454),appointment:true,duration:60,employees:['Tony'],purchasable:false}
     ],
     employees: [
-      {id:'body-tony',name:'Tony Rivera',role:'Body Repair Specialist',initials:'TR',services:['Inspección de daños','Reparación de panel','Cotización de colisión']},
-      {id:'body-luis',name:'Luis Cruz',role:'Paint Specialist',initials:'LC',services:['Reparación de panel','Pintura parcial']}
+      {id:'body-tony',name:'Tony Rivera',photoUrl:'/images/team-demo/m7.webp',role:'Body Repair Specialist',initials:'TR',services:['Inspección de daños','Reparación de panel','Cotización de colisión']},
+      {id:'body-luis',name:'Luis Cruz',photoUrl:'/images/team-demo/m8.webp',role:'Paint Specialist',initials:'LC',services:['Reparación de panel','Pintura parcial']}
     ],
     bookingLabel: 'Solicitar evaluación', cartEnabled: false, bookingEnabled: true,
     aboutTitle: 'Evaluación visual antes de comenzar la reparación.',
@@ -577,9 +583,9 @@ export const templateConfigs: TemplateConfig[] = [
       {id:'cosmo-6',type:'service',name:'Consulta de transformación',price:0,displayPrice:'Consulta gratis',description:'Consulta para cambios de color, corte o transformación de imagen.',image:pexels(3764014),appointment:true,duration:30,employees:['Camila'],purchasable:false}
     ],
     employees: [
-      {id:'cosmo-camila',name:'Camila Rivera',role:'Master Cosmetologist',initials:'CR',services:['Blower & Styling','Color completo','Keratina','Consulta de transformación']},
-      {id:'cosmo-andrea',name:'Andrea López',role:'Hair Stylist',initials:'AL',services:['Blower & Styling','Keratina']},
-      {id:'cosmo-valeria',name:'Valeria Soto',role:'Beauty & Nail Artist',initials:'VS',services:['Maquillaje profesional','Manicure & Gel']}
+      {id:'cosmo-camila',name:'Camila Rivera',photoUrl:'/images/team-demo/w7.webp',role:'Master Cosmetologist',initials:'CR',services:['Blower & Styling','Color completo','Keratina','Consulta de transformación']},
+      {id:'cosmo-andrea',name:'Andrea López',photoUrl:'/images/team-demo/w8.webp',role:'Hair Stylist',initials:'AL',services:['Blower & Styling','Keratina']},
+      {id:'cosmo-valeria',name:'Valeria Soto',photoUrl:'/images/team-demo/w1.webp',role:'Beauty & Nail Artist',initials:'VS',services:['Maquillaje profesional','Manicure & Gel']}
     ],
     bookingLabel: 'Reservar cita', cartEnabled: false, bookingEnabled: true,
     aboutTitle: 'Un salón completo con agenda por especialista.',

@@ -1,7 +1,9 @@
 import {musicFileLimit, normalizeSiteMusic, siteCanPublishMusic} from "../../shared/site-music.mjs";
+import sharp from 'sharp';
+import {isTeamPhotoKey,teamPhotoUrl} from '../../shared/team-photo.mjs';
 import crypto from "node:crypto";
 import { assertSameOrigin, errorResponse, requireSiteAccess } from "../lib/client-auth.mjs";
-import { clientAssetStore, getClientSite } from "../lib/client-store.mjs";
+import { clientAssetStore, getClientSite, publicTeamMembers } from "../lib/client-store.mjs";
 import { siteEntitlement } from "../lib/subscription-billing.mjs";
 import { cleanText, safeFileName } from "../lib/platform-utils.mjs";
 
@@ -19,8 +21,9 @@ export default async (req) => {
       if (!site) throw Object.assign(new Error("Asset not found."), { status: 404 });
       const audio=key.startsWith(`sites/${siteId}/music/`);
       if(audio && (!siteCanPublishMusic(site) || !normalizeSiteMusic(site.music,siteId).tracks.some(track=>track.audioKey===key))) throw Object.assign(new Error("Asset not found."),{status:404});
-      const isPublic=siteEntitlement(site).public;
-      if (!isPublic) await requireSiteAccess(siteId);
+      const teamPhoto=isTeamPhotoKey(siteId,key);
+      const isPublic=siteEntitlement(site).public && (!teamPhoto || publicTeamMembers(site).some(employee=>employee.photoAssetKey===key));
+      if (!isPublic) await requireSiteAccess(siteId,teamPhoto?["owner"]:undefined);
       const [data, metadata] = await Promise.all([
         clientAssetStore().get(key, { type: "arrayBuffer" }),
         clientAssetStore().getMetadata(key),
@@ -54,6 +57,18 @@ export default async (req) => {
     if (!(file instanceof File)) throw Object.assign(new Error("Image file is required."), { status: 400 });
     if (!ALLOWED_TYPES.has(file.type)) throw Object.assign(new Error("Use a JPG, PNG, WebP, or GIF image."), { status: 400 });
     if (file.size > MAX_SIZE) throw Object.assign(new Error("The image cannot exceed 8 MB."), { status: 400 });
+    if (form.get('purpose')==='team-photo') {
+      const key=`sites/${siteId}/team/${crypto.randomUUID()}.webp`;
+      let photo;
+      try {
+        photo=await sharp(Buffer.from(await file.arrayBuffer()),{limitInputPixels:40_000_000})
+          .rotate().resize(720,720,{fit:'cover',position:'centre',withoutEnlargement:true}).webp({quality:85}).toBuffer();
+      } catch {
+        throw Object.assign(new Error('Use a valid JPG, PNG, WebP, or GIF image.'),{status:400});
+      }
+      await clientAssetStore().set(key,new Uint8Array(photo).buffer,{metadata:{contentType:'image/webp',size:photo.length}});
+      return Response.json({ok:true,assetKey:key,imageUrl:teamPhotoUrl(siteId,key)},{headers:{'Cache-Control':'no-store'}});
+    }
     const key = `sites/${siteId}/${Date.now()}-${crypto.randomUUID()}-${safeFileName(file.name, "image")}`;
     await clientAssetStore().set(key, await file.arrayBuffer(), { metadata: {
       contentType: file.type,

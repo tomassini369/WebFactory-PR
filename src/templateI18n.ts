@@ -308,7 +308,7 @@ const localizedTemplates: Record<string, Partial<Record<TemplateLanguage, Locali
     description:'A music artist Template with performance packages, bookable dates, deposits, and private-event inquiries.',
     hours:'Bookings · By availability', features:['Artist booking','Event packages','Deposits','Social media'], bookingLabel:'Check a date',
     aboutTitle:'Artist booking without endless message threads.', aboutText:'Sonido Vivo turns music packages into clear options with availability, deposits, and direct production contact.',
-    trust:['Date availability','Event deposits','Social links'], employeeRoles:['Performing Artist'],
+    trust:['Date availability','Event deposits','Social links'], employeeRoles:['Vocalist','Performing Artist','Percussionist'],
     items:[
       {name:'Acoustic Set',description:'An intimate performance for restaurants, lounges, and smaller events.',badge:'Popular'},
       {name:'Full Live Performance',description:'A full performance for private activities and events.',badge:'Featured'},

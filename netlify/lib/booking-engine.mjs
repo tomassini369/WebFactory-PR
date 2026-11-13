@@ -1,9 +1,10 @@
+import {teamBookingId} from '../../shared/team-booking.mjs';
 import {basicProfessional,isBasicMembership} from "../../shared/membership-plans.mjs";
 import {isBusinessTime} from '../../shared/business-hours.mjs';
 import {bookingSlotLockKey} from './booking-date-index.mjs';
 import {reservationBlocks} from './booking-reservation-cache.mjs';
 import crypto from "node:crypto";
-import { clientCommerceStore, commerceKey } from "./client-store.mjs";
+import { clientCommerceStore, commerceKey, getClientSite } from "./client-store.mjs";
 import { googleBusy } from "./google-calendar.mjs";
 import { withBookingLock } from "./booking-lock.mjs";
 import { bookingPolicy, bookingBuffers } from './booking-policy.mjs';
@@ -31,17 +32,22 @@ function overlaps(startA, endA, startB, endB) {
   return startA < endB && endA > startB;
 }
 
-async function reservationsForEmployee(siteId,employeeId,startDay,endDay,catalog=[],ignoreReservationId='',fresh=false){
- return reservationBlocks({store:clientCommerceStore(),siteId,employeeId,startDay,endDay,catalog,ignoreReservationId,fresh});
+async function reservationsForEmployee(site,employeeId,startDay,endDay,catalog=[],ignoreReservationId='',fresh=false){
+ const query={store:clientCommerceStore(),siteId:site.siteId,employeeId,startDay,endDay,catalog,ignoreReservationId,fresh};
+ if(employeeId===teamBookingId||site.settings?.teamBookingEnabled===true) return reservationBlocks({...query,employeeId:null});
+ const [individual, team] = await Promise.all([
+   reservationBlocks(query), reservationBlocks({...query,employeeId:teamBookingId}),
+ ]);
+ return [...individual,...team];
 }
 
 function bookingServiceAndEmployee(site, serviceId, employeeId, locationId = "") {
-  if(isBasicMembership(site)&&employeeId!==basicProfessional(site))throw Object.assign(new Error("Professional unavailable for this plan."),{status:404});
+  if(employeeId!==teamBookingId&&isBasicMembership(site)&&employeeId!==basicProfessional(site))throw Object.assign(new Error("Professional unavailable for this plan."),{status:404});
   const service = (site.catalog || []).find((item) => item.id === serviceId && item.type === "service" && item.requiresAppointment && item.active !== false);
   const locations = (site.business?.locations || []).filter((location) => location.active !== false);
   const hasLocations = locations.length > 0;
   if (hasLocations && !locations.some(location=>location.id===locationId)) throw Object.assign(new Error("Choose an active booking branch."),{status:404});
-  const employee = (site.employees || []).find((item) => item.id === employeeId && item.active !== false && (item.serviceIds || []).includes(serviceId) && (!hasLocations || (locationId && (item.locationIds || []).includes(locationId))));
+  const employee = employeeId===teamBookingId ? {id:teamBookingId,calendarId:site.settings?.teamBookingCalendarId} : (site.employees || []).find((item) => item.id === employeeId && item.active !== false && (item.serviceIds || []).includes(serviceId) && (!hasLocations || (locationId && (item.locationIds || []).includes(locationId))));
   if (!service || !employee) throw Object.assign(new Error("Service or employee is unavailable."), { status: 404 });
   return { service, employee };
 }
@@ -97,7 +103,7 @@ export async function availabilityForDate(site, serviceId, employeeId, date, loc
   const timeZone = site.settings?.timezone || "America/Puerto_Rico";
   const dayStart = zonedToUtc(date, '00:00', timeZone);
   const dayEnd = new Date(localDayEnd(date,timeZone));
-  const reserved = await reservationsForEmployee(site.siteId, employeeId, dayStart.getTime(), dayEnd.getTime(),site.catalog,ignoreReservationId,fresh);
+  const reserved = await reservationsForEmployee(site, employeeId, dayStart.getTime(), dayEnd.getTime(),site.catalog,ignoreReservationId,fresh);
   let googleReserved = [];
   if (site.googleCalendar?.connected && employee.calendarId) {
     try {
@@ -111,19 +117,19 @@ export async function availabilityForDate(site, serviceId, employeeId, date, loc
   return ruleSlots({ date, site, employee, service, locationId, blocks: [...reserved, ...googleReserved], timeZone });
 }
 
-export function monthAvailabilityFromBlocks({ month, timeZone, service, employee, site, blocks, locationId = "" }) {
+export function monthAvailabilityFromBlocks({ month, timeZone, service, employee, site, blocks, locationId = "", includeStarts = false }) {
   const [year, monthNumber] = month.split("-").map(Number);
   const available = {};
   const dayCount = new Date(Date.UTC(year, monthNumber, 0)).getUTCDate();
   for (let day = 1; day <= dayCount; day += 1) {
     const date = `${month}-${String(day).padStart(2, "0")}`;
     const slots = ruleSlots({date,timeZone,service,employee,site,blocks,locationId});
-    if (slots.length) available[date] = slots.length;
+    if (slots.length) available[date] = includeStarts ? slots.map(slot=>slot.start) : slots.length;
   }
   return available;
 }
 
-export async function availabilityForMonth(site, serviceId, employeeId, month, locationId = "") {
+export async function availabilityForMonth(site, serviceId, employeeId, month, locationId = "", {includeStarts=false} = {}) {
   if (!/^\d{4}-\d{2}$/.test(month)) throw Object.assign(new Error("Invalid booking month."), { status: 400 });
   const { service, employee } = bookingServiceAndEmployee(site, serviceId, employeeId, locationId);
   const [year, monthNumber] = month.split("-").map(Number);
@@ -133,7 +139,7 @@ export async function availabilityForMonth(site, serviceId, employeeId, month, l
   const timeZone = site.settings?.timezone || "America/Puerto_Rico";
   const rangeStart = zonedToUtc(firstDate, "00:00", timeZone);
   const rangeEnd = new Date(localDayEnd(lastDate,timeZone));
-  const reserved = await reservationsForEmployee(site.siteId, employeeId, rangeStart.getTime(), rangeEnd.getTime(),site.catalog);
+  const reserved = await reservationsForEmployee(site, employeeId, rangeStart.getTime(), rangeEnd.getTime(),site.catalog);
   let googleReserved = [];
   if (site.googleCalendar?.connected && employee.calendarId) {
     try {
@@ -145,7 +151,69 @@ export async function availabilityForMonth(site, serviceId, employeeId, month, l
     }
   }
   const blocks = [...reserved, ...googleReserved];
-  return monthAvailabilityFromBlocks({ month, timeZone, service, employee, site, blocks, locationId });
+  return monthAvailabilityFromBlocks({ month, timeZone, service, employee, site, blocks, locationId, includeStarts });
+}
+
+export function eligibleBookingProfessionals(site, serviceId, locationId = "") {
+  const locations = (site.business?.locations || []).filter(location => location.active !== false);
+  if (locations.length && !locations.some(location => location.id === locationId)) return [];
+  const basicId = isBasicMembership(site) ? basicProfessional(site) : null;
+  return (site.employees || []).filter(employee => employee.active !== false &&
+    employee.serviceIds?.includes(serviceId) && (!locations.length || employee.locationIds?.includes(locationId)) &&
+    (basicId === null || employee.id === basicId));
+}
+
+export async function bookingAvailabilityForDate(site, serviceId, employeeId, date, locationId, read = availabilityForDate) {
+  if (site.settings?.teamBookingEnabled===true) return read(site, serviceId, teamBookingId, date, locationId, {strictGoogle:true});
+  if (employeeId===teamBookingId) throw Object.assign(new Error('Team agenda is disabled.'), {status:409});
+  if (employeeId !== 'any') return read(site, serviceId, employeeId, date, locationId, {strictGoogle:true});
+  if (!validDate(date)) throw Object.assign(new Error('Invalid booking date.'), {status:400});
+  const professionals = eligibleBookingProfessionals(site, serviceId, locationId);
+  const agendas = await Promise.all(professionals.map(async employee => (await read(site, serviceId, employee.id, date, locationId, {strictGoogle:true})).map(slot=>({...slot,employeeId:employee.id}))));
+  return [...new Map(agendas.flat().map(slot => [slot.start, slot])).values()].sort((a,b) => a.start.localeCompare(b.start));
+}
+
+export async function bookingAvailabilityForMonth(site, serviceId, employeeId, month, locationId) {
+  if (site.settings?.teamBookingEnabled===true) return availabilityForMonth(site, serviceId, teamBookingId, month, locationId);
+  if (employeeId===teamBookingId) throw Object.assign(new Error('Team agenda is disabled.'), {status:409});
+  if (employeeId !== 'any') return availabilityForMonth(site, serviceId, employeeId, month, locationId);
+  if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) throw Object.assign(new Error('Invalid booking month.'), {status:400});
+  const agendas = await Promise.all(eligibleBookingProfessionals(site, serviceId, locationId)
+    .map(employee => availabilityForMonth(site, serviceId, employee.id, month, locationId, {includeStarts:true})));
+  const startsByDate = new Map();
+  for (const agenda of agendas) {
+    for (const [date, starts] of Object.entries(agenda)) {
+      const unique = startsByDate.get(date) || new Set();
+      starts.forEach(start=>unique.add(start));
+      startsByDate.set(date,unique);
+    }
+  }
+  return Object.fromEntries([...startsByDate].map(([date,starts])=>[date,starts.size]));
+}
+
+export const bookingModeLockKey = siteId => `locks/booking-mode/${siteId}`;
+
+export async function reserveBookingSlot(site, booking) {
+  return withBookingLock(clientCommerceStore(),bookingModeLockKey(site.siteId),async()=>{
+    const current=await getClientSite(site.siteId);
+    if(!current) throw Object.assign(new Error('Business is unavailable.'), {status:404});
+    if(current.settings?.teamBookingEnabled===true) return createBookingHold(current,{...booking,employeeId:teamBookingId});
+    if(booking.employeeId===teamBookingId) throw Object.assign(new Error('The booking agenda changed. Refresh and try again.'), {status:409});
+    return reserveIndividualSlot(current,booking);
+  });
+}
+
+async function reserveIndividualSlot(site, booking) {
+  if (booking.employeeId !== 'any') return createBookingHold(site, booking);
+  const professionals = eligibleBookingProfessionals(site, booking.serviceId, booking.locationId);
+  for (const employee of professionals) {
+    try {
+      return await createBookingHold(site, {...booking, employeeId:employee.id});
+    } catch (error) {
+      if (error?.status !== 409) throw error;
+    }
+  }
+  throw Object.assign(new Error("That time is no longer available. / Ese horario ya no está disponible."), {status:409});
 }
 
 export async function createBookingHold(site, { serviceId, employeeId, start, locationId = "" }, {strictGoogle=true,ignoreReservationId=''} = {}) {
@@ -155,7 +223,7 @@ export async function createBookingHold(site, { serviceId, employeeId, start, lo
     .formatToParts(new Date(isoStart)).reduce((acc, part) => ({ ...acc, [part.type]: part.value }), {});
   const localDate = `${parts.year}-${parts.month}-${parts.day}`;
   const store=clientCommerceStore();
-  const lockKey=bookingSlotLockKey(site.siteId,employeeId);
+  const lockKey=bookingSlotLockKey(site.siteId,teamBookingId);
   return withBookingLock(store,lockKey,async()=>{
   const slots = await availabilityForDate(site, serviceId, employeeId, localDate, locationId,{strictGoogle,ignoreReservationId,fresh:true});
   const selected = slots.find((slot) => slot.start === isoStart);

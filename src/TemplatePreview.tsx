@@ -205,7 +205,7 @@ function TemplateSite({ slug }: { slug: string }) {
   }
 
   return (
-    <div className={`template-site visual-${visualStyle}`} style={styles}>
+    <div className={`template-site template-${config.slug} visual-${visualStyle}`} style={styles}>
       <TemplateNotice ui={ui} slug={slug} />
       {buyerReceipt && <BuyerReceipt receipt={buyerReceipt} lang={language} colors={{primary:config.dark,secondary:config.accent}} onClose={()=>setBuyerReceipt(null)}/>}
 

@@ -19,7 +19,7 @@ export async function reservationBlocks({store,siteId,employeeId,startDay,endDay
   for(let i=0;i<entries.length;i+=20){
    const batch=await Promise.all(entries.slice(i,i+20).map(async entry=>({entry,row:await store.get(entry.key,{type:'json'})})));
    for(const {entry,row} of batch){
-    if(!row||row.siteId&&row.siteId!==siteId||row.employeeId!==employeeId||['cancelled','failed'].includes(row.status))continue;
+    if(!row||row.siteId&&row.siteId!==siteId||employeeId!=null&&row.employeeId!==employeeId||['cancelled','failed'].includes(row.status))continue;
     const start=Date.parse(row.start)-Math.max(0,Number(row.bufferBeforeMinutes??0))*60000;
     const end=Date.parse(row.end)+Math.max(0,Number(row.bufferMinutes??catalog.find(x=>x.id===row.serviceId)?.bufferMinutes??0))*60000;
     if(Number.isFinite(start)&&Number.isFinite(end)&&start<endDay&&end>startDay)blocks.push({start,end,reservationId:row.holdId||row.transactionId||entry.key,holdId:row.holdId,transactionId:row.transactionId,expiresAt:entry.kind==='holds'?Date.parse(row.expiresAt||''):null});

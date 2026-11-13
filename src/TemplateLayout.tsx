@@ -1,20 +1,24 @@
-import { useState, type ReactNode, type CSSProperties } from 'react'
+import { motion } from 'framer-motion'
+import { useLayoutEffect, useRef, useState, type ReactNode, type CSSProperties } from 'react'
 import type { TemplateConfig, TemplateItem } from './templateData'
 import type { TemplateLanguage, TemplateUi } from './templateI18n'
 import './template-preview.css'
 import './template-polish.css'
 import './template-evolution.css'
 import './template-glass.css'
+import './template-team.css'
+import './template-sonido-vivo.css'
+import {mountAtlas} from './vendor/atlas-runtime.mjs'
 import TemplateHighlights from './TemplateHighlights'
 
 type Props = {
  config: TemplateConfig; ui: {[K in keyof TemplateUi]: TemplateUi[K] extends string ? string : TemplateUi[K]}; language: TemplateLanguage; setLanguage: (language: TemplateLanguage) => void;
- startBooking: (item?: TemplateItem, employeeId?: string) => void; setCatalogOpen: (open: boolean) => void; setCartOpen: (open: boolean) => void;
+ teamBooking?: boolean; startBooking: (item?: TemplateItem, employeeId?: string) => void; setCatalogOpen: (open: boolean) => void; setCartOpen: (open: boolean) => void;
  cart: Array<{quantity: number}>; contact?: ReactNode; map?: ReactNode; footer?: ReactNode; extraSections?: ReactNode; social?: ReactNode; music?: ReactNode;
  catalogEnabled?: boolean; mainClass?: string; sectionOrder?: string[]; logoUrl?: string; locationHref?: string; phoneHref?: string;
 }
 /** The product layout. Demo, Builder and live storefront all render this component. */
-export default function TemplateLayout({config,ui,language,setLanguage,startBooking,setCatalogOpen,setCartOpen,cart,contact,map,footer,extraSections,social,music,catalogEnabled=true,mainClass='',sectionOrder,logoUrl,locationHref,phoneHref}: Props) {
+export default function TemplateLayout({config,ui,language,setLanguage,startBooking,teamBooking=false,setCatalogOpen,setCartOpen,cart,contact,map,footer,extraSections,social,music,catalogEnabled=true,mainClass='',sectionOrder,logoUrl,locationHref,phoneHref}: Props) {
  const [menuOpen,setMenuOpen] = useState(false)
  const sectionStyle = (key:string): CSSProperties | undefined => sectionOrder ? {order:sectionOrder.includes(key)?sectionOrder.indexOf(key)+2:99} : undefined
  return <>      <header className="template-header">
@@ -85,20 +89,7 @@ export default function TemplateLayout({config,ui,language,setLanguage,startBook
               </div>
               <p>{ui.teamIntro}</p>
             </div>
-            <div className="template-team-grid">
-              {config.employees.map((employee) => (
-                <article key={employee.id}>
-                  <span>{employee.initials}</span>
-                  <small>{employee.role}</small>
-                  <h3>{employee.name}</h3>
-                  <div>{employee.services.map((service) => <b key={service}>{service}</b>)}</div>
-                  <button disabled={!config.bookingEnabled || !config.items.some(item=>item.appointment && item.employees?.some(name=>employee.name.startsWith(name)))} onClick={() => {
-                    const matching = config.items.find((item) => item.appointment && item.employees?.some((name) => employee.name.startsWith(name)))
-                    if (matching) startBooking(matching,employee.id)
-                  }}>{ui.viewAvailability}</button>
-                </article>
-              ))}
-            </div>
+            <TeamCards key={config.slug} config={config} language={language} label={ui.viewAvailability} teamBooking={teamBooking} startBooking={startBooking}/>
           </section>
         )}
 
@@ -153,4 +144,80 @@ export default function TemplateLayout({config,ui,language,setLanguage,startBook
       </footer>}
 
 </>
+}
+
+function TeamCards({config,language,label,teamBooking,startBooking}: Pick<Props,'config'|'language'|'teamBooking'|'startBooking'> & {label:string}){
+ const people=config.employees
+ const count=people.length
+ const [index,setIndex]=useState(config.slug==='sonido-vivo-artist'&&count===3?1:0)
+ const current=Math.min(index,count-1)
+ const stage=useRef<HTMLDivElement>(null)
+ const engine=useRef<ReturnType<typeof mountAtlas>|null>(null)
+ const gesture=useRef<'pending'|'horizontal'|'vertical'>('pending')
+ const suppressClick=useRef(false)
+ const membership=people.map(person=>person.id).join('|')
+ const es=language==='es'
+ useLayoutEffect(()=>{
+  if(!stage.current||count<2)return
+  const runtime=mountAtlas(stage.current,current,setIndex)
+  engine.current=runtime
+  return ()=>{runtime.destroy();engine.current=null}
+ },[count,membership])
+ const advance=(direction:number)=>engine.current?.advance(direction)
+ return <div className="team-carousel" role="group" aria-label={es?'Integrantes del equipo':'Team members'} onKeyDown={event=>{
+  if(count<2)return
+  if(event.key==='ArrowLeft'||event.key==='ArrowRight'){event.preventDefault();advance(event.key==='ArrowLeft'?-1:1)}
+ }}>
+  <motion.div ref={stage} className="team-carousel-stage" data-count={count}
+   onPointerDownCapture={()=>{gesture.current='pending';suppressClick.current=false}}
+   onPan={(_,info)=>{
+    if(count<2||gesture.current==='vertical')return
+    const {x,y}=info.offset
+    if(gesture.current==='pending'){
+     if(Math.max(Math.abs(x),Math.abs(y))<8)return
+     if(Math.abs(y)>=Math.abs(x)){gesture.current='vertical';return}
+     gesture.current='horizontal'
+     suppressClick.current=true
+     engine.current?.beginDrag()
+    }
+    engine.current?.drag(x)
+   }}
+   onPanEnd={(event,info)=>{
+    if(gesture.current!=='horizontal')return
+    const x=info.offset.x
+    engine.current?.endDrag(event.type==='pointercancel'||Math.abs(x)<=45?0:x<0?1:-1)
+    gesture.current='pending'
+   }}
+   onClickCapture={event=>{
+    if(suppressClick.current&&event.detail>0){event.preventDefault();event.stopPropagation()}
+   }}
+  >
+   {people.map((person,member)=>{
+    const active=member===current
+    const matching=config.items.find(item=>item.appointment&&(item.employeeIds?.includes(person.id)??item.employees?.some(name=>person.name.startsWith(name))))
+    const canBook=config.bookingEnabled&&(teamBooking||matching)
+    return <article key={person.id} className="team-card" data-active={active} inert={!active&&count>3&&Math.min(Math.abs(member-current),count-Math.abs(member-current))>1}>
+     <div className="team-card-portrait" aria-hidden="true">
+      <span>{person.initials}</span>
+      {person.photoUrl&&<img src={person.photoUrl} alt="" loading="lazy" draggable={false} decoding="async" onError={event=>{event.currentTarget.hidden=true}}/>}
+      <div className="team-atlas-mono">{person.photoUrl&&<img src={person.photoUrl} alt="" loading="lazy" draggable={false} decoding="async" onError={event=>{event.currentTarget.hidden=true}}/>}</div>
+     </div>
+     <div className="team-card-copy">
+      {person.role&&<small>{person.role}</small>}
+      <h3>{person.name}</h3>
+      {active&&person.services.length>0&&<ul className="team-card-services">{person.services.map(service=><li key={service}>{service}</li>)}</ul>}
+      {active&&canBook&&<button className="team-card-book" type="button" onClick={()=>teamBooking?startBooking():startBooking(matching,person.id)}>{label}</button>}
+     </div>
+     {!active&&<button className="team-card-select" type="button" aria-label={person.name} onClick={()=>engine.current?.goTo(member)}/>}
+    </article>
+   })}
+  </motion.div>
+  {count>1&&<div className="team-card-controls">
+   <button className="team-card-arrow" type="button" aria-label={es?'Integrante anterior':'Previous team member'} onClick={()=>advance(-1)}>‹</button>
+   <div className="team-card-dots">
+    {people.map((person,i)=><button key={person.id} type="button" aria-label={person.name} aria-current={i===current?'true':undefined} onClick={()=>engine.current?.goTo(i)}/>)}
+   </div>
+   <button className="team-card-arrow" type="button" aria-label={es?'Siguiente integrante':'Next team member'} onClick={()=>advance(1)}>›</button>
+  </div>}
+ </div>
 }

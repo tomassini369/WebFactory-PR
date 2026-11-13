@@ -1,3 +1,8 @@
+import {isTeamPhotoKey} from '../../shared/team-photo.mjs';
+import {teamBookingId} from '../../shared/team-booking.mjs';
+import {bookingModeLockKey} from '../lib/booking-engine.mjs';
+import {withBookingLock} from '../lib/booking-lock.mjs';
+import {listGoogleCalendars} from '../lib/google-calendar.mjs';
 import {membershipAllowsCapability} from "../../shared/membership-plans.mjs";
 import {normalizeTemplateOverrides} from "../../shared/template-overrides.mjs";
 import {normalizeSocialLinks} from "../../shared/social-links.mjs";
@@ -9,11 +14,11 @@ import { sanitizePolicies } from "../lib/publication-review.mjs";
 import {normalizeBookingPolicy} from '../lib/booking-policy.mjs';
 import { readPosOperations } from '../lib/pos-operations.mjs';
 import { assertSameOrigin, authorizedSites, errorResponse, requireSiteAccess } from "../lib/client-auth.mjs";
-import { clientAssetStore, clientSiteStore, patchClientSite, publicClientSite, renameClientSiteSlug } from "../lib/client-store.mjs";
+import { clientAssetStore, clientCommerceStore, clientSiteStore, patchClientSite, publicClientSite, renameClientSiteSlug } from "../lib/client-store.mjs";
 import { cleanText, validEmail } from "../lib/platform-utils.mjs";
 import { normalizeTaxConfig } from "../lib/webfactory-v3-domain.mjs";
 
-const allowedSections = new Set(["slug", "business", "design", "features", "catalog", "employees", "hours", "paymentRules", "settings", "taxConfig", "members", "reviewSettings", "music"]);
+const allowedSections = new Set(["slug", "business", "design", "features", "catalog", "employees", "hours", "paymentRules", "settings", "taxConfig", "members", "reviewSettings", "music", "teamBooking"]);
 
 function color(value, fallback) {
   const result = cleanText(value, 20);
@@ -218,7 +223,7 @@ export function normalizeClientSection(site, section, incoming, user, membership
         }
       }
       value = sanitizeEmployees(payload.value, site.catalog, site.business?.locations || []).map(employee=>({...((site.employees || []).find(existing=>existing.id===employee.id)||{}),...employee}));
-      if (new Set(value.map(employee=>employee.id)).size!==value.length) throw Object.assign(new Error("Professional IDs must be unique."),{status:400});
+      if (value.some(employee=>employee.id===teamBookingId)||new Set(value.map(employee=>employee.id)).size!==value.length) throw Object.assign(new Error("Professional IDs must be unique."),{status:400});
       if ((site.members || []).some(member=>member.employeeId && !value.some(employee=>employee.id===member.employeeId))) throw Object.assign(new Error("Unlink portal access before removing a professional. Deactivate to preserve bookings."),{status:409});
     }
     if (section === "hours") value = sanitizeHours(payload.value);
@@ -258,6 +263,15 @@ export function normalizeClientSection(site, section, incoming, user, membership
 }
 
 /** Existing-site Builder writes are validated together and committed with one revision. */
+export async function validateTeamPhotos(site, employees, assetMetadata = key => clientAssetStore().getMetadata(key)) {
+  const previous=new Map((site.employees||[]).map(member=>[member.id,member.photoAssetKey]));
+  await Promise.all([...new Set(employees.filter(member=>member.photoAssetKey&&member.photoAssetKey!==previous.get(member.id)).map(member=>member.photoAssetKey))].map(async key=>{
+    if(!isTeamPhotoKey(site.siteId,key)) throw Object.assign(new Error('This photo does not belong to this business.'),{status:403});
+    const asset=await assetMetadata(key);
+    if(asset?.metadata?.contentType!=='image/webp') throw Object.assign(new Error('Upload the team photo again.'),{status:400});
+  }));
+}
+
 export async function normalizeBuilderUpdate(site, input, user, membership, assetMetadata = key => clientAssetStore().getMetadata(key)) {
   const fail = (message,status=400) => {throw Object.assign(new Error(message),{status});};
   if (!input || typeof input !== 'object' || Array.isArray(input)) fail('Invalid Builder changes.');
@@ -345,6 +359,19 @@ export default async (req) => {
       const updated = await renameClientSiteSlug(site.siteId, payload.value, payload.revision);
       return Response.json({ ok: true, site: updated, publicSite: publicClientSite(updated) }, { headers: { "Cache-Control": "no-store" } });
     }
+    if (section === "teamBooking") {
+      if (typeof payload.value?.enabled!=='boolean') throw Object.assign(new Error('Choose a valid booking mode.'),{status:400});
+      if (!Number.isSafeInteger(payload.revision)||payload.revision!==site.revision) throw Object.assign(new Error('Reload before changing the booking agenda.'),{status:409});
+      const calendarId=cleanText(payload.value.calendarId ?? site.settings?.teamBookingCalendarId,320);
+      if (calendarId && calendarId!==site.settings?.teamBookingCalendarId &&
+          (!site.googleCalendar?.connected || !(await listGoogleCalendars(site.siteId)).some(calendar=>calendar.id===calendarId))) {
+        throw Object.assign(new Error('Choose a writable Google Calendar.'),{status:400});
+      }
+      const settings={...site.settings,teamBookingEnabled:payload.value.enabled,teamBookingCalendarId:calendarId};
+      const updated=await withBookingLock(clientCommerceStore(),bookingModeLockKey(site.siteId),()=>
+        patchClientSite(site.siteId,{settings},{expectedRevision:payload.revision}));
+      return Response.json({ok:true,site:updated},{headers:{'Cache-Control':'no-store'}});
+    }
     if (section === "music") {
       if (!siteCanPublishMusic(site)) throw Object.assign(new Error("Music is available for artist and DJ websites."),{status:400});
       if (!Number.isSafeInteger(payload.revision) || payload.revision!==site.revision) throw Object.assign(new Error("Reload before editing the music library."),{status:409});
@@ -354,6 +381,11 @@ export default async (req) => {
     }
     const value = normalizeClientSection(site, section, payload.value, user, membership);
 
+    if (section==='employees') {
+      const uploads=new Map(payload.value.filter(member=>member.photoAssetKey!==undefined).map(member=>[cleanText(member.id,120),cleanText(member.photoAssetKey,700)]));
+      for(const member of value) if(uploads.has(member.id)) member.photoAssetKey=uploads.get(member.id);
+      await validateTeamPhotos(site,value);
+    }
     if(['catalog','employees'].includes(section)&&!Number.isInteger(payload.revision))throw Object.assign(new Error('Reload the portal before editing the catalog.'),{status:409});
     const updated = await patchClientSite(site.siteId, { [section]: value },['catalog','employees'].includes(section)?{expectedRevision:payload.revision}:{});
     return Response.json({ ok: true, site: updated, publicSite: publicClientSite(updated) }, { headers: { "Cache-Control": "no-store" } });

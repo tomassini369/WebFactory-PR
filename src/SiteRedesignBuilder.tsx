@@ -1,3 +1,4 @@
+import {teamPhotoUrl} from '../shared/team-photo.mjs'
 import {publicSiteMusic} from '../shared/site-music.mjs'
 import {useEffect, useMemo, useState} from 'react'
 import WebFactoryBuilder, {initialState, type BuilderState, type BuilderAsset} from './WebFactoryBuilder'
@@ -21,7 +22,7 @@ export function existingBuilderState(site:any):BuilderState {
     business:{...defaults.business,...site.business,slug:site.slug,logo:url(site.business?.logoAssetKey),hero:url(site.business?.heroAssetKey),gallery:(site.business?.galleryAssetKeys||[]).map(url),galleryAssets:(site.business?.galleryAssetKeys||[]).map((assetKey:string)=>({assetKey,fileName:'',contentType:''}))},
     design:{...defaults.design,...site.design,style,primary,secondary:accent},features:{...featureDefaults,...site.features},
     catalog:(site.catalog||[]).filter((item:any)=>item.active!==false).map((item:any)=>({...item,image:url(item.imageAssetKey)})),
-    team:(site.employees||[]).filter((member:any)=>member.active!==false),
+    team:(site.employees||[]).filter((member:any)=>member.active!==false).map((member:any)=>({...member,photoUrl:teamPhotoUrl(site.siteId,member.photoAssetKey)})),
     hours:{...closedDays,...site.hours},
     payments:{...defaults.payments,...site.paymentRules,bookingPayment:site.paymentRules?.bookingPayment||'full',methods:{stripe:Boolean(site.paymentRules?.methods?.stripe),ath:Boolean(site.paymentRules?.methods?.ath),inPerson:Boolean(site.paymentRules?.methods?.inPerson)},stripe:{...defaults.payments.stripe,accountStatus:site.paymentRules?.stripeConnectedAccountId?'existing':'new'},ath:{...defaults.payments.ath,...site.paymentRules?.ath,accountStatus:site.paymentRules?.ath?.credentialsConfigured?'active':'needs_account'},inPerson:{instructions:site.paymentRules?.inPerson?.instructions||''}},
   }
@@ -66,5 +67,5 @@ export default function SiteRedesignBuilder({siteId,lang}:{siteId:string;lang:La
   }
   if(!site||!state)return <section className="wf-redesign"><p role={error?'alert':'status'}>{error||(es?'Cargando Builder…':'Loading Builder…')}</p></section>
   if(!['active','trialing','trial','complimentary'].includes(site.servicePlan?.subscriptionStatus))return <section className="wf-redesign"><h2>{es?'Se requiere una suscripción activa':'An active subscription is required'}</h2><a href="/client-admin">{es?'Volver al portal':'Back to portal'}</a></section>
-  return <WebFactoryBuilder key={siteId} lang={lang} editing={{initialState:state,revision:site.revision,saving,timezone:site.settings?.timezone,publicUrl:`/sites/${site.slug}`,upload,publish}}/>
+  return <WebFactoryBuilder key={siteId} lang={lang} editing={{initialState:state,revision:site.revision,saving,timezone:site.settings?.timezone,teamBookingEnabled:site.settings?.teamBookingEnabled,publicUrl:`/sites/${site.slug}`,upload,publish}}/>
 }
