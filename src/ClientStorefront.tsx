@@ -21,7 +21,7 @@ import './template-preview.css'
 import './client-storefront.css'
 
 type Item={id:string;type:'product'|'service';name:string;nameEn?:string;nameEs?:string;description:string;descriptionEn?:string;descriptionEs?:string;price:number;inventory:number|null;requiresAppointment:boolean;duration:number;imageUrl:string}
-type Employee={id:string;name:string;role:string;roleEn?:string;roleEs?:string;serviceIds:string[];locationIds?:string[]}
+type Employee={id:string;name:string;role:string;roleEn?:string;roleEs?:string;serviceIds:string[];locationIds?:string[];photoUrl?:string;active?:boolean}
 type Location={id:string;name:string;address:string;phone:string;mapsUrl:string;hours:any}
 export type StorefrontSite={siteId:string;slug:string;business:any;design:any;features:Record<string,boolean>;catalog:Item[];employees:Employee[];hours:any;paymentRules:any;settings:any;music?:PublicMusic}
 type CartLine={id:string;quantity:number}
@@ -273,8 +273,8 @@ export default function ClientStorefront({slug,previewSite,previewLanguage='en'}
     kicker: site.business.kicker || businessCategory || '', headline: site.business.headline || businessName,
     description: businessDescription || '', heroImage, gallery: galleryImages, location: site.business.address || '', phone: site.features.calls ? site.business.phone || '' : '', hours,
     accent, accent2, dark:primary, cream,
-    features: [], items: visibleCatalog.map(item=>({id:item.id,type:item.type,name:itemName(item),description:itemDescription(item),price:item.price,image:item.imageUrl,appointment:item.requiresAppointment,employees:site.employees.filter(employee=>employee.serviceIds.includes(item.id)).map(employee=>employee.name)})),
-    employees: site.features.bookings ? site.employees.map(employee=>({id:employee.id,name:employee.name,role:employeeRole(employee),initials:initials(employee.name),services:employee.serviceIds.map(id=>site.catalog.find(item=>item.id===id)).filter((item):item is Item=>Boolean(item)).map(itemName)})) : [],
+    features: [], items: visibleCatalog.map(item=>({id:item.id,type:item.type,name:itemName(item),description:itemDescription(item),price:item.price,image:item.imageUrl,appointment:item.requiresAppointment,employeeIds:site.employees.filter(employee=>employee.serviceIds.includes(item.id)).map(employee=>employee.id)})),
+    employees: site.employees.filter(employee=>employee.active!==false&&employee.name.trim()).map(employee=>({photoUrl:employee.photoUrl,id:employee.id,name:employee.name,role:employeeRole(employee),initials:initials(employee.name),services:employee.serviceIds.map(id=>site.catalog.find(item=>item.id===id)).filter((item):item is Item=>Boolean(item)).map(itemName)})),
     bookingLabel: templateCopy?.bookingLabel||t.book, bookingEnabled: Boolean(site.features.bookings && visibleCatalog.some(item=>item.requiresAppointment)), cartEnabled: site.features.cart!==false,
     aboutTitle: site.business.aboutTitle || businessName, aboutText: site.business.aboutText || businessDescription || '', trust: [],
   }

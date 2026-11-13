@@ -1,10 +1,11 @@
-import { useState, type ReactNode, type CSSProperties } from 'react'
+import { useRef, useState, type ReactNode, type CSSProperties } from 'react'
 import type { TemplateConfig, TemplateItem } from './templateData'
 import type { TemplateLanguage, TemplateUi } from './templateI18n'
 import './template-preview.css'
 import './template-polish.css'
 import './template-evolution.css'
 import './template-glass.css'
+import './template-team.css'
 import TemplateHighlights from './TemplateHighlights'
 
 type Props = {
@@ -85,21 +86,7 @@ export default function TemplateLayout({config,ui,language,setLanguage,startBook
               </div>
               <p>{ui.teamIntro}</p>
             </div>
-            <div className="template-team-grid">
-              {config.employees.map((employee) => (
-                <article key={employee.id}>
-                  <span>{employee.initials}</span>
-                  <small>{employee.role}</small>
-                  <h3>{employee.name}</h3>
-                  <div>{employee.services.map((service) => <b key={service}>{service}</b>)}</div>
-                  <button disabled={!config.bookingEnabled || !config.items.some(item=>item.appointment && (teamBooking || item.employees?.some(name=>employee.name.startsWith(name))))} onClick={() => {
-                    if(teamBooking){startBooking();return}
-                    const matching = config.items.find((item) => item.appointment && item.employees?.some((name) => employee.name.startsWith(name)))
-                    if (matching) startBooking(matching,employee.id)
-                  }}>{ui.viewAvailability}</button>
-                </article>
-              ))}
-            </div>
+            <TeamCards key={config.slug} config={config} language={language} label={ui.viewAvailability} teamBooking={teamBooking} startBooking={startBooking}/>
           </section>
         )}
 
@@ -154,4 +141,41 @@ export default function TemplateLayout({config,ui,language,setLanguage,startBook
       </footer>}
 
 </>
+}
+
+function TeamCards({config,language,label,teamBooking,startBooking}: Pick<Props,'config'|'language'|'teamBooking'|'startBooking'> & {label:string}){
+ const list=useRef<HTMLUListElement>(null)
+ const es=language==='es'
+ function advance(direction:number){
+  const rail=list.current
+  const card=rail?.querySelector('li')
+  if(!rail||!card)return
+  const gap=Number.parseFloat(getComputedStyle(rail).columnGap)||0
+  const distance=card.getBoundingClientRect().width+gap
+  rail.scrollBy({left:direction*distance,behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'})
+ }
+ return <>
+  <ul ref={list} className="template-team-cards" aria-label={es?'Integrantes del equipo':'Team members'}>
+   {config.employees.map(employee=>{
+    const matching=config.items.find(item=>item.appointment&&(item.employeeIds?.includes(employee.id)??item.employees?.some(name=>employee.name.startsWith(name))))
+    const canBook=config.bookingEnabled&&(teamBooking||matching)
+    return <li key={employee.id}>
+     <article className={employee.photoUrl?'team-card has-photo':'team-card'}>
+      <div className="team-card-portrait" aria-hidden="true">
+       <span>{employee.initials}</span>
+       {employee.photoUrl&&<img src={employee.photoUrl} alt="" loading="lazy" decoding="async" onError={event=>{event.currentTarget.hidden=true}}/>}
+      </div>
+      {employee.role&&<small>{employee.role}</small>}
+      <h3>{employee.name}</h3>
+      {employee.services.length>0&&<ul className="team-card-services">{employee.services.map(service=><li key={service}>{service}</li>)}</ul>}
+      {canBook&&<button className="template-solid" type="button" onClick={()=>teamBooking?startBooking():startBooking(matching,employee.id)}>{label}</button>}
+     </article>
+    </li>
+   })}
+  </ul>
+  {config.employees.length>1&&<div className={config.employees.length>3?'team-card-controls many':'team-card-controls'}>
+   <button type="button" aria-label={es?'Integrante anterior':'Previous team member'} onClick={()=>advance(-1)}>‹</button>
+   <button type="button" aria-label={es?'Siguiente integrante':'Next team member'} onClick={()=>advance(1)}>›</button>
+  </div>}
+ </>
 }

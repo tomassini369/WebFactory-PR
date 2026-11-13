@@ -132,7 +132,7 @@ export type BuilderState = {
 
 export type BuilderAsset = {assetKey:string;fileName:string;contentType:string;size:number;imageUrl?:string}
 export type BuilderEditing = {
-  initialState:BuilderState; revision:number; saving:boolean; publicUrl:string; timezone?:string;
+  initialState:BuilderState; revision:number; saving:boolean; publicUrl:string; timezone?:string; teamBookingEnabled?:boolean;
   upload:(file:File)=>Promise<BuilderAsset>;
   publish:(state:BuilderState)=>Promise<BuilderState>;
 }
@@ -392,7 +392,7 @@ function Preview({state,device,lang}:{state:BuilderState;device:Device;lang:Lang
     business:{...state.business,logoUrl:state.business.logo,heroUrl:state.business.hero,galleryUrls:state.business.gallery},
     design:state.design,features:state.features,music:state.music,
     catalog:state.catalog.map(item=>({...item,imageUrl:item.image||'',inventory:null})),employees:state.team,
-    hours:state.hours,paymentRules:state.payments,settings:{locale:lang,timezone:editing?.timezone||'America/Puerto_Rico'},
+    hours:state.hours,paymentRules:state.payments,settings:{locale:lang,timezone:editing?.timezone||'America/Puerto_Rico',teamBookingEnabled:editing?.teamBookingEnabled},
   }
   return <StorefrontPreview previewSite={previewSite} lang={lang} device={device}/>
 }

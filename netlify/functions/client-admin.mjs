@@ -1,3 +1,4 @@
+import {isTeamPhotoKey} from '../../shared/team-photo.mjs';
 import {teamBookingId} from '../../shared/team-booking.mjs';
 import {bookingModeLockKey} from '../lib/booking-engine.mjs';
 import {withBookingLock} from '../lib/booking-lock.mjs';
@@ -262,6 +263,15 @@ export function normalizeClientSection(site, section, incoming, user, membership
 }
 
 /** Existing-site Builder writes are validated together and committed with one revision. */
+export async function validateTeamPhotos(site, employees, assetMetadata = key => clientAssetStore().getMetadata(key)) {
+  const previous=new Map((site.employees||[]).map(member=>[member.id,member.photoAssetKey]));
+  await Promise.all([...new Set(employees.filter(member=>member.photoAssetKey&&member.photoAssetKey!==previous.get(member.id)).map(member=>member.photoAssetKey))].map(async key=>{
+    if(!isTeamPhotoKey(site.siteId,key)) throw Object.assign(new Error('This photo does not belong to this business.'),{status:403});
+    const asset=await assetMetadata(key);
+    if(asset?.metadata?.contentType!=='image/webp') throw Object.assign(new Error('Upload the team photo again.'),{status:400});
+  }));
+}
+
 export async function normalizeBuilderUpdate(site, input, user, membership, assetMetadata = key => clientAssetStore().getMetadata(key)) {
   const fail = (message,status=400) => {throw Object.assign(new Error(message),{status});};
   if (!input || typeof input !== 'object' || Array.isArray(input)) fail('Invalid Builder changes.');
@@ -371,6 +381,11 @@ export default async (req) => {
     }
     const value = normalizeClientSection(site, section, payload.value, user, membership);
 
+    if (section==='employees') {
+      const uploads=new Map(payload.value.filter(member=>member.photoAssetKey!==undefined).map(member=>[cleanText(member.id,120),cleanText(member.photoAssetKey,700)]));
+      for(const member of value) if(uploads.has(member.id)) member.photoAssetKey=uploads.get(member.id);
+      await validateTeamPhotos(site,value);
+    }
     if(['catalog','employees'].includes(section)&&!Number.isInteger(payload.revision))throw Object.assign(new Error('Reload the portal before editing the catalog.'),{status:409});
     const updated = await patchClientSite(site.siteId, { [section]: value },['catalog','employees'].includes(section)?{expectedRevision:payload.revision}:{});
     return Response.json({ ok: true, site: updated, publicSite: publicClientSite(updated) }, { headers: { "Cache-Control": "no-store" } });

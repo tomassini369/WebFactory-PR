@@ -1,6 +1,8 @@
-import {useEffect,useState} from 'react'
+import {useEffect,useRef,useState} from 'react'
 import {useWorkspaceApi} from './training/workspace-services'
 import {useUnsavedChanges} from './interaction-state'
+import {teamPhotoUrl} from '../shared/team-photo.mjs'
+import {usePractice} from './training/practice-context'
 import {PortalPanel} from './PortalPanel'
 const days=[['Lunes','Monday'],['Martes','Tuesday'],['Miércoles','Wednesday'],['Jueves','Thursday'],['Viernes','Friday'],['Sábado','Saturday'],['Domingo','Sunday']]
 export default function ProfessionalEditor({site,setSite,lang,onSave,busy}:any){
@@ -8,14 +10,41 @@ export default function ProfessionalEditor({site,setSite,lang,onSave,busy}:any){
  const loadRequests=async()=>{const result=await api('/.netlify/functions/client-professional?siteId='+encodeURIComponent(site.siteId));setRequests(result.requests||[])}
  useEffect(()=>{void loadRequests().catch(()=>setRequestError(lang==='es'?'No se pudieron cargar las solicitudes.':'Could not load requests.'))},[site.siteId,site.revision])
  const review=async(id:string)=>{try{await api('/.netlify/functions/client-professional',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({siteId:site.siteId,action:'review',id})});await loadRequests()}catch(error){setRequestError(error instanceof Error?error.message:'Error')}}
+ const practice=usePractice()
+ const currentSite=useRef(site)
+ currentSite.current=site
+ const [uploading,setUploading]=useState<string|null>(null)
+ const [photoError,setPhotoError]=useState('')
  const es=lang==='es',t=(a:string,b:string)=>es?a:b
  useUnsavedChanges(site.employees,site.revision,(original:any)=>setSite({...site,employees:original}),lang)
  const update=(index:number,patch:any)=>setSite({...site,employees:site.employees.map((employee:any,n:number)=>n===index?{...employee,...patch}:employee)})
+ const uploadPhoto=async(employeeId:string,file?:File)=>{
+  if(!file||uploading)return
+  setUploading(employeeId);setPhotoError('')
+  try{
+   const form=new FormData()
+   form.set('siteId',site.siteId);form.set('purpose','team-photo');form.set('file',file)
+   const result=await api('/.netlify/functions/client-asset',{method:'POST',body:form})
+   const latest=currentSite.current
+   if(latest.siteId===site.siteId)setSite({...latest,employees:latest.employees.map((member:any)=>member.id===employeeId?{...member,photoAssetKey:result.assetKey}:member)})
+  }catch(error){setPhotoError(error instanceof Error?error.message:t('No se pudo subir la foto.','Could not upload the photo.'))}
+  finally{setUploading(null)}
+ }
  return <PortalPanel className="ca-panel ca-professionals"><header><h2>{t('Profesionales y disponibilidad','Professionals and availability')}</h2><p>{t('Asigna servicios y horarios sin crear una cuenta de portal ni registrar salarios. También puedes añadir al Dueño como profesional y vincular su misma cuenta.','Assign services and hours without creating a portal account or recording wages. You can also add the Owner as a professional and link the same account.')}</p></header>
- {requestError&&<p className="ca-error" role="alert">{requestError}</p>}{requests.filter(request=>request.status==='pending').length>0&&<details><summary>{t('Solicitudes de disponibilidad pendientes','Pending availability requests')}</summary><p>{t('Revisa la agenda y guarda los días no disponibles en el perfil antes de marcar la solicitud como revisada.','Review the calendar and save unavailable dates on the profile before marking the request reviewed.')}</p>{requests.filter(request=>request.status==='pending').map(request=><article key={request.id}><strong>{site.employees.find((employee:any)=>employee.id===request.employeeId)?.name}</strong><p>{request.start} – {request.end}</p><button onClick={()=>void review(request.id)}>{t('Marcar revisada','Mark reviewed')}</button></article>)}</details>}
- <div className="ca-actions"><button data-training="team-add" onClick={()=>setSite({...site,employees:[...site.employees,{id:'employee-'+crypto.randomUUID(),name:'',role:'',roleEn:'',roleEs:'',active:true,serviceIds:[],locationIds:[],calendarId:'',dailyLimit:8,schedule:{},timeOff:[]}]})}>{t('+ Añadir','+ Add')}</button><span data-training="team-save"><button className="ca-save" disabled={busy} onClick={onSave}>{busy?t('Guardando…','Saving…'):t('Guardar cambios','Save changes')}</button></span></div>
+ {photoError&&<p className="ca-error" role="alert">{photoError}</p>}{requestError&&<p className="ca-error" role="alert">{requestError}</p>}{requests.filter(request=>request.status==='pending').length>0&&<details><summary>{t('Solicitudes de disponibilidad pendientes','Pending availability requests')}</summary><p>{t('Revisa la agenda y guarda los días no disponibles en el perfil antes de marcar la solicitud como revisada.','Review the calendar and save unavailable dates on the profile before marking the request reviewed.')}</p>{requests.filter(request=>request.status==='pending').map(request=><article key={request.id}><strong>{site.employees.find((employee:any)=>employee.id===request.employeeId)?.name}</strong><p>{request.start} – {request.end}</p><button onClick={()=>void review(request.id)}>{t('Marcar revisada','Mark reviewed')}</button></article>)}</details>}
+ <div className="ca-actions"><button data-training="team-add" onClick={()=>setSite({...site,employees:[...site.employees,{id:'employee-'+crypto.randomUUID(),name:'',role:'',roleEn:'',roleEs:'',active:true,serviceIds:[],locationIds:[],calendarId:'',dailyLimit:8,schedule:{},timeOff:[]}]})}>{t('+ Añadir','+ Add')}</button><span data-training="team-save"><button className="ca-save" disabled={busy||Boolean(uploading)} onClick={onSave}>{busy?t('Guardando…','Saving…'):t('Guardar cambios','Save changes')}</button></span></div>
  {!site.employees.length&&<p role="status">{t('Añade un profesional y asígnale sus servicios para recibir citas.','Add a professional and assign services to receive appointments.')}</p>}
  <div className="ca-list">{site.employees.map((employee:any,index:number)=>{const linked=site.members?.find((member:any)=>member.employeeId===employee.id);return <article data-training="team-member" key={employee.id}><div className="ca-grid"><label>{t('Nombre','Name')}<input value={employee.name} onChange={e=>update(index,{name:e.target.value})}/></label><label className="check"><input type="checkbox" checked={employee.active!==false} onChange={e=>update(index,{active:e.target.checked})}/>{t('Activo','Active')}</label><label>{t('Especialidad · inglés','Specialty · English')}<input value={employee.roleEn||employee.role||''} onChange={e=>update(index,{role:e.target.value,roleEn:e.target.value})}/></label><label>{t('Especialidad · español','Specialty · Spanish')}<input value={employee.roleEs||''} onChange={e=>update(index,{roleEs:e.target.value})}/></label><p className="wide">{t('La especialidad describe el servicio; no concede permisos.','Specialty describes the service; it grants no permissions.')}</p>
+ {!practice&&<fieldset className="wide">
+  <legend>{t('Foto pública del integrante','Public team photo')}</legend>
+  {employee.photoAssetKey&&<img src={teamPhotoUrl(site.siteId,employee.photoAssetKey)} width={80} height={80} alt="" style={{borderRadius:14,objectFit:'cover'}}/>}
+  <label>{employee.photoAssetKey?t('Reemplazar foto','Replace photo'):t('Subir foto','Upload photo')}
+   <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" disabled={busy||Boolean(uploading)} onChange={event=>{const file=event.currentTarget.files?.[0];event.currentTarget.value='';void uploadPhoto(employee.id,file)}}/>
+  </label>
+  {uploading===employee.id&&<p role="status">{t('Subiendo foto…','Uploading photo…')}</p>}
+  {employee.photoAssetKey&&<button type="button" disabled={busy||Boolean(uploading)} onClick={()=>update(index,{photoAssetKey:''})}>{t('Quitar foto','Remove photo')}</button>}
+  <p>{t('Pulsa Guardar cambios para actualizar la página pública.','Select Save changes to update the public website.')}</p>
+ </fieldset>}
  <fieldset className="wide"><legend>{t('Servicios asignados','Assigned services')}</legend>{site.catalog.filter((item:any)=>item.type==='service').map((item:any)=><label className="check" key={item.id}><input type="checkbox" checked={employee.serviceIds?.includes(item.id)||false} onChange={e=>update(index,{serviceIds:e.target.checked?[...(employee.serviceIds||[]),item.id]:(employee.serviceIds||[]).filter((id:string)=>id!==item.id)})}/>{es?item.nameEs||item.nameEn||item.name:item.nameEn||item.name}</label>)}</fieldset>
  {site.business.locations?.length>0&&<fieldset className="wide"><legend>{t('Sucursales asignadas','Assigned branches')}</legend>{site.business.locations.map((location:any)=><label className="check" key={location.id}><input type="checkbox" checked={employee.locationIds?.includes(location.id)||false} onChange={e=>update(index,{locationIds:e.target.checked?[...(employee.locationIds||[]),location.id]:(employee.locationIds||[]).filter((id:string)=>id!==location.id)})}/>{location.name}</label>)}</fieldset>}
  <label>{t('Límite diario de citas','Daily appointment limit')}<input type="number" min="1" max="100" value={employee.dailyLimit||8} onChange={e=>update(index,{dailyLimit:Number(e.target.value)})}/></label><label>Google Calendar ID<input value={employee.calendarId||''} onChange={e=>update(index,{calendarId:e.target.value})}/></label></div>

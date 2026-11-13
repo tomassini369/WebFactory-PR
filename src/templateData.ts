@@ -20,6 +20,7 @@ export type TemplateItem = {
   duration?: number
   deposit?: number
   employees?: string[]
+  employeeIds?: string[]
   badge?: string
   groupCapacity?: number
   purchasable?: boolean
@@ -29,6 +30,7 @@ export type TemplateEmployee = {
   id: string
   name: string
   role: string
+  photoUrl?: string
   initials: string
   services: string[]
 }

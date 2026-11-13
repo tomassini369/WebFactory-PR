@@ -43,3 +43,19 @@ test('audio supports iPhone range probes, seeking and private caching',async()=>
   assert.equal(musicResponse(bytes,'bytes=6-',true).status,416);
   assert.equal(musicResponse(bytes,'bytes=-2',true).headers.get('content-range'),'bytes 4-5/6');
 });
+
+test('team photos accept only uploaded images from the same business and expose active profiles', async () => {
+  const { validateTeamPhotos } = await import('../functions/client-admin.mjs');
+  const { publicClientSite } = await import('./client-store.mjs');
+  const key = 'sites/one/team/01234567-0123-4567-89ab-0123456789ab.webp';
+  const site = {siteId:'one',settings:{teamBookingEnabled:true},employees:[]};
+  const member = {id:'artist',name:'Artist',photoAssetKey:key};
+  await validateTeamPhotos(site,[member],async () => ({metadata:{contentType:'image/webp'}}));
+  await assert.rejects(validateTeamPhotos(site,[member],async () => null),{status:400});
+  await assert.rejects(validateTeamPhotos(site,[{...member,photoAssetKey:key.replace('/one/','/two/')}]),{status:403});
+  const view = publicClientSite({...site,employees:[member,{...member,id:'inactive',active:false}]});
+  assert.equal(view.employees.length,1);
+  assert.match(view.employees[0].photoUrl,/client-asset\?siteId=one/);
+  assert.equal(view.employees[0].photoAssetKey,undefined);
+  assert.equal(publicClientSite({...site,employees:[{...member,photoAssetKey:''}]}).employees[0].photoUrl,'');
+});
