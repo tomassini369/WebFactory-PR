@@ -1,3 +1,4 @@
+import {teamBookingId} from '../../shared/team-booking.mjs';
 import crypto from 'node:crypto';
 import {clientCommerceStore,commerceKey} from './client-store.mjs';
 import {availabilityForDate} from './booking-engine.mjs';
@@ -13,11 +14,12 @@ export function validateWaitlist(site,input,now=Date.now()){
  const locations=(site.business?.locations||[]).filter(l=>l.active!==false);
  if(!service||locations.length&&!locations.some(l=>l.id===input.locationId))throw fail('Choose an active service and location.');
  const professionals=(site.employees||[]).filter(e=>e.active!==false&&e.serviceIds?.includes(service.id)&&(!locations.length||e.locationIds?.includes(input.locationId)));
- if(!professionals.length||input.employeeId&&!professionals.some(e=>e.id===input.employeeId))throw fail('Professional unavailable.');
+ const teamMode=site.settings?.teamBookingEnabled===true;
+ if(!teamMode&&(!professionals.length||input.employeeId&&!professionals.some(e=>e.id===input.employeeId)))throw fail('Professional unavailable.');
  if(!validDate(input.from)||!validDate(input.until)||input.from>input.until||Date.parse(input.from)<now-86400000||Date.parse(input.until)>now+90*86400000||Date.parse(input.until)-Date.parse(input.from)>30*86400000)throw fail('Choose up to 30 preferred days within the next 90 days.');
  const name=String(input.name||'').trim(),email=String(input.email||'').trim().toLowerCase();
  if(!name||name.length>180||email.length>320||!/^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(email)||input.consent!==true||input.website)throw fail('Name, email and explicit waitlist consent are required.');
- return {serviceId:service.id,employeeId:input.employeeId||'',locationId:input.locationId||'',from:input.from,until:input.until,customer:{name,email},consentVersion:'waitlist-2026-10-26',consentedAt:new Date(now).toISOString(),language:input.lang==='es'?'es':'en'};
+ return {serviceId:service.id,employeeId:teamMode?'':input.employeeId||'',locationId:input.locationId||'',from:input.from,until:input.until,customer:{name,email},consentVersion:'waitlist-2026-10-26',consentedAt:new Date(now).toISOString(),language:input.lang==='es'?'es':'en'};
 }
 export async function joinWaitlist(site,input,{store=clientCommerceStore(),now=Date.now()}={}){
  const data=validateWaitlist(site,input,now),token=crypto.randomBytes(32).toString('base64url'),id=tokenHash(token);
@@ -65,16 +67,19 @@ export async function offerWaitlist(site,booking,{store=clientCommerceStore(),av
  const origin=baseUrl||globalThis.Netlify?.env?.get('DEPLOY_PRIME_URL')||globalThis.Netlify?.env?.get('URL');
  if(!origin||!/^https:\/\//.test(origin))return {offered:0};
  const date=new Intl.DateTimeFormat('en-CA',{timeZone:site.settings?.timezone||'America/Puerto_Rico',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(booking.start));
+ const teamMode=site.settings?.teamBookingEnabled===true;
+ const employeeId=teamMode?teamBookingId:booking.employeeId;
+ if(!teamMode&&employeeId===teamBookingId)return {offered:0};
  const started=Date.now();let offered=0;
  for await(const row of iterateWaitlistEntries(site,{store,now})){
   if(offered>=3||Date.now()-started>20000)break;
-  if(row.status!=='waiting'||!row.customer?.email||Date.parse(row.expiresAt)<=now||row.from>date||row.until<date||row.locationId!==(booking.locationId||'')||row.employeeId&&row.employeeId!==booking.employeeId)continue;
-  const slots=await available(site,row.serviceId,booking.employeeId,date,row.locationId);
+  if(row.status!=='waiting'||!row.customer?.email||Date.parse(row.expiresAt)<=now||row.from>date||row.until<date||row.locationId!==(booking.locationId||'')||row.employeeId&&row.employeeId!==employeeId)continue;
+  const slots=await available(site,row.serviceId,employeeId,date,row.locationId);
   if(!slots.some(s=>s.start===booking.start))continue;
   const key=commerceKey(site.siteId,'waitlist',row.id),current=await store.getWithMetadata(key,{type:'json'});
   if(current?.data?.status!=='waiting'||!current.etag)continue;
   const token=crypto.randomBytes(32).toString('base64url'),hash=tokenHash(token),expiresAt=new Date(Math.min(now+24*3600000,Date.parse(row.expiresAt),Date.parse(booking.start))).toISOString();
-  const invitation={siteId:site.siteId,requestId:row.id,expiresAt,serviceId:row.serviceId,employeeId:booking.employeeId,locationId:row.locationId,start:booking.start};
+  const invitation={siteId:site.siteId,requestId:row.id,expiresAt,serviceId:row.serviceId,employeeId,locationId:row.locationId,start:booking.start};
   await store.setJSON(commerceKey(site.siteId,'waitlist-invitations',hash),invitation,{onlyIfNew:true});
   const next={...current.data,invitationCount:Number(current.data.invitationCount||0)+1,status:'invited',invitationExpiresAt:expiresAt,deliveryStatus:'sending',invitationHash:hash};
   const claimed=await store.setJSON(key,next,{onlyIfMatch:current.etag});if(!claimed.modified)continue;

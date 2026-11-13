@@ -9,12 +9,12 @@ import TemplateHighlights from './TemplateHighlights'
 
 type Props = {
  config: TemplateConfig; ui: {[K in keyof TemplateUi]: TemplateUi[K] extends string ? string : TemplateUi[K]}; language: TemplateLanguage; setLanguage: (language: TemplateLanguage) => void;
- startBooking: (item?: TemplateItem, employeeId?: string) => void; setCatalogOpen: (open: boolean) => void; setCartOpen: (open: boolean) => void;
+ teamBooking?: boolean; startBooking: (item?: TemplateItem, employeeId?: string) => void; setCatalogOpen: (open: boolean) => void; setCartOpen: (open: boolean) => void;
  cart: Array<{quantity: number}>; contact?: ReactNode; map?: ReactNode; footer?: ReactNode; extraSections?: ReactNode; social?: ReactNode; music?: ReactNode;
  catalogEnabled?: boolean; mainClass?: string; sectionOrder?: string[]; logoUrl?: string; locationHref?: string; phoneHref?: string;
 }
 /** The product layout. Demo, Builder and live storefront all render this component. */
-export default function TemplateLayout({config,ui,language,setLanguage,startBooking,setCatalogOpen,setCartOpen,cart,contact,map,footer,extraSections,social,music,catalogEnabled=true,mainClass='',sectionOrder,logoUrl,locationHref,phoneHref}: Props) {
+export default function TemplateLayout({config,ui,language,setLanguage,startBooking,teamBooking=false,setCatalogOpen,setCartOpen,cart,contact,map,footer,extraSections,social,music,catalogEnabled=true,mainClass='',sectionOrder,logoUrl,locationHref,phoneHref}: Props) {
  const [menuOpen,setMenuOpen] = useState(false)
  const sectionStyle = (key:string): CSSProperties | undefined => sectionOrder ? {order:sectionOrder.includes(key)?sectionOrder.indexOf(key)+2:99} : undefined
  return <>      <header className="template-header">
@@ -92,7 +92,8 @@ export default function TemplateLayout({config,ui,language,setLanguage,startBook
                   <small>{employee.role}</small>
                   <h3>{employee.name}</h3>
                   <div>{employee.services.map((service) => <b key={service}>{service}</b>)}</div>
-                  <button disabled={!config.bookingEnabled || !config.items.some(item=>item.appointment && item.employees?.some(name=>employee.name.startsWith(name)))} onClick={() => {
+                  <button disabled={!config.bookingEnabled || !config.items.some(item=>item.appointment && (teamBooking || item.employees?.some(name=>employee.name.startsWith(name))))} onClick={() => {
+                    if(teamBooking){startBooking();return}
                     const matching = config.items.find((item) => item.appointment && item.employees?.some((name) => employee.name.startsWith(name)))
                     if (matching) startBooking(matching,employee.id)
                   }}>{ui.viewAvailability}</button>

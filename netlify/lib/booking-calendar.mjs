@@ -1,3 +1,4 @@
+import {teamBookingId} from '../../shared/team-booking.mjs';
 import crypto from "node:crypto";
 import { createGoogleEvent, ensureGoogleGuest, updateBookingGoogleEvent } from "./google-calendar.mjs";
 
@@ -11,18 +12,19 @@ export async function syncBookingCalendar(site, record) {
   if (record.googleEventId && !record.calendarUpdatePending && (!record.customerCalendarInviteRequested || record.customerCalendarInviteStatus === "sent")) return { ...record, calendarSyncStatus: "synced", calendarSyncPending: false };
   const employee = (site.employees || []).find(item => item.id === record.employeeId);
   if (!site.googleCalendar?.connected) return { ...record, calendarSyncStatus: "not_connected", calendarSyncPending: true };
-  if (!employee?.calendarId) return { ...record, calendarSyncStatus: "unassigned", calendarSyncPending: true };
+  const targetCalendar=record.googleCalendarId || (record.employeeId===teamBookingId ? site.settings?.teamBookingCalendarId : employee?.calendarId);
+  if (!targetCalendar) return { ...record, calendarSyncStatus: "unassigned", calendarSyncPending: true };
   const id = "bf" + crypto.createHash("sha256").update(`${site.siteId}:${record.transactionId}`).digest("hex");
   try {
     const email = String(record.customer?.email || "").trim().toLowerCase();
     const guest = record.customerCalendarInviteRequested && /^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(email) ? { email, displayName: record.customer?.name || "", responseStatus: "needsAction" } : null;
-    const calendarId = record.googleCalendarId || employee.calendarId;
+    const calendarId = targetCalendar;
     let event = record.googleEventId ? (record.calendarUpdatePending ? await updateBookingGoogleEvent(site.siteId,calendarId,record.googleEventId,record,site.settings?.timezone || "America/Puerto_Rico") : { id: record.googleEventId }) : await createGoogleEvent(site.siteId, calendarId, {
       id,
       ...(guest ? { attendees: [guest], guestsCanInviteOthers: false, guestsCanSeeOtherGuests: false } : {}),
       reminders: { useDefault: false, overrides: [{ method: "popup", minutes: 1440 }, { method: "popup", minutes: 240 }] },
       summary: `${record.items?.[0]?.name || "Appointment"} — ${record.customer?.name || "Customer"}`,
-      description: `WebFactory booking ${record.bookingCode || record.transactionId} · ${employee.name || ""}`,
+      description: `WebFactory booking ${record.bookingCode || record.transactionId} · ${(record.employeeId===teamBookingId ? site.business?.name : employee?.name) || ""}`,
       location: (site.business?.locations || []).find(item=>item.id===record.locationId)?.address || site.business?.address || "",
       extendedProperties: { private: { webfactoryTransactionId: record.transactionId, webfactorySiteId: site.siteId } },
       start: { dateTime: record.start, timeZone: site.settings?.timezone || "America/Puerto_Rico" },

@@ -1,3 +1,4 @@
+import {teamBookingId} from '../../shared/team-booking.mjs';
 import {membershipAllowsCapability} from '../../shared/membership-plans.mjs';
 import {kioskOpticsResponse,preserveKioskDistortion,preservePresetDistortions} from '../lib/kiosk-optics-compat.mjs';
 import {cancelPendingCheckout} from '../lib/cancel-pending-checkout.mjs';
@@ -160,9 +161,10 @@ export function createKioskHandler({ authorize = requireSiteCapability, getStore
             const customer={name:cleanText(input.customer?.name,180),email:cleanText(input.customer?.email,320),phone:cleanText(input.customer?.phone,80)};
             if(!customer.name||!validEmail(customer.email))throw kioskFail('Name and valid email required.');
             const service=(site.catalog||[]).find(x=>x.id===input.booking?.serviceId&&x.active!==false&&x.requiresAppointment&&x.type==='service');
-            const employeeId=String(input.booking?.employeeId||'');
+            const teamMode=site.settings?.teamBookingEnabled===true;
+            const employeeId=teamMode?teamBookingId:String(input.booking?.employeeId||'');
             const professionals=eligibleBookingProfessionals(site,service?.id,state.locationId);
-            if(!service||!professionals.some(employee=>employeeId==='any'||employee.id===employeeId)||!kioskBookingProviders(site).includes(input.paymentProvider))throw kioskFail('Service, professional or payment unavailable.',409);
+            if(!service||(!teamMode&&!professionals.some(employee=>employeeId==='any'||employee.id===employeeId))||!kioskBookingProviders(site).includes(input.paymentProvider))throw kioskFail('Service, professional or payment unavailable.',409);
             payload={siteId:site.siteId,locationId:state.locationId,customer,lang:input.lang==='es'?'es':'en',paymentProvider:input.paymentProvider,booking:{serviceId:service.id,employeeId,start:String(input.booking?.start||''),locationId:state.locationId}};
           }else if(input.action==='balance_checkout'){
             if(!modes.existingBookings||!state.bookingLookup||state.bookingLookup.expiresAt<=now)throw kioskFail('Find your booking again.',409);

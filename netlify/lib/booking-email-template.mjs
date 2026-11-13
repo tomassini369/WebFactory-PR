@@ -1,3 +1,4 @@
+import {teamBookingId} from '../../shared/team-booking.mjs';
 import { renderReceiptBlock } from "./receipt-email-template.mjs";
 import { bookingKioskPin } from "./kiosk-bookings.mjs";
 import { escapeHtml, bookingCalendarUrl } from "./booking-calendar-export.mjs";
@@ -19,7 +20,7 @@ export function bookingDetails(site, record) {
     service:(record.items || []).map(item=>item.name).filter(Boolean).join(" · ") || (es ? "Cita" : "Appointment"),
     date:start.toLocaleDateString(locale,{timeZone,weekday:"long",year:"numeric",month:"long",day:"numeric"}),
     time:`${start.toLocaleTimeString(locale,{timeZone,hour:"numeric",minute:"2-digit"})} – ${end.toLocaleTimeString(locale,{timeZone,hour:"numeric",minute:"2-digit"})}`,
-    employee:(site.employees || []).find(item=>item.id === record.employeeId)?.name || "",
+    employee:record.employeeId===teamBookingId ? site.business?.name || "" : (site.employees || []).find(item=>item.id === record.employeeId)?.name || "",
     address, phone:location?.phone || site.business?.phone || "", email:site.business?.email || "",
     maps:safeWebUrl(location?.mapsUrl || site.business?.mapsUrl) || (address ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}` : ""),
     website:`${publicBaseUrl()}/sites/${encodeURIComponent(site.slug || "")}`,

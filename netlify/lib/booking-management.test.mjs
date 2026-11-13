@@ -1,3 +1,4 @@
+import {teamBookingId} from '../../shared/team-booking.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
@@ -111,6 +112,7 @@ test('shared agenda deduplicates hours and assigns an eligible professional unde
  f.site.employees.push({...alex,id:'mia',name:'Mia',schedule:{Monday:{enabled:true,open:'09:30',close:'17:30'}}},
   {...alex,id:'inactive',active:false},{...alex,id:'other',locationIds:['other']});
  f.site.hours.Lunes.close='18:00';
+ await f.prepare();
  const slots=await bookingAvailabilityForDate(f.site,'haircut','any',f.date,'one');
  assert.equal(new Set(slots.map(slot=>slot.start)).size,slots.length);
  const monthly=await bookingAvailabilityForMonth(f.site,'haircut','any',f.date.slice(0,7),'one');
@@ -120,4 +122,63 @@ test('shared agenda deduplicates hours and assigns an eligible professional unde
  assert.equal((await reserveBookingSlot(f.site,selection)).employeeId,'mia');
  await assert.rejects(reserveBookingSlot(f.site,selection),{status:409});
  await assert.rejects(reserveBookingSlot(f.site,{...selection,employeeId:'other'}),{status:404});
+});
+
+test('one team agenda uses business hours, blocks both branches and preserves capacity after switching modes',async t=>{
+ const {bookingAvailabilityForDate,bookingAvailabilityForMonth,reserveBookingSlot}=await import('./booking-engine.mjs');
+ const f=fixture(t);
+ f.site.settings.teamBookingEnabled=true;
+ f.site.employees[0].schedule={Monday:{enabled:false}};
+ f.site.business.locations.push({id:'two',name:'Local 2'});
+ f.site.catalog.push({...f.site.catalog[0],id:'consult'});
+ await f.prepare();
+ const selection={serviceId:'haircut',employeeId:teamBookingId,locationId:'one',start:f.date+'T13:30:00Z'};
+ const slots=await bookingAvailabilityForDate(f.site,'haircut',teamBookingId,f.date,'one');
+ assert.equal(slots[0].start,new Date(selection.start).toISOString());
+ assert.equal((await bookingAvailabilityForMonth(f.site,'haircut',teamBookingId,f.date.slice(0,7),'one'))[f.date],slots.length);
+ const results=await Promise.allSettled([reserveBookingSlot(f.site,selection),reserveBookingSlot(f.site,{...selection,serviceId:'consult',locationId:'two'})]);
+ const [held]=results.filter(result=>result.status==='fulfilled');
+ assert.equal(results.filter(result=>result.status==='fulfilled').length,1);
+ assert.equal(held.value.employeeId,teamBookingId);
+ assert.equal(results.find(result=>result.status==='rejected').reason.status,409);
+ f.site.settings.teamBookingEnabled=false;
+ f.site.employees[0].schedule={};
+ await f.prepare();
+ await assert.rejects(reserveBookingSlot(f.site,selection),{status:409});
+ await assert.rejects(reserveBookingSlot(f.site,{...selection,employeeId:'any'}),{status:409});
+ assert.equal((await reserveBookingSlot(f.site,{...selection,employeeId:'any',start:f.date+'T14:00:00Z'})).employeeId,'alex');
+});
+
+test('team agenda checks the selected Google Calendar without consulting individual calendars',async t=>{
+ const {bookingAvailabilityForDate}=await import('./booking-engine.mjs');
+ const f=fixture(t);
+ f.site.googleCalendar.connected=true;
+ f.site.settings={...f.site.settings,teamBookingEnabled:true,teamBookingCalendarId:'band'};
+ f.site.employees[0].calendarId='personal';
+ await f.prepare();
+ await clientOAuthStore().setJSON(`tokens/${f.site.siteId}.json`,{encrypted:encryptToken({access_token:'test',expires_at:Date.now()+3600000})});
+ t.mock.method(globalThis,'fetch',async(url,options)=>{
+  assert.match(String(url),/freeBusy/);
+  assert.deepEqual(JSON.parse(options.body).items,[{id:'band'}]);
+  return Response.json({calendars:{band:{busy:[{start:f.date+'T13:30:00Z',end:f.date+'T14:00:00Z'}]}}});
+ });
+ const slots=await bookingAvailabilityForDate(f.site,'haircut',teamBookingId,f.date,'one');
+ assert.equal(slots[0].start,f.date+'T14:00:00.000Z');
+});
+
+test('confirmed team bookings sync to the shared Google Calendar',async t=>{
+ const f=fixture(t);
+ f.site.googleCalendar.connected=true;
+ f.site.settings.teamBookingCalendarId='band';
+ await f.prepare();
+ await clientOAuthStore().setJSON(`tokens/${f.site.siteId}.json`,{encrypted:encryptToken({access_token:'test',expires_at:Date.now()+3600000})});
+ t.mock.method(globalThis,'fetch',async(url,options)=>{
+  assert.match(String(url),/calendars\/band\/events/);
+  assert.equal(options.method,'POST');
+  assert.match(JSON.parse(options.body).description,/Nova/);
+  return Response.json({id:'team-event'});
+ });
+ const synced=await syncBookingCalendar(f.site,{...f.record,employeeId:teamBookingId});
+ assert.equal(synced.googleCalendarId,'band');
+ assert.equal(synced.googleEventId,'team-event');
 });

@@ -1,3 +1,4 @@
+import {teamBookingId} from '../../shared/team-booking.mjs';
 import {isBasicMembership,membershipAllowsCapability} from "../../shared/membership-plans.mjs";
 import {catalogPriceCents} from '../lib/catalog-price.mjs';
 import {verifyMerchantCapability} from '../lib/stripe-merchant-capability.mjs';
@@ -114,12 +115,12 @@ export async function performCheckout(req, { kiosk = false, kioskQr = false, bal
       if (!service) throw Object.assign(new Error("The selected service is unavailable."), { status: 409 });
       const fullAmount = basic ? 0 : catalogPriceCents(service.price);
       hold = await reserveBookingSlot(site, { ...payload.booking, locationId });
-      const employee = site.employees.find(member => member.id === hold.employeeId);
+      const bookingName = hold.employeeId===teamBookingId ? site.business?.name || (lang==="es"?"Equipo":"Team") : site.employees.find(member => member.id === hold.employeeId)?.name || "";
       const unitAmount = site.paymentRules?.bookingPayment === "deposit"
         ? Math.round(fullAmount * Number(site.paymentRules?.bookingDepositPercent || 25) / 100)
         : fullAmount;
       const serviceName = localizedText(service, lang, "name");
-      items = [{ id: service.id, name: site.paymentRules?.bookingPayment === "deposit" ? `${lang === "es" ? "Depósito" : "Deposit"} — ${serviceName}` : serviceName, description: `${employee.name} · ${new Date(hold.start).toLocaleString(lang === "es" ? "es-PR" : "en-US", { timeZone: site.settings?.timezone || "America/Puerto_Rico" })}`, quantity: 1, unitAmount }];
+      items = [{ id: service.id, name: site.paymentRules?.bookingPayment === "deposit" ? `${lang === "es" ? "Depósito" : "Deposit"} — ${serviceName}` : serviceName, description: `${bookingName} · ${new Date(hold.start).toLocaleString(lang === "es" ? "es-PR" : "en-US", { timeZone: site.settings?.timezone || "America/Puerto_Rico" })}`, quantity: 1, unitAmount }];
     } else {
       kind = "order";
       items = canonicalCart(site, payload.items, lang);

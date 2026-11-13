@@ -188,7 +188,7 @@ export function publicClientSite(site) {
         ? `/.netlify/functions/client-asset?siteId=${encodeURIComponent(site.siteId)}&key=${encodeURIComponent(item.imageAssetKey)}`
         : "",
     })),
-    employees: (site.employees || []).filter((member) => member.active !== false && (!basic||member.id===basicProfessional(site))).map((member) => ({
+    employees: (site.employees || []).filter((member) => member.active !== false && (!basic||site.settings?.teamBookingEnabled===true||member.id===basicProfessional(site))).map((member) => ({
       id: member.id,
       name: member.name,
       role: member.role,
@@ -198,7 +198,7 @@ export function publicClientSite(site) {
       locationIds: member.locationIds || [],
     })),
     hours: site.hours || {},
-    settings: {timezone: site.settings?.timezone, waitlistEnabled: !basic && site.settings?.waitlistEnabled === true},
+    settings: {timezone: site.settings?.timezone, teamBookingEnabled: site.settings?.teamBookingEnabled === true, waitlistEnabled: !basic && site.settings?.waitlistEnabled === true},
     paymentRules: {
       bookingWithoutPayment: basic,
       methods: basic ? {} : site.paymentRules?.methods || {},
