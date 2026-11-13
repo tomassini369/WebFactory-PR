@@ -296,7 +296,7 @@ export const templateConfigs: TemplateConfig[] = [
     description: 'Template para artista musical con paquetes de presentación, fechas reservables, depósitos y contacto para eventos privados.',
     heroImage: pexels(1763075), gallery: [pexels(1190297), pexels(164829), pexels(167636)],
     location: 'Puerto Rico', phone: '(787) 555-0203', hours: 'Bookings · By availability',
-    accent: '#B8B8BE', accent2: '#F5F5F5', dark: '#0B0B0D', cream: '#F5F5F5',
+    accent: '#C084FC', accent2: '#E2B7FF', dark: '#120A1D', cream: '#FAF5FF',
     features: ['Artist booking', 'Event packages', 'Deposits', 'Social media'],
     items: [
       {id:'music-1',type:'service',name:'Set acústico',price:450,description:'Presentación íntima para restaurantes, lounges y eventos pequeños.',image:pexels(1190297),appointment:true,duration:90,deposit:100,employees:['Alex','Mia'],badge:'Popular'},
