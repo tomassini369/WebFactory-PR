@@ -103,3 +103,21 @@ test('Google failure blocks daily, monthly and final confirmation equally',async
  const f=fixture(t);await f.prepare();f.site.googleCalendar={connected:true};f.site.employees[0].calendarId='external-calendar';
  for(const operation of [()=>availabilityForDate(f.site,'haircut','alex',f.date,'one'),()=>availabilityForMonth(f.site,'haircut','alex',f.date.slice(0,7),'one'),()=>createBookingHold(f.site,{serviceId:'haircut',employeeId:'alex',locationId:'one',start:f.date+'T15:00:00Z'},{strictGoogle:false})])await assert.rejects(operation(),{status:503});
 });
+
+test('shared agenda deduplicates hours and assigns an eligible professional under the existing booking lock',async t=>{
+ const {bookingAvailabilityForDate,bookingAvailabilityForMonth,reserveBookingSlot}=await import('./booking-engine.mjs');
+ const f=fixture(t);await f.prepare();
+ const [alex]=f.site.employees;
+ f.site.employees.push({...alex,id:'mia',name:'Mia',schedule:{Monday:{enabled:true,open:'09:30',close:'17:30'}}},
+  {...alex,id:'inactive',active:false},{...alex,id:'other',locationIds:['other']});
+ f.site.hours.Lunes.close='18:00';
+ const slots=await bookingAvailabilityForDate(f.site,'haircut','any',f.date,'one');
+ assert.equal(new Set(slots.map(slot=>slot.start)).size,slots.length);
+ const monthly=await bookingAvailabilityForMonth(f.site,'haircut','any',f.date.slice(0,7),'one');
+ assert.equal(monthly[f.date],slots.length);
+ const selection={serviceId:'haircut',employeeId:'any',locationId:'one',start:f.date+'T13:30:00Z'};
+ assert.equal((await reserveBookingSlot(f.site,selection)).employeeId,'alex');
+ assert.equal((await reserveBookingSlot(f.site,selection)).employeeId,'mia');
+ await assert.rejects(reserveBookingSlot(f.site,selection),{status:409});
+ await assert.rejects(reserveBookingSlot(f.site,{...selection,employeeId:'other'}),{status:404});
+});

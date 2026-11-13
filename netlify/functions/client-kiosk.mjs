@@ -3,7 +3,7 @@ import {kioskOpticsResponse,preserveKioskDistortion,preservePresetDistortions} f
 import {cancelPendingCheckout} from '../lib/cancel-pending-checkout.mjs';
 import {manageInPersonOrder} from '../lib/in-person-orders.mjs';
 import {withBookingLock} from '../lib/booking-lock.mjs';
-import {availabilityForDate} from '../lib/booking-engine.mjs';
+import {availabilityForDate,bookingAvailabilityForDate,eligibleBookingProfessionals} from '../lib/booking-engine.mjs';
 import {kioskBookingModes,lookupKioskBooking,assertKioskBooking,kioskBookingView,bookingBalance} from '../lib/kiosk-bookings.mjs';
 import crypto from 'node:crypto';
 import {kioskAppearance,validateKioskAppearance,kioskPresets,validateKioskPresets} from '../lib/kiosk-skins.mjs';
@@ -117,9 +117,7 @@ export function createKioskHandler({ authorize = requireSiteCapability, getStore
       if(req.method==='POST'&&input.action==='availability'){
         if(!modes.newBookings||site.features?.bookings===false)throw kioskFail('Booking kiosk disabled.',403);
         if(!/^\d{4}-\d{2}-\d{2}$/.test(input.date||'')||Date.parse(input.date)>now+366*86400000||Date.parse(input.date)<now-2*86400000)throw kioskFail('Choose a valid date / Escoge una fecha válida.');
-        let slots;
-        if(input.employeeId==='any'){const people=(site.employees||[]).filter(x=>x.active!==false&&x.serviceIds?.includes(input.serviceId)&&(!state.locationId||x.locationIds?.includes(state.locationId)));const all=await Promise.all(people.map(async person=>(await availability(site,String(input.serviceId||''),person.id,input.date,state.locationId,{strictGoogle:true})).map(slot=>({...slot,employeeId:person.id}))));slots=[...new Map(all.flat().sort((a,b)=>a.start.localeCompare(b.start)).map(slot=>[slot.start,slot])).values()];}
-        else slots=await availability(site,String(input.serviceId||''),String(input.employeeId||''),input.date,state.locationId,{strictGoogle:true});
+        const slots=await bookingAvailabilityForDate(site,String(input.serviceId||''),String(input.employeeId||''),input.date,state.locationId,availability);
         return respond({ok:true,slots},{headers});
       }
       if(req.method==='POST'&&['lookup_booking','check_in','clear_booking'].includes(input.action)){
@@ -162,9 +160,10 @@ export function createKioskHandler({ authorize = requireSiteCapability, getStore
             const customer={name:cleanText(input.customer?.name,180),email:cleanText(input.customer?.email,320),phone:cleanText(input.customer?.phone,80)};
             if(!customer.name||!validEmail(customer.email))throw kioskFail('Name and valid email required.');
             const service=(site.catalog||[]).find(x=>x.id===input.booking?.serviceId&&x.active!==false&&x.requiresAppointment&&x.type==='service');
-            const employee=(site.employees||[]).find(x=>x.id===input.booking?.employeeId&&x.active!==false&&x.serviceIds?.includes(service?.id)&&(!state.locationId||x.locationIds?.includes(state.locationId)));
-            if(!service||!employee||!kioskBookingProviders(site).includes(input.paymentProvider))throw kioskFail('Service, professional or payment unavailable.',409);
-            payload={siteId:site.siteId,locationId:state.locationId,customer,lang:input.lang==='es'?'es':'en',paymentProvider:input.paymentProvider,booking:{serviceId:service.id,employeeId:employee.id,start:String(input.booking?.start||''),locationId:state.locationId}};
+            const employeeId=String(input.booking?.employeeId||'');
+            const professionals=eligibleBookingProfessionals(site,service?.id,state.locationId);
+            if(!service||!professionals.some(employee=>employeeId==='any'||employee.id===employeeId)||!kioskBookingProviders(site).includes(input.paymentProvider))throw kioskFail('Service, professional or payment unavailable.',409);
+            payload={siteId:site.siteId,locationId:state.locationId,customer,lang:input.lang==='es'?'es':'en',paymentProvider:input.paymentProvider,booking:{serviceId:service.id,employeeId,start:String(input.booking?.start||''),locationId:state.locationId}};
           }else if(input.action==='balance_checkout'){
             if(!modes.existingBookings||!state.bookingLookup||state.bookingLookup.expiresAt<=now)throw kioskFail('Find your booking again.',409);
             const key=commerceKey(site.siteId,'bookings',state.bookingLookup.id);

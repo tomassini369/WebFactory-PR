@@ -111,19 +111,19 @@ export async function availabilityForDate(site, serviceId, employeeId, date, loc
   return ruleSlots({ date, site, employee, service, locationId, blocks: [...reserved, ...googleReserved], timeZone });
 }
 
-export function monthAvailabilityFromBlocks({ month, timeZone, service, employee, site, blocks, locationId = "" }) {
+export function monthAvailabilityFromBlocks({ month, timeZone, service, employee, site, blocks, locationId = "", includeStarts = false }) {
   const [year, monthNumber] = month.split("-").map(Number);
   const available = {};
   const dayCount = new Date(Date.UTC(year, monthNumber, 0)).getUTCDate();
   for (let day = 1; day <= dayCount; day += 1) {
     const date = `${month}-${String(day).padStart(2, "0")}`;
     const slots = ruleSlots({date,timeZone,service,employee,site,blocks,locationId});
-    if (slots.length) available[date] = slots.length;
+    if (slots.length) available[date] = includeStarts ? slots.map(slot=>slot.start) : slots.length;
   }
   return available;
 }
 
-export async function availabilityForMonth(site, serviceId, employeeId, month, locationId = "") {
+export async function availabilityForMonth(site, serviceId, employeeId, month, locationId = "", {includeStarts=false} = {}) {
   if (!/^\d{4}-\d{2}$/.test(month)) throw Object.assign(new Error("Invalid booking month."), { status: 400 });
   const { service, employee } = bookingServiceAndEmployee(site, serviceId, employeeId, locationId);
   const [year, monthNumber] = month.split("-").map(Number);
@@ -145,7 +145,53 @@ export async function availabilityForMonth(site, serviceId, employeeId, month, l
     }
   }
   const blocks = [...reserved, ...googleReserved];
-  return monthAvailabilityFromBlocks({ month, timeZone, service, employee, site, blocks, locationId });
+  return monthAvailabilityFromBlocks({ month, timeZone, service, employee, site, blocks, locationId, includeStarts });
+}
+
+export function eligibleBookingProfessionals(site, serviceId, locationId = "") {
+  const locations = (site.business?.locations || []).filter(location => location.active !== false);
+  if (locations.length && !locations.some(location => location.id === locationId)) return [];
+  const basicId = isBasicMembership(site) ? basicProfessional(site) : null;
+  return (site.employees || []).filter(employee => employee.active !== false &&
+    employee.serviceIds?.includes(serviceId) && (!locations.length || employee.locationIds?.includes(locationId)) &&
+    (basicId === null || employee.id === basicId));
+}
+
+export async function bookingAvailabilityForDate(site, serviceId, employeeId, date, locationId, read = availabilityForDate) {
+  if (employeeId !== 'any') return read(site, serviceId, employeeId, date, locationId, {strictGoogle:true});
+  if (!validDate(date)) throw Object.assign(new Error('Invalid booking date.'), {status:400});
+  const professionals = eligibleBookingProfessionals(site, serviceId, locationId);
+  const agendas = await Promise.all(professionals.map(async employee => (await read(site, serviceId, employee.id, date, locationId, {strictGoogle:true})).map(slot=>({...slot,employeeId:employee.id}))));
+  return [...new Map(agendas.flat().map(slot => [slot.start, slot])).values()].sort((a,b) => a.start.localeCompare(b.start));
+}
+
+export async function bookingAvailabilityForMonth(site, serviceId, employeeId, month, locationId) {
+  if (employeeId !== 'any') return availabilityForMonth(site, serviceId, employeeId, month, locationId);
+  if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) throw Object.assign(new Error('Invalid booking month.'), {status:400});
+  const agendas = await Promise.all(eligibleBookingProfessionals(site, serviceId, locationId)
+    .map(employee => availabilityForMonth(site, serviceId, employee.id, month, locationId, {includeStarts:true})));
+  const startsByDate = new Map();
+  for (const agenda of agendas) {
+    for (const [date, starts] of Object.entries(agenda)) {
+      const unique = startsByDate.get(date) || new Set();
+      starts.forEach(start=>unique.add(start));
+      startsByDate.set(date,unique);
+    }
+  }
+  return Object.fromEntries([...startsByDate].map(([date,starts])=>[date,starts.size]));
+}
+
+export async function reserveBookingSlot(site, booking) {
+  if (booking.employeeId !== 'any') return createBookingHold(site, booking);
+  const professionals = eligibleBookingProfessionals(site, booking.serviceId, booking.locationId);
+  for (const employee of professionals) {
+    try {
+      return await createBookingHold(site, {...booking, employeeId:employee.id});
+    } catch (error) {
+      if (error?.status !== 409) throw error;
+    }
+  }
+  throw Object.assign(new Error("That time is no longer available. / Ese horario ya no está disponible."), {status:409});
 }
 
 export async function createBookingHold(site, { serviceId, employeeId, start, locationId = "" }, {strictGoogle=true,ignoreReservationId=''} = {}) {

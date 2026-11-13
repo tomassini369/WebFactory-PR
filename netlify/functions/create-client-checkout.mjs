@@ -13,7 +13,7 @@ import { sendBookingConfirmationEmails } from "../lib/client-notifications.mjs";
 import { bookingManageUrl } from "../lib/booking-email-template.mjs";
 import { bookingCalendarUrl } from "../lib/booking-calendar-export.mjs";
 import crypto from "node:crypto";
-import { createBookingHold } from "../lib/booking-engine.mjs";
+import { reserveBookingSlot } from "../lib/booking-engine.mjs";
 import { clientCommerceStore, commerceKey, getClientSite, getClientSiteBySlug } from "../lib/client-store.mjs";
 import { cleanText, publicBaseUrl, validEmail } from "../lib/platform-utils.mjs";
 import { siteEntitlement } from "../lib/subscription-billing.mjs";
@@ -111,10 +111,10 @@ export async function performCheckout(req, { kiosk = false, kioskQr = false, bal
       kind = "booking";
       if(site.settings?.bookingApproval==='manual'&&site.paymentRules?.bookingPayment!=='in_person')throw Object.assign(new Error('Manual approval requires in-person payment.'),{status:409});
       const service = (site.catalog || []).find((item) => item.id === payload.booking.serviceId && item.type === "service" && item.requiresAppointment && item.active !== false);
-      const employee = (site.employees || []).find((member) => member.id === payload.booking.employeeId && member.active !== false && (member.serviceIds || []).includes(service?.id) && (!locations.length || (locationId && (member.locationIds || []).includes(locationId))));
-      if (!service || !employee) throw Object.assign(new Error("The selected service or employee is unavailable."), { status: 409 });
+      if (!service) throw Object.assign(new Error("The selected service is unavailable."), { status: 409 });
       const fullAmount = basic ? 0 : catalogPriceCents(service.price);
-      hold = await createBookingHold(site, { ...payload.booking, locationId },{strictGoogle:true});
+      hold = await reserveBookingSlot(site, { ...payload.booking, locationId });
+      const employee = site.employees.find(member => member.id === hold.employeeId);
       const unitAmount = site.paymentRules?.bookingPayment === "deposit"
         ? Math.round(fullAmount * Number(site.paymentRules?.bookingDepositPercent || 25) / 100)
         : fullAmount;
