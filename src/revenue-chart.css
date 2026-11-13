@@ -19,7 +19,7 @@ html[data-wf-theme="dark"] .wf-data-chart { --chart-accent: #78a7e4; }
 .wf-data-chart .wf-data-chart-bars > button:is(:hover,[aria-pressed="true"]) { background:var(--chart-soft);border-color:var(--chart-accent); }
 .wf-data-chart .wf-data-chart-bars > button:focus-visible { outline:3px solid var(--chart-accent);outline-offset:2px; }
 .wf-data-chart .wf-data-chart-bars .wf-data-chart-amount { font-size:.6875rem;line-height:20px;color:var(--chart-muted);font-variant-numeric:tabular-nums;white-space:nowrap; }
-.wf-data-chart .wf-data-chart-bars small { font-size:.75rem;line-height:26px;color:var(--chart-muted); }
+.wf-data-chart .wf-data-chart-bars small { font-size:.75rem;line-height:26px;color:var(--chart-muted);white-space:nowrap;word-break:normal; }
 .wf-data-chart .wf-data-chart-bars .wf-data-chart-track { display:flex;align-items:flex-end;width:65%;margin:auto;height:100%;background:transparent;border-radius:5px;overflow:hidden; }
 .wf-data-chart .wf-data-chart-bars .wf-data-chart-track i { display:block;width:100%;background:var(--chart-accent);border-radius:5px 5px 0 0;min-height:0; }
 .wf-data-chart-detail { display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;min-height:56px;margin-top:14px;padding:12px 14px;background:var(--chart-soft);border:1px solid var(--chart-line);border-radius:12px;font-size:.8125rem;line-height:1.5;color:var(--chart-muted); }

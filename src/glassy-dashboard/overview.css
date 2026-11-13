@@ -52,3 +52,8 @@ html[data-wf-theme=light] .gd-root .gd-month-grid .gd-today{background:#29272f;c
 /* Keep the original chart design; change only the description text contrast. */
 html body #root .gd-root .gd-content .wf-data-chart-detail,
 html body #root .gd-root .gd-content .wf-data-chart-detail :is(span,strong){color:#f7f7fa}
+
+@media (max-width:480px) {
+  html body #root .gd-root .gd-revenue .wf-data-chart-content { min-width:0; }
+  .gd-root .gd-revenue .wf-data-chart-amount { overflow:hidden; text-overflow:ellipsis; }
+}

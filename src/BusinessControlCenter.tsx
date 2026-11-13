@@ -28,9 +28,30 @@ export default function BusinessControlCenter({site,commerce,lang,role,onNavigat
  const statusLabel=(status:string)=>statusCopy[status]?.[es?0:1]||status.replaceAll('_',' ');
  const net=(r:RecordEntry)=>Math.max(0,Number(r.amountTotal||0)-Number(r.refundedAmount||0));const revenue=paid.reduce((sum,r)=>sum+net(r),0);
  const now=new Date();const timezone=site.settings.timezone||'America/Puerto_Rico';
- const dateKey=(value:Date)=>value.toLocaleDateString('en-CA',{timeZone:timezone});
- const chartPaid=paid.filter(r=>salesKind==='all'||r.kind===salesKind);
- const days=Array.from({length:7},(_,i)=>{const d=new Date(now);d.setDate(d.getDate()-6+i);const key=dateKey(d);return{key,label:d.toLocaleDateString(es?'es-PR':'en-US',{weekday:'short',timeZone:timezone}),dateLabel:d.toLocaleDateString(es?'es-PR':'en-US',{weekday:'long',month:'short',day:'numeric',timeZone:timezone}),amount:chartPaid.filter(r=>dateKey(new Date(r.createdAt))===key).reduce((s,r)=>s+net(r),0)}});
+ const dateFormat={year:'numeric',month:'2-digit',day:'2-digit'} as const;
+ const businessDate=new Intl.DateTimeFormat('en-CA',{...dateFormat,timeZone:timezone});
+ const calendarDate=new Intl.DateTimeFormat('en-CA',{...dateFormat,timeZone:'UTC'});
+ const today=Object.fromEntries(businessDate.formatToParts(now).map(part=>[part.type,Number(part.value)]));
+ // Use UTC to step through civil dates once the business's local day is known.
+ const sunday=new Date(Date.UTC(today.year,today.month-1,today.day));
+ sunday.setUTCDate(sunday.getUTCDate()-sunday.getUTCDay());
+ const locale=es?'es-PR':'en-US';
+ const weekdayShort=new Intl.DateTimeFormat(locale,{weekday:'short',timeZone:'UTC'});
+ const dateLabel=new Intl.DateTimeFormat(locale,{weekday:'long',month:'short',day:'numeric',timeZone:'UTC'});
+ const salesByDay=new Map<string,number>();
+ for(const record of paid){
+  if(salesKind!=='all'&&record.kind!==salesKind)continue;
+  const timestamp=Date.parse(record.createdAt);
+  if(!Number.isFinite(timestamp))continue;
+  const key=businessDate.format(timestamp);
+  salesByDay.set(key,(salesByDay.get(key)??0)+net(record));
+ }
+ const days=Array.from({length:7},(_,i)=>{
+  const date=new Date(sunday);
+  date.setUTCDate(date.getUTCDate()+i);
+  const key=calendarDate.format(date);
+  return {key,label:weekdayShort.format(date),dateLabel:dateLabel.format(date),amount:salesByDay.get(key)??0};
+ });
  const upcoming=commerce.bookings.filter(r=>r.start&&new Date(r.start)>=now&&!['cancelled','canceled','refunded'].includes(r.status)).sort((a,b)=>Date.parse(a.start!)-Date.parse(b.start!)).slice(0,3);
  const recent=all.slice().sort((a,b)=>Date.parse(b.createdAt)-Date.parse(a.createdAt)).slice(0,3);
  const orderFollowUps=commerce.orders.filter(r=>['processing','payment_review_required'].includes(r.status)||(r.paymentStatus==='due'&&!['cancelled','canceled','refunded','expired','completed'].includes(r.status))).length;
@@ -49,7 +70,7 @@ export default function BusinessControlCenter({site,commerce,lang,role,onNavigat
    <PortalPanel className="gd-board"><header><h2>{es?'Mi negocio':'My business'}</h2><p>{es?'Ventas y actividad · Historial cargado':'Sales and activity · Loaded history'}</p></header><div className="bcc-metrics">{[[es?'Ventas registradas':'Recorded sales',money(revenue),es?'Pagos menos reembolsos':'Payments less refunds'],[es?'Reservaciones':'Bookings',String(commerce.bookings.length),es?'Historial cargado':'Loaded history'],[es?'Pagos confirmados':'Confirmed payments',String(paid.length),es?'Online y en persona':'Online and in person'],[es?'Clientes en historial':'Customers in history',String(customers),es?'Emails únicos':'Unique emails']].map(([label,value,note])=><article key={label}><small>{label}</small><strong>{value}</strong><span>{note}</span></article>)}</div>
     <div className="gd-board-columns">{([{id:'orders',label:es?'Órdenes':'Orders',Icon:ShoppingBag,value:orderFollowUps,note:es?'Por revisar':'To review'},{id:'bookings',label:es?'Reservaciones':'Bookings',Icon:CalendarDays,value:bookingFollowUps,note:es?'Con pago pendiente':'Awaiting payment'},{id:'catalog',label:es?'Catálogo':'Catalog',Icon:Package,value:site.catalog.length,note:es?'Productos y servicios':'Products and services'}]).filter(x=>canNavigate(x.id)).map(({id,label,Icon,value,note})=><article key={id}><header><Icon size={18}/><h3>{label}</h3></header><strong>{value}</strong><p>{note}</p><button type="button" onClick={()=>go(id)}>{es?'Abrir':'Open'} {label}</button></article>)}</div>
    </PortalPanel>
-   <PortalPanel className="gd-revenue"><header><h3>{es?'Ventas de los últimos 7 días':'Sales in the last 7 days'}</h3><strong>{money(days.reduce((s,d)=>s+d.amount,0))}</strong></header><label className="bcc-chart-filter"><span>{es?'Tipo de transacción':'Transaction type'}</span><select value={salesKind} onChange={event=>setSalesKind(event.target.value)}><option value="all">{es?'Todas':'All'}</option><option value="order">{es?'Órdenes':'Orders'}</option><option value="booking">{es?'Reservaciones':'Bookings'}</option></select></label><RevenueChart days={days} lang={lang}/><p className="bcc-note">{es?'USD · Historial cargado · Zona horaria del negocio':'USD · Loaded history · Business time zone'}</p></PortalPanel>
+   <PortalPanel className="gd-revenue"><header><h3>{es?'Ventas de esta semana':'Sales this week'}</h3><strong>{money(days.reduce((s,d)=>s+d.amount,0))}</strong></header><label className="bcc-chart-filter"><span>{es?'Tipo de transacción':'Transaction type'}</span><select value={salesKind} onChange={event=>setSalesKind(event.target.value)}><option value="all">{es?'Todas':'All'}</option><option value="order">{es?'Órdenes':'Orders'}</option><option value="booking">{es?'Reservaciones':'Bookings'}</option></select></label><RevenueChart days={days} lang={lang}/><p className="bcc-note">{es?'USD · Domingo a sábado · Historial cargado · Zona horaria del negocio':'USD · Sunday to Saturday · Loaded history · Business time zone'}</p></PortalPanel>
    <PortalPanel className="gd-calendar"><header><h3>{es?'Calendario':'Calendar'}</h3></header><div className="gd-calendar-month"><button type="button" aria-label={es?'Mes anterior':'Previous month'} onClick={()=>setMonth(new Date(month.getFullYear(),month.getMonth()-1,1))}>‹</button><strong>{month.toLocaleDateString(es?'es-PR':'en-US',{month:'long',year:'numeric'})}</strong><button type="button" aria-label={es?'Mes siguiente':'Next month'} onClick={()=>setMonth(new Date(month.getFullYear(),month.getMonth()+1,1))}>›</button></div><div className="gd-month-grid" role="img" aria-label={month.toLocaleDateString(es?'es-PR':'en-US',{month:'long',year:'numeric'})}>{weekday.map((day,i)=><small key={'week'+i}>{day}</small>)}{Array.from({length:monthStart},(_,i)=><span key={'empty'+i}/>)}{Array.from({length:monthDays},(_,i)=>{const day=i+1,today=day===now.getDate()&&month.getMonth()===now.getMonth()&&month.getFullYear()===now.getFullYear();return <span key={day} className={today?'gd-today':''}>{day}</span>})}</div><div className="bcc-bookings">{upcoming.length?upcoming.map(r=><article key={r.transactionId}><time dateTime={r.start}>{new Date(r.start!).toLocaleDateString(es?'es-PR':'en-US',{month:'short',day:'numeric',timeZone:timezone})}<b>{new Date(r.start!).toLocaleTimeString(es?'es-PR':'en-US',{hour:'numeric',minute:'2-digit',timeZone:timezone})}</b></time><div><strong>{r.customer?.name||r.customer?.email||r.transactionId}</strong><span>{statusLabel(r.status)}</span></div></article>):<p>{es?'No hay citas próximas en el historial cargado.':'No upcoming bookings in the loaded history.'}</p>}</div>{canNavigate('bookings')&&<button type="button" onClick={()=>go('bookings')}>{es?'Abrir agenda':'Open schedule'}</button>}</PortalPanel>
    <PortalPanel className="gd-activity"><header><h3>{es?'Últimos movimientos':'Recent activity'}</h3></header>{recent.length?recent.map(r=><div className="bcc-activity" key={r.transactionId}><div className="gd-record-icon"><UsersRound size={18}/></div><div><strong>{r.customer?.name||r.customer?.email||r.transactionId}</strong><span>{r.kind==='booking'?(es?'Reservación':'Booking'):(es?'Venta':'Sale')} · {statusLabel(r.paymentStatus)}</span></div><b>{money(r.amountTotal)}</b></div>):<p>{es?'Las ventas y citas aparecerán aquí cuando se registren.':'Sales and bookings will appear here when recorded.'}</p>}<div className="gd-shortcuts">{actions.slice(4).map(([tab,label])=><button type="button" key={tab} onClick={()=>go(tab)}><ActionIcon name={tab}/>{label}</button>)}</div></PortalPanel>
   </div>{attendance}
