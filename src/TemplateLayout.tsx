@@ -1,3 +1,4 @@
+import { motion } from 'framer-motion'
 import { useLayoutEffect, useRef, useState, type ReactNode, type CSSProperties } from 'react'
 import type { TemplateConfig, TemplateItem } from './templateData'
 import type { TemplateLanguage, TemplateUi } from './templateI18n'
@@ -151,6 +152,8 @@ function TeamCards({config,language,label,teamBooking,startBooking}: Pick<Props,
  const current=Math.min(index,count-1)
  const stage=useRef<HTMLDivElement>(null)
  const engine=useRef<ReturnType<typeof mountAtlas>|null>(null)
+ const gesture=useRef<'pending'|'horizontal'|'vertical'>('pending')
+ const suppressClick=useRef(false)
  const membership=people.map(person=>person.id).join('|')
  const es=language==='es'
  useLayoutEffect(()=>{
@@ -164,7 +167,30 @@ function TeamCards({config,language,label,teamBooking,startBooking}: Pick<Props,
   if(count<2)return
   if(event.key==='ArrowLeft'||event.key==='ArrowRight'){event.preventDefault();advance(event.key==='ArrowLeft'?-1:1)}
  }}>
-  <div ref={stage} className="team-carousel-stage" data-count={count}>
+  <motion.div ref={stage} className="team-carousel-stage" data-count={count}
+   onPointerDownCapture={()=>{gesture.current='pending';suppressClick.current=false}}
+   onPan={(_,info)=>{
+    if(count<2||gesture.current==='vertical')return
+    const {x,y}=info.offset
+    if(gesture.current==='pending'){
+     if(Math.max(Math.abs(x),Math.abs(y))<8)return
+     if(Math.abs(y)>=Math.abs(x)){gesture.current='vertical';return}
+     gesture.current='horizontal'
+     suppressClick.current=true
+     engine.current?.beginDrag()
+    }
+    engine.current?.drag(x)
+   }}
+   onPanEnd={(event,info)=>{
+    if(gesture.current!=='horizontal')return
+    const x=info.offset.x
+    engine.current?.endDrag(event.type==='pointercancel'||Math.abs(x)<=45?0:x<0?1:-1)
+    gesture.current='pending'
+   }}
+   onClickCapture={event=>{
+    if(suppressClick.current&&event.detail>0){event.preventDefault();event.stopPropagation()}
+   }}
+  >
    {people.map((person,member)=>{
     const active=member===current
     const matching=config.items.find(item=>item.appointment&&(item.employeeIds?.includes(person.id)??item.employees?.some(name=>person.name.startsWith(name))))
@@ -184,7 +210,7 @@ function TeamCards({config,language,label,teamBooking,startBooking}: Pick<Props,
      {!active&&<button className="team-card-select" type="button" aria-label={person.name} onClick={()=>engine.current?.goTo(member)}/>}
     </article>
    })}
-  </div>
+  </motion.div>
   {count>1&&<div className="team-card-controls">
    <button className="team-card-arrow" type="button" aria-label={es?'Integrante anterior':'Previous team member'} onClick={()=>advance(-1)}>‹</button>
    <div className="team-card-dots">
