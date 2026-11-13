@@ -60,3 +60,18 @@
 .template-site.template-sonido-vivo-artist .team-card-dots button:not([aria-current])::after {
   background: #63546e;
 }
+.template-site.template-sonido-vivo-artist :is(.template-story, .template-gallery, .template-contact, .template-footer) {
+  background: #100c16;
+  color: var(--sonido-ink);
+}
+.template-site.template-sonido-vivo-artist :is(.template-story-copy p, .template-trust-row span, .template-contact > div:first-child p, .template-contact-grid small, .template-footer span) {
+  color: var(--sonido-muted);
+}
+.template-site.template-sonido-vivo-artist .template-contact-grid article {
+  background: var(--sonido-panel);
+  border-color: var(--sonido-line);
+  box-shadow: none;
+}
+.template-site.template-sonido-vivo-artist .template-footer {
+  border-top: 1px solid var(--sonido-line);
+}
