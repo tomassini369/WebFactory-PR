@@ -25,3 +25,14 @@ body:has(.ca-booking-calendar.wf-panel-expanded) {
   min-inline-size: 0;
   max-inline-size: 100%;
 }
+
+/* A solid scrollport avoids compositing the dashboard wallpaper during pinch zoom. */
+html body #root .gd-root .gd-content .wf-portal-panel.ca-booking-calendar.wf-panel-expanded {
+  background: var(--gd-solid, var(--pg-surface, Canvas)) !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+  box-shadow: none !important;
+}
+.wf-panel-expanded.ca-booking-calendar::backdrop {
+  background: rgb(5 12 24 / 68%);
+}
