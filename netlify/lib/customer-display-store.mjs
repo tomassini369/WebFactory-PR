@@ -17,11 +17,11 @@ export function scopedDisplayStore(commerce,registry,generation){
    if(!device(key))return commerce.setJSON(key,data,options);
    const row=await registry.getWithMetadata(key,{type:'json'});
    if(options.onlyIfNew&&row||options.onlyIfMatch&&row?.etag!==options.onlyIfMatch)return {modified:false};
-   const {sequence,updatedAt,draft,attemptId,...metadata}=data;
+   const {sequence,updatedAt,draft,attemptId,storefrontOrderId,...metadata}=data;
    const previous=row?.data?.snapshots||{};
    const retained=Object.keys(previous).filter(id=>id!==generation).sort((a,b)=>(previous[b].updatedAt||0)-(previous[a].updatedAt||0)).slice(0,3);
    const snapshots=Object.fromEntries(retained.map(id=>[id,previous[id]]));
-   snapshots[generation]={sequence,updatedAt,draft,attemptId};
+   snapshots[generation]={sequence,updatedAt,draft,attemptId,...(storefrontOrderId?{storefrontOrderId}:{})};
    return registry.setJSON(key,{metadata,snapshots},options);
   },
  };

@@ -1,3 +1,4 @@
+import {isBusinessOwner} from '../lib/commercial-access.mjs';
 import {membershipAllowsCapability} from '../../shared/membership-plans.mjs';
 import {renewPosSession} from '../lib/mfa-security.mjs';
 import {customerDisplayStore} from '../lib/customer-display-store.mjs';
@@ -35,7 +36,7 @@ export function createCustomerDisplayHandler({authorize=requireSiteCapability,ge
    });
    const validToken=responseCookie?responseCookie.split('=')[1].split(';')[0].split('.')[1]:deviceToken;
    responseCookie=`${cookieName}=${id}.${validToken}; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=34560000`;
-   const body=await publicDisplayView(store,state,site,now);
+   const body=await publicDisplayView(store,isBusinessOwner(member)?state:{...state,storefrontOrderId:''},site,now);
    return Response.json({ok:true,...body},{headers:{...headers,...(responseCookie?{'Set-Cookie':responseCookie}:{})}});
   }
   const {site,user,membership}=await authorize(input.siteId,'pos');const actor=displayActor(user);
@@ -52,19 +53,31 @@ export function createCustomerDisplayHandler({authorize=requireSiteCapability,ge
    const current=await store.get(displayKey(input.id),{type:'json'});
    if(!current||current.siteId!==site.siteId||current.actor!==actor||current.revoked||displayExpired(current,now)||!current.deviceHash)throw displayFail('Display unavailable.',403);
    const sale=await displaySale(store,current);
-   const activeAttempt=sale?.payment==='pending'&&sale.totals?{id:current.attemptId,kind:sale.source==='pos_remote'?'card':'direct',transactionId:sale.transactionId,checkoutUrl:sale.checkout?.url||''}:null;
-   return Response.json({ok:true,paired:true,sequence:current.sequence,activeAttempt},{headers});
+   const activeAttempt=current.attemptId&&sale?.payment==='pending'&&sale.totals?{id:current.attemptId,kind:sale.source==='pos_remote'?'card':'direct',transactionId:sale.transactionId,checkoutUrl:sale.checkout?.url||''}:null;
+   return Response.json({ok:true,paired:true,sequence:current.sequence,activeAttempt,storefrontOrderId:isBusinessOwner(membership)?current.storefrontOrderId||'':''},{headers});
   }
-  const state=await mutateDisplay(store,input.id,current=>{
+  const state=await mutateDisplay(store,input.id,async current=>{
    if(!current||current.siteId!==site.siteId||current.actor!==actor)throw displayFail('Display unavailable.',403);
-   if(input.action==='revoke')return {...current,revoked:true,pairHash:null,deviceHash:null,draft:null,attemptId:''};
+   if(input.action==='revoke')return {...current,revoked:true,pairHash:null,deviceHash:null,draft:null,attemptId:'',storefrontOrderId:''};
    if(current.revoked||displayExpired(current,now))throw displayFail('Display expired.',409);
+   if(input.action==='share_storefront'){
+    if(!isBusinessOwner(membership)||!current.deviceHash)throw displayFail('Owner and paired screen required.',403);
+    const orderId=input.transactionId;
+    if(typeof orderId!=='string'||orderId&&!/^[a-zA-Z0-9_-]{1,160}$/.test(orderId))throw displayFail('Invalid order reference.');
+    if(orderId){
+     const active=await displaySale(store,{...current,storefrontOrderId:''});
+     if(current.attemptId&&active?.payment==='pending')throw displayFail('Finish the active POS payment first.',409);
+     const sale=await displaySale(store,{...current,attemptId:'',storefrontOrderId:orderId});
+     if(!sale?.checkout)throw displayFail('No active Stripe checkout for this online order.',409);
+    }
+    return {...current,updatedAt:now,attemptId:orderId?'':current.attemptId,storefrontOrderId:orderId};
+   }
    if(input.action!=='sync'||!Number.isSafeInteger(input.sequence)||input.sequence<1)throw displayFail('Invalid synchronization.');
    if(input.sequence<=current.sequence)return null;
    if(input.attemptId&&!/^[a-zA-Z0-9_-]{8,120}$/.test(input.attemptId))throw displayFail('Invalid sale attempt.');
-   return {...current,sequence:input.sequence,updatedAt:now,draft:displayDraft(site,membership,input),attemptId:input.attemptId||''};
+   return {...current,sequence:input.sequence,updatedAt:now,draft:displayDraft(site,membership,input),attemptId:input.attemptId||'',storefrontOrderId:input.attemptId?'':current.storefrontOrderId};
   });
-  return Response.json({ok:true,paired:Boolean(state.deviceHash),sequence:state.sequence},{headers});
+  return Response.json({ok:true,paired:Boolean(state.deviceHash),sequence:state.sequence,storefrontOrderId:isBusinessOwner(membership)?state.storefrontOrderId||'':''},{headers});
  }catch(e){return errorResponse(e instanceof SyntaxError?displayFail('Invalid JSON.'):e)}
 }}
 export default createCustomerDisplayHandler();

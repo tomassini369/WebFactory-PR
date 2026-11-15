@@ -97,3 +97,27 @@ test('POS keepalive requires authenticated POS capability and cannot renew on cr
  assert.equal((await authorized(request('https://foreign.invalid'))).status,403);assert.equal(calls,0);assert.equal((await authorized(request('https://example.invalid'))).status,200);assert.equal(calls,1);
  const denied=createCustomerDisplayHandler({getStore:()=>f.store,authorize:async()=>{throw Object.assign(Error('Denied'),{status:401})},renewSession:async()=>{throw Error('Must not renew')}});assert.equal((await denied(request('https://example.invalid'))).status,401);
 });
+
+test('owner can explicitly display an online Stripe checkout without exposing customer data',async()=>{
+ const f=fixture(),s=await f.create(),{cookie}=await f.pair(s);
+ const key='tenant-a/transactions/order-online.json';
+ const record={siteId:f.site.siteId,transactionId:'order-online',kind:'order',channel:'storefront',paymentStatus:'pending',status:'payment_pending',stripeAccountId:'acct_fixture',stripeSessionId:'cs_fixture',checkoutUrl:'https://checkout.stripe.com/c/pay/cs_test_fixture',checkoutExpiresAt:new Date(Date.now()+600000).toISOString(),amountTotal:3500,customer:{name:'Private customer',email:'private@example.invalid'}};
+ f.rows.set(key,{data:record,etag:'source'});
+ f.rows.set('tenant-a/orders/order-online.json',{data:{...record,status:'checkout_creating'},etag:'stale'});
+ const share=(transactionId)=>f.post({action:'share_storefront',siteId:f.site.siteId,id:s.id,transactionId});
+ assert.equal((await (await f.get(cookie)).json()).checkout,null);
+ f.setRole('employee');assert.equal((await share('order-online')).status,403);f.setRole('owner');
+ assert.equal((await share('different-tenant-order')).status,409);
+ assert.equal((await share('order-online')).status,200);
+ const view=await (await f.get(cookie)).json();
+ assert.equal(view.checkout.url,record.checkoutUrl);
+ assert.equal(view.totals.total,3500);
+ assert.deepEqual(view.totals.customer,{name:'',email:'',phone:''});
+ assert.equal(view.receipt,null);
+ const resumed=await (await f.post({action:'resume',siteId:f.site.siteId,id:s.id})).json();
+ assert.equal(resumed.activeAttempt,null);
+ assert.equal(resumed.storefrontOrderId,'order-online');
+ record.paymentStatus='cancelled';record.status='cancelled';
+ assert.equal((await (await f.get(cookie)).json()).checkout,null);
+ assert.equal((await share('')).status,200);
+});

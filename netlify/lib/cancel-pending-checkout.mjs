@@ -3,12 +3,15 @@ import {withBookingLock} from './booking-lock.mjs';
 import {stripeClient} from './reserved-stripe-checkout.mjs';
 import {assertStripeWriteAllowed} from './stripe-runtime.mjs';
 import {releaseInventory} from './inventory-reservations.mjs';
+export function isStorefrontStripeOrder(record){
+ return record?.kind==='order'&&record.channel==='storefront'&&!record.source&&record.paymentProvider!=='ath_movil'&&Boolean(record.stripeSessionId&&record.stripeAccountId);
+}
 const fail=(message,status=409)=>Object.assign(new Error(message),{status});
 export async function cancelPendingCheckout(site,id,{authorize,requestUrl,store=clientCommerceStore(),client,release=releaseInventory}={}){
  if(!/^[a-zA-Z0-9_-]{1,160}$/.test(id||''))throw fail('Invalid transaction.',400);
  return withBookingLock(store,`locks/commerce/${site.siteId}`,async()=>{
   const key=commerceKey(site.siteId,'transactions',id);let row=await store.get(key,{type:'json'});
-  if(!row||row.siteId!==site.siteId||row.kind!=='order')throw fail('Transaction unavailable.',404);
+  if(!row||row.siteId!==site.siteId||row.transactionId!==id||row.kind!=='order')throw fail('Transaction unavailable.',404);
   await authorize(row);
   if(row.cancelledByCustomerAt&&row.paymentStatus==='cancelled'){await store.setJSON(commerceKey(site.siteId,'orders',id),row);return row;}
   if(row.inventoryAppliedAt||!['pending','expired'].includes(row.paymentStatus)||!row.stripeSessionId||!row.stripeAccountId)throw fail('Payment requires verification; it cannot be cancelled here. / Este pago requiere verificación.');

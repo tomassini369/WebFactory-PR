@@ -1,3 +1,4 @@
+import {cancelPendingCheckout,isStorefrontStripeOrder} from "../lib/cancel-pending-checkout.mjs";
 import {canAccessCommerce, assertCommerceAction, employeeCommerceRecord, isBusinessOwner} from "../lib/commercial-access.mjs";
 import {bookingPolicy} from '../lib/booking-policy.mjs';
 import {bookingBalance} from '../lib/kiosk-bookings.mjs';
@@ -78,6 +79,15 @@ export function createCommerceAdminHandler({authorizeAccess=requireSiteAccess,au
     const requestedCapability = payload.action === "recover_pos" ? "pos" : payload.action === "refund" ? "refunds" : payload.action === "kitchen_status" ? "kitchen" : (payload.kind === "booking" ? "bookings" : "orders");
     const { site, membership, user } = await authorizeCapability(payload.siteId, requestedCapability);
     if (['mark_paid','recover_pos','recover_ath'].includes(payload.action) && !membershipHasCapability(membership,'collect')) throw Object.assign(new Error('Collection permission required / Se requiere permiso de cobro.'),{status:403});
+    if(payload.action==='cancel_storefront_checkout'){
+      if(payload.kind!=='order'||!isBusinessOwner(membership))throw Object.assign(new Error('Only the owner can cancel a storefront checkout.'),{status:403});
+      const store=getStore();
+      const record=await cancelPendingCheckout(site,payload.transactionId,{store,requestUrl:req.url,authorize:row=>{
+        assertCommerceAction(site,membership,row,payload.action);
+        if(!isStorefrontStripeOrder(row))throw Object.assign(new Error('Storefront Stripe checkout unavailable.'),{status:404});
+      }});
+      return Response.json({ok:true,record:employeeCommerceRecord(record,membership)},{headers:{'Cache-Control':'no-store'}});
+    }
     const balanceAction=['review_booking_balance','close_booking_balance'].includes(payload.action);
     if(balanceAction&&(payload.kind!=='booking'||!membershipHasCapability(membership,'payments')))throw Object.assign(new Error('Booking and payment permissions required / Se requieren permisos de citas y pagos.'),{status:403});
     const kind = payload.kind === "booking" ? "bookings" : "orders";
