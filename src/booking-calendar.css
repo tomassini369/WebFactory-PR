@@ -57,8 +57,15 @@ html body #root .gd-root .gd-content .ca-booking-calendar .bp-appointment {
     grid-template-columns: minmax(0, 1fr);
     min-width: 0;
   }
-  .ca-booking-calendar .ca-booking-calendar-controls :is(input[type="date"], select) {
+  .ca-booking-calendar .ca-booking-calendar-controls select {
     width: 100%;
+  }
+  html body #root .gd-root .gd-content .ca-booking-calendar .ca-booking-calendar-controls input[type="date"] {
+    -webkit-appearance: none;
+    appearance: none;
+    display: block;
+    width: min(100%, 16rem);
+    margin: 0;
   }
   .ca-booking-calendar .ca-booking-month { gap: 4px; }
   .ca-booking-calendar .ca-booking-month > small { padding-inline: 0; }
