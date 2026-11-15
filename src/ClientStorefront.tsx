@@ -68,6 +68,7 @@ export default function ClientStorefront({slug,previewSite,previewLanguage='en'}
   const [contactStatus,setContactStatus]=useState('')
   const [buyerReceiptToken]=useState(()=>previewSite?'':new URL(location.href).searchParams.get('receipt')||'')
   const [receiptStatus,setReceiptStatus]=useState('')
+  const [returnedFromCheckout]=useState(()=>!previewSite&&new URLSearchParams(location.search).get('checkout')==='cancelled')
   const [receiptTimeZone,setReceiptTimeZone]=useState<string|undefined>()
   const [buyerReceipt,setBuyerReceipt]=useState<ReceiptRecord|null>(null)
   const [trackingUrl,setTrackingUrl]=useState('')
@@ -282,7 +283,7 @@ export default function ClientStorefront({slug,previewSite,previewLanguage='en'}
   const startLayoutBooking=(item?:TemplateItem,employeeId?:string)=>{const service=item?visibleCatalog.find(entry=>entry.id===item.id):visibleCatalog.find(entry=>entry.requiresAppointment);if(service)beginBooking(service,employeeId)}
 
   return <div className={`template-site client-template template-${site.design?.templateSlug||'custom'} visual-${visualStyle}`} style={styles}>
-    {receiptStatus&&<div className="cs-tracking-banner" role="status">{receiptStatus}</div>}
+    {(receiptStatus||returnedFromCheckout)&&<div className="cs-tracking-banner" role="status">{receiptStatus||(lang==='es'?'Volviste de Stripe. Si sales antes de completar el pago, la orden puede seguir pendiente hasta que venza el enlace.':'You returned from Stripe. If you leave before completing payment, the order may stay pending until the link expires.')}</div>}
     {buyerReceipt&&<BuyerReceipt receipt={buyerReceipt} lang={lang} colors={{primary,secondary:accent}} timeZone={receiptTimeZone||site.settings?.timezone} onClose={()=>setBuyerReceipt(null)}/>}
     <TemplateLayout config={layoutConfig} ui={layoutUi} language={lang} setLanguage={setLang} startBooking={startLayoutBooking} teamBooking={teamBooking} setCatalogOpen={setCatalog} setCartOpen={open=>{setBooking(null);setCheckoutOpen(open)}} cart={cart} logoUrl={site.business.logoUrl} locationHref={site.features.maps?site.business.mapsUrl:undefined} phoneHref={site.features.calls&&site.business.phone?`tel:${site.business.phone}`:undefined} catalogEnabled={site.features.products!==false||site.features.services!==false}
       social={<TemplateSocialLinks links={socialLinks} lang={lang}/>}

@@ -1,3 +1,4 @@
+import {isStorefrontStripeOrder} from './cancel-pending-checkout.mjs';
 import crypto from 'node:crypto';
 import {calculateTax} from './webfactory-v3-domain.mjs';
 import {requirePosAdjustments} from './pos-permissions.mjs';
@@ -39,24 +40,32 @@ export function displayDraft(site,membership,input){
  if(![subtotal,discount,tip,tax,total].every(Number.isSafeInteger))throw displayFail('Invalid total.');
  return {customer:displayCustomer(input.customer),items:items.map(({taxable,taxRateOverride,...item})=>item),subtotal,discount,tip,tax,total,taxIncluded:Boolean(site.taxConfig?.pricesIncludeTax)};
 }
-function displayCheckout(record, paid) {
- if(paid||record.source!=='pos_remote'||record.paymentStatus!=='pending'||record.status!=='payment_pending')return null;
- if(!record.checkoutExpiresAt||!Number.isFinite(Date.parse(record.checkoutExpiresAt))||Date.parse(record.checkoutExpiresAt)<=Date.now())return null;
+function displayCheckout(record, expiresAt, now) {
+ if(record.paymentStatus!=='pending'||record.status!=='payment_pending'||!Number.isFinite(expiresAt)||expiresAt<=now)return null;
  try{const url=new URL(record.checkoutUrl);if(url.protocol==='https:'&&url.hostname==='checkout.stripe.com'&&!url.port&&!url.username&&!url.password&&/^\/(?:c\/)?pay\//.test(url.pathname))return {url:url.href};}catch{}
  return null;
 }
 export async function displaySale(store,state){
- if(!state.attemptId)return null;
- const marker=await store.get(commerceKey(state.siteId,'pos-attempts',state.attemptId),{type:'json'});
+ const storefrontId=state.storefrontOrderId;
+ if(!state.attemptId&&!storefrontId)return null;
+ const marker=state.attemptId?await store.get(commerceKey(state.siteId,'pos-attempts',state.attemptId),{type:'json'}):null;
  if(marker&&marker.siteId!==state.siteId)throw displayFail('Sale unavailable.',404);
- const id=marker?.transactionId||`txn_pos_${state.attemptId}`;
- const record=await store.get(commerceKey(state.siteId,'orders',id),{type:'json'})||await store.get(commerceKey(state.siteId,'transactions',id),{type:'json'});
- if(!record)return {payment:'pending'};
- if(record.siteId!==state.siteId||!['pos','pos_remote'].includes(record.source)||String(record.createdBy||'').toLowerCase()!==state.email)throw displayFail('Sale unavailable.',403);
+ const id=marker?.transactionId||(state.attemptId?`txn_pos_${state.attemptId}`:storefrontId);
+ const record=await store.get(commerceKey(state.siteId,'transactions',id),{type:'json'})||await store.get(commerceKey(state.siteId,'orders',id),{type:'json'});
+ if(!record)return state.attemptId?{payment:'pending'}:null;
+ if(record.siteId!==state.siteId)throw displayFail('Sale unavailable.',403);
+ if(state.attemptId){
+  if(!['pos','pos_remote'].includes(record.source)||String(record.createdBy||'').toLowerCase()!==state.email)throw displayFail('Sale unavailable.',403);
+ }else if(record.transactionId!==storefrontId||!isStorefrontStripeOrder(record))return null;
  const paid=record.paymentStatus==='paid'||record.paymentStatus==='paid_in_person'&&record.status==='completed';
+
+ const now=Date.now(),expiresAt=Date.parse(record.checkoutExpiresAt||'');
+ const expiredStorefront=!state.attemptId&&Number.isFinite(expiresAt)&&expiresAt<=now;
+ const failed=expiredStorefront||['expired','cancelled','payment_failed','failed'].includes(record.status);
+ const checkout=record.source==='pos'?null:displayCheckout(record,expiresAt,now);
  const items=(record.items||[]).map(x=>({id:x.id,nameEn:String(x.name||x.id).slice(0,220),nameEs:String(x.name||x.id).slice(0,220),quantity:x.quantity,unitAmount:x.unitAmount}));
- const totals={customer:displayCustomer(paid?null:record.customer),items,subtotal:Number(record.subtotal||0),discount:Number(record.discounts||0),tip:Number(record.tip||0),tax:Number(record.tax||0),total:Number(record.amountTotal||0),taxIncluded:Boolean(record.pricesIncludeTax)};
- return {payment:paid?'paid':['expired','cancelled','payment_failed','failed'].includes(record.status)?'failed':'pending',source:record.source,transactionId:record.transactionId||id,totals,checkout:displayCheckout(record,paid),completedAt:record.v3ArtifactsCreatedAt||record.paidAt||record.createdAt,receipt:paid&&record.receiptId?{id:record.receiptId,createdAt:record.paidAt||record.createdAt}:null};
+ const totals={customer:displayCustomer(paid||!state.attemptId?null:record.customer),items,subtotal:Number(record.subtotal||0),discount:Number(record.discounts||0),tip:Number(record.tip||0),tax:Number(record.tax||0),total:Number(record.amountTotal||0),taxIncluded:Boolean(record.pricesIncludeTax)};
+ return {payment:paid?'paid':failed?'failed':'pending',source:record.source,transactionId:record.transactionId||id,totals,checkout,completedAt:record.v3ArtifactsCreatedAt||record.paidAt||record.createdAt,receipt:state.attemptId&&paid&&record.receiptId?{id:record.receiptId,createdAt:record.paidAt||record.createdAt}:null};
 }
 export async function publicDisplayView(store,state,site,now){
  let sale=await displaySale(store,state);
