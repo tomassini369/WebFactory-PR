@@ -24,8 +24,11 @@ export function FluidGlassSurface({radius=28,backdropSelector='.gd-wallpaper',di
   update();m.addEventListener?.('change',update)
   return()=>m.removeEventListener?.('change',update)
  },[])
+ // iOS browsers share WebKit’s mobile rendering path, including iPad desktop mode.
+ const appleTouchDevice=typeof navigator!=='undefined'&&(/iPhone|iPad|iPod/i.test(navigator.userAgent)||
+  (/Macintosh/.test(navigator.userAgent)&&navigator.maxTouchPoints>1))
  const reading=<NeutralReadingLayer opacity={opacity??context.opacity} color={readingColor}/>
- if(reduceTransparency)return reading
+ if(reduceTransparency||appleTouchDevice)return reading
  return <><LiquidGlass
   aria-hidden="true"
   data-fluid-distortion={intensity}
