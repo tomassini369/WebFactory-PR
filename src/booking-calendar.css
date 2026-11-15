@@ -20,7 +20,7 @@ body:has(.ca-booking-calendar.wf-panel-expanded) {
   max-inline-size: 100%;
 }
 
-.ca-booking-calendar.wf-panel-expanded :is(input[type="date"], select) {
+.ca-booking-calendar :is(input[type="date"], select) {
   box-sizing: border-box;
   min-inline-size: 0;
   max-inline-size: 100%;
@@ -39,14 +39,12 @@ html body #root .gd-root .gd-content .wf-portal-panel.ca-booking-calendar.wf-pan
 
 /* Override dashboard pill styles for calendar cells and appointment cards. */
 html body #root .gd-root .gd-content .ca-booking-calendar .bp-appointment {
-  display: grid;
   justify-items: start;
   width: 100%;
   box-sizing: border-box;
   border-radius: 12px;
   text-align: start;
   white-space: normal;
-  overflow-wrap: anywhere;
 }
 .ca-booking-calendar .bp-appointment > * {
   min-width: 0;
@@ -61,9 +59,6 @@ html body #root .gd-root .gd-content .ca-booking-calendar .bp-appointment {
   }
   .ca-booking-calendar .ca-booking-calendar-controls :is(input[type="date"], select) {
     width: 100%;
-    min-width: 0;
-    max-width: 100%;
-    box-sizing: border-box;
   }
   .ca-booking-calendar .ca-booking-month { gap: 4px; }
   .ca-booking-calendar .ca-booking-month > small { padding-inline: 0; }
