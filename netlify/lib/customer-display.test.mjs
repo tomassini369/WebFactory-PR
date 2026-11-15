@@ -117,6 +117,12 @@ test('owner can explicitly display an online Stripe checkout without exposing cu
  const resumed=await (await f.post({action:'resume',siteId:f.site.siteId,id:s.id})).json();
  assert.equal(resumed.activeAttempt,null);
  assert.equal(resumed.storefrontOrderId,'order-online');
+ const expiresAt=record.checkoutExpiresAt;
+ record.checkoutExpiresAt=new Date(0).toISOString();
+ const expired=await (await f.get(cookie)).json();
+ assert.equal(expired.checkout,null);
+ assert.equal(expired.payment,'failed');
+ record.checkoutExpiresAt=expiresAt;
  record.paymentStatus='cancelled';record.status='cancelled';
  assert.equal((await (await f.get(cookie)).json()).checkout,null);
  assert.equal((await share('')).status,200);

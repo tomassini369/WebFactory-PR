@@ -40,9 +40,8 @@ export function displayDraft(site,membership,input){
  if(![subtotal,discount,tip,tax,total].every(Number.isSafeInteger))throw displayFail('Invalid total.');
  return {customer:displayCustomer(input.customer),items:items.map(({taxable,taxRateOverride,...item})=>item),subtotal,discount,tip,tax,total,taxIncluded:Boolean(site.taxConfig?.pricesIncludeTax)};
 }
-function displayCheckout(record, paid) {
- if(paid||(record.source!=='pos_remote'&&!isStorefrontStripeOrder(record))||record.paymentStatus!=='pending'||record.status!=='payment_pending')return null;
- if(!record.checkoutExpiresAt||!Number.isFinite(Date.parse(record.checkoutExpiresAt))||Date.parse(record.checkoutExpiresAt)<=Date.now())return null;
+function displayCheckout(record, expiresAt, now) {
+ if(record.paymentStatus!=='pending'||record.status!=='payment_pending'||!Number.isFinite(expiresAt)||expiresAt<=now)return null;
  try{const url=new URL(record.checkoutUrl);if(url.protocol==='https:'&&url.hostname==='checkout.stripe.com'&&!url.port&&!url.username&&!url.password&&/^\/(?:c\/)?pay\//.test(url.pathname))return {url:url.href};}catch{}
  return null;
 }
@@ -59,9 +58,14 @@ export async function displaySale(store,state){
   if(!['pos','pos_remote'].includes(record.source)||String(record.createdBy||'').toLowerCase()!==state.email)throw displayFail('Sale unavailable.',403);
  }else if(record.transactionId!==storefrontId||!isStorefrontStripeOrder(record))return null;
  const paid=record.paymentStatus==='paid'||record.paymentStatus==='paid_in_person'&&record.status==='completed';
+
+ const now=Date.now(),expiresAt=Date.parse(record.checkoutExpiresAt||'');
+ const expiredStorefront=!state.attemptId&&Number.isFinite(expiresAt)&&expiresAt<=now;
+ const failed=expiredStorefront||['expired','cancelled','payment_failed','failed'].includes(record.status);
+ const checkout=record.source==='pos'?null:displayCheckout(record,expiresAt,now);
  const items=(record.items||[]).map(x=>({id:x.id,nameEn:String(x.name||x.id).slice(0,220),nameEs:String(x.name||x.id).slice(0,220),quantity:x.quantity,unitAmount:x.unitAmount}));
  const totals={customer:displayCustomer(paid||!state.attemptId?null:record.customer),items,subtotal:Number(record.subtotal||0),discount:Number(record.discounts||0),tip:Number(record.tip||0),tax:Number(record.tax||0),total:Number(record.amountTotal||0),taxIncluded:Boolean(record.pricesIncludeTax)};
- return {payment:paid?'paid':['expired','cancelled','payment_failed','failed'].includes(record.status)?'failed':'pending',source:record.source,transactionId:record.transactionId||id,totals,checkout:displayCheckout(record,paid),completedAt:record.v3ArtifactsCreatedAt||record.paidAt||record.createdAt,receipt:state.attemptId&&paid&&record.receiptId?{id:record.receiptId,createdAt:record.paidAt||record.createdAt}:null};
+ return {payment:paid?'paid':failed?'failed':'pending',source:record.source,transactionId:record.transactionId||id,totals,checkout,completedAt:record.v3ArtifactsCreatedAt||record.paidAt||record.createdAt,receipt:state.attemptId&&paid&&record.receiptId?{id:record.receiptId,createdAt:record.paidAt||record.createdAt}:null};
 }
 export async function publicDisplayView(store,state,site,now){
  let sale=await displaySale(store,state);

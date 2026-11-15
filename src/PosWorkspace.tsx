@@ -69,7 +69,8 @@ export default function PosWorkspace({site,lang,operator,operations=posOperation
  const saveAttempt=(value:Attempt|null)=>{try{if(value)sessionStorage.setItem(storageKey,JSON.stringify(value));else sessionStorage.removeItem(storageKey)}catch{if(value)throw new Error(t('No se pudo proteger el intento de venta. Habilita almacenamiento de sesión antes de cobrar.','The sale attempt could not be protected. Enable session storage before charging.'))}setAttempt(value)}
  const change=(id:string,quantity:number)=>{if(locked)return;const item=available.find(x=>x.id===id);if(!item)return;setError('');setReceiptId('');setDisplayAttempt('');setCart(current=>quantity<=0?current.filter(x=>x.id!==id):current.map(x=>x.id===id?{...x,quantity:Math.min(posQuantityLimit(item),Math.max(1,Math.floor(quantity)))}:x))}
  const add=(item:PosItem)=>{if(locked||posQuantityLimit(item)===0)return;setError('');setReceiptId('');setDisplayAttempt('');setCart(current=>{const found=current.find(x=>x.id===item.id);return found?current.map(x=>x.id===item.id?{...x,quantity:Math.min(posQuantityLimit(item),x.quantity+1)}:x):current.length<50?[...current,{id:item.id,quantity:1}]:current})}
- const finish=(id:string)=>{saveAttempt(null);snapshot.current=null;setRemote(null);setStatus(null);setShowQr(false);setDisplayAttempt('');setCart([]);setCustomer({name:'',email:'',phone:''});setDiscount('0');setTip('0');setReceiptId(id);onSaleComplete?.()}
+ const clearAttempt=()=>{saveAttempt(null);snapshot.current=null;setRemote(null);setStatus(null);setShowQr(false);setDisplayAttempt('')}
+ const finish=(id:string)=>{clearAttempt();setCart([]);setCustomer({name:'',email:'',phone:''});setDiscount('0');setTip('0');setReceiptId(id);onSaleComplete?.()}
  const submit=async(kind:'direct'|'card')=>{
   if(!operations.cashierEnabled)return setError(t('El POS está deshabilitado. Verifica los pagos pendientes desde el historial.','POS is disabled. Review pending payments in History.'))
   if(gate.current||remote)return
@@ -85,13 +86,13 @@ export default function PosWorkspace({site,lang,operator,operations=posOperation
    if(!attempt){snapshot.current={siteId:site.siteId,locationId,items:cart,customer,discountCents:totals.discount,tipCents:totals.tip,...(kind==='direct'?{paymentMethod:method}:{}),saleAttemptId:current.id};saveAttempt(current)}
    const result=await request(kind==='card'?'/.netlify/functions/client-pos-checkout':'/.netlify/functions/client-pos-sale-idempotent',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(snapshot.current)})
    if(kind==='card'){saveAttempt({...current,transactionId:result.transactionId});setRemote({transactionId:result.transactionId,checkoutUrl:result.checkoutUrl});setStatus(null);setShowQr(true)}else finish(result.receiptId||'')
-  }catch(e){setError(e instanceof Error?e.message:t('No se pudo confirmar la venta.','The sale could not be confirmed.'));if(!attempt&&e instanceof PosError&&[400,401,403].includes(e.status)){saveAttempt(null);snapshot.current=null}}
+  }catch(e){setError(e instanceof Error?e.message:t('No se pudo confirmar la venta.','The sale could not be confirmed.'));if(!attempt&&e instanceof PosError&&[400,401,403].includes(e.status)){clearAttempt()}}
   finally{gate.current=false;setBusy(false)}
  }
  const cancelPending=async()=>{
   if(gate.current||!attempt||attempt.kind!=='card'||!confirm(t('¿Cancelar este pago pendiente? Se verificará antes de liberar la venta.','Cancel this pending payment? Its status will be verified first.')))return;
   gate.current=true;setBusy(true);setError('');
-  try{await request('/.netlify/functions/client-pos-cancel',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({siteId:site.siteId,transactionId:attempt.transactionId||`txn_pos_${attempt.id}`})});saveAttempt(null);snapshot.current=null;setRemote(null);setStatus(null);setShowQr(false);setDisplayAttempt('');onSaleComplete?.()}catch(e){setError(e instanceof Error?e.message:'Error')}finally{gate.current=false;setBusy(false)}
+  try{await request('/.netlify/functions/client-pos-cancel',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({siteId:site.siteId,transactionId:attempt.transactionId||`txn_pos_${attempt.id}`})});clearAttempt();onSaleComplete?.()}catch(e){setError(e instanceof Error?e.message:'Error')}finally{gate.current=false;setBusy(false)}
  }
  const verify=async()=>{
   if(gate.current||!attempt)return
@@ -106,7 +107,7 @@ export default function PosWorkspace({site,lang,operator,operations=posOperation
     const result=await request(`/.netlify/functions/client-pos-status?siteId=${encodeURIComponent(site.siteId)}&transactionId=${encodeURIComponent(transactionId)}`)
     setStatus(result.transaction)
     if(result.transaction.paymentStatus==='paid')finish(result.transaction.receiptId||'')
-    else if(['expired','cancelled','payment_failed'].includes(result.transaction.status)){saveAttempt(null);snapshot.current=null;setRemote(null);setShowQr(false);setDisplayAttempt('');onSaleComplete?.()}
+    else if(['expired','cancelled','payment_failed'].includes(result.transaction.status)){clearAttempt();onSaleComplete?.()}
    }
   }catch(e){setError(e instanceof Error?e.message:t('No se pudo verificar el pago.','Payment could not be verified.'))}
   finally{gate.current=false;setBusy(false)}

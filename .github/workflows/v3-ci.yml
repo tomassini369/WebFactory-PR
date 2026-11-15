@@ -557,8 +557,7 @@ jobs:
             .ok == true and
             (.readyForV3Web | type == "boolean") and
             .subscription.enabled == true and
-            .subscription.monthlyPriceConfigured == true and
-            .subscription.annualPriceConfigured == true and
+            .subscription.tierPricesConfigured == true and
             .commerce.deployContext == "deploy-preview" and
             (
               (.commerce.stripeKeyMode == "missing" and .commerce.stripeApi == false and .commerce.stripeWriteSafe == false) or

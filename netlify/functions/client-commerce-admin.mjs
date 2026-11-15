@@ -71,7 +71,7 @@ export function createCommerceAdminHandler({authorizeAccess=requireSiteAccess,au
       const mergedOrders=[...new Map([...orders,...pendingPos].map(record=>[record.transactionId,record])).values()];
       const visible = records => records.filter(record => canAccessCommerce(site,membership,record));
       const visibleBookings=await Promise.all(visible(bookings).map(async row=>row.bookingTotalCents!=null||row.balanceAttempt?{...row,bookingBalance:await bookingBalance(getStore(),row)}:row));
-      return Response.json({ ok: true, orders: visible(mergedOrders).map(row=>employeeCommerceRecord(row,membership)), bookings: visibleBookings.map(row=>employeeCommerceRecord(row,membership)) }, { headers: { "Cache-Control": "no-store" } });
+      return Response.json({ ok: true, orders: visible(mergedOrders).map(row=>({...employeeCommerceRecord(row,membership),canCancelStorefrontCheckout:isBusinessOwner(membership)&&isStorefrontStripeOrder(row)&&row.paymentStatus==='pending'})), bookings: visibleBookings.map(row=>employeeCommerceRecord(row,membership)) }, { headers: { "Cache-Control": "no-store" } });
     }
     if (req.method !== "POST") return Response.json({ ok: false, message: "Method not allowed." }, { status: 405 });
     assertSameOrigin(req);
