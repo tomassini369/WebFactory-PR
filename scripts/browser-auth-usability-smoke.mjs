@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import {membershipTrialDays} from '../shared/membership-plans.mjs'
 import {createServer} from 'vite'
 import {chromium} from 'playwright'
 
@@ -56,9 +57,9 @@ try{
  assert.equal(recoveryRequests,6,'Only explicit recovery clicks send requests')
  await page.goto(origin+'/builder');await page.locator('.builder-price').waitFor()
  await page.getByRole('button',{name:'EN',exact:true}).click()
- assert.match(await page.locator('.builder-price').innerText(),/7 days/)
+ assert.match(await page.locator('.builder-price').innerText(),new RegExp(`${membershipTrialDays} days`))
  await page.getByRole('button',{name:'ES',exact:true}).click()
- assert.match(await page.locator('.builder-price').innerText(),/7 días/)
+ assert.match(await page.locator('.builder-price').innerText(),new RegExp(`${membershipTrialDays} días`))
  assert.deepEqual(errors,[])
  console.log('PASS language handoff, localized session failure, reset failure/retry and Builder price')
 }finally{await browser?.close();await server.close()}
