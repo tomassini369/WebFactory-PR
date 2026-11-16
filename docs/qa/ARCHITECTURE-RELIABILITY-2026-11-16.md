@@ -78,3 +78,28 @@ monthly/annual amounts; responsive containment remains checked for all cards.
 Commercial-access fixtures explicitly simulate the owner's calendar read and
 reject that read for employees. Login CI now annotates failed subtest logs so
 individual failures remain diagnosable when hosted raw logs are unavailable.
+
+The template-rendering fixture explicitly opts into custom colors/styles, and
+professional-booking checks navigate the current team carousel before booking.
+Consumer navigation waits for the real email field before measuring the ready
+form; the shared card also exists in the inert loading placeholder. Dedicated
+chunk/session/loading tests retain their cold-state coverage. Overflow checks
+still fail on excess page width and now retain a single-frame layout diagnostic
+with query/fragment-free link details and hosted screenshot artifacts.
+
+Template rendering, library/Builder parity, glass, carousel, per-template
+functions and related UI integrations run in the `experience-templates` matrix
+entry. The existing required `verify` gate waits for every matrix entry and
+architecture regressions. All scripts, viewport/locale/theme matrices and
+assertions are retained; this separates long serial checks within the existing
+35-minute per-job budget.
+
+Functional template journeys use the compiled production bundle, while a
+middleware-only Vite instance supplies template metadata. This avoids client
+dependency-optimizer/HMR reloads during assertions. The default run still
+requires every template/language combination; an explicit local diagnostic
+slug is validated and cannot silently match zero templates.
+
+The existing-draft fixture is seeded before Builder mounts, so an earlier
+empty Builder instance cannot flush over the fixture during navigation. The
+assertions still verify preservation of business, feature, catalog and team data.

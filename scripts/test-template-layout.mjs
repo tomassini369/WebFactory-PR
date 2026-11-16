@@ -19,7 +19,7 @@ try {
   const {templateUi} = await server.ssrLoadModule('/src/templateI18n.ts')
   let checked=0
   for(const config of templateConfigs) for(const lang of ['en','es']) {
-    const site={siteId:'preview',slug:'example',business:{name:'Client business',description:'Client content',category:config.category,phone:'787-555-0100',heroUrl:'',galleryUrls:[]},design:{templateSlug:config.slug,primary:'#123456',secondary:'#abcdef'},features:{products:true,services:true,bookings:true,cart:true},catalog:[{id:'real-service',type:'service',name:'Real client service',description:'Actual service',price:25,inventory:null,requiresAppointment:true,duration:30,imageUrl:''}],employees:[],hours:{},paymentRules:{},settings:{}}
+    const site={siteId:'preview',slug:'example',business:{name:'Client business',description:'Client content',category:config.category,phone:'787-555-0100',heroUrl:'',galleryUrls:[]},design:{templateSlug:config.slug,templateOverrides:['primary','secondary'],primary:'#123456',secondary:'#abcdef'},features:{products:true,services:true,bookings:true,cart:true},catalog:[{id:'real-service',type:'service',name:'Real client service',description:'Actual service',price:25,inventory:null,requiresAppointment:true,duration:30,imageUrl:''}],employees:[],hours:{},paymentRules:{},settings:{}}
     const live=renderToStaticMarkup(React.createElement(Storefront,{slug:'example',previewSite:site,previewLanguage:lang}))
     const demo=renderToStaticMarkup(React.createElement(Layout,{config,ui:templateUi[lang],language:lang,setLanguage(){},startBooking(){},setCartOpen(){},setCatalogOpen(){},cart:[]}))
     for(const className of ['template-header','template-hero','template-hero-content','template-hero-meta','template-story','template-story-images','template-gallery','template-contact','template-footer']) {
@@ -52,14 +52,14 @@ try {
     const mapped=renderToStaticMarkup(React.createElement(Storefront,{slug:'example',previewSite:{...site,features:{...site.features,maps:true},business:{...site.business,address:'123 Main St, Arecibo',mapsUrl:'https://www.google.com/maps?q=Arecibo'}},previewLanguage:lang}))
     assert.ok(mapped.includes('template-location-map')&&!mapped.includes('<iframe')&&mapped.includes('template-map-consent'),'Configured map waits for an explicit load action')
     assert.ok(!off.includes('template-location-map'),'Disabled maps remain hidden')
-    const styled=renderToStaticMarkup(React.createElement(Storefront,{slug:'example',previewSite:{...site,design:{...site.design,style:'Luxury'}},previewLanguage:lang}))
+    const styled=renderToStaticMarkup(React.createElement(Storefront,{slug:'example',previewSite:{...site,design:{...site.design,style:'Luxury',templateOverrides:[...site.design.templateOverrides,'style']}},previewLanguage:lang}))
     assert.ok(styled.includes('visual-luxury'), 'Saved style preference is honored consistently in Builder and live renderer')
     const card=renderToStaticMarkup(React.createElement(CatalogCard,{item:config.items[0],accent:config.accent,language:lang,ui:templateUi[lang],onView(){},onAdd(){},onBook(){},bookEnabled:false,cartEnabled:false,disabled:true}))
     assert.ok(card.includes('template-catalog-card') && card.includes('template-card-copy'))
     assert.ok(!card.includes('template-solid'), 'Disabled commerce/booking never renders an action button')
     checked++
   }
-  const canonical={siteId:'custom-preview',slug:'custom',business:{name:'Custom business',description:'Own content',category:'Barber',heroUrl:'/own-hero.jpg',galleryUrls:['/own-1.jpg','/own-2.jpg']},design:{templateSlug:'northline-barber',style:'Modern',primary:'#123456',secondary:'#abcdef'},features:{services:true,products:false,bookings:false,cart:false},catalog:[],employees:[],hours:{},paymentRules:{},settings:{}}
+  const canonical={siteId:'custom-preview',slug:'custom',business:{name:'Custom business',description:'Own content',category:'Barber',heroUrl:'/own-hero.jpg',galleryUrls:['/own-1.jpg','/own-2.jpg']},design:{templateSlug:'northline-barber',style:'Modern',templateOverrides:['style','primary','secondary'],primary:'#123456',secondary:'#abcdef'},features:{services:true,products:false,bookings:false,cart:false},catalog:[],employees:[],hours:{},paymentRules:{},settings:{}}
   const main=html=>html.match(/<main[^>]*>[\s\S]*?<\/main>/)[0]
   const expected=main(renderToStaticMarkup(React.createElement(Storefront,{slug:'custom',previewSite:canonical})))
   for(const legacyLayout of ['split','centered','editorial','showcase']) {

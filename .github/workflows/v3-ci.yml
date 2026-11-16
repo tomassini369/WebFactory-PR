@@ -17,7 +17,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        suite: [core, commerce, experience, experience-navigation]
+        suite: [core, commerce, experience, experience-navigation, experience-templates]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -303,13 +303,13 @@ jobs:
         if: matrix.suite == 'experience'
         run: node scripts/browser-home-evolution-smoke.mjs
       - name: Check all template renderers and saved storefront data
-        if: matrix.suite == 'experience'
+        if: matrix.suite == 'experience-templates'
         run: node scripts/test-template-layout.mjs
       - name: Check template library and Builder responsive parity
-        if: matrix.suite == 'experience'
+        if: matrix.suite == 'experience-templates'
         run: node scripts/browser-template-workspace-smoke.mjs
       - name: Check shared glass composition and motion
-        if: matrix.suite == 'experience'
+        if: matrix.suite == 'experience-templates'
         run: node scripts/browser-template-glass-smoke.mjs
       - name: Check kiosk pairing, privacy, checkout and mobile layouts on Chromium
         if: matrix.suite == 'commerce'
@@ -321,19 +321,19 @@ jobs:
           QA_PORT: 5227
         run: node scripts/browser-kiosk-smoke.mjs
       - name: Check spatial highlights on Chromium and WebKit
-        if: matrix.suite == 'experience'
+        if: matrix.suite == 'experience-templates'
         run: node scripts/browser-spatial-carousel-smoke.mjs
       - name: Check functions for every template and language
-        if: matrix.suite == 'experience'
+        if: matrix.suite == 'experience-templates'
         run: node scripts/browser-template-functions-smoke.mjs
       - name: Check Builder cart and draft interactions
-        if: matrix.suite == 'experience'
+        if: matrix.suite == 'experience-templates'
         run: node scripts/browser-interactions-smoke.mjs
       - name: Check ChatGPT configuration on mobile and desktop
-        if: matrix.suite == 'experience'
+        if: matrix.suite == 'experience-templates'
         run: node scripts/browser-chatgpt-ui-smoke.mjs
       - name: Check installed Shadcn components on desktop and mobile
-        if: matrix.suite == 'experience'
+        if: matrix.suite == 'experience-templates'
         run: node scripts/browser-shadcn-smoke.mjs
       - name: Check floating portal login cards and return controls
         if: matrix.suite == 'experience-navigation'
@@ -684,6 +684,17 @@ jobs:
               cat "$log"
             done
           done
+      - name: Save deployed consumer failure evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: marketplace-preview-evidence
+          path: |
+            /tmp/webfactory-marketplace-consumer/
+            /tmp/webfactory-marketplace-return/
+            /tmp/marketplace-consumer-*.log
+            /tmp/marketplace-return-*.log
+          if-no-files-found: ignore
       - name: Use Python for deployed architecture regressions
         uses: actions/setup-python@v5
         with:
