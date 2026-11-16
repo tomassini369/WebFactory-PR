@@ -1,5 +1,5 @@
 import {createContext, useContext, useMemo, type ReactNode} from 'react'
-import {withAuthRetry} from '../auth-retry'
+import {requestJson} from '../../shared/http-client.mjs'
 
 export type WorkspaceFetch = (input: string | URL | Request, init?: RequestInit) => Promise<Response>
 export type WorkspaceApi = (url: string, options?: RequestInit) => Promise<any>
@@ -17,13 +17,7 @@ export function useWorkspaceFetch(): WorkspaceFetch {
 export function useWorkspaceApi(): WorkspaceApi {
   const practiceFetch = useContext(WorkspaceServices)
   return useMemo(() => {
-    const request: WorkspaceApi = async (url, options) => {
-      const response = await (practiceFetch || browserFetch)(url, {credentials: 'include', cache: 'no-store', ...options})
-      const result = await response.json()
-      if (!response.ok || result.ok === false) throw Object.assign(new Error(result.message || 'Request failed.'), {code: typeof result.code === 'string' ? result.code : '', status: response.status})
-      return result
-    }
-    return practiceFetch ? request : (url, options) => withAuthRetry(() => request(url, options))
+    return (url,options)=>requestJson(url,{credentials:'include',...options},{fetcher:practiceFetch||browserFetch,retry:false})
   }, [practiceFetch])
 }
 

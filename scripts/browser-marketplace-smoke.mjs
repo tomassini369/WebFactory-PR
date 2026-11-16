@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import {membershipIds,membershipPlans} from '../shared/membership-plans.mjs'
 import {mkdir} from 'node:fs/promises'
 import {preview} from 'vite'
 import {chromium,webkit} from 'playwright'
@@ -102,7 +103,16 @@ try{
  assert.equal(await page.locator('.wf-hero-media img').getAttribute('src'),'/media/webfactory-hero-poster.webp')
  assert.equal(await page.locator('.wf-tour-step').count(),5);assert.equal(await page.locator('#plataforma .wf-platform article').count(),5)
  for(const section of ['recorrido','plataforma','explorar','como-funciona','planes','faq'])assert.equal(await page.locator('#'+section).count(),1,section)
- assert.equal(await page.locator('.wf-mcp').count(),1);assert.equal(await page.getByRole('tab').count(),4);assert.match(await page.locator('.wf-price').innerText(),/\$30/);assert.match(await page.locator('.wf-price').innerText(),/350/)
+ assert.equal(await page.locator('.wf-mcp').count(),1);assert.equal(await page.getByRole('tab').count(),4)
+ await page.locator('.wf-membership-toggle').click()
+ assert.equal(await page.locator('.wf-membership-toggle').getAttribute('aria-expanded'),'true')
+ assert.deepEqual(await page.locator('#planes .card-plan-name').allTextContents(),membershipIds.map(id=>membershipPlans[id].name))
+ for(const [index,interval] of ['monthly','annual'].entries()){
+  await page.locator('#planes .membership-interval button').nth(index).click()
+  assert.equal(await page.locator('#planes .membership-interval button').nth(index).getAttribute('aria-pressed'),'true')
+  await page.waitForFunction(prices=>JSON.stringify([...document.querySelectorAll('#planes .card-price')].map(el=>el.textContent))===JSON.stringify(prices),membershipIds.map(id=>`$${membershipPlans[id][interval]}`))
+ }
+ await page.locator('.wf-membership-toggle').click();assert.equal(await page.locator('.wf-membership-toggle').getAttribute('aria-expanded'),'false')
  assert.equal(await page.locator('link[rel="canonical"]').getAttribute('href'),'https://webfactorypr.com/crear')
  await page.getByRole('tab').first().click();await page.locator('.wf-demo-product button').click();assert.match(await page.locator('.wf-demo-total').innerText(),/29/)
  await page.locator('.wf-h-login').click();await page.locator('input[type="email"]').waitFor();await page.locator('.portal-return-home').click();await page.locator('.mk-root').waitFor();assert.equal(documents,baseline)

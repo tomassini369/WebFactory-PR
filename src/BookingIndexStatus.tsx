@@ -4,6 +4,10 @@ import {usePractice} from './training/practice-context'
 import {useWorkspaceApi} from './training/workspace-services'
 
 type IndexState = {status: 'pending'|'building'|'ready'; processed?: number}
+function validatedState(value: unknown): IndexState {
+ if(!value||typeof value!=='object'||!('status' in value)||typeof value.status!=='string'||!['pending','building','ready'].includes(value.status)||('processed' in value&&(typeof value.processed!=='number'||!Number.isFinite(value.processed)||value.processed<0)))throw new Error('No se pudo validar el estado del historial. / History status could not be validated.')
+ return value as IndexState
+}
 
 export default function BookingIndexStatus({siteId,lang,area='bookings'}:{siteId:string;lang:'es'|'en';area?:'bookings'|'turns'}){
  const api=useWorkspaceApi()
@@ -12,6 +16,7 @@ export default function BookingIndexStatus({siteId,lang,area='bookings'}:{siteId
  const turns=area==='turns'
  const endpoint=turns?'/.netlify/functions/client-order-turn-index':'/.netlify/functions/client-booking-index'
  const [state,setState]=useState<IndexState>({status:'pending'})
+ const [checkRevision,setCheckRevision]=useState(0)
  const [checking,setChecking]=useState(!practice)
  const [busy,setBusy]=useState(false)
  const [error,setError]=useState('')
@@ -22,11 +27,11 @@ export default function BookingIndexStatus({siteId,lang,area='bookings'}:{siteId
   setChecking(true)
   setError('')
   void api(endpoint+'?siteId='+encodeURIComponent(siteId))
-   .then(result=>{if(active)setState(result.state)})
+   .then(result=>{if(active)setState(validatedState(result.state))})
    .catch(reason=>{if(active)setError(reason.message)})
    .finally(()=>{if(active)setChecking(false)})
   return()=>{active=false}
- },[siteId,practice,endpoint])
+ },[siteId,practice,endpoint,checkRevision])
 
  async function optimize(){
   setBusy(true)
@@ -34,8 +39,9 @@ export default function BookingIndexStatus({siteId,lang,area='bookings'}:{siteId
   try{
    for(let batch=0;batch<3;batch++){
     const result=await api(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({siteId})})
-    setState(result.state)
-    if(result.state.status==='ready')break
+    const next=validatedState(result.state)
+    setState(next)
+    if(next.status==='ready')break
    }
   }catch(reason){
    setError(reason instanceof Error?reason.message:(es?'No se pudo preparar el historial.':'Could not prepare the history.'))
@@ -51,7 +57,7 @@ export default function BookingIndexStatus({siteId,lang,area='bookings'}:{siteId
   <h2>{title}</h2>
   <p role="status">{checking?(es?'Consultando estado…':'Checking status…'):state.status==='ready'?ready:pending}</p>
   {turns&&state.status==='building'&&<p>{es?'Pedidos revisados':'Orders reviewed'}: {state.processed??0}</p>}
-  {state.status!=='ready'&&<button type="button" disabled={checking||busy||!!practice} onClick={()=>void optimize()}>{buttonLabel}</button>}
-  {error&&<p role="alert">{error}</p>}
+  {!error&&state.status!=='ready'&&<button type="button" disabled={checking||busy||!!practice} onClick={()=>void optimize()}>{buttonLabel}</button>}
+  {error&&<div role="alert"><p>{error}</p><button type="button" disabled={checking||busy} onClick={()=>setCheckRevision(value=>value+1)}>{es?'Reintentar estado del historial':'Retry history status'}</button></div>}
  </PortalPanel>
 }

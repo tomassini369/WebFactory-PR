@@ -1,13 +1,14 @@
 import {useState,type FormEvent} from 'react'
 import {PortalPanel} from './PortalPanel'
-import {withAuthRetry} from './auth-retry'
+import {requestJson} from '../shared/http-client.mjs'
 import {adRequest,type Campaign} from './MarketplaceAdvertising'
 import './content-claims-console.css'
 type Review={id:string;alias:string;text:string;rating:number;revision:number;status:string;reports:number;reason:string}
 export default function MarketplaceModeration({lang}:{lang:'es'|'en'}){
  const es=lang==='es',[slug,setSlug]=useState(''),[rows,setRows]=useState<Review[]>([]),[ads,setAds]=useState<Campaign[]>([]),[loaded,setLoaded]=useState(false),[reviewLoaded,setReviewLoaded]=useState(false),[busy,setBusy]=useState(false),[error,setError]=useState(''),[offerRevision,setOfferRevision]=useState(0),[checked,setChecked]=useState<Record<string,boolean>>({}),[offset,setOffset]=useState(0),[nextOffset,setNextOffset]=useState<number|null>(null)
  const reasons=[['privacy','Datos personales','Personal information'],['spam','Spam','Spam'],['conflict','Conflicto de interés','Conflict of interest'],['threat','Amenazas','Threats'],['irrelevant','Contenido ajeno','Unrelated content'],['experience_unsubstantiated','Experiencia sin fundamento tras revisión','Unsubstantiated experience after review']]
- async function reviews(body?:Record<string,unknown>){return withAuthRetry(async()=>{const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),15000);try{const r=await fetch('/.netlify/functions/marketplace-reviews'+(body?'':'?scope=admin&slug='+encodeURIComponent(slug)+'&offset='+offset),{method:body?'POST':'GET',credentials:'same-origin',cache:'no-store',signal:controller.signal,...(body?{headers:{'Content-Type':'application/json'},body:JSON.stringify({slug,...body})}:{})});const data=await r.json();if(!r.ok||!data.ok)throw Error(data.message||'Request unavailable');return data}finally{clearTimeout(timer)}})}
+ const reviews=(body?:Record<string,unknown>)=>requestJson('/.netlify/functions/marketplace-reviews'+(body?'':'?scope=admin&slug='+encodeURIComponent(slug)+'&offset='+offset),{method:body?'POST':'GET',...(body?{headers:{'Content-Type':'application/json'},body:JSON.stringify({slug,...body})}:{})},{requireOk:true})
+
  async function run(action:()=>Promise<void>){if(busy)return;setBusy(true);setError('');try{await action();setChecked({})}catch(e){setError(e instanceof Error?e.message:'Error')}finally{setBusy(false)}}
  async function loadAds(){const data=await adRequest('?scope=admin');setAds(data.campaigns);setOfferRevision(data.offerRevision);setLoaded(true)}
  function offer(e:FormEvent<HTMLFormElement>){e.preventDefault();const data=new FormData(e.currentTarget);void run(async()=>{await adRequest('',{scope:'admin',action:'set_offer',revision:offerRevision,amount:Math.round(Number(data.get('amount'))*100),days:Number(data.get('days')),terms:data.get('terms'),enabled:data.get('enabled')==='on',approved:data.get('approved')==='on',taxReviewed:data.get('taxReviewed')==='on'});await loadAds()})}

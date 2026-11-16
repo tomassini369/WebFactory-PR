@@ -1,7 +1,7 @@
 import { getClientSiteBySlug } from "../lib/client-store.mjs";
 import { cleanText } from "../lib/platform-utils.mjs";
 import { siteEntitlement } from "../lib/subscription-billing.mjs";
-import { listV3Records } from "../lib/webfactory-v3-store.mjs";
+import { findPaymentLink } from "../lib/webfactory-v3-store.mjs";
 
 export default async (req) => {
   try {
@@ -11,9 +11,8 @@ export default async (req) => {
     const token = cleanText(url.searchParams.get("token"), 200);
     const site = await getClientSiteBySlug(slug);
     if (!site || !siteEntitlement(site).public) throw Object.assign(new Error("Payment link is unavailable."), { status: 404 });
-    const rows = await listV3Records(site.siteId, "payment-links", { limit: 1000 });
-    const link = rows.find((row) => row.token === token && row.active !== false);
-    if (!link) throw Object.assign(new Error("Payment link is unavailable."), { status: 404 });
+    const link = await findPaymentLink(site.siteId,token);
+    if (!link || link.active===false) throw Object.assign(new Error("Payment link is unavailable."), { status: 404 });
     if (link.expiresAt && Date.parse(link.expiresAt) <= Date.now()) throw Object.assign(new Error("Payment link has expired."), { status: 410 });
     return Response.json({
       ok: true,

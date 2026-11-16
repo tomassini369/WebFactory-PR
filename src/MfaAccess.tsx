@@ -1,3 +1,4 @@
+import {observePortalUser} from './portal-auth'
 import PortalSceneCopy from './PortalSceneCopy'
 import PortalLoadingCard from './PortalLoadingCard'
 import PortalReturnHome from './PortalReturnHome'
@@ -57,7 +58,7 @@ function SecurityPanel({user,lang,onComplete,onCodes,allowDisable=false}:{user:U
 export function MfaGate({children,loadingView}:{children:ReactNode;loadingView?:ReactNode}) {
   const [user,setUser]=useState<User|null>(null),[loading,setLoading]=useState(true),[failed,setFailed]=useState(false),[holdCodes,setHoldCodes]=useState(false)
   const [lang,setLang]=usePortalLanguage()
-  useEffect(()=>{let active=true;const stop=onAuthChange((_event,next)=>{if(active){setUser(next);setLoading(false);setFailed(false)}});void getUser().then(next=>{if(active)setUser(next)}).catch(()=>{if(active)setFailed(true)}).finally(()=>{if(active)setLoading(false)});return()=>{active=false;stop()}},[])
+  useEffect(()=>observePortalUser({onUser:next=>{setUser(next);setFailed(false)},onError:()=>setFailed(true),onReady:()=>setLoading(false)}),[])
   if(loading)return loadingView||<PortalLoadingCard lang={lang}/>
   if(failed)return <main className="mfa-screen"><p role="alert">{lang==='es'?'No se pudo comprobar tu sesión.':'Unable to check your session.'}</p><button className="btn" onClick={()=>window.location.reload()}>{lang==='es'?'Intentar de nuevo':'Try again'}</button><a href="/">{lang==='es'?'Volver a WebFactory PR':'Return to WebFactory PR'}</a></main>
   if(!user?.mfa?.required||(user.mfa.verified&&!holdCodes))return <PortalSessionContext.Provider value={user}>{children}</PortalSessionContext.Provider>
@@ -66,7 +67,7 @@ export function MfaGate({children,loadingView}:{children:ReactNode;loadingView?:
 
 export function MfaSettings({lang,allowDisable=false}:{lang:'es'|'en';allowDisable?:boolean}) {
   const [user,setUser]=useState<User|null>(null),[resetBusy,setResetBusy]=useState(false),[resetSent,setResetSent]=useState(false),[resetError,setResetError]=useState('')
-  useEffect(()=>{let active=true;void getUser().then(next=>{if(active)setUser(next)}).catch(()=>{});const stop=onAuthChange((_event,next)=>{if(active)setUser(next)});return()=>{active=false;stop()}},[])
+  useEffect(()=>observePortalUser({onUser:setUser}),[])
   if(!user)return null
   const es=lang==='es',accountEmail=user.email||''
   const sendReset=async()=>{if(!accountEmail)return setResetError(es?'Esta cuenta no tiene un email válido.':'This account does not have a valid email.');setResetBusy(true);setResetError('');try{await requestPasswordRecovery(accountEmail);setResetSent(true)}catch(e){setResetError(e instanceof Error?e.message:(es?'No se pudo enviar el enlace.':'The reset link could not be sent.'))}finally{setResetBusy(false)}}

@@ -17,7 +17,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        suite: [core, commerce, experience, experience-navigation]
+        suite: [core, commerce, experience, experience-navigation, experience-templates]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -162,8 +162,15 @@ jobs:
       - name: Check unified workspace hierarchy, disclosures and Builder state
         if: matrix.suite == 'experience'
         run: |
-          node scripts/browser-workspace-experience-smoke.mjs
-          node scripts/browser-admin-experience-smoke.mjs
+          for check in workspace admin; do
+            log="/tmp/$check-experience.log"
+            if ! node "scripts/browser-$check-experience-smoke.mjs" > "$log" 2>&1; then
+              cat "$log"
+              node scripts/report-kiosk-ci-error.mjs "$log" experience
+              exit 1
+            fi
+            cat "$log"
+          done
       - name: Check Marketplace and preserved Crear landing on Chromium and WebKit
         if: matrix.suite == 'experience'
         env:
@@ -186,18 +193,29 @@ jobs:
       - name: Check login locale persistence and single session handoff
         if: matrix.suite == 'experience-navigation'
         run: |
-          QA_BUILT=1 node scripts/browser-login-lifecycle-smoke.mjs
-          node scripts/browser-login-loading-smoke.mjs
-          QA_ASSERT=1 QA_HOLD_IMAGES=1 node scripts/browser-login-paint-smoke.mjs
-          QA_ENGINE=webkit QA_ASSERT=1 QA_HOLD_IMAGES=1 node scripts/browser-login-paint-smoke.mjs
-          QA_WIDTHS=390,980 node scripts/browser-login-navigation-paint-smoke.mjs
-          QA_ENGINE=webkit QA_WIDTHS=390,980 node scripts/browser-login-navigation-paint-smoke.mjs
-          node scripts/browser-shared-login-smoke.mjs
-          QA_ENGINE=webkit QA_WIDTHS=390,1440 node scripts/browser-shared-login-smoke.mjs
-          node scripts/browser-commercial-loading-detail-smoke.mjs
-          QA_ENGINE=webkit QA_WIDTHS=390,980,1440 node scripts/browser-commercial-loading-detail-smoke.mjs
-          QA_ENGINE=webkit QA_WIDTHS=390,1440 node scripts/browser-login-loading-smoke.mjs
-          QA_BUILT=1 QA_ENGINE=webkit node scripts/browser-login-lifecycle-smoke.mjs
+          login_check=0
+          check_login() {
+            login_check=$((login_check + 1))
+            log="/tmp/login-check-$login_check.log"
+            if ! "$@" > "$log" 2>&1; then
+              cat "$log"
+              node scripts/report-kiosk-ci-error.mjs "$log" experience
+              return 1
+            fi
+            cat "$log"
+          }
+          check_login env QA_BUILT=1 node scripts/browser-login-lifecycle-smoke.mjs
+          check_login node scripts/browser-login-loading-smoke.mjs
+          check_login env QA_ASSERT=1 QA_HOLD_IMAGES=1 node scripts/browser-login-paint-smoke.mjs
+          check_login env QA_ENGINE=webkit QA_ASSERT=1 QA_HOLD_IMAGES=1 node scripts/browser-login-paint-smoke.mjs
+          check_login env QA_WIDTHS=390,980 node scripts/browser-login-navigation-paint-smoke.mjs
+          check_login env QA_ENGINE=webkit QA_WIDTHS=390,980 node scripts/browser-login-navigation-paint-smoke.mjs
+          check_login node scripts/browser-shared-login-smoke.mjs
+          check_login env QA_ENGINE=webkit QA_WIDTHS=390,1440 node scripts/browser-shared-login-smoke.mjs
+          check_login node scripts/browser-commercial-loading-detail-smoke.mjs
+          check_login env QA_ENGINE=webkit QA_WIDTHS=390,980,1440 node scripts/browser-commercial-loading-detail-smoke.mjs
+          check_login env QA_ENGINE=webkit QA_WIDTHS=390,1440 node scripts/browser-login-loading-smoke.mjs
+          check_login env QA_BUILT=1 QA_ENGINE=webkit node scripts/browser-login-lifecycle-smoke.mjs
       - name: Check initial login visibility, locale handoff and failure states
         if: matrix.suite == 'experience-navigation'
         run: node scripts/browser-auth-usability-smoke.mjs
@@ -285,13 +303,13 @@ jobs:
         if: matrix.suite == 'experience'
         run: node scripts/browser-home-evolution-smoke.mjs
       - name: Check all template renderers and saved storefront data
-        if: matrix.suite == 'experience'
+        if: matrix.suite == 'experience-templates'
         run: node scripts/test-template-layout.mjs
       - name: Check template library and Builder responsive parity
-        if: matrix.suite == 'experience'
+        if: matrix.suite == 'experience-templates'
         run: node scripts/browser-template-workspace-smoke.mjs
       - name: Check shared glass composition and motion
-        if: matrix.suite == 'experience'
+        if: matrix.suite == 'experience-templates'
         run: node scripts/browser-template-glass-smoke.mjs
       - name: Check kiosk pairing, privacy, checkout and mobile layouts on Chromium
         if: matrix.suite == 'commerce'
@@ -303,19 +321,19 @@ jobs:
           QA_PORT: 5227
         run: node scripts/browser-kiosk-smoke.mjs
       - name: Check spatial highlights on Chromium and WebKit
-        if: matrix.suite == 'experience'
+        if: matrix.suite == 'experience-templates'
         run: node scripts/browser-spatial-carousel-smoke.mjs
       - name: Check functions for every template and language
-        if: matrix.suite == 'experience'
+        if: matrix.suite == 'experience-templates'
         run: node scripts/browser-template-functions-smoke.mjs
       - name: Check Builder cart and draft interactions
-        if: matrix.suite == 'experience'
+        if: matrix.suite == 'experience-templates'
         run: node scripts/browser-interactions-smoke.mjs
       - name: Check ChatGPT configuration on mobile and desktop
-        if: matrix.suite == 'experience'
+        if: matrix.suite == 'experience-templates'
         run: node scripts/browser-chatgpt-ui-smoke.mjs
       - name: Check installed Shadcn components on desktop and mobile
-        if: matrix.suite == 'experience'
+        if: matrix.suite == 'experience-templates'
         run: node scripts/browser-shadcn-smoke.mjs
       - name: Check floating portal login cards and return controls
         if: matrix.suite == 'experience-navigation'
@@ -325,7 +343,14 @@ jobs:
         run: node scripts/browser-reference-styles-smoke.mjs
       - name: Check automatic buyer receipts, demo isolation, PDF and printing
         if: matrix.suite == 'commerce'
-        run: node scripts/browser-buyer-receipt-smoke.mjs
+        run: |
+          log="/tmp/buyer-receipt.log"
+          if ! node scripts/browser-buyer-receipt-smoke.mjs > "$log" 2>&1; then
+            cat "$log"
+            node scripts/report-kiosk-ci-error.mjs "$log" experience
+            exit 1
+          fi
+          cat "$log"
       - name: Check portal login fields on desktop and mobile
         if: matrix.suite == 'experience-navigation'
         run: |
@@ -355,7 +380,7 @@ jobs:
 
   # Preserve the existing required check name while all suites finish independently.
   verify:
-    needs: verify-suite
+    needs: [verify-suite, architecture-reliability]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -363,7 +388,8 @@ jobs:
       - name: Require every verification suite to pass
         env:
           SUITE_RESULT: ${{ needs.verify-suite.result }}
-        run: test "$SUITE_RESULT" = success
+          ARCHITECTURE_RESULT: ${{ needs.architecture-reliability.result }}
+        run: test "$SUITE_RESULT" = success && test "$ARCHITECTURE_RESULT" = success
 
   kiosk-skins:
     runs-on: ubuntu-24.04
@@ -486,6 +512,44 @@ jobs:
             /tmp/webfactory-platform-audit-fixes/
             /tmp/builder-audit-regressions/
             /tmp/builder-audit-preview.log
+
+  architecture-reliability:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: npm ci
+      - run: python -m pip install playwright==1.62.0
+      - run: npx playwright install --with-deps chromium webkit
+      - name: Build production architecture regressions
+        env:
+          CONTEXT: production
+        run: npm run build
+      - name: Check all architecture faults on both engines and seven widths
+        shell: bash
+        run: |
+          npm run preview -- --host 127.0.0.1 --port 5470 > /tmp/architecture-server.log 2>&1 &
+          preview_pid=$!
+          trap 'kill "$preview_pid" 2>/dev/null || true' EXIT
+          for attempt in {1..30}; do
+            if curl -fsS http://127.0.0.1:5470/ -o /dev/null; then break; fi
+            sleep 1
+          done
+          python scripts/browser-architecture-reliability.py --base http://127.0.0.1:5470 --out /tmp/architecture-reliability
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: architecture-reliability
+          path: |
+            /tmp/architecture-reliability/
+            /tmp/architecture-server.log
 
   kiosk-bookings:
     runs-on: ubuntu-24.04
@@ -620,6 +684,32 @@ jobs:
               cat "$log"
             done
           done
+      - name: Save deployed consumer failure evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: marketplace-preview-evidence
+          path: |
+            /tmp/webfactory-marketplace-consumer/
+            /tmp/webfactory-marketplace-return/
+            /tmp/marketplace-consumer-*.log
+            /tmp/marketplace-return-*.log
+          if-no-files-found: ignore
+      - name: Use Python for deployed architecture regressions
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install Python browser client
+        run: python -m pip install playwright==1.62.0
+      - name: Check deployed architecture recovery and verified payment states
+        env:
+          PREVIEW_URL: https://deploy-preview-${{ github.event.pull_request.number }}--webfactorypr.netlify.app
+        run: python scripts/browser-architecture-reliability.py --base "$PREVIEW_URL" --widths 390 1440 --out /tmp/architecture-preview
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: architecture-preview
+          path: /tmp/architecture-preview/
       - name: Check deployed commercial authentication boundaries
         env:
           PREVIEW_URL: https://deploy-preview-${{ github.event.pull_request.number }}--webfactorypr.netlify.app

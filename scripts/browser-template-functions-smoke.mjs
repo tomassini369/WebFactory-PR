@@ -1,25 +1,28 @@
 import {showBuilderPreview} from './qa-workspace-navigation.mjs'
 import assert from 'node:assert/strict'
-import {createServer} from 'vite'
+import {createServer,preview} from 'vite'
 import {chromium} from 'playwright'
-const server=await createServer({server:{host:'127.0.0.1',port:5191,strictPort:true}})
-await server.listen()
+const server=await createServer({server:{middlewareMode:true},appType:'custom'})
+const production=await preview({preview:{host:'127.0.0.1',port:5191,strictPort:true}})
 const {templateConfigs}=await server.ssrLoadModule('/src/templateData.ts')
 const {localizeTemplate}=await server.ssrLoadModule('/src/templateI18n.ts')
 const launch=()=>chromium.launch(process.env.QA_CHROMIUM_PATH?{executablePath:process.env.QA_CHROMIUM_PATH,args:['--single-process']}:undefined)
+const cases=process.env.QA_TEMPLATE_SLUG?templateConfigs.filter(config=>config.slug===process.env.QA_TEMPLATE_SLUG):templateConfigs
+assert(cases.length>0,'Choose an existing template slug')
 let checked=0
 try{
- for(const base of templateConfigs)for(const lang of ['en','es']){
+ for(const base of cases)for(const lang of ['en','es']){
   const config=localizeTemplate(base,lang)
   const browser=await launch()
   const page=await browser.newPage({viewport:{width:lang==='en'?390:1280,height:900}})
   try{
+   console.log('Checking template functions',config.slug,lang)
    await page.goto('http://127.0.0.1:5191/templates/'+config.slug)
    await page.locator('.template-hero h1').waitFor()
    await page.locator('.template-languages button').filter({hasText:lang.toUpperCase()}).click()
    assert.equal(await page.locator('.template-location-map iframe').count(),0,'No Google iframe before an explicit choice');await page.locator('.template-map-consent button').click();assert.equal(await page.locator('.template-location-map iframe').count(),1,'Demo includes sample map')
    assert.equal(await page.locator('.template-header-actions .template-cart-button').count(),config.cartEnabled?1:0)
-   assert.equal(await page.locator('.template-hero-actions .template-solid').count(),config.bookingEnabled?1:0)
+   assert.equal(await page.locator('.template-hero-actions .template-solid').count(),config.bookingEnabled?1:0,`${config.slug}/${lang}: hero reservation action`)
    for(const selector of ['.template-function-showcase','.template-feature-strip','.template-catalog-gateway','.template-booking-showcase'])assert.equal(await page.locator(selector).count(),0,'No repeated feature blocks')
    assert.equal(await page.getByRole('button',{name:config.bookingLabel,exact:true}).count(),Number(config.bookingEnabled),'One primary reservation action')
    assert.equal(await page.locator('.template-highlights .template-solid,.template-highlights .template-glass').count(),0,'Highlights do not repeat catalog actions')
@@ -31,11 +34,13 @@ try{
    }
    await page.locator('.catalog-close').click()
    for(const employee of config.employees){
-    const matching=config.items.find(item=>item.appointment&&item.employees?.some(name=>employee.name.startsWith(name)))
-    const team=page.locator('.template-team-grid article').filter({has:page.getByRole('heading',{name:employee.name,exact:true})})
-    if(!matching)assert.equal(await team.getByRole('button').isEnabled(),false)
+    const matching=config.items.find(item=>item.appointment&&(item.employeeIds?.includes(employee.id)??item.employees?.some(name=>employee.name.startsWith(name))))
+    if(config.employees.length>1)await page.locator('.team-card-dots').getByRole('button',{name:employee.name,exact:true}).click()
+    await page.waitForFunction(name=>document.querySelector('.team-card[data-active=true] h3')?.textContent===name,employee.name)
+    const team=page.locator('.team-card[data-active=true]').filter({has:page.getByRole('heading',{name:employee.name,exact:true})})
+    if(!config.bookingEnabled||!matching)assert.equal(await team.locator('.team-card-book').count(),0,'Unavailable appointments have no booking action')
     else{
-     await team.getByRole('button').click()
+     await team.locator('.team-card-book').click()
      await page.locator('.template-booking-modal').waitFor()
      const selected=page.locator('.template-choice-grid .selected')
      assert.ok((await selected.textContent()).startsWith(employee.name),`${config.slug}/${lang}: team preselection`)
@@ -100,19 +105,19 @@ try{
    assert.equal(state.features.form,false)
    assert.deepEqual(state.catalog,[]);assert.deepEqual(state.team,[])
    checked++
-   if(checked%10===0)console.log(`Completed ${checked}/46 functional cases`)
-  }finally{await browser.close()}
+   if(checked%10===0)console.log(`Completed ${checked}/${cases.length*2} functional cases`)
+  }catch(error){console.error('Template function failure',JSON.stringify({slug:config.slug,lang,url:page.url(),headings:await page.locator('.template-hero h1').allTextContents().catch(()=>[]),hero:await page.locator('.template-hero-actions').allInnerTexts().catch(()=>[])}));throw error}finally{await browser.close()}
  }
  const preservedBrowser=await launch()
  try{
   const page=await preservedBrowser.newPage()
-  await page.goto('http://127.0.0.1:5191/builder')
-  await page.evaluate(()=>localStorage.setItem('webfactory-v3-builder-draft',JSON.stringify({business:{name:'Existing business',category:'Barber'},features:{products:false,services:true,cart:false,bookings:false,calendar:false,form:true},catalog:[{id:'own-service',type:'service',name:'Own service',price:20,requiresAppointment:false,duration:30}],team:[{id:'own-team',name:'Own team',role:'Professional',serviceIds:['own-service']}]})))
+  await page.addInitScript(()=>localStorage.setItem('webfactory-v3-builder-draft',JSON.stringify({business:{name:'Existing business',category:'Barber'},features:{products:false,services:true,cart:false,bookings:false,calendar:false,form:true},catalog:[{id:'own-service',type:'service',name:'Own service',price:20,requiresAppointment:false,duration:30}],team:[{id:'own-team',name:'Own team',role:'Professional',serviceIds:['own-service']}]})))
   await page.goto('http://127.0.0.1:5191/builder?template=luna-market')
   await page.waitForFunction(()=>JSON.parse(localStorage.getItem('webfactory-v3-builder-draft')||'{}').design?.templateSlug==='luna-market')
   const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('webfactory-v3-builder-draft')))
   assert.equal(saved.business.category,'Barber');assert.equal(saved.features.cart,false);assert.equal(saved.features.products,false);assert.equal(saved.features.bookings,false);assert.equal(saved.features.form,true)
   assert.equal(saved.catalog[0].id,'own-service');assert.equal(saved.team[0].id,'own-team')
  }finally{await preservedBrowser.close()}
+ assert.equal(checked,cases.length*2,'Every requested template and language completed')
  console.log(`Template functions: ${checked} template/language cases passed; commerce actions, employee preselection and fresh Builder defaults verified`)
-}finally{await server.close()}
+}finally{await server.close();await new Promise(resolve=>production.httpServer.close(resolve))}

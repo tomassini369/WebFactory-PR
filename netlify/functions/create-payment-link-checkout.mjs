@@ -1,25 +1,17 @@
+import {issueBuyerReceiptAccess} from '../lib/buyer-receipt-access.mjs';
+import {createCheckoutAttemptHandler} from '../lib/checkout-attempt.mjs';
+import {verifyMerchantCapability} from '../lib/stripe-merchant-capability.mjs';
 import {isBasicMembership} from "../../shared/membership-plans.mjs";
 import { clientCommerceStore, commerceKey, getClientSiteBySlug } from "../lib/client-store.mjs";
 import { cleanText, publicBaseUrl, validEmail } from "../lib/platform-utils.mjs";
 import { siteEntitlement } from "../lib/subscription-billing.mjs";
 import { assertStripeWriteAllowed } from "../lib/stripe-runtime.mjs";
 import { calculateTax } from "../lib/webfactory-v3-domain.mjs";
-import { listV3Records } from "../lib/webfactory-v3-store.mjs";
+import { findPaymentLink } from "../lib/webfactory-v3-store.mjs";
 import { createAthCheckout } from "../lib/ath-movil.mjs";
 import { assertSameOrigin } from "../lib/client-auth.mjs";
 
 function env(name) { return globalThis.Netlify?.env?.get(name) || ""; }
-
-async function verifyMerchantCapability(accountId) {
-  const params = new URLSearchParams();
-  params.append("include[]", "configuration.merchant");
-  const response = await fetch(`https://api.stripe.com/v2/core/accounts/${encodeURIComponent(accountId)}?${params}`, {
-    headers: { Authorization: `Bearer ${env("STRIPE_SECRET_KEY")}`, "Stripe-Version": "2026-08-26.preview" },
-  });
-  const account = await response.json();
-  if (!response.ok) throw new Error(account?.error?.message || "Stripe account status could not be verified.");
-  return account.configuration?.merchant?.capabilities?.card_payments?.status || "pending";
-}
 
 function appendLine(params, index, name, amount, quantity = 1) {
   params.set(`line_items[${index}][price_data][currency]`, "usd");
@@ -28,12 +20,7 @@ function appendLine(params, index, name, amount, quantity = 1) {
   params.set(`line_items[${index}][quantity]`, String(quantity));
 }
 
-async function findPaymentLink(siteId, token) {
-  const rows = await listV3Records(siteId, "payment-links", { limit: 1000 });
-  return rows.find((row) => row.token === token) || null;
-}
-
-export default async (req) => {
+export async function performPaymentLinkCheckout(req) {
   try {
     if (req.method !== "POST") return Response.json({ ok: false, message: "Method not allowed." }, { status: 405 });
     assertSameOrigin(req);
@@ -57,6 +44,7 @@ export default async (req) => {
 
     const quantity = link.allowQuantity ? Math.max(1, Math.min(20, Math.floor(Number(payload.quantity || 1)))) : 1;
     const checkoutAttemptId = cleanText(payload.checkoutAttemptId, 120).replace(/[^a-zA-Z0-9_-]/g, "");
+    if(req.headers.has('Idempotency-Key')&&req.headers.get('Idempotency-Key')!==checkoutAttemptId)throw Object.assign(new Error('Checkout attempt does not match its key.'),{status:400});
     if (checkoutAttemptId.length < 8) throw Object.assign(new Error("A valid checkout attempt ID is required."), { status: 400 });
     const baseAmount = Math.max(1, Number(link.amount || 0)) * quantity;
     const catalogItem = link.catalogItemId ? (site.catalog || []).find((item) => item.id === link.catalogItemId) : null;
@@ -77,6 +65,7 @@ export default async (req) => {
     const transactionId = `txn_pl_${provider === "ath_movil" ? "ath_" : ""}${checkoutAttemptId}`;
     const existing = await clientCommerceStore().get(commerceKey(site.siteId, "transactions", transactionId), { type: "json" });
     if (existing?.checkoutUrl && existing?.source === "payment_link") {
+      if(existing.paymentLinkId!==link.paymentLinkId||existing.amountTotal!==tax.totalCents||existing.customer?.email!==customer.email)throw Object.assign(new Error("This attempt belongs to another checkout."),{status:409});
       return Response.json({ ok: true, checkoutUrl: existing.checkoutUrl, transactionId, reused: true }, { headers: { "Cache-Control": "no-store" } });
     }
     const title = cleanText(link.title || "Payment", 220);
@@ -98,8 +87,12 @@ export default async (req) => {
       updatedAt: new Date().toISOString(),
     };
 
+    const receiptAccess=await issueBuyerReceiptAccess(site.siteId,transactionId);
+    record.buyerReceiptHash=receiptAccess.hash;
+    const receiptReturn=`/pay/${encodeURIComponent(site.slug)}/${encodeURIComponent(link.token)}?checkout=success&receipt=${encodeURIComponent(receiptAccess.token)}`;
+
     if(provider === "ath_movil") {
-      return Response.json(await createAthCheckout(site,record,{lang:payload.lang,requestUrl:req.url,returnUrl:`/pay/${encodeURIComponent(site.slug)}/${encodeURIComponent(link.token)}`}),{headers:{"Cache-Control":"no-store"}});
+      return Response.json(await createAthCheckout(site,record,{lang:payload.lang,requestUrl:req.url,returnUrl:receiptReturn}),{headers:{"Cache-Control":"no-store"}});
     }
     const accountId = site.paymentRules?.stripeConnectedAccountId;
     if (!accountId || !site.paymentRules?.methods?.stripe) throw Object.assign(new Error("Stripe payments are not connected for this business."), { status: 409 });
@@ -108,7 +101,7 @@ export default async (req) => {
 
     const params = new URLSearchParams();
     params.set("mode", "payment");
-    params.set("success_url", `${publicBaseUrl()}/pay/${encodeURIComponent(site.slug)}/${encodeURIComponent(link.token)}?checkout=success&session_id={CHECKOUT_SESSION_ID}`);
+    params.set("success_url", `${publicBaseUrl()}${receiptReturn}&session_id={CHECKOUT_SESSION_ID}`);
     params.set("cancel_url", `${publicBaseUrl()}/pay/${encodeURIComponent(site.slug)}/${encodeURIComponent(link.token)}?checkout=cancelled`);
     params.set("customer_email", customer.email);
     params.set("client_reference_id", transactionId);
@@ -148,3 +141,12 @@ export default async (req) => {
 };
 
 export const config = { rateLimit: { windowLimit: 20, windowSize: 60, aggregateBy: ["ip"] } };
+
+export default createCheckoutAttemptHandler({performCheckout:performPaymentLinkCheckout,getSite:async payload=>{
+ const site=await getClientSiteBySlug(payload.slug);
+ if(!site||isBasicMembership(site)||!siteEntitlement(site).public)return null;
+ const link=await findPaymentLink(site.siteId,cleanText(payload.token,200));
+ if(!link||link.active===false)return null;
+ if(link.expiresAt&&Date.parse(link.expiresAt)<=Date.now())throw Object.assign(new Error('Payment link has expired.'),{status:410});
+ return site;
+},isAvailable:site=>!isBasicMembership(site)&&siteEntitlement(site).public,getStore:clientCommerceStore});

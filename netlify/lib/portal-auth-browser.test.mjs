@@ -34,7 +34,7 @@ async function browserAuth(t, responses, hash = "") {
     t.after(()=>descriptor ? Object.defineProperty(globalThis,key,descriptor) : delete globalThis[key]);
   }
   const source = await readFile(new URL("../../src/portal-auth.ts",import.meta.url),"utf8");
-  const compiled = ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText;
+  const compiled = ts.transpileModule(source.replace('../shared/http-client.mjs',new URL('../../shared/http-client.mjs',import.meta.url).href),{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText;
   const api = await import(`data:text/javascript;base64,${Buffer.from(compiled+`\n// test ${moduleId++}`).toString("base64")}`);
   return {api,requests,removed,historyCalls,channels};
 }
@@ -91,4 +91,17 @@ test("account changes in another tab clear the old account before reading the ne
   await new Promise(resolve=>setImmediate(resolve));
   assert.deepEqual(events[1],{event:"login_remote",user:{id:"new",email:"new@example.com"}});
   unsubscribe();
+});
+
+test('initial session observation cannot overwrite a newer login with a stale null result',async t=>{
+ let finishRefresh;
+ const deferred=new Promise(resolve=>{finishRefresh=()=>resolve(Response.json({ok:true}))});
+ const next={id:'new-user',email:'next@example.invalid',mfa:{required:false}};
+ const f=await browserAuth(t,[()=>deferred,{body:{ok:true}},{body:{ok:true,user:next}},{body:{ok:true,user:{id:'previous-user'}}}]);
+ const seen=[];let ready=0;
+ const stop=f.api.observePortalUser({onUser:user=>seen.push(user?.id||null),onReady:()=>ready++});
+ await new Promise(resolve=>setTimeout(resolve,0));
+ await f.api.login('next@example.invalid','synthetic-password');
+ finishRefresh();await new Promise(resolve=>setTimeout(resolve,20));
+ assert.deepEqual(seen,['new-user']);assert.equal(ready,1);stop();
 });

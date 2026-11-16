@@ -1,3 +1,4 @@
+import {requestJson} from '../shared/http-client.mjs'
 import {teamPhotoUrl} from '../shared/team-photo.mjs'
 import {publicSiteMusic} from '../shared/site-music.mjs'
 import {useEffect, useMemo, useState} from 'react'
@@ -31,12 +32,8 @@ export function existingBuilderState(site:any):BuilderState {
 export default function SiteRedesignBuilder({siteId,lang}:{siteId:string;lang:Lang}) {
   const fetch=useWorkspaceFetch(),practice=usePractice(),es=lang==='es'
   const [site,setSite]=useState<any>(null),[error,setError]=useState(''),[saving,setSaving]=useState(false)
-  const request=async(url:string,options?:RequestInit)=>{
-    const response=await fetch(url,{credentials:'include',cache:'no-store',...options})
-    const result=await response.json()
-    if(!response.ok||!result.ok)throw new Error(result.message||(es?'No se pudo completar la solicitud.':'The request could not be completed.'))
-    return result
-  }
+  const [reload,setReload]=useState(0)
+  const request=(url:string,options?:RequestInit)=>requestJson(url,{credentials:'include',...options},{fetcher:fetch,requireOk:true})
   useEffect(()=>{
     let active=true;setSite(null);setError('')
     request(`/.netlify/functions/client-admin?siteId=${encodeURIComponent(siteId)}`).then(result=>{
@@ -45,7 +42,7 @@ export default function SiteRedesignBuilder({siteId,lang}:{siteId:string;lang:La
       setSite(result.site)
     }).catch(error=>{if(active)setError(error instanceof Error?error.message:String(error))})
     return()=>{active=false}
-  },[siteId])
+  },[siteId,reload])
   const state=useMemo(()=>site?existingBuilderState(site):null,[site])
   const upload=async(file:File):Promise<BuilderAsset>=>{
     if(practice)throw new Error(es?'Los archivos no se suben durante Training.':'Uploads are disabled during Training.')
@@ -65,7 +62,7 @@ export default function SiteRedesignBuilder({siteId,lang}:{siteId:string;lang:La
       setSite(result.site);return existingBuilderState(result.site)
     }finally{setSaving(false)}
   }
-  if(!site||!state)return <section className="wf-redesign"><p role={error?'alert':'status'}>{error||(es?'Cargando Builder…':'Loading Builder…')}</p></section>
+  if(!site||!state)return <section className="wf-redesign"><p role={error?'alert':'status'}>{error||(es?'Cargando Builder…':'Loading Builder…')}</p>{error&&<><button type="button" className="ca-primary-link" onClick={()=>setReload(value=>value+1)}>{es?'Reintentar':'Retry'}</button><a href="/client-admin">{es?'Volver al portal':'Back to portal'}</a></>}</section>
   if(!['active','trialing','trial','complimentary'].includes(site.servicePlan?.subscriptionStatus))return <section className="wf-redesign"><h2>{es?'Se requiere una suscripción activa':'An active subscription is required'}</h2><a href="/client-admin">{es?'Volver al portal':'Back to portal'}</a></section>
   return <WebFactoryBuilder key={siteId} lang={lang} editing={{initialState:state,revision:site.revision,saving,timezone:site.settings?.timezone,teamBookingEnabled:site.settings?.teamBookingEnabled,publicUrl:`/sites/${site.slug}`,upload,publish}}/>
 }

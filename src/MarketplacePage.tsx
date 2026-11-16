@@ -1,5 +1,5 @@
 import MarketplaceSponsored from './MarketplaceSponsored'
-import {useEffect,useRef,useState,type FormEvent} from 'react'
+import {useEffect,useMemo,useRef,useState,type FormEvent} from 'react'
 import {ArrowRight,CarFront,ChevronLeft,ChevronRight,Flower2,HeartPulse,MapPin,PawPrint,Search,BriefcaseBusiness,Scissors,Store,Tag,UtensilsCrossed,Home,UserRound,X,Check,Compass} from 'lucide-react'
 import {AdaptiveLogo} from './theme'
 import MarketplaceHeader from './MarketplaceHeader'
@@ -24,7 +24,8 @@ export default function MarketplacePage({lang,setLang}:{lang:Language;setLang:(l
   if(scroll)requestAnimationFrame(()=>{results.current?.focus({preventScroll:true});results.current?.scrollIntoView({block:'start',behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'})})
  }
  const submit=(event:FormEvent)=>{event.preventDefault();apply(draft)}
- const visible=entries.filter(b=>(!filters.categoria||b.category===filters.categoria)&&(!filters.municipio||b.municipalities.includes(filters.municipio))&&(!filters.q||fold([b.name,b.nameEn,b.nameEs,b.description,b.descriptionEn,b.descriptionEs,b.categoryLabel,...b.services.map(i=>i.name+' '+i.nameEn+' '+i.nameEs)].join(' ')).includes(fold(filters.q))))
+ const searchIndex=useMemo(()=>entries.map(b=>({business:b,text:fold([b.name,b.nameEn,b.nameEs,b.description,b.descriptionEn,b.descriptionEs,b.categoryLabel,...b.services.map(i=>i.name+' '+i.nameEn+' '+i.nameEs)].join(' '))})),[entries])
+ const visible=useMemo(()=>{const query=fold(filters.q);return searchIndex.filter(({business:b,text})=>(!filters.categoria||b.category===filters.categoria)&&(!filters.municipio||b.municipalities.includes(filters.municipio))&&(!query||text.includes(query))).map(row=>row.business)},[searchIndex,filters])
  const filtered=Boolean(filters.q||filters.municipio||filters.categoria),selectedCategory=marketplaceCategories.find(item=>item.id===filters.categoria)
  return <div className="mk-root">
   <a className="mk-skip" href="#marketplace-content">{es?'Ir al contenido':'Skip to content'}</a>

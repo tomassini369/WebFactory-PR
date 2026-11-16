@@ -3,7 +3,7 @@ import {chromium,webkit} from 'playwright'
 import {mkdir,writeFile} from 'node:fs/promises'
 import assert from 'node:assert/strict'
 const port=Number(process.env.QA_PORT||5401),engine=process.env.QA_ENGINE==='webkit'?webkit:chromium,output=process.env.QA_OUTPUT||'/tmp/login-paint-before'
-const server=await preview({root:process.env.QA_ROOT||process.cwd(),preview:{host:'127.0.0.1',port,strictPort:true}}),browser=await engine.launch(engine===chromium&&process.env.QA_CHROMIUM_PATH?{executablePath:process.env.QA_CHROMIUM_PATH,args:['--no-sandbox']}:undefined);await mkdir(output,{recursive:true});const results=[]
+const server=await preview({root:process.env.QA_ROOT||process.cwd(),preview:{host:'127.0.0.1',port,strictPort:true}}),browser=await engine.launch(engine===chromium&&process.env.QA_CHROMIUM_PATH?{executablePath:process.env.QA_CHROMIUM_PATH,args:['--no-sandbox']}:engine===webkit&&process.env.QA_WEBKIT_PATH?{executablePath:process.env.QA_WEBKIT_PATH}:undefined);await mkdir(output,{recursive:true});const results=[]
 async function snapshot(page){return page.evaluate(()=>{
  const card=[...document.querySelectorAll('.ca-login,.wfa-login,.mk-auth-card')].find(e=>e.getBoundingClientRect().width&&getComputedStyle(e).display!=='none');if(!card)return null
  const box=e=>{const r=e.getBoundingClientRect();return {x:r.x,y:r.y,width:r.width,height:r.height}},style=e=>{if(!e)return null;const s=getComputedStyle(e);return {box:box(e),background:s.backgroundColor,color:s.color,shadow:s.boxShadow,border:s.border,borderRadius:s.borderRadius,font:s.font,opacity:s.opacity,appearance:s.appearance,padding:s.padding}}

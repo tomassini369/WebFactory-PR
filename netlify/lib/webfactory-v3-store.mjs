@@ -1,3 +1,4 @@
+import {listIndexedV3Records,findIndexedPaymentLink} from './v3-record-index.mjs';
 import { clientCommerceStore } from "./client-store.mjs";
 import { cleanText } from "./platform-utils.mjs";
 
@@ -31,17 +32,10 @@ export async function putV3Record(siteId, collection, id, value) {
   return record;
 }
 
-export async function listV3Records(siteId, collection, { limit = 250 } = {}) {
-  const site = safeSiteId(siteId);
-  const group = cleanText(collection, 80).replace(/[^a-zA-Z0-9_-]/g, "");
-  if (!group) throw new Error("Invalid V3 collection.");
-  const result = await clientCommerceStore().list({ prefix: `${site}/v3/${group}/` });
-  const rows = [];
-  for (const blob of result.blobs || []) {
-    const value = await clientCommerceStore().get(blob.key, { type: "json" });
-    if (value?.siteId === site) rows.push(value);
-  }
-  return rows
-    .sort((a, b) => Date.parse(b.updatedAt || b.createdAt || "") - Date.parse(a.updatedAt || a.createdAt || ""))
-    .slice(0, Math.max(1, Math.min(1000, Number(limit) || 250)));
+export async function listV3RecordsPage(siteId,collection,options={}){
+ const site=safeSiteId(siteId),group=cleanText(collection,80).replace(/[^a-zA-Z0-9_-]/g,'');
+ if(!group)throw new Error('Invalid V3 collection.');
+ return listIndexedV3Records(clientCommerceStore(),site,group,options);
 }
+export async function listV3Records(siteId,collection,options={}){return (await listV3RecordsPage(siteId,collection,options)).records;}
+export const findPaymentLink=(siteId,token)=>findIndexedPaymentLink(clientCommerceStore(),safeSiteId(siteId),token);

@@ -5,7 +5,7 @@ import { cleanText } from "../lib/platform-utils.mjs";
 import { createCustomerRecord, createInventoryMovement, createPaymentLinkRecord } from "../lib/webfactory-v3-domain.mjs";
 import { sendBusinessEmail } from "../lib/business-email.mjs";
 import { renderCommerceEmail } from "../lib/commerce-email-template.mjs";
-import { getV3Record, listV3Records, putV3Record } from "../lib/webfactory-v3-store.mjs";
+import { getV3Record, listV3RecordsPage, putV3Record } from "../lib/webfactory-v3-store.mjs";
 
 const allowedCollections = new Set(["customers", "payment-links", "receipts", "inventory-movements", "review-requests"]);
 const collectionCapability = { customers: "customers", "payment-links": "payments", receipts: "payments", "inventory-movements": "catalog", "review-requests": "marketing" };
@@ -21,8 +21,8 @@ export default async (req) => {
         throw Object.assign(new Error("Invalid V3 collection."), { status: 400 });
       }
       await requireSiteCapability(siteId, collectionCapability[collection] || "overview");
-      const records = await listV3Records(siteId, collection, { limit: Number(url.searchParams.get("limit") || 250) });
-      return Response.json({ ok: true, records }, { headers: { "Cache-Control": "no-store" } });
+      const page = await listV3RecordsPage(siteId, collection, { limit: Number(url.searchParams.get("limit") || 250),cursor:url.searchParams.get("cursor")||'' });
+      return Response.json({ ok: true, ...page }, { headers: { "Cache-Control": "no-store" } });
     }
 
     if (req.method !== "POST") {
