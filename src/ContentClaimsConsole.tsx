@@ -1,7 +1,7 @@
 import './content-claims-console.css'
 import {useEffect,useRef,useState,type FormEvent} from 'react'
 import {PortalPanel} from './PortalPanel'
-import {withAuthRetry} from './auth-retry'
+import {requestJson} from '../shared/http-client.mjs'
 
 type Summary={id:string;siteId:string;status:string;createdAt:number;updatedAt:number;hasCounter?:boolean}
 type Claim=Summary&{revision:number;work:string;contentUrl:string;statement:string;counterSubmitted?:boolean;claimant?:{name:string;email:string;phone:string;address:string};counter?:Record<string,unknown>;history:Array<{action:string;at:number;actor?:string;reason?:string}>}
@@ -13,9 +13,8 @@ export default function ContentClaimsConsole({lang,siteId}:{lang:'es'|'en';siteI
  const revision=useRef(0),gate=useRef(false)
  const label=(value:string)=>statuses[value]?.[es?0:1]||value
  const date=(value:number)=>Number.isFinite(value)?new Date(value).toLocaleString(es?'es-PR':'en-US'):'—'
- async function request(query:string,body?:Record<string,unknown>){
-  return withAuthRetry(async()=>{const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),15000);try{const response=await fetch('/.netlify/functions/content-claims'+query,{method:body?'POST':'GET',credentials:'same-origin',cache:'no-store',signal:controller.signal,...(body?{headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}:{})});const result=await response.json();if(!response.ok||result.ok!==true)throw Error(result.message||t('No se pudo consultar el caso.','Unable to access this case.'));return result}finally{clearTimeout(timer)}})
- }
+ const request=(query:string,body?:Record<string,unknown>)=>requestJson('/.netlify/functions/content-claims'+query,{method:body?'POST':'GET',...(body?{headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}:{})},{requireOk:true,errorMessage:t('No se pudo consultar el caso.','Unable to access this case.')})
+
  const query=(id?:string)=>{const params=new URLSearchParams();if(siteId)params.set('siteId',siteId);if(id)params.set('id',id);return params.size?'?'+params.toString():''}
  async function load(id?:string){if(gate.current)return;gate.current=true;const current=++revision.current;setBusy(true);setError('');setMessage('');setClaim(null);try{const result=await request(query(id));if(current!==revision.current)return;if(id)setClaim(result.claim);else{if(!Array.isArray(result.claims))throw Error(t('No se pudo validar la lista de casos. Intenta nuevamente.','The case list could not be validated. Please retry.'));setRows(result.claims);setLoaded(true)}}catch(e){if(current===revision.current){setRows([]);setError(e instanceof Error?e.message:t('Intenta nuevamente.','Please retry.'))}}finally{if(current===revision.current)setBusy(false);gate.current=false}}
  useEffect(()=>{void load();return()=>{revision.current++;gate.current=false}},[siteId])

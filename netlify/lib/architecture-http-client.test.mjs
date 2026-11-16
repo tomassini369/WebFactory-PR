@@ -1,0 +1,27 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {requestJson,HttpError} from '../../shared/http-client.mjs';
+import {createDraftWriter} from '../../shared/draft-writer.mjs';
+import {effectiveBusinessSchedule} from '../../shared/business-hours.mjs';
+for(const method of ['POST','PATCH','DELETE'])test(`${method} never repeats a lost response`,async()=>{let writes=0;await assert.rejects(requestJson('/fixture',{method},{retry:true,fetcher:async()=>{writes++;throw new TypeError('Failed to fetch')}}),{code:'NETWORK_ERROR'});assert.equal(writes,1)});
+for(const value of [null,[],42,'invalid'])test(`malformed JSON ${JSON.stringify(value)} is friendly and never retried`,async()=>{let reads=0;await assert.rejects(requestJson('/fixture',{}, {retry:true,fetcher:async()=>{reads++;return Response.json(value)}}),error=>error instanceof HttpError&&error.code==='INVALID_RESPONSE'&&!error.message.includes('properties'));assert.equal(reads,1)});
+test('HTML gateway failures do not expose parser errors',async()=>{await assert.rejects(requestJson('/fixture',{}, {fetcher:async()=>new Response('<html>private proxy trace</html>',{status:502})}),error=>error.status===502&&!error.message.includes('private proxy trace')&&!error.message.includes('Unexpected token'))});
+test('a stalled request has a deadline and aborts its transport once',async()=>{let signal,calls=0;await assert.rejects(requestJson('/fixture',{method:'POST'},{timeoutMs:10,fetcher:async(_url,init)=>{calls++;signal=init.signal;return new Promise(()=>{})}}),{code:'REQUEST_TIMEOUT'});assert(signal.aborted);assert.equal(calls,1)});
+test('deadline covers a response body that never finishes',async()=>{await assert.rejects(requestJson('/fixture',{method:'POST'},{timeoutMs:10,fetcher:async()=>({ok:true,json:()=>new Promise(()=>{})})}),{code:'REQUEST_TIMEOUT'})});
+test('aborted reads do not send, retry, or reject an unobserved promise',async()=>{const controller=new AbortController();controller.abort();let calls=0;await assert.rejects(requestJson('/fixture',{signal:controller.signal},{retry:true,fetcher:async()=>{calls++;return Response.json({ok:true})}}),{name:'AbortError'});assert.equal(calls,0)});
+test('read retries require explicit opt in',async()=>{let calls=0;await assert.rejects(requestJson('/fixture',{}, {fetcher:async()=>{calls++;return Response.json({ok:false},{status:503})}}),{status:503});assert.equal(calls,1)});
+test('status and application error codes survive the common client',async()=>{await assert.rejects(requestJson('/fixture',{}, {fetcher:async()=>Response.json({ok:false,code:'REVISION_CONFLICT',message:'Reload before saving.'},{status:409})}),{status:409,code:'REVISION_CONFLICT'})});
+test('draft typing coalesces writes and flush commits the last edit exactly once',()=>{const timers=new Map(),saved=[];let next=0;const writer=createDraftWriter(value=>saved.push(value),{setTimer:callback=>{timers.set(++next,callback);return next},clearTimer:id=>timers.delete(id)});for(let i=0;i<20;i++)writer.schedule({name:String(i)});assert.equal(saved.length,0);assert.equal(timers.size,1);writer.flush();writer.flush();assert.deepEqual(saved,[{name:'19'}]);assert.equal(timers.size,0)});
+test('draft cancel cannot write into another workspace',()=>{let callback,writes=0;const writer=createDraftWriter(()=>writes++,{setTimer:fn=>{callback=fn},clearTimer:()=>{}});writer.schedule('old');writer.cancel();callback();assert.equal(writes,0)});
+test('calendar and booking engine respect business closure and Spanish-first aliases',()=>{const site={hours:{Lunes:{enabled:false,open:'09:00',close:'17:00'},Monday:{enabled:true,open:'09:00',close:'17:00'}},business:{locations:[]}};const person={schedule:{Monday:{enabled:true,open:'08:00',close:'18:00'}}};assert.equal(effectiveBusinessSchedule(site,person,'','Monday'),null);assert.equal(effectiveBusinessSchedule(site,person,'','Lunes'),null)});
+test('effective hours intersect branch and professional limits and preserve every break',()=>{const site={hours:{Lunes:{enabled:true,open:'09:00',close:'18:00',breaks:[{start:'12:00',end:'12:30'}]}},business:{locations:[{id:'one',hours:{Monday:{enabled:true,open:'10:00',close:'17:00'}}}]}};const person={schedule:{Monday:{enabled:true,open:'08:00',close:'16:00',breaks:[{start:'14:00',end:'14:30'}]}}};assert.deepEqual(effectiveBusinessSchedule(site,person,'one','Lunes'),{enabled:true,open:'10:00',close:'16:00',breaks:[{start:'12:00',end:'12:30'},{start:'14:00',end:'14:30'}]})});
+
+test('a Request object retains its POST classification even with read retries enabled',async()=>{let calls=0;await assert.rejects(requestJson(new Request('https://synthetic.invalid',{method:'POST',body:'{}'}),{},{retry:true,fetcher:async()=>{calls++;throw new TypeError('Failed to fetch')}}),{code:'NETWORK_ERROR'});assert.equal(calls,1)});
+
+test('legacy opaque retry callbacks cannot repeat a write by default',async()=>{
+ const {readFile}=await import('node:fs/promises'),{default:ts}=await import('typescript');
+ const source=await readFile(new URL('../../src/auth-retry.ts',import.meta.url),'utf8');
+ const code=ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText;
+ const {withAuthRetry}=await import('data:text/javascript;base64,'+Buffer.from(code).toString('base64'));
+ let writes=0;await assert.rejects(withAuthRetry(async()=>{writes++;throw new TypeError('Failed to fetch')}));assert.equal(writes,1);
+});

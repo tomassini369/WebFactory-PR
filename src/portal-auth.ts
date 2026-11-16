@@ -1,3 +1,4 @@
+import {requestJson} from '../shared/http-client.mjs'
 import type { User as IdentityUser } from '@netlify/identity'
 export type User=IdentityUser & {mfa?:{required:boolean;policyRequired?:boolean;enrolled:boolean;verified:boolean;needsLogin:boolean;authenticatorEnrolled?:boolean;authenticatorAvailable?:boolean;credentials?:Array<{id:string;label:string;createdAt:string}>;recoveryCodesRemaining?:number}}
 
@@ -17,12 +18,10 @@ function clearLegacySession() {
 }
 
 async function authRequest(path:string,payload?:Record<string,string>):Promise<AuthResult> {
-  const response=await fetch(`/.netlify/functions/${path}`, {
+  return requestJson(`/.netlify/functions/${path}`, {
     method:payload?'POST':'GET', credentials:'same-origin', cache:'no-store',
     ...(payload?{headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}:{}),
-  })
-  if(!response.ok)throw new Error('Unable to complete authentication. Please try again later.')
-  return response.json() as Promise<AuthResult>
+  },{requireOk:true,errorMessage:'No se pudo verificar el acceso. Intenta nuevamente. / Unable to verify access. Please try again.'}) as Promise<AuthResult>
 }
 
 function broadcast(event:string,user:User|null) {
@@ -139,3 +138,12 @@ export function onAuthChange(callback:(event:string,user:User|null)=>void):()=>v
 }
 
 export async function refreshPortalUser(){const user=await getUser();broadcast('login',user);return user}
+
+// A completed older read cannot override a newer login/logout notification.
+export function observePortalUser({onUser,onError,onReady}:{onUser:(user:User|null)=>void;onError?:(error:unknown)=>void;onReady?:()=>void}){
+ let active=true,generation=0
+ const stop=onAuthChange((_event,user)=>{generation++;if(active){onUser(user);onReady?.()}})
+ const initial=generation
+ void getUser().then(user=>{if(active&&generation===initial)onUser(user)}).catch(error=>{if(active&&generation===initial)onError?.(error)}).finally(()=>{if(active&&generation===initial)onReady?.()})
+ return()=>{active=false;generation++;stop()}
+}

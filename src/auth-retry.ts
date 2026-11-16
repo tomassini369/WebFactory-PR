@@ -1,3 +1,4 @@
+// Opaque operations may write: retries require an explicit read-only caller.
 const delay=(milliseconds:number)=>new Promise(resolve=>window.setTimeout(resolve,milliseconds))
 
 function retryable(error:unknown){
@@ -5,7 +6,7 @@ function retryable(error:unknown){
   return error instanceof TypeError||/load failed|failed to fetch|network|timeout|authentication required/i.test(message)
 }
 
-export async function withAuthRetry<T>(operation:()=>Promise<T>,attempts=5){
+export async function withAuthRetry<T>(operation:()=>Promise<T>,attempts=1){
   let lastError:unknown
   for(let attempt=0;attempt<attempts;attempt+=1){
     try{return await operation()}catch(error){

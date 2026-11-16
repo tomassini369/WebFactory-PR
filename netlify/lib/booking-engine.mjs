@@ -1,3 +1,5 @@
+import {daySchedule,effectiveBusinessSchedule as effectiveSchedule} from '../../shared/business-hours.mjs';
+export {daySchedule};
 import {teamBookingId} from '../../shared/team-booking.mjs';
 import {basicProfessional,isBasicMembership} from "../../shared/membership-plans.mjs";
 import {isBusinessTime} from '../../shared/business-hours.mjs';
@@ -52,16 +54,6 @@ function bookingServiceAndEmployee(site, serviceId, employeeId, locationId = "")
   return { service, employee };
 }
 
-const EN_DAYS = {Domingo:'Sunday',Lunes:'Monday',Martes:'Tuesday','Miércoles':'Wednesday',Jueves:'Thursday',Viernes:'Friday','Sábado':'Saturday'};
-export function daySchedule(hours, day) {return hours?.[day] ?? hours?.[EN_DAYS[day]];}
-function effectiveSchedule(site,employee,locationId,day) {
-  const location=(site.business?.locations || []).find(location=>location.id===locationId);
-  const schedules=[daySchedule(site.hours,day),daySchedule(location?.hours,day),daySchedule(employee.schedule,day)].filter(Boolean);
-  if (!schedules.length || schedules.some(schedule=>!schedule.enabled)) return null;
-  const open=schedules.map(schedule=>schedule.open || '09:00').sort().at(-1),close=schedules.map(schedule=>schedule.close || '17:00').sort()[0];
-  if (open>=close) return null;
-  return {enabled:true,open,close,breaks:schedules.flatMap(schedule=>schedule.breaks || [])};
-}
 function localDayEnd(date,timeZone) {
   const next=new Date(date+'T12:00:00Z');next.setUTCDate(next.getUTCDate()+1);
   return zonedToUtc(next.toISOString().slice(0,10),'00:00',timeZone).getTime();

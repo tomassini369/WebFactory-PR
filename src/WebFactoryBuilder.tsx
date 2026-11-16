@@ -1,3 +1,5 @@
+import {requestJson} from '../shared/http-client.mjs'
+import {createDraftWriter} from '../shared/draft-writer.mjs'
 import {membershipTrialDays} from '../shared/membership-plans.mjs'
 import {SocialLinksEditor} from './SiteMediaEditor'
 import {businessSocialLinks} from '../shared/social-links.mjs'
@@ -332,14 +334,11 @@ const uploadOrderAsset = async (file:File,itemId:string,practice=false) => {
   form.append('draftId',getDraftId())
   form.append('itemId',itemId)
   form.append('file',file)
-  const response = await fetch('/.netlify/functions/upload-builder-asset',{
+  const result = await requestJson('/.netlify/functions/upload-builder-asset',{
     method:'POST',
     body:form,
-  })
-  const result = await response.json()
-  if (!response.ok || !result.ok) {
-    throw new Error(result.message || 'No se pudo guardar el archivo.')
-  }
+  },{requireOk:true,timeoutMs:60000})
+  if(typeof result.assetKey!=='string'||!result.assetKey)throw new Error('No se pudo validar el archivo. / The uploaded file could not be validated.')
   return result as {assetKey:string;fileName:string;contentType:string;size:number}
 }
 
@@ -982,7 +981,7 @@ function FinalStep({state,setStep,lang,complimentaryInviteToken,trialInviteToken
     try {
       const {logo,...business} = state.business
       const catalog = state.catalog.map(({image,...item})=>item)
-      const response = await fetch('/.netlify/functions/request-saas-site',{
+      const result = await requestJson('/.netlify/functions/request-saas-site',{
         method:'POST',
         headers:{'Content-Type':'application/json'},
         body:JSON.stringify({
@@ -1007,11 +1006,7 @@ function FinalStep({state,setStep,lang,complimentaryInviteToken,trialInviteToken
             payments:state.payments,
           },
         }),
-      })
-      const result = await response.json()
-      if(!response.ok || !result.ok){
-        throw new Error(result.message || (lang==='es'?'No se pudo preparar tu acceso.':'Your access could not be prepared.'))
-      }
+      },{fetcher:fetch,requireOk:true})
       setCreated({portalUrl:result.portalUrl,publicUrl:result.publicUrl})
       feedback.success()
     } catch (error) {
@@ -1148,23 +1143,12 @@ export default function WebFactoryBuilder({lang,editing}:{lang:Language;editing?
       .catch((error)=>setComplimentaryInviteError(error instanceof Error?error.message:String(error)))
   },[])
 
-  useEffect(()=>{
-    if(editing)return
-    if(practice){practice.setUi('builder',state);setSaved(true);return}
-    try {
-      const persistentState = {
-        ...state,
-        business: {...state.business,logo:undefined,hero:undefined,gallery:undefined},
-        catalog: state.catalog.map((item)=>({...item,image:undefined})),
-      }
-      localStorage.setItem(STORAGE_KEY,JSON.stringify(persistentState))
-      setSaved(true)
-      setDraftError(false)
-    } catch {
-      setSaved(false)
-      setDraftError(true)
-    }
-  },[state])
+  const draftWriter=useMemo(()=>createDraftWriter<BuilderState>(value=>{
+    try{const persistentState={...value,business:{...value.business,logo:undefined,hero:undefined,gallery:undefined},catalog:value.catalog.map(item=>({...item,image:undefined}))};localStorage.setItem(STORAGE_KEY,JSON.stringify(persistentState));setSaved(true);setDraftError(false)}
+    catch{setSaved(false);setDraftError(true)}
+  }),[])
+  useLayoutEffect(()=>{if(editing)return;if(practice){practice.setUi('builder',state);setSaved(true);return}setSaved(false);draftWriter.schedule(state)},[state])
+  useEffect(()=>{if(editing||practice)return;const flush=()=>draftWriter.flush();const hidden=()=>{if(document.visibilityState==='hidden')flush()};window.addEventListener('pagehide',flush);window.addEventListener('beforeunload',flush);document.addEventListener('visibilitychange',hidden);return()=>{flush();window.removeEventListener('pagehide',flush);window.removeEventListener('beforeunload',flush);document.removeEventListener('visibilitychange',hidden)}},[draftWriter,editing,practice])
 
   const dirty=useUnsavedChanges(editing?state:undefined,editing?.revision,original=>setState(original),lang,editing?.initialState)
   const publish=async()=>{

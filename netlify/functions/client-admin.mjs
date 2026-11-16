@@ -386,8 +386,8 @@ export default async (req) => {
       for(const member of value) if(uploads.has(member.id)) member.photoAssetKey=uploads.get(member.id);
       await validateTeamPhotos(site,value);
     }
-    if(['catalog','employees'].includes(section)&&!Number.isInteger(payload.revision))throw Object.assign(new Error('Reload the portal before editing the catalog.'),{status:409});
-    const updated = await patchClientSite(site.siteId, { [section]: value },['catalog','employees'].includes(section)?{expectedRevision:payload.revision}:{});
+    if(!Number.isSafeInteger(payload.revision))throw Object.assign(new Error('Reload the portal before saving these changes.'),{status:409});
+    const updated = await patchClientSite(site.siteId, { [section]: value },{expectedRevision:payload.revision});
     return Response.json({ ok: true, site: updated, publicSite: publicClientSite(updated) }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
     if (typeof error?.code === 'string' && /^SLUG_[A-Z_]+$/.test(error.code)) return Response.json({ ok: false, code: error.code, message: error.status >= 500 ? 'The change could not be confirmed. Reload before retrying.' : error.message }, { status: error.status, headers: { 'Cache-Control': 'no-store' } });

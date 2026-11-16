@@ -73,3 +73,13 @@ test('unchanged legacy assets and private integrations survive unrelated Builder
  const f=fixture(t);await f.prepare();const site={...f.a,business:{...f.a.business,logoAssetKey:'legacy/logo',heroAssetKey:'legacy/hero',galleryAssetKeys:['legacy/gallery']},paymentRules:{...f.a.paymentRules,stripe:{accountId:'preserve-account'},ath:{token:'preserve-private-token'}}};const value=draft(site);value.business.heroAssetKey=site.business.heroAssetKey;value.business.galleryAssets=[{assetKey:'legacy/gallery'}];value.payments.stripe={accountId:'untrusted'};value.payments.ath={token:'untrusted'};
  const patch=await normalizeBuilderUpdate(site,value,{},{} ,async()=>{throw new Error('Existing assets need no reupload')});assert.equal(patch.business.heroAssetKey,'legacy/hero');assert.equal(patch.paymentRules.stripe.accountId,'preserve-account');assert.equal(patch.paymentRules.ath.token,'preserve-private-token');
 });
+
+test('all settings edits reject missing and stale client revisions without overwriting another edit',async t=>{
+ const f=fixture(t);await f.prepare();
+ const sections={hours:{Lunes:{enabled:true,open:'09:00',close:'17:00'}},business:{name:'stale'},features:{products:true},design:{primary:'#123456'},settings:{timezone:'America/Puerto_Rico'},paymentRules:{}};
+ for(const [section,value]of Object.entries(sections))for(const revision of [undefined,2]){
+  const req=new Request('https://pos.example.invalid/.netlify/functions/client-admin',{method:'PATCH',headers:{Origin:'https://pos.example.invalid','Content-Type':'application/json'},body:JSON.stringify({siteId:f.a.siteId,section,value,revision})});
+  const response=await handler(req);assert.equal(response.status,409,section+' '+await response.text());
+ }
+ assert.equal((await getClientSite(f.a.siteId)).revision,3);
+});

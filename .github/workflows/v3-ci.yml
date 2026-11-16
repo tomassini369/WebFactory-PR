@@ -355,7 +355,7 @@ jobs:
 
   # Preserve the existing required check name while all suites finish independently.
   verify:
-    needs: verify-suite
+    needs: [verify-suite, architecture-reliability]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -363,7 +363,8 @@ jobs:
       - name: Require every verification suite to pass
         env:
           SUITE_RESULT: ${{ needs.verify-suite.result }}
-        run: test "$SUITE_RESULT" = success
+          ARCHITECTURE_RESULT: ${{ needs.architecture-reliability.result }}
+        run: test "$SUITE_RESULT" = success && test "$ARCHITECTURE_RESULT" = success
 
   kiosk-skins:
     runs-on: ubuntu-24.04
@@ -486,6 +487,44 @@ jobs:
             /tmp/webfactory-platform-audit-fixes/
             /tmp/builder-audit-regressions/
             /tmp/builder-audit-preview.log
+
+  architecture-reliability:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: npm ci
+      - run: python -m pip install playwright==1.62.0
+      - run: npx playwright install --with-deps chromium webkit
+      - name: Build production architecture regressions
+        env:
+          CONTEXT: production
+        run: npm run build
+      - name: Check all architecture faults on both engines and seven widths
+        shell: bash
+        run: |
+          npm run preview -- --host 127.0.0.1 --port 5470 > /tmp/architecture-server.log 2>&1 &
+          preview_pid=$!
+          trap 'kill "$preview_pid" 2>/dev/null || true' EXIT
+          for attempt in {1..30}; do
+            if curl -fsS http://127.0.0.1:5470/ -o /dev/null; then break; fi
+            sleep 1
+          done
+          python scripts/browser-architecture-reliability.py --base http://127.0.0.1:5470 --out /tmp/architecture-reliability
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: architecture-reliability
+          path: |
+            /tmp/architecture-reliability/
+            /tmp/architecture-server.log
 
   kiosk-bookings:
     runs-on: ubuntu-24.04
@@ -620,6 +659,21 @@ jobs:
               cat "$log"
             done
           done
+      - name: Use Python for deployed architecture regressions
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install Python browser client
+        run: python -m pip install playwright==1.62.0
+      - name: Check deployed architecture recovery and verified payment states
+        env:
+          PREVIEW_URL: https://deploy-preview-${{ github.event.pull_request.number }}--webfactorypr.netlify.app
+        run: python scripts/browser-architecture-reliability.py --base "$PREVIEW_URL" --widths 390 1440 --out /tmp/architecture-preview
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: architecture-preview
+          path: /tmp/architecture-preview/
       - name: Check deployed commercial authentication boundaries
         env:
           PREVIEW_URL: https://deploy-preview-${{ github.event.pull_request.number }}--webfactorypr.netlify.app

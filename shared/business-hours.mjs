@@ -27,3 +27,16 @@ export function businessHoursRows(hours={}){
 export function completeBusinessHours(hours={}){
  return {...hours,...Object.fromEntries(businessHoursRows(hours).map(row=>[row.key,row.hours]))};
 }
+
+export function daySchedule(hours,day){
+ const names=BUSINESS_WEEK.find(entry=>entry.es===day||entry.en===day);
+ return names?(hours?.[names.es]??hours?.[names.en]):undefined;
+}
+export function effectiveBusinessSchedule(site,employee,locationId,day){
+ const location=(site.business?.locations||[]).find(row=>row.id===locationId);
+ const schedules=[daySchedule(site.hours,day),daySchedule(location?.hours,day),daySchedule(employee?.schedule,day)].filter(Boolean);
+ if(!schedules.length||schedules.some(row=>!row.enabled))return null;
+ const open=schedules.map(row=>row.open||'09:00').sort().at(-1),close=schedules.map(row=>row.close||'17:00').sort()[0];
+ if(!isBusinessTime(open)||!isBusinessTime(close)||open>=close)return null;
+ return {enabled:true,open,close,breaks:schedules.flatMap(row=>row.breaks||[])};
+}

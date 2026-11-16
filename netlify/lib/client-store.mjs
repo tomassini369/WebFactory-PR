@@ -1,3 +1,4 @@
+import {withV3RecordIndex} from './v3-record-index.mjs';
 import {teamPhotoUrl} from "../../shared/team-photo.mjs";
 import {basicProfessional,isBasicMembership} from "../../shared/membership-plans.mjs";
 import {publicSiteMusic} from "../../shared/site-music.mjs";
@@ -24,7 +25,7 @@ function scopedStore(name) {
 export const clientSiteStore = () => scopedStore("webfactory-client-sites");
 export const clientAssetStore = () => scopedStore("webfactory-client-assets");
 export const clientOrderTurnIndexStore = () => scopedStore("webfactory-order-turn-index");
-export const clientCommerceStore = () => indexedCommerceStore(withOrderTurnIndex(scopedStore("webfactory-client-commerce"), clientOrderTurnIndexStore));
+export const clientCommerceStore = () => indexedCommerceStore(withOrderTurnIndex(withV3RecordIndex(scopedStore("webfactory-client-commerce")), clientOrderTurnIndexStore));
 export const clientEventStore = () => scopedStore("webfactory-client-events");
 export const clientBackupStore = () => scopedStore("webfactory-client-backups");
 export const clientOAuthStore = () => scopedStore("webfactory-client-oauth");

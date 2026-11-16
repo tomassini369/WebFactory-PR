@@ -1,10 +1,11 @@
 import {useEffect,useRef,useState,type FormEvent} from 'react'
 import {startVisiblePolling} from './visible-polling'
-import {withAuthRetry} from './auth-retry'
+import {requestJson} from '../shared/http-client.mjs'
 import {PortalPanel} from './PortalPanel'
 import './content-claims-console.css'
 export type Campaign={id:string;siteId:string;slug:string;title:string;body:string;status:string;moderation:string;revision:number;offer:{amount:number;days:number;terms:string};endsAt:number|null;reason:string}
-export async function adRequest(query:string,body?:Record<string,unknown>){return withAuthRetry(async()=>{const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),15000);try{const response=await fetch('/.netlify/functions/marketplace-ads'+query,{method:body?'POST':'GET',credentials:'same-origin',cache:'no-store',signal:controller.signal,...(body?{headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}:{})});const result=await response.json();if(!response.ok||result.ok!==true)throw Error(result.message||'Request unavailable');return result}finally{clearTimeout(timer)}})}
+export async function adRequest(query:string,body?:Record<string,unknown>){return requestJson('/.netlify/functions/marketplace-ads'+query,{method:body?'POST':'GET',...(body?{headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}:{})},{requireOk:true})}
+
 export default function MarketplaceAdvertising({siteId,slug,lang}:{siteId:string;slug:string;lang:'es'|'en'}){
  const es=lang==='es',[offer,setOffer]=useState<{version:string;amount:number;days:number;terms:string}|null>(null),[rows,setRows]=useState<Campaign[]>([]),[loaded,setLoaded]=useState(false),[busy,setBusy]=useState(false),[error,setError]=useState(''),[message,setMessage]=useState(''),[accepted,setAccepted]=useState(false)
  const labels:Record<string,[string,string]>={pending_review:['Pendiente de revisión','Pending review'],approved:['Aprobado; sin pagar','Approved; unpaid'],checkout_pending:['Pago pendiente','Payment pending'],paid:['Pagado','Paid'],paused:['Pausado','Paused'],rejected:['Rechazado','Rejected'],payment_failed:['Pago fallido','Payment failed'],expired:['Checkout expirado','Checkout expired'],payment_reversed:['Pago revertido o disputado','Reversed or disputed payment'],cancelled:['Cerrado sin pago','Closed unpaid']}
