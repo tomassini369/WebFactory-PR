@@ -64,3 +64,17 @@ Final command results, head SHA and Deploy Preview evidence are recorded in the
 release PR. Browser sizes are emulation, not physical-device acceptance. Passing
 fixtures do not certify live provider credentials or guarantee that future bugs
 cannot occur.
+
+## Additional failures exposed by the complete CI run
+
+The agenda's index-status panel now validates status and progress before setting
+render state. Missing state or a malformed counter shows a local error with a
+read-only retry; it cannot take down the booking workspace. The native fault
+suite covers both malformed variants and recovery on Chromium and WebKit.
+
+Existing smoke fixtures are aligned with the actual three-plan membership UI
+and current social-link editor. Pricing assertions use the canonical shared
+monthly/annual amounts; responsive containment remains checked for all cards.
+Commercial-access fixtures explicitly simulate the owner's calendar read and
+reject that read for employees. Login CI now annotates failed subtest logs so
+individual failures remain diagnosable when hosted raw logs are unavailable.

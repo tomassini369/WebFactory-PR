@@ -30,11 +30,16 @@ try {
         }))
         assert(craft.height >= 95, `${width}: feature card readable`)
         assert(craft.layout === 'grid' || craft.layout === 'flex', `${width}: feature layout`)
-        const price = await page.locator('.wf-price').evaluate(el => ({
+        const disclosure = page.locator('.wf-membership-toggle')
+        const collapsible = await disclosure.isVisible()
+        if (collapsible) await disclosure.click()
+        const prices = await page.locator('#planes .card-price').evaluateAll(elements => elements.map(el => ({
           width: el.getBoundingClientRect().width,
           parentWidth: el.parentElement?.getBoundingClientRect().width || 0,
-        }))
-        assert(price.width > 0 && price.width <= price.parentWidth, `${width}: price card containment`)
+        })))
+        assert.equal(prices.length, 3, `${width}: all membership prices present`)
+        for (const price of prices) assert(price.width > 0 && price.width <= price.parentWidth, `${width}: price card containment`)
+        if (collapsible) await disclosure.click()
         const controls = await page.locator('.wf-h-actions button,.wf-h-login').evaluateAll(elements => elements.map(el => {
           const r = el.getBoundingClientRect(); return { x:r.x,y:r.y,right:r.right,bottom:r.bottom,width:r.width,height:r.height }
         }).filter(r => r.width && r.height))

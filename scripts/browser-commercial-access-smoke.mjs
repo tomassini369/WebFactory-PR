@@ -25,6 +25,7 @@ try{
    if(name==='dashboard-appearance')body={ok:true,prefs:{},hasCustom:false};
    else if(name==='portal-profile'){assert(['GET','PUT'].includes(request.method()));const preferences=request.method()==='PUT'?request.postDataJSON():{};body={ok:true,profile:{name:'',phone:'',language:preferences.language||null,theme:preferences.theme||null},hasPhoto:false,revision:0,version:'isolated-profile-fixture'}}
    else if(name==='portal-session')body={ok:true,user}
+   else if(name==='google-calendar-status'){assert.equal(role,'owner');assert.equal(request.method(),'GET');assert.equal(url.searchParams.get('siteId'),site.siteId);body={ok:true,configured:false,calendars:[]}}
    else if(name==='client-admin'){
     if(request.method()==='PATCH')throw Error('Unexpected general settings mutation')
     body=url.searchParams.has('siteId')?{ok:true,site:employeeSiteView(site,member),membership:{...member,capabilities:commercialCapabilities(member)},posOperations:{cashierEnabled:true,displayEnabled:false,profile:'auto',revision:0}}:{ok:true,sites:[{siteId:site.siteId,slug:site.slug,businessName:site.business.name}]}

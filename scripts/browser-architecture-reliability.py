@@ -22,7 +22,7 @@ def run(args):
     for width in args.widths:
      for theme in ['light','dark']:
       for lang in ['es','en']:
-       es=lang=='es';state=dict(receipt='pending',null_link=False,directory_error=False,redesign_error=False,history_error=False,hold_a=False,held=[],checkouts=[],trace=[])
+       es=lang=='es';state=dict(receipt='pending',null_link=False,directory_error=False,redesign_error=False,history_error=False,index_error=True,hold_a=False,held=[],checkouts=[],trace=[])
        context=browser.new_context(viewport=dict(width=width,height=950),service_workers='block',reduced_motion='reduce')
        context.add_init_script('localStorage.setItem("webfactory-language",'+json.dumps(lang)+');localStorage.setItem("webfactory-theme-v2",'+json.dumps(theme)+');')
        errors=[];page=context.new_page();page.on('pageerror',lambda error:errors.append(str(error)))
@@ -57,6 +57,8 @@ def run(args):
          if state['history_error']=='malformed':return fulfill(route,dict(ok=True,records=[None]))
          if state['history_error']:return fulfill(route,dict(ok=False,message='Synthetic history preparation'),503)
          body=dict(ok=True,records=[],nextCursor=None)
+        elif name in ['client-booking-index','client-order-turn-index']:
+         body=(dict(ok=True,state=dict(status='building',processed={})) if theme=='dark' else dict(ok=True)) if state['index_error'] else dict(ok=True,state=dict(status='ready',processed=0))
         elif name=='client-commerce-admin':
          key=query['siteId'][0]
          if state['hold_a'] and key=='tenant-a':state['held'].append(route);return
@@ -102,12 +104,17 @@ def run(args):
         state['held']=[];state['hold_a']=False
         expect(page.get_by_text('CUSTOMER-tenant-b',exact=True)).to_be_visible();assert page.get_by_text('OLD-TENANT-A',exact=True).count()==0;fits()
         state['history_error']='malformed' if theme=='dark' else True;section(page,'Cobros y pagos' if es else 'Payments');panel=page.locator('[data-training=payment-links]');expect(panel.get_by_role('button',name='Reintentar historial' if es else 'Retry history')).to_be_visible();state['history_error']=False;panel.get_by_role('button',name='Reintentar historial' if es else 'Retry history').click();expect(panel.get_by_role('alert')).to_have_count(0);fits()
+        section(page,'Ver citas' if es else 'View appointments');retry=page.get_by_role('button',name='Reintentar estado del historial' if es else 'Retry history status');expect(retry).to_be_visible();expect(page.locator('.ca-booking-calendar')).to_be_visible();state['index_error']=False;retry.click();expect(retry).to_have_count(0);expect(page.locator('.ca-booking-calendar')).to_be_visible();fits()
         page.screenshot(path=str(out/f'{engine}-{width}-{theme}-{lang}.png'),full_page=True)
         assert not errors,errors
         print('PASS architecture faults, trusted payment state and recovery',engine,width,theme,lang,flush=True)
-       except Exception:
-        print('Architecture failure state',json.dumps(dict(engine=engine,width=width,theme=theme,lang=lang,path=urlparse(page.url).path,requests=state['trace'][-25:],headings=page.locator('h1').all_text_contents(),errors=errors)),flush=True)
-        page.screenshot(path=str(out/f'failure-{engine}-{width}-{theme}-{lang}.png'),full_page=True);raise
+       except Exception as failure:
+        print('Architecture failure',repr(failure),flush=True)
+        try:print('Architecture failure state',json.dumps(dict(engine=engine,width=width,theme=theme,lang=lang,path=urlparse(page.url).path,requests=state['trace'][-25:],headings=page.locator('h1').all_text_contents(),errors=errors)),flush=True)
+        except Error:pass
+        try:page.screenshot(path=str(out/f'failure-{engine}-{width}-{theme}-{lang}.png'),full_page=True)
+        except Error:pass
+        raise
        finally:context.close()
    finally:browser.close()
 

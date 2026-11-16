@@ -162,8 +162,15 @@ jobs:
       - name: Check unified workspace hierarchy, disclosures and Builder state
         if: matrix.suite == 'experience'
         run: |
-          node scripts/browser-workspace-experience-smoke.mjs
-          node scripts/browser-admin-experience-smoke.mjs
+          for check in workspace admin; do
+            log="/tmp/$check-experience.log"
+            if ! node "scripts/browser-$check-experience-smoke.mjs" > "$log" 2>&1; then
+              cat "$log"
+              node scripts/report-kiosk-ci-error.mjs "$log" experience
+              exit 1
+            fi
+            cat "$log"
+          done
       - name: Check Marketplace and preserved Crear landing on Chromium and WebKit
         if: matrix.suite == 'experience'
         env:
@@ -186,18 +193,29 @@ jobs:
       - name: Check login locale persistence and single session handoff
         if: matrix.suite == 'experience-navigation'
         run: |
-          QA_BUILT=1 node scripts/browser-login-lifecycle-smoke.mjs
-          node scripts/browser-login-loading-smoke.mjs
-          QA_ASSERT=1 QA_HOLD_IMAGES=1 node scripts/browser-login-paint-smoke.mjs
-          QA_ENGINE=webkit QA_ASSERT=1 QA_HOLD_IMAGES=1 node scripts/browser-login-paint-smoke.mjs
-          QA_WIDTHS=390,980 node scripts/browser-login-navigation-paint-smoke.mjs
-          QA_ENGINE=webkit QA_WIDTHS=390,980 node scripts/browser-login-navigation-paint-smoke.mjs
-          node scripts/browser-shared-login-smoke.mjs
-          QA_ENGINE=webkit QA_WIDTHS=390,1440 node scripts/browser-shared-login-smoke.mjs
-          node scripts/browser-commercial-loading-detail-smoke.mjs
-          QA_ENGINE=webkit QA_WIDTHS=390,980,1440 node scripts/browser-commercial-loading-detail-smoke.mjs
-          QA_ENGINE=webkit QA_WIDTHS=390,1440 node scripts/browser-login-loading-smoke.mjs
-          QA_BUILT=1 QA_ENGINE=webkit node scripts/browser-login-lifecycle-smoke.mjs
+          login_check=0
+          check_login() {
+            login_check=$((login_check + 1))
+            log="/tmp/login-check-$login_check.log"
+            if ! "$@" > "$log" 2>&1; then
+              cat "$log"
+              node scripts/report-kiosk-ci-error.mjs "$log" experience
+              return 1
+            fi
+            cat "$log"
+          }
+          check_login env QA_BUILT=1 node scripts/browser-login-lifecycle-smoke.mjs
+          check_login node scripts/browser-login-loading-smoke.mjs
+          check_login env QA_ASSERT=1 QA_HOLD_IMAGES=1 node scripts/browser-login-paint-smoke.mjs
+          check_login env QA_ENGINE=webkit QA_ASSERT=1 QA_HOLD_IMAGES=1 node scripts/browser-login-paint-smoke.mjs
+          check_login env QA_WIDTHS=390,980 node scripts/browser-login-navigation-paint-smoke.mjs
+          check_login env QA_ENGINE=webkit QA_WIDTHS=390,980 node scripts/browser-login-navigation-paint-smoke.mjs
+          check_login node scripts/browser-shared-login-smoke.mjs
+          check_login env QA_ENGINE=webkit QA_WIDTHS=390,1440 node scripts/browser-shared-login-smoke.mjs
+          check_login node scripts/browser-commercial-loading-detail-smoke.mjs
+          check_login env QA_ENGINE=webkit QA_WIDTHS=390,980,1440 node scripts/browser-commercial-loading-detail-smoke.mjs
+          check_login env QA_ENGINE=webkit QA_WIDTHS=390,1440 node scripts/browser-login-loading-smoke.mjs
+          check_login env QA_BUILT=1 QA_ENGINE=webkit node scripts/browser-login-lifecycle-smoke.mjs
       - name: Check initial login visibility, locale handoff and failure states
         if: matrix.suite == 'experience-navigation'
         run: node scripts/browser-auth-usability-smoke.mjs
@@ -325,7 +343,14 @@ jobs:
         run: node scripts/browser-reference-styles-smoke.mjs
       - name: Check automatic buyer receipts, demo isolation, PDF and printing
         if: matrix.suite == 'commerce'
-        run: node scripts/browser-buyer-receipt-smoke.mjs
+        run: |
+          log="/tmp/buyer-receipt.log"
+          if ! node scripts/browser-buyer-receipt-smoke.mjs > "$log" 2>&1; then
+            cat "$log"
+            node scripts/report-kiosk-ci-error.mjs "$log" experience
+            exit 1
+          fi
+          cat "$log"
       - name: Check portal login fields on desktop and mobile
         if: matrix.suite == 'experience-navigation'
         run: |
