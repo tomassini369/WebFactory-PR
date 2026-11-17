@@ -192,12 +192,12 @@
 
 [[redirects]]
   from = "/builder"
-  to = "/index.html"
+  to = "/builder/index.html"
   status = 200
 
 [[redirects]]
   from = "/builder/"
-  to = "/index.html"
+  to = "/builder/index.html"
   status = 200
 
 [[redirects]]
