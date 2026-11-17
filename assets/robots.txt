@@ -3,6 +3,8 @@ Allow: /
 Disallow: /webfactory-admin
 Disallow: /client-admin
 Disallow: /password
+Allow: /builder$
+Allow: /builder/$
 Disallow: /builder
 Disallow: /preview-review
 Disallow: /template-parity-preview

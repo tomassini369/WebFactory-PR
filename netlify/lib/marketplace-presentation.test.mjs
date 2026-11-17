@@ -30,3 +30,17 @@ test('public metadata separates discovery from creating and never overrides tena
  assert.match(publicPageMetadata('/','es').description,/negocios, servicios y productos publicados/)
  for(const path of ['/sites/business','/client-admin','/webfactory-admin','/pay/business/private','/track/private','/kiosk'])assert.equal(publicPageMetadata(path,'es'),null,path)
 })
+
+
+test('public Builder has its own canonical metadata in both languages',async()=>{
+ const {publicPageMetadata}=await import('../../src/public-page-metadata.ts')
+ for(const lang of ['en','es']){
+  for(const path of ['/builder','/builder/']){
+   const metadata=publicPageMetadata(path,lang)
+   assert.equal(metadata.url,'https://webfactorypr.com/builder')
+   assert.match(metadata.title,/Builder/)
+   assert.ok(metadata.description.length>0)
+  }
+ }
+ assert.equal(publicPageMetadata('/builder/private','en'),null)
+})

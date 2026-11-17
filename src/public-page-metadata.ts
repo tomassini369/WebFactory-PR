@@ -1,11 +1,12 @@
-// Only the two WebFactory public entry points. Tenant metadata remains server-owned.
+// WebFactory public entry points. Tenant metadata remains server-owned.
 export function publicPageMetadata(pathname:string,lang:'es'|'en'){
- const creating=/^\/crear\/?$/.test(pathname)
+ const builder=/^\/builder\/?$/.test(pathname)
+ const creating=builder||/^\/crear\/?$/.test(pathname)
  if(pathname!=='/'&&!creating)return null
  const es=lang==='es'
- const title=creating?'WebFactory PR | Plataforma de comercio y reservas':es?'WebFactory PR | Descubre negocios en Puerto Rico':'WebFactory PR | Discover local Puerto Rico'
+ const title=builder?'WebFactory PR | Builder + Factory AI':creating?'WebFactory PR | Plataforma de comercio y reservas':es?'WebFactory PR | Descubre negocios en Puerto Rico':'WebFactory PR | Discover local Puerto Rico'
  const description=creating?(es?'Crea y administra tu página de negocio con catálogo, ventas, pagos y reservaciones. Conoce el Builder y Factory AI.':'Create and manage your business website with a catalog, sales, payments and bookings. Meet the Builder and Factory AI.'):(es?'Descubre negocios, servicios y productos publicados en Puerto Rico con el Marketplace de WebFactory PR.':'Discover published Puerto Rico businesses, services and products in the WebFactory PR Marketplace.')
- const url='https://webfactorypr.com'+(creating?'/crear':'/')
+ const url='https://webfactorypr.com'+(builder?'/builder':creating?'/crear':'/')
  return {title,description,url,locale:es?'es_PR':'en_US'}
 }
 export function updatePublicPageMetadata(pathname:string,lang:'es'|'en'){
