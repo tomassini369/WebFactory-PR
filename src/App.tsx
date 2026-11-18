@@ -55,8 +55,8 @@ function RouteView({children,portal=false}:{children:ReactNode;portal?:boolean})
 type Language = 'es' | 'en'
 
 const content = {
-  es: {builder:['WEBFACTORY BUILDER + AI','Avanzado por dentro. Fácil por fuera.','Configura tu negocio paso a paso o pídele a Factory AI que proponga estructura, contenido bilingüe, catálogo y equipo dentro del mismo Builder.']},
-  en: {builder:['WEBFACTORY BUILDER + AI','Powerful underneath. Simple on the surface.','Configure your business step by step or ask Factory AI to propose structure, bilingual content, catalog and team inside the same Builder.']},
+  es: {builder:['WebFactory Builder','Avanzado por dentro. Fácil por fuera.','Personaliza tu plantilla paso a paso. Si quieres ayuda, describe tu negocio a Factory AI. Revisa su propuesta de diseño, contenido bilingüe, catálogo y equipo y decide si la aplicas en el Builder.']},
+  en: {builder:['WebFactory Builder','Powerful underneath. Simple on the surface.','Customize your template step by step. For help, describe your business to Factory AI. Review its proposal for your design, bilingual content, catalog and team, then decide whether to apply it in the Builder.']},
 }
 
 function Heading({data,invert=false}:{data:string[],invert?:boolean}) {
