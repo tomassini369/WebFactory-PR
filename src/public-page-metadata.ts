@@ -5,7 +5,7 @@ export function publicPageMetadata(pathname:string,lang:'es'|'en'){
  if(pathname!=='/'&&!creating)return null
  const es=lang==='es'
  const title=builder?'WebFactory PR | WebFactory Builder':creating?'WebFactory PR | Plataforma de comercio y reservas':es?'WebFactory PR | Descubre negocios en Puerto Rico':'WebFactory PR | Discover local Puerto Rico'
- const description=creating?(es?'Elige una plantilla para tu negocio y personalízala en el Builder de WebFactory PR. Factory AI ofrece ayuda opcional para redactar el contenido.':'Choose a template for your business website and customize it in the WebFactory PR Builder. Factory AI offers optional help with writing content.'):(es?'Descubre negocios, servicios y productos publicados en Puerto Rico con el Marketplace de WebFactory PR.':'Discover published Puerto Rico businesses, services and products in the WebFactory PR Marketplace.')
+ const description=creating?(es?'Personaliza una plantilla para tu negocio. Si quieres, revisa y aplica una propuesta de Factory AI con diseño, contenido bilingüe, catálogo y equipo.':'Customize a template for your business website. If you like, review and apply a Factory AI proposal for your design, bilingual content, catalog and team.'):(es?'Descubre negocios, servicios y productos publicados en Puerto Rico con el Marketplace de WebFactory PR.':'Discover published Puerto Rico businesses, services and products in the WebFactory PR Marketplace.')
  const url='https://webfactorypr.com'+(builder?'/builder':creating?'/crear':'/')
  return {title,description,url,locale:es?'es_PR':'en_US'}
 }
