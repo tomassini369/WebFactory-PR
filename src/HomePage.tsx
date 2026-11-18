@@ -23,7 +23,7 @@ const copy = {
     heroAlt: 'Illustration of the Business Control Center with sample data', sample: 'Sample data', sampleBusiness: 'Sample business', center: 'Business Control Center', scroll: 'Scroll to see it come together',
     tourLabel: 'HOW IT COMES TOGETHER', tourTitle: 'From your first page to your daily operation.', tourText: 'Keep scrolling. The Control Center updates with every step.',
     steps: [
-      ['Create', 'Create your website', 'Start from a template or ask Factory AI to propose structure, bilingual content, catalog and team inside the Builder.'],
+      ['Create', 'Create your website', 'Choose a template and customize it in the Builder. For help writing your content, you can ask Factory AI for suggestions.'],
       ['Sell', 'Sell products and services', 'Catalog, inventory, cart and POS, all connected to your website.'],
       ['Book', 'Accept bookings', 'Customers choose a service, a professional and a time. Schedules and availability live in one calendar.'],
       ['Get paid', 'Get paid your way', 'Connect Stripe and ATH Móvil to your business accounts and send payment links. No WebFactory commission on your sales.'],
@@ -48,7 +48,7 @@ const copy = {
     // Platform
     platformLabel: 'ONE PLATFORM', platformTitle: 'Five pieces of your business. Connected.',
     platform: [
-      ['Website', 'Templates and the Builder with Factory AI, bilingual content and your brand.'],
+      ['Website', 'Customize a template with your branding and bilingual content.'],
       ['Commerce', 'Catalog, inventory, cart, POS and orders with tracking.'],
       ['Payments', 'Stripe, ATH Móvil and payment links connected to your business.'],
       ['Employees', 'Profiles, services, schedules, time off and access by role.'],
@@ -69,7 +69,7 @@ const copy = {
     heroAlt: 'Ilustración del Business Control Center con datos de ejemplo', sample: 'Datos de ejemplo', sampleBusiness: 'Negocio de ejemplo', center: 'Business Control Center', scroll: 'Haz scroll y míralo tomar forma',
     tourLabel: 'CÓMO SE CONECTA TODO', tourTitle: 'De tu primera página a tu operación diaria.', tourText: 'Sigue bajando. El Control Center se actualiza en cada paso.',
     steps: [
-      ['Crear', 'Crea tu website', 'Comienza con un template o pídele a Factory AI que proponga estructura, contenido bilingüe, catálogo y equipo dentro del Builder.'],
+      ['Crear', 'Crea tu website', 'Elige una plantilla y personalízala en el Builder. Si necesitas ayuda para redactar el contenido, puedes pedirle sugerencias a Factory AI.'],
       ['Vender', 'Vende productos y servicios', 'Catálogo, inventario, carrito y POS, conectados a tu website.'],
       ['Reservar', 'Recibe reservas', 'Tus clientes eligen servicio, profesional y horario. Horarios y disponibilidad en un solo calendario.'],
       ['Cobrar', 'Cobra a tu manera', 'Conecta Stripe y ATH Móvil a las cuentas de tu negocio y envía enlaces de pago. Sin comisión de WebFactory sobre tus ventas.'],
@@ -91,7 +91,7 @@ const copy = {
     demoNote: 'Demo local. No procesa pagos ni crea pedidos o reservas.',
     platformLabel: 'UNA PLATAFORMA', platformTitle: 'Cinco piezas de tu negocio. Conectadas.',
     platform: [
-      ['Website', 'Templates y el Builder con Factory AI, contenido bilingüe y tu marca.'],
+      ['Website', 'Personaliza una plantilla con tu marca y contenido bilingüe.'],
       ['Ventas', 'Catálogo, inventario, carrito, POS y pedidos con seguimiento.'],
       ['Pagos', 'Stripe, ATH Móvil y enlaces de pago conectados a tu negocio.'],
       ['Empleados', 'Perfiles, servicios, horarios, días libres y acceso por rol.'],
