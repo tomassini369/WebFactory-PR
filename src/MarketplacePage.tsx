@@ -16,7 +16,7 @@ export default function MarketplacePage({lang,setLang}:{lang:Language;setLang:(l
  const [filters,setFilters]=useState(()=>readMarketplaceFilters(window.location.search)),[draft,setDraft]=useState(filters)
  const [entries,setEntries]=useState<DirectoryBusiness[]>([]),[loading,setLoading]=useState(true),[error,setError]=useState(false),[truncated,setTruncated]=useState(false),[attempt,setAttempt]=useState(0),[photoFailed,setPhotoFailed]=useState(false)
  const results=useRef<HTMLHeadingElement>(null),queryInput=useRef<HTMLInputElement>(null),rail=useRef<HTMLDivElement>(null)
- useEffect(()=>{let active=true;setLoading(true);setError(false);void marketplaceRequest('directory').then(r=>{if(active){setEntries(r.entries);setTruncated(r.truncated)}}).catch(()=>{if(active)setError(true)}).finally(()=>{if(active)setLoading(false)});return()=>{active=false}},[attempt])
+ useEffect(()=>{let active=true;setLoading(true);setError(false);void marketplaceRequest(filters.q?'directory?'+new URLSearchParams({q:filters.q}):'directory').then(r=>{if(active){setEntries(r.entries);setTruncated(r.truncated)}}).catch(()=>{if(active)setError(true)}).finally(()=>{if(active)setLoading(false)});return()=>{active=false}},[attempt,filters.q])
  useEffect(()=>{const restore=()=>{const value=readMarketplaceFilters(window.location.search);setFilters(value);setDraft(value)};window.addEventListener('popstate',restore);return()=>window.removeEventListener('popstate',restore)},[])
  function apply(value:MarketplaceFilters,scroll=true){
   const next=normalizeMarketplaceFilters(value);setFilters(next);setDraft(next)
