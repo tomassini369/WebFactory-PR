@@ -22,3 +22,6 @@ html[data-wf-theme="light"] .mk-root{--mk-canvas:#f6f9fe;--mk-surface:#fff;--mk-
 /* Keep anchor targets below the measured header at every responsive height. */
 .mk-root #marketplace-content{scroll-margin-top:calc(var(--mk-header-height,140px) + 16px)}
 @media(max-width:767px){.mk-header .mk-navigation.is-open{position:absolute;top:100%;left:16px;right:16px;margin:0;padding:12px;background:var(--mk-canvas);border:1px solid var(--mk-line);border-radius:0 0 12px 12px;max-height:calc(100dvh - var(--mk-header-height,140px) - 90px);overflow-y:auto;overscroll-behavior:contain}}
+
+.mk-item-results {list-style:none; margin:0; padding:0 1rem 1rem}
+.mk-item-results a {display:flex; flex-wrap:wrap; align-items:center; gap:.5rem; min-height:44px; color:inherit}

@@ -7,3 +7,7 @@ export async function marketplaceRequest(path:string,payload?:Record<string,unkn
  return result
 }
 export const businessName=(b:DirectoryBusiness,lang:'es'|'en')=>(lang==='es'?b.nameEs:b.nameEn)||b.name
+
+export function catalogItemUrl(slug: string, itemId: string) {
+ return '/sites/' + encodeURIComponent(slug) + '?' + new URLSearchParams({item: itemId})
+}
