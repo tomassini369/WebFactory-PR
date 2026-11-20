@@ -100,3 +100,35 @@ test('deleting then reaccepting a consumer profile never republishes its old rev
 test('an unpaid campaign may be canceled with revision checks and never creates a Stripe charge',async()=>{
  const f=await adFixture();await f.db.setJSON(adKey(id),{id,siteId:'tenant-a',slug:'tenant-a',status:'approved',moderation:'approved',revision:1,offer});assert.equal((await f.handler(request({siteId:'tenant-a',action:'cancel_unpaid',id,revision:0}))).status,409);assert.equal((await f.handler(request({siteId:'tenant-a',action:'cancel_unpaid',id,revision:1}))).status,200);assert.equal((await f.db.get(adKey(id))).status,'cancelled');assert.equal(f.created(),0);
 });
+
+test('external advertiser uses own identity, moderated offer and verified sandbox payment', async () => {
+ const db=memory(), profiles=memory();
+ let actor=consumer, parameters;
+ const handler=createAdsHandler({
+  store:()=>db, profiles:()=>profiles, consumer:async()=>actor, admin:async()=>({id:'admin'}),
+  clock:()=>now, uuid:()=>id, safe:()=>{}, stripeFactory:()=>({checkout:{sessions:{
+   create:async input=>{parameters=input;return {id:'cs_test_external',url:'https://checkout.stripe.com/c/pay/test'}}
+  }}})
+ });
+ const apply={scope:'advertiser',action:'apply',brand:'Faro QA',title:'Fixture ad',body:'External brand campaign.',accepted:true,offerVersion:offer.version,siteId:'tenant-a'};
+ await db.setJSON(offerKey,offer);
+ assert.equal((await handler(request(apply))).status,403);
+ await profiles.setJSON(consumerKey(actor.id),active);
+ assert.equal((await handler(request(apply))).status,200);
+ const row=await db.get(adKey(id));
+ assert.notEqual(row.siteId,'tenant-a');
+ actor={...consumer,id:'second'};
+ await profiles.setJSON(consumerKey(actor.id),active);
+ assert.equal((await handler(request({scope:'advertiser',action:'cancel_unpaid',siteId:row.siteId,id,revision:1}))).status,404);
+ actor=consumer;
+ assert.deepEqual(await publicAds(db,undefined,now),[]);
+ assert.equal((await handler(request({scope:'admin',action:'moderate',id,revision:1,decision:'approve',reason:'Reviewed the external brand copy.',reviewed:true}))).status,200);
+ assert.equal((await handler(request({scope:'advertiser',action:'checkout',id,revision:2}))).status,200);
+ assert.match(parameters.success_url,/\/cuenta\?/);
+ await settleAdEvent({type:'checkout.session.completed',livemode:false,data:{object:{id:'cs_test_external',metadata:parameters.metadata,client_reference_id:id,currency:'usd',amount_total:offer.amount,mode:'payment',payment_status:'paid',status:'complete',payment_intent:'pi_external'}}},db,now);
+ const [placement]=await publicAds(db,undefined,now);
+ assert.equal(placement.brand,apply.brand);
+ assert.equal(placement.sponsored,true);
+ assert.equal(placement.siteId,undefined);
+ assert.equal(placement.createdBy,undefined);
+});

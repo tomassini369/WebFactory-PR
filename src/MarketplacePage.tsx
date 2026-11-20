@@ -59,6 +59,7 @@ export default function MarketplacePage({lang,setLang}:{lang:Language;setLang:(l
    <section className="mk-local-context" aria-labelledby="mk-advertisers">
     <h2 id="mk-advertisers">{es?'Publicidad para marcas externas':'Advertising for external brands'}</h2>
     <p>{es?'¿Te interesa anunciar tu marca en el Marketplace? Escríbenos con el nombre de tu marca y los municipios que quieres alcanzar.':'Interested in advertising on the Marketplace? Tell us your brand name and the municipalities you want to reach.'}</p>
+    <a href="/cuenta#publicidad">{es?'Gestionar campañas':'Manage campaigns'}<ArrowRight size={16}/></a>
     <a href={'mailto:info@webfactorypr.com?subject='+encodeURIComponent(es?'Consulta de publicidad en el Marketplace':'Marketplace advertising inquiry')}>{es?'Consultar por correo':'Email an inquiry'}<ArrowRight size={16}/></a>
    </section>
    {visible.some(b=>b.locations.some(l=>l.mapsUrl))&&<section className="mk-location-list" aria-label={es?'Ubicaciones de negocios':'Business locations'}>{visible.flatMap(b=>b.locations.filter(l=>l.mapsUrl).map((l,i)=><a key={b.slug+i} href={l.mapsUrl} target="_blank" rel="noopener noreferrer"><MapPin size={18}/><span>{businessName(b,lang)}<small>{l.address||l.name}</small></span><ArrowRight size={17}/></a>))}</section>}
