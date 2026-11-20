@@ -29,6 +29,10 @@ export function validEmail(value) {
 }
 
 export function publicBaseUrl() {
+  const context = globalThis.Netlify?.context;
+  if (context?.deploy?.context === "deploy-preview" && context.deploy.id && context.site?.name) {
+    return `https://${context.deploy.id}--${context.site.name}.netlify.app`;
+  }
   return (
     globalThis.Netlify?.env?.get("URL") ||
     globalThis.Netlify?.env?.get("DEPLOY_PRIME_URL") ||
