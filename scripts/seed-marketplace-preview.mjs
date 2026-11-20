@@ -9,10 +9,10 @@ export async function seedMarketplacePreview(env=process.env,store=getDeployStor
   const product={id:'pomada-qa',type:'product',name:'Pomada de prueba',nameEn:'Test pomade',nameEs:'Pomada de prueba',price:12,active:true,requiresAppointment:false};
   const site={siteId,slug,status:'active',previewFixture:'marketplace-152',revision:1,members:[],
     servicePlan:{billingModel:'complimentary',subscriptionStatus:'complimentary'},business:{...draft.business,name:'Faro Norte · QA',nameEs:'Faro Norte · QA',nameEn:'Faro Norte · QA',email:'',phone:'',locations:[{id:'arecibo-preview',name:'Arecibo QA',address:'Arecibo, Puerto Rico',active:true,hours:draft.hours}]},
-    catalog:[{...service,active:true},product],features:{...draft.features,products:true,stripe:false},
+    catalog:[{...service,active:true,description:'Corte de prueba con pago presencial simulado.',descriptionEn:'Test haircut with simulated in-person payment.',descriptionEs:'Corte de prueba con pago presencial simulado.'},product],features:{...draft.features,products:true,stripe:false},
     design:{...draft.design,mode:'template_base',templateCategory:'Barber',templateRoute:'/templates/northline-barber',preserveTemplateStructure:true},
     hours:draft.hours,employees:draft.team.map(member=>({...member,active:true,serviceIds:[service.id],locationIds:['arecibo-preview'],schedule:draft.hours})),
-    paymentRules:{},settings:{locale:'es',timezone:'America/Puerto_Rico',currency:'usd'}};
+    paymentRules:{methods:{inPerson:true},productPayment:'in_person',bookingPayment:'in_person'},settings:{locale:'es',timezone:'America/Puerto_Rico',currency:'usd'}};
   const sites=store('webfactory-client-sites',{consistency:'strong'});
   await sites.setJSON('sites/'+siteId+'.json',site,{onlyIfNew:true});
   await sites.setJSON('slugs/'+slug+'.json',{siteId,slug},{onlyIfNew:true});
