@@ -26,7 +26,8 @@ export async function seedMarketplacePreview(env=process.env,store=getDeployStor
 
   // Only this explicitly requested build gets the disposable actor.
   const subject=execFileSync('git',['log','-1','--format=%s'],{encoding:'utf8'}).trim();
-  if (subject!=='Validate sandbox activation for preview 152') return;
+  const accountCheckoutTest = subject === 'Test signed-in advertiser checkout on preview 152';
+  if (!accountCheckoutTest && subject!=='Validate sandbox activation for preview 152') return;
   const actor={id:randomUUID(),name:'Marca Faro · QA',email:'marca-faro@example.invalid',confirmedAt:new Date(now).toISOString()};
   await sites.setJSON(consumerKey(actor.id),{
     status:'active',name:actor.name,municipality:'Arecibo',favorites:[],following:[],revision:1,
@@ -55,6 +56,14 @@ export async function seedMarketplacePreview(env=process.env,store=getDeployStor
   const row=await qa.get(adKey(campaign.id),{type:'json'});
   if(row.status!=='approved')throw new Error('Missing fixture approval.');
   // Only the reviewed fixture goes into the deploy store read by the webhook.
+  if (accountCheckoutTest) {
+    // Keep synthetic applicant and reviewer provenance. Only the designated
+    // account can open the sandbox checkout for this deploy-scoped fixture.
+    row.siteId = 'advertiser-6cf1fc3b890e419929a543f473e66c17db0b29574ffec427a237bb89ce6ff0ce';
+    row.previewFixture = 'marketplace-152';
+    await offers.setJSON(adKey(row.id),row,{onlyIfNew:true});
+    return;
+  }
   await offers.setJSON(adKey(row.id),row,{onlyIfNew:true});
   await writeFile('dist/qa-anunciante-152.json',JSON.stringify({marca:row.brand,entorno:'Preview 152',estadoInicial:row.status,campaignId:row.id,fixtureAccount:row.siteId,importeCentavos:row.offer.amount},null,2));
 }
