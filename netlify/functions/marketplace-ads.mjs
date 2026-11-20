@@ -1,6 +1,6 @@
 import crypto from 'node:crypto';
 import Stripe from 'stripe';
-import {requirePlatformAdmin,requireClientUser,requireSiteAccess,assertSameOrigin,errorResponse} from '../lib/client-auth.mjs';
+import {requirePlatformAdmin,requireMarketplaceUser,requireSiteAccess,assertSameOrigin,errorResponse} from '../lib/client-auth.mjs';
 import {withBookingLock} from '../lib/booking-lock.mjs';
 import {readAuthPayload,authJson} from '../lib/auth-gateway.mjs';
 import {clientCommerceStore,clientSiteStore,getClientSiteBySlug} from '../lib/client-store.mjs';
@@ -9,7 +9,7 @@ import {stripeRuntimeState} from '../lib/stripe-runtime.mjs';
 import {adKey,adId,adFail,adText,saveAd,adRows,publicAds,adCheckout,settleAdEvent,validOffer,offerKey} from '../lib/marketplace-ads.mjs';
 const view=row=>({id:row.id,slug:row.slug,brand:row.brand,siteId:row.siteId,title:row.title,body:row.body,status:row.status,moderation:row.moderation,reason:row.reason||'',createdAt:row.createdAt,paidAt:row.paidAt||null,endsAt:row.endsAt||null,revision:row.revision,offer:row.offer});
 const env=k=>globalThis.Netlify?.env?.get(k)||'';
-export function createAdsHandler({store=clientCommerceStore,consumer=requireClientUser,profiles=clientSiteStore,admin=requirePlatformAdmin,owner=id=>requireSiteAccess(id,['owner']),site=getClientSiteBySlug,clock=Date.now,uuid=crypto.randomUUID,stripeFactory=()=>new Stripe(env('STRIPE_SECRET_KEY'),{apiVersion:'2026-08-26.dahlia'}),safe=url=>{const s=stripeRuntimeState({context:globalThis.Netlify?.context?.deploy?.context||env('CONTEXT'),requestUrl:url});if(s.production||s.keyMode!=='test')throw adFail('Advertisement checkout requires the isolated test environment.',503)}}={}){return async req=>{try{
+export function createAdsHandler({store=clientCommerceStore,consumer=requireMarketplaceUser,profiles=clientSiteStore,admin=requirePlatformAdmin,owner=id=>requireSiteAccess(id,['owner']),site=getClientSiteBySlug,clock=Date.now,uuid=crypto.randomUUID,stripeFactory=()=>new Stripe(env('STRIPE_SECRET_KEY'),{apiVersion:'2026-08-26.dahlia'}),safe=url=>{const s=stripeRuntimeState({context:globalThis.Netlify?.context?.deploy?.context||env('CONTEXT'),requestUrl:url});if(s.production||s.keyMode!=='test')throw adFail('Advertisement checkout requires the isolated test environment.',503)}}={}){return async req=>{try{
  if(!['GET','POST'].includes(req.method))return new Response(null,{status:405,headers:{Allow:'GET, POST'}});assertSameOrigin(req);
  const input=req.method==='POST'?await readAuthPayload(req):Object.fromEntries(new URL(req.url).searchParams),db=store();
  const offerRow=await db.getWithMetadata(offerKey,{type:'json'}),offer=offerRow?.data;

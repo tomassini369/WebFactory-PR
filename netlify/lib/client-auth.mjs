@@ -1,6 +1,6 @@
 import {membershipAllowsCapability} from "../../shared/membership-plans.mjs";
 import {activeMembership, commercialCapabilities, COMMERCIAL_ROLES} from "./commercial-access.mjs";
-import { getUser } from "@netlify/identity";
+import { admin as identityAdmin, getUser } from "@netlify/identity";
 import { getClientSite, normalizeEmail, sitesForEmail } from "./client-store.mjs";
 import { assertSecondFactor } from "./mfa-security.mjs";
 import { authorizedAction } from "./internal-action-auth.mjs";
@@ -29,6 +29,17 @@ export async function requireClientUser() {
   }
   await assertSecondFactor(user);
   return user;
+}
+
+// Identity can return session claims without the email confirmation timestamp.
+export async function requireMarketplaceUser() {
+  const user = await requireClientUser();
+  if (user.confirmedAt) return user;
+  const record = await identityAdmin.getUser(user.id);
+  if (record.id !== user.id || !record.email || normalizeEmail(record.email) !== normalizeEmail(user.email)) {
+    throw Object.assign(new Error("Unable to verify this account."), { status: 403 });
+  }
+  return { ...user, confirmedAt: record.confirmedAt };
 }
 
 function env(name) {

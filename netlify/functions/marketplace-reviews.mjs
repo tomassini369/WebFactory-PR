@@ -1,5 +1,5 @@
 import crypto from 'node:crypto';
-import {assertSameOrigin,requireClientUser,requirePlatformAdmin,errorResponse} from '../lib/client-auth.mjs';
+import {assertSameOrigin,requireMarketplaceUser,requirePlatformAdmin,errorResponse} from '../lib/client-auth.mjs';
 import {readAuthPayload,authJson} from '../lib/auth-gateway.mjs';
 import {clientCommerceStore,clientSiteStore,getClientSiteBySlug} from '../lib/client-store.mjs';
 import {consumerKey,publicConsumer,discoverableSite} from '../lib/marketplace.mjs';
@@ -10,7 +10,7 @@ const reviewKey=(slug,id)=>`marketplace-reviews/${slug}/${hash(slug+':'+id)}.jso
 const projection=r=>({id:r.id,alias:r.alias,rating:r.rating,text:r.text,updatedAt:r.updatedAt,revision:r.revision});
 const reasons=['privacy','spam','conflict','threat','irrelevant','experience_unsubstantiated'];
 function text(value,min,max){if(typeof value!=='string'||value.trim().length<min||value.length>max||/[\x00-\x08\x0b\x0c\x0e-\x1f<>]/.test(value))throw fail('Invalid review text.');return value.trim()}
-export function createReviewsHandler({store=clientCommerceStore,profiles=clientSiteStore,user=requireClientUser,admin=requirePlatformAdmin,site=getClientSiteBySlug,clock=Date.now}={}){return async req=>{try{
+export function createReviewsHandler({store=clientCommerceStore,profiles=clientSiteStore,user=requireMarketplaceUser,admin=requirePlatformAdmin,site=getClientSiteBySlug,clock=Date.now}={}){return async req=>{try{
  if(!['GET','POST'].includes(req.method))return new Response(null,{status:405,headers:{Allow:'GET, POST'}});
  assertSameOrigin(req);const url=new URL(req.url),input=req.method==='POST'?await readAuthPayload(req):Object.fromEntries(url.searchParams);
  if(!slugOK(input.slug))throw fail('Invalid business.');const business=await site(input.slug);if(!discoverableSite(business))throw fail('Business unavailable.',404);
