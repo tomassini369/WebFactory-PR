@@ -1,5 +1,6 @@
 import {getDeployStore} from '@netlify/blobs';
-import {offerKey,validOffer} from '../netlify/lib/marketplace-ads.mjs';
+import {execFileSync} from 'node:child_process';
+import {adKey,offerKey,validOffer} from '../netlify/lib/marketplace-ads.mjs';
 import {readFile} from 'node:fs/promises';
 
 export async function seedMarketplacePreview(env=process.env,store=getDeployStore) {
@@ -36,4 +37,20 @@ export async function seedMarketplacePreview(env=process.env,store=getDeployStor
   if (!validOffer(saved) || saved.amount !== launchOffer.amount || saved.days !== launchOffer.days) {
     throw new Error('Could not verify the $10 Marketplace preview offer.');
   }
+
+  // This fixture exists only in the named sandbox build and expires on redeploy.
+  const subject = execFileSync('git', ['log','-1','--format=%s'], {encoding:'utf8'}).trim();
+  if (subject !== 'Verify the 30-day advertiser sandbox checkout') return;
+  const campaign = {
+    id: 'caa3a4dc-ec6e-43fb-b039-b04ea47256ec',
+    siteId: 'advertiser-6cf1fc3b890e419929a543f473e66c17db0b29574ffec427a237bb89ce6ff0ce',
+    kind: 'external',
+    brand: 'Marca Faro · QA',
+    title: 'Campaña de prueba de 30 días',
+    body: 'Anuncio temporal para verificar el precio y la duración en el preview.',
+    status: 'approved', moderation: 'approved', revision: 1,
+    createdAt: now, createdBy: 'qa-fixture', previewFixture: 'marketplace-152',
+    offer: {version:saved.version,amount:saved.amount,days:saved.days,terms:saved.terms,acceptedAt:now,acceptedBy:'qa-fixture'},
+  };
+  await offers.setJSON(adKey(campaign.id), campaign, {onlyIfNew:true});
 }
