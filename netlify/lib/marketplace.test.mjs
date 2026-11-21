@@ -92,3 +92,11 @@ test('previous preview consent requires fresh acceptance without losing saved pr
  assert.equal(accepted.needsAcceptance,false);assert.deepEqual(accepted.favorites,['test-business']);assert.equal(accepted.name,'Saved name');assert.equal(accepted.municipality,'Arecibo');assert.equal(accepted.revision,5);
  assert.equal((await store.get(consumerKey(user.id))).consent.version,CONSUMER_POLICY_VERSION);
 });
+
+test('catalog search includes active matches beyond the initial twelve',()=>{
+ const catalog=Array.from({length:15},(_,index)=>({id:'p'+index,name:'Artículo '+index,type:'product',active:index!==14,price:5}));
+ const business=site({catalog});
+ assert.equal(directoryEntry(business).services.length,12);
+ assert.deepEqual(directoryEntry(business,'articulo 13').services.map(item=>item.id),['p13']);
+ assert.deepEqual(directoryEntry(business,'articulo 14').services,[]);
+});

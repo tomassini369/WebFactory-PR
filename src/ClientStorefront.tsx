@@ -163,14 +163,26 @@ export default function ClientStorefront({slug,previewSite,previewLanguage='en'}
     const locationId=employee&&!employee.locationIds?.includes(selectedLocationId)?(employee.locationIds?.length===1?employee.locationIds[0]:''):selectedLocationId
     setBooking({serviceId:item.id,employeeId:teamBooking?teamBookingId:employee?.id||'any',date:'',start:'',locationId});setAvailableDates({});setBookingMonth(currentMonth(site?.settings?.timezone));setCalendarView(true);setCatalog(false)
   }
-  const openedBookingLink=useRef(false)
-  useEffect(()=>{
-    if(previewSite||openedBookingLink.current||!site?.features.bookings||new URLSearchParams(location.search).get('booking')!=='1')return
-    const item=visibleCatalog.find(entry=>entry.requiresAppointment)
-    if(!item)return
-    openedBookingLink.current=true
-    beginBooking(item)
-  },[previewSite,site,visibleCatalog])
+  const openedCatalogLink = useRef('')
+  useEffect(() => {
+    if (previewSite || !site || site.slug !== slug) return
+    const params = new URLSearchParams(location.search)
+    const itemId = params.get('item')
+    const genericBooking = params.get('booking') === '1'
+    if (!itemId && !genericBooking) return
+    const key = JSON.stringify([slug, itemId, genericBooking])
+    if (openedCatalogLink.current === key) return
+    const item = itemId
+      ? visibleCatalog.find(entry => entry.id === itemId)
+      : visibleCatalog.find(entry => entry.requiresAppointment)
+    openedCatalogLink.current = key
+    if (!item) {
+      setError(lang === 'es' ? 'Este artículo ya no está disponible.' : 'This item is no longer available.')
+      return
+    }
+    if (item.requiresAppointment && site.features.bookings !== false) beginBooking(item)
+    else if (itemId) setSelectedItem(item)
+  }, [previewSite, site, slug, visibleCatalog, lang])
   const locations=(site?.business.locations||[]) as Location[]
   const employees=site?.employees.filter(x=>x.serviceIds.includes(booking?.serviceId||'')&&(!locations.length||(booking?.locationId&&x.locationIds?.includes(booking.locationId))))||[]
   const {serviceId,employeeId,date,locationId:bookingLocationId}=booking||{}
