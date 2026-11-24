@@ -100,3 +100,18 @@ test('catalog search includes active matches beyond the initial twelve',()=>{
  assert.deepEqual(directoryEntry(business,'articulo 13').services.map(item=>item.id),['p13']);
  assert.deepEqual(directoryEntry(business,'articulo 14').services,[]);
 });
+test('consumer photo persists across reads and edits, is private, and can be removed',async()=>{
+ const {default:sharp}=await import('sharp');
+ const store=memory(),user={id:'photo-owner'},key=consumerKey(user.id);
+ await store.setJSON(key,{consent:{version:CONSUMER_POLICY_VERSION},revision:0},{onlyIfNew:true});
+ const jpeg=await sharp({create:{width:120,height:90,channels:3,background:'#24568a'}}).jpeg().toBuffer();
+ const edit=(revision,changes)=>updateConsumer(store,user,{action:'profile',name:'Alex',revision,...changes});
+ await edit(0,{photo:'data:image/jpeg;base64,'+jpeg.toString('base64')});
+ const saved=publicConsumer(await store.get(key),user).photo;
+ assert.match(saved,/^data:image\/webp;base64,/);
+ assert.equal((await edit(1,{name:'Sam'})).photo,saved);
+ assert.equal(publicConsumer(await store.get(consumerKey('another-user')),{id:'another-user'}).photo,undefined);
+ await assert.rejects(edit(2,{photo:'data:image/jpeg;base64,AAAA'}),{status:400});
+ assert.equal(publicConsumer(await store.get(key),user).photo,saved);
+ assert.equal((await edit(2,{photo:''})).photo,undefined);
+});

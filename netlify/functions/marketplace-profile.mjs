@@ -9,7 +9,7 @@ export default async req=>{
   const user=await requireMarketplaceUser();
   if(!user.confirmedAt)throw Object.assign(new Error('Confirm your email before using your consumer profile.'),{status:403});
   const store=clientSiteStore();
-  const profile=req.method==='GET'?publicConsumer(await store.get(consumerKey(user.id),{type:'json'}),user):await updateConsumer(store,user,await readAuthPayload(req),getClientSiteBySlug);
+  const profile=req.method==='GET'?publicConsumer(await store.get(consumerKey(user.id),{type:'json'}),user):await updateConsumer(store,user,await readAuthPayload(req,new URL(req.url).searchParams.has('photo')?512*1024:8192),getClientSiteBySlug);
   return authJson({ok:true,profile});
  }catch(error){return errorResponse(error)}
 };

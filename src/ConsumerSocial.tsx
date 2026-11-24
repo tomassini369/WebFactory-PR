@@ -29,7 +29,7 @@ export function ConsumerIdentity({lang,profile,view}:{view:ReturnType<typeof cur
   ]
   return <header className="cs-identity">
     <div className="cs-cover"/>
-    <div className="cs-intro"><div className="cs-avatar" aria-hidden="true">{initials}</div>
+    <div className="cs-intro"><div className="cs-avatar" aria-hidden="true">{profile.photo?<img src={profile.photo} alt=""/>:initials}</div>
       <div><h1>{name}</h1>{profile.municipality&&<p><MapPin size={16}/>{profile.municipality}, PR</p>}</div>
       <a className="cs-edit" href="#perfil" aria-current={view==='perfil'?'page':undefined}><Pencil size={16}/>{es?'Editar perfil':'Edit profile'}</a>
     </div>
