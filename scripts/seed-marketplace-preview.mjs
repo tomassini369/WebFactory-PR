@@ -8,10 +8,16 @@ export async function seedMarketplacePreview(env=process.env,store=getDeployStor
   const draft=JSON.parse(await readFile(new URL('../preview/fixtures/faro-norte/builder-draft.json',import.meta.url),'utf8'));
   const siteId='site-qa-marketplace-152',slug='faro-norte-qa-152';
   const service=draft.catalog.find(item=>item.requiresAppointment);
+  const assets=store('webfactory-client-assets',{consistency:'strong'});
+  const key=name=>'sites/'+siteId+'/faro-norte/'+name+'.webp';
+  for(const name of ['logo','corte-clasico']){
+    const image=await readFile(new URL('../preview/fixtures/faro-norte/images/'+name+'.webp',import.meta.url));
+    await assets.set(key(name),new Uint8Array(image).buffer,{onlyIfNew:true,metadata:{contentType:'image/webp'}});
+  }
   const product={id:'pomada-qa',type:'product',name:'Pomada de prueba',nameEn:'Test pomade',nameEs:'Pomada de prueba',price:12,active:true,requiresAppointment:false};
   const site={siteId,slug,status:'active',previewFixture:'marketplace-152',revision:1,members:[],
-    servicePlan:{billingModel:'complimentary',subscriptionStatus:'complimentary'},business:{...draft.business,name:'Faro Norte · QA',nameEs:'Faro Norte · QA',nameEn:'Faro Norte · QA',email:'',phone:'',locations:[{id:'arecibo-preview',name:'Arecibo QA',address:'Arecibo, Puerto Rico',active:true,hours:draft.hours}]},
-    catalog:[{...service,active:true,description:'Corte de prueba con pago presencial simulado.',descriptionEn:'Test haircut with simulated in-person payment.',descriptionEs:'Corte de prueba con pago presencial simulado.'},product],features:{...draft.features,products:true,stripe:false},
+    servicePlan:{billingModel:'complimentary',subscriptionStatus:'complimentary'},business:{...draft.business,logoAssetKey:key('logo'),name:'Faro Norte · QA',nameEs:'Faro Norte · QA',nameEn:'Faro Norte · QA',email:'',phone:'',locations:[{id:'arecibo-preview',name:'Arecibo QA',address:'Arecibo, Puerto Rico',active:true,hours:draft.hours}]},
+    catalog:[{...service,imageAssetKey:key('corte-clasico'),active:true,description:'Corte de prueba con pago presencial simulado.',descriptionEn:'Test haircut with simulated in-person payment.',descriptionEs:'Corte de prueba con pago presencial simulado.'},product],features:{...draft.features,products:true,stripe:false},
     design:{...draft.design,mode:'template_base',templateCategory:'Barber',templateRoute:'/templates/northline-barber',preserveTemplateStructure:true},
     hours:draft.hours,employees:draft.team.map(member=>({...member,active:true,serviceIds:[service.id],locationIds:['arecibo-preview'],schedule:draft.hours})),
     paymentRules:{methods:{inPerson:true},productPayment:'in_person',bookingPayment:'in_person'},settings:{locale:'es',timezone:'America/Puerto_Rico',currency:'usd'}};
@@ -21,6 +27,11 @@ export async function seedMarketplacePreview(env=process.env,store=getDeployStor
   const now=Date.now();
   const offers=store('webfactory-client-commerce',{consistency:'strong'});
   await offers.setJSON('marketplace/organic/'+siteId+'/'+product.id,{siteId,itemId:product.id,title:'Pomada de prueba · QA',terms:'Oferta de demostración en el preview.',price:12,start:now,end:now+7*86400000,revision:1},{onlyIfNew:true});
+
+  await offers.setJSON('marketplace/organic/'+siteId+'/'+service.id,{
+    siteId,itemId:service.id,title:service.nameEs||service.name,terms:'Reserva de demostración en el preview.',
+    price:service.price,start:now,end:now+7*86400000,revision:1
+  },{onlyIfNew:true});
 
   const launchOffer = {
     version: 'preview-152-usd10-30d',
