@@ -331,3 +331,6 @@
 
 [[context.deploy-preview.plugins]]
   package = "./plugins/preview-barber"
+
+[functions."promotion-video-background"]
+  included_files = ["node_modules/@ffmpeg-installer/linux-x64/ffmpeg", "node_modules/@ffmpeg-installer/linux-x64/package.json"]

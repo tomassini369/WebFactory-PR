@@ -16,17 +16,20 @@ function categoryFor(site){
  for(const [id,pattern] of [['barberias',/barber/],['belleza',/beauty|salon|belleza|cosmet/],['comida',/restaurant|food|comida|cafe|cater|bartend/],['tiendas',/retail|shop|store|tienda/],['bienestar',/health|wellness|salud|bienestar|fitness/],['talleres',/auto|carwash|mecan|taller/],['mascotas',/pet|mascot/]])if(pattern.test(value))return id;
  return 'servicios';
 }
-export function directoryEntry(site){
+export function directoryEntry(site,query=""){
  if(!discoverableSite(site))return null;
  const pub=publicClientSite(site),b=pub.business;
+ const searchable=pub.catalog.filter(item=>pub.features[item.type==="product"?"products":"services"]!==false);
+ const needle=fold(query).trim();
+ const items=needle?searchable.filter(item=>[item.name,item.nameEn,item.nameEs].some(name=>fold(name).includes(needle))):searchable.slice(0,12);
  const locations=b.locations.map(l=>({name:text(l.name),address:text(l.address,350),mapsUrl:safeMap(l.mapsUrl)}));
  const towns=municipalities.filter(town=>locations.some(l=>new RegExp(`(?:^|[^a-z])${fold(town)}(?:$|[^a-z])`).test(fold(l.address))));
- return {slug:site.slug,name:text(b.name),nameEn:text(b.nameEn),nameEs:text(b.nameEs),category:categoryFor(site),categoryLabel:text(b.category),description:text(b.description,400),descriptionEn:text(b.descriptionEn,400),descriptionEs:text(b.descriptionEs,400),municipalities:towns,locations,heroUrl:b.heroUrl,logoUrl:b.logoUrl,galleryUrls:b.galleryUrls.slice(0,12),services:pub.catalog.slice(0,12).map(i=>({id:i.id,name:text(i.name),nameEn:text(i.nameEn),nameEs:text(i.nameEs),price:Number.isFinite(i.price)&&i.price>=0?i.price:null,type:i.type,imageUrl:i.imageUrl,requiresAppointment:i.requiresAppointment}))};
+ return {slug:site.slug,name:text(b.name),nameEn:text(b.nameEn),nameEs:text(b.nameEs),category:categoryFor(site),categoryLabel:text(b.category),description:text(b.description,400),descriptionEn:text(b.descriptionEn,400),descriptionEs:text(b.descriptionEs,400),municipalities:towns,locations,heroUrl:b.heroUrl,logoUrl:b.logoUrl,galleryUrls:b.galleryUrls.slice(0,12),services:items.map(i=>({id:i.id,name:text(i.name),nameEn:text(i.nameEn),nameEs:text(i.nameEs),price:Number.isFinite(i.price)&&i.price>=0?i.price:null,type:i.type,imageUrl:i.imageUrl,requiresAppointment:i.requiresAppointment}))};
 }
 function safeMap(value){try{const url=new URL(value);return url.protocol==='https:'&&['maps.google.com','www.google.com','google.com','maps.app.goo.gl','goo.gl'].includes(url.hostname)?url.href:''}catch{return ''}}
 // A bounded directory read uses only the same canonical sites as public storefronts.
 // Never scan commerce, members, Identity or OAuth stores to populate discovery.
-export async function readDirectory(store,{maxSites=250,budgetMs=6000,clock=Date.now}={}){
+export async function readDirectory(store,{maxSites=250,budgetMs=6000,clock=Date.now,query=""}={}){
  const entries=[],start=clock();let count=0,truncated=false;
  outer:for await(const page of store.list({prefix:'sites/',paginate:true})){
   for(let i=0;i<(page.blobs||[]).length;){
@@ -36,7 +39,7 @@ export async function readDirectory(store,{maxSites=250,budgetMs=6000,clock=Date
     if(!/^sites\/[a-zA-Z0-9_-]{1,120}\.json$/.test(key))return null;
     const site=await store.get(key,{type:'json'});
     if(site&&key!==`sites/${site.siteId}.json`)throw new Error('Invalid directory record.');
-    return directoryEntry(site);
+    return directoryEntry(site,query);
    }));entries.push(...loaded.filter(Boolean));
   }
  }
@@ -46,7 +49,7 @@ export function publicConsumer(profile,user){
  const restricted=profile?.status==='minor_review',deleted=profile?.status==='deleted';
  const needsAcceptance=profile?.consent?.version!==CONSUMER_POLICY_VERSION||deleted;
  if(restricted||needsAcceptance)return {name:'',municipality:'',favorites:[],following:[],revision:Number(profile?.revision||0),needsAcceptance,restricted};
- return {needsAcceptance:false,restricted:false,name:text(profile?.name||user.name,100),municipality:municipalities.includes(profile?.municipality)?profile.municipality:'',following:Array.isArray(profile?.following)?profile.following.filter(v=>typeof v==='string'&&v.length<=64&&slugPattern.test(v)).slice(0,100):[],favorites:Array.isArray(profile?.favorites)?profile.favorites.filter(v=>typeof v==='string'&&v.length<=64&&slugPattern.test(v)).slice(0,100):[],revision:Number(profile?.revision||0)};
+ return {savedPromotions:Array.isArray(profile?.savedPromotions)?profile.savedPromotions.slice(0,100):[],...(profile?.photo?{photo:profile.photo}:{}),needsAcceptance:false,restricted:false,name:text(profile?.name||user.name,100),municipality:municipalities.includes(profile?.municipality)?profile.municipality:'',following:Array.isArray(profile?.following)?profile.following.filter(v=>typeof v==='string'&&v.length<=64&&slugPattern.test(v)).slice(0,100):[],favorites:Array.isArray(profile?.favorites)?profile.favorites.filter(v=>typeof v==='string'&&v.length<=64&&slugPattern.test(v)).slice(0,100):[],revision:Number(profile?.revision||0)};
 }
 export async function updateConsumer(store,user,payload,loadBySlug){
  const key=consumerKey(user.id),record=await store.getWithMetadata(key,{type:'json'});
@@ -65,6 +68,23 @@ export async function updateConsumer(store,user,payload,loadBySlug){
   const name=text(payload.name,100),municipality=text(payload.municipality);
   if(!name||municipality&&!municipalities.includes(municipality))throw Object.assign(new Error('Invalid profile.'),{status:400});
   next={...current,name,municipality};
+  if(payload.photo!==undefined){
+   if(payload.photo==='')next.photo='';
+   else{
+    if(typeof payload.photo!=='string'||payload.photo.length>500000||!/^data:image\/jpeg;base64,[A-Za-z0-9+/]+=*$/.test(payload.photo))throw Object.assign(new Error('Invalid profile photo.'),{status:400});
+    const {encodeProfileImage}=await import('./profile-image.mjs');
+    try{
+     const image=await encodeProfileImage(Buffer.from(payload.photo.slice(23),'base64'));
+     next.photo='data:image/webp;base64,'+image.toString('base64');
+    }catch{throw Object.assign(new Error('Invalid profile photo.'),{status:400})}
+   }
+  }
+ }else if(payload.action==='save_promotion'){
+  const id=payload.post;
+  if(typeof id!=='string'||id.length>500||!/^p-[A-Za-z0-9_%!.~*'()-]+$/.test(id)||typeof payload.saved!=='boolean')throw Object.assign(Error('Invalid promotion.'),{status:400});
+  const savedPromotions=(current.savedPromotions||[]).filter(value=>value!==id);
+  if(payload.saved){if(savedPromotions.length>=100)throw Object.assign(Error('Saved limit reached.'),{status:400});savedPromotions.push(id)}
+  next={...current,savedPromotions};
  }else if(['favorite','follow'].includes(payload.action)){
   const slug=text(payload.slug,64);
   if(!slugPattern.test(slug)||typeof payload.saved!=='boolean')throw Object.assign(new Error('Invalid favorite.'),{status:400});

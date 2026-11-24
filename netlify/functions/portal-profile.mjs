@@ -1,5 +1,5 @@
 import crypto from 'node:crypto';
-import sharp from 'sharp';
+import {encodeProfileImage} from '../lib/profile-image.mjs';
 import {assertSameOrigin,errorResponse,requireSiteAccess,requirePlatformAdmin} from '../lib/client-auth.mjs';
 import {appearanceStore} from './dashboard-appearance.mjs';
 const headers={'Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer','Vary':'Cookie'};
@@ -14,11 +14,7 @@ export function normalizeProfile(input={}){
  const text=(key,max)=>typeof input?.[key]==='string'?input[key].replace(/[\u0000-\u001f\u007f]/g,'').trim().slice(0,max):'';
  return {name:text('name',100),phone:text('phone',40),language:['es','en'].includes(input?.language)?input.language:null,theme:['dark','light'].includes(input?.theme)?input.theme:null};
 }
-export function createPortalProfileHandler({siteAccess=requireSiteAccess,platformAccess=requirePlatformAdmin,store=appearanceStore,encodeImage=async bytes=>{
- const image=sharp(bytes,{limitInputPixels:40000000,animated:false});const meta=await image.metadata();
- if(!['jpeg','png','webp'].includes(meta.format)||meta.pages>1)throw fail('Use a static JPEG, PNG or WebP image.',400);
- return image.rotate().resize({width:512,height:512,fit:'cover',position:'centre',withoutEnlargement:true}).webp({quality:86}).toBuffer();
-}}={}){return async req=>{try{
+export function createPortalProfileHandler({siteAccess=requireSiteAccess,platformAccess=requirePlatformAdmin,store=appearanceStore,encodeImage=encodeProfileImage}={}){return async req=>{try{
  if(!['GET','PUT','POST','DELETE'].includes(req.method))return new Response(null,{status:405,headers:{...headers,Allow:'GET, PUT, POST, DELETE'}});
  assertSameOrigin(req);const url=new URL(req.url);const siteId=url.searchParams.get('siteId');
  if(siteId&&(!/^[a-z0-9_-]{1,120}$/i.test(siteId)))throw fail('Invalid business.',400);

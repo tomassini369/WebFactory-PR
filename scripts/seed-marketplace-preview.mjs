@@ -1,0 +1,67 @@
+import {getDeployStore} from '@netlify/blobs';
+import {execFileSync} from 'node:child_process';
+import {adKey,offerKey,validOffer} from '../netlify/lib/marketplace-ads.mjs';
+import {readFile} from 'node:fs/promises';
+
+export async function seedMarketplacePreview(env=process.env,store=getDeployStore) {
+  if (env.CONTEXT!=='deploy-preview' || env.REVIEW_ID!=='152' || (env.HEAD||env.BRANCH)!=='feat/marketplace-catalog-journeys') return;
+  const draft=JSON.parse(await readFile(new URL('../preview/fixtures/faro-norte/builder-draft.json',import.meta.url),'utf8'));
+  const siteId='site-qa-marketplace-152',slug='faro-norte-qa-152';
+  const service=draft.catalog.find(item=>item.requiresAppointment);
+  const assets=store('webfactory-client-assets',{consistency:'strong'});
+  const key=name=>'sites/'+siteId+'/faro-norte/'+name+'.webp';
+  for(const name of ['logo','corte-clasico']){
+    const image=await readFile(new URL('../preview/fixtures/faro-norte/images/'+name+'.webp',import.meta.url));
+    await assets.set(key(name),new Uint8Array(image).buffer,{onlyIfNew:true,metadata:{contentType:'image/webp'}});
+  }
+  const product={id:'pomada-qa',type:'product',name:'Pomada de prueba',nameEn:'Test pomade',nameEs:'Pomada de prueba',price:12,active:true,requiresAppointment:false};
+  const site={siteId,slug,status:'active',previewFixture:'marketplace-152',revision:1,members:[],
+    servicePlan:{billingModel:'complimentary',subscriptionStatus:'complimentary'},business:{...draft.business,logoAssetKey:key('logo'),name:'Faro Norte · QA',nameEs:'Faro Norte · QA',nameEn:'Faro Norte · QA',email:'',phone:'',locations:[{id:'arecibo-preview',name:'Arecibo QA',address:'Arecibo, Puerto Rico',active:true,hours:draft.hours}]},
+    catalog:[{...service,imageAssetKey:key('corte-clasico'),active:true,description:'Corte de prueba con pago presencial simulado.',descriptionEn:'Test haircut with simulated in-person payment.',descriptionEs:'Corte de prueba con pago presencial simulado.'},product],features:{...draft.features,products:true,stripe:false},
+    design:{...draft.design,mode:'template_base',templateCategory:'Barber',templateRoute:'/templates/northline-barber',preserveTemplateStructure:true},
+    hours:draft.hours,employees:draft.team.map(member=>({...member,active:true,serviceIds:[service.id],locationIds:['arecibo-preview'],schedule:draft.hours})),
+    paymentRules:{methods:{inPerson:true},productPayment:'in_person',bookingPayment:'in_person'},settings:{locale:'es',timezone:'America/Puerto_Rico',currency:'usd'}};
+  const sites=store('webfactory-client-sites',{consistency:'strong'});
+  await sites.setJSON('sites/'+siteId+'.json',site,{onlyIfNew:true});
+  await sites.setJSON('slugs/'+slug+'.json',{siteId,slug},{onlyIfNew:true});
+  const now=Date.now();
+  const offers=store('webfactory-client-commerce',{consistency:'strong'});
+  await offers.setJSON('marketplace/organic/'+siteId+'/'+product.id,{siteId,itemId:product.id,title:'Pomada de prueba · QA',terms:'Oferta de demostración en el preview.',price:12,start:now,end:now+7*86400000,revision:1},{onlyIfNew:true});
+
+  await offers.setJSON('marketplace/organic/'+siteId+'/'+service.id,{
+    siteId,itemId:service.id,title:service.nameEs||service.name,terms:'Reserva de demostración en el preview.',
+    price:service.price,start:now,end:now+7*86400000,revision:1
+  },{onlyIfNew:true});
+
+  const launchOffer = {
+    version: 'preview-152-usd10-30d',
+    revision: 1,
+    enabled: true,
+    approved: true,
+    taxReviewed: true, // Sandbox only. This offer belongs to the deploy store.
+    amount: 1000,
+    days: 30,
+    terms: 'Espacio patrocinado en rotación durante 30 días por un pago único de $10, sin renovación automática. / Rotating sponsored placement for 30 days for a one-time $10 payment, with no automatic renewal.',
+  };
+  await offers.setJSON(offerKey, launchOffer, {onlyIfNew:true});
+  const saved = await offers.get(offerKey, {type:'json'});
+  if (!validOffer(saved) || saved.amount !== launchOffer.amount || saved.days !== launchOffer.days) {
+    throw new Error('Could not verify the $10 Marketplace preview offer.');
+  }
+
+  // This fixture exists only in the named sandbox build and expires on redeploy.
+  const subject = execFileSync('git', ['log','-1','--format=%s'], {encoding:'utf8'}).trim();
+  if (subject !== 'Verify the 30-day advertiser sandbox checkout') return;
+  const campaign = {
+    id: 'caa3a4dc-ec6e-43fb-b039-b04ea47256ec',
+    siteId: 'advertiser-6cf1fc3b890e419929a543f473e66c17db0b29574ffec427a237bb89ce6ff0ce',
+    kind: 'external',
+    brand: 'Marca Faro · QA',
+    title: 'Campaña de prueba de 30 días',
+    body: 'Anuncio temporal para verificar el precio y la duración en el preview.',
+    status: 'approved', moderation: 'approved', revision: 1,
+    createdAt: now, createdBy: 'qa-fixture', previewFixture: 'marketplace-152',
+    offer: {version:saved.version,amount:saved.amount,days:saved.days,terms:saved.terms,acceptedAt:now,acceptedBy:'qa-fixture'},
+  };
+  await offers.setJSON(adKey(campaign.id), campaign, {onlyIfNew:true});
+}
