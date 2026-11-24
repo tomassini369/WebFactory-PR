@@ -19,9 +19,15 @@ export default function PromotionComposer({es,external,siteId,slug,busy,terms,pr
  const [status,setStatus]=useState('')
  async function add(file?:File){
   if(!file||gate.current)return
-  const video=['video/mp4','video/quicktime','video/x-m4v'].includes(file.type)||/\.(mp4|mov|m4v)$/i.test(file.name)
+  // Files providers may send an empty or generic MIME type. The preparation
+  // step identifies the actual video container from its bytes.
+  if(!file.type||file.type==='application/octet-stream'){
+   const photoType=/\.jpe?g$/i.test(file.name)?'image/jpeg':/\.png$/i.test(file.name)?'image/png':/\.webp$/i.test(file.name)?'image/webp':''
+   if(photoType)file=new File([file],file.name,{type:photoType,lastModified:file.lastModified})
+  }
+  const video=file.type.startsWith('video/')||!file.type||file.type==='application/octet-stream'||/\.(mp4|mov|m4v|webm|mkv|3gp|3g2|ts|mts|m2ts|ogv)$/i.test(file.name)
   if(files.length>=4||!video&&(!['image/jpeg','image/webp','image/png'].includes(file.type)||file.size>4*1024*1024)){
-   setError(es?'Selecciona JPG, PNG o WebP de hasta 4 MB, o un video MP4 o MOV.':'Choose JPG, PNG or WebP up to 4 MB, or an MP4 or MOV video.');return
+   setError(es?'Selecciona JPG, PNG o WebP de hasta 4 MB, o un archivo de video desde Fotos o Archivos.':'Choose JPG, PNG or WebP up to 4 MB, or a video from Photos or Files.');return
   }
   const slot=[0,1,2,3].find(i=>!files.some(f=>f.slot===i))!
   setError('');setStatus('')
@@ -39,7 +45,7 @@ export default function PromotionComposer({es,external,siteId,slug,busy,terms,pr
    controller.signal.throwIfAborted()
    setFiles(list=>[...list,{file:clip,url:objectUrl(clip),slot,uploaded:{id,at:Date.now()}}])
    setStatus(es?'Video cargado. Puedes completar el anuncio.':'Video uploaded. You can finish the advertisement.')
-  }catch(e){if(!controller.signal.aborted){setStatus('');setError(prepared?(es?'No se pudo subir el video. Comprueba la sesión y vuelve a seleccionarlo.':'Video upload failed. Check your session and select it again.'):e instanceof Error&&/^(Selecciona|El |Este |Choose |The |This )/.test(e.message)?e.message:(es?'No se pudo preparar este archivo. Selecciona un MP4 H.264 o un MOV compatible.':'Could not prepare this file. Choose an H.264 MP4 or a supported MOV.'))}}
+  }catch(e){if(!controller.signal.aborted){setStatus('');setError(prepared?(es?'No se pudo subir el video. Comprueba la sesión y vuelve a seleccionarlo.':'Video upload failed. Check your session and select it again.'):e instanceof Error&&/^(Selecciona|El |Este |Choose |The |This )/.test(e.message)?e.message:(es?'Este archivo no se pudo convertir en el dispositivo. En la app de origen, exporta el video como MP4 H.264 y vuelve a seleccionarlo.':'This device could not convert the file. Export the video as H.264 MP4 from the original app and select it again.'))}}
   finally{gate.current=false;upload.current=null;if(!controller.signal.aborted)setWorking(false)}
  }
  async function finishCrop(){
@@ -76,7 +82,7 @@ export default function PromotionComposer({es,external,siteId,slug,busy,terms,pr
  const media:PostMedia[]=files.map(f=>({type:f.file.type,url:f.url,coverTime:f.coverTime}))
  return <form onSubmit={submit} className="mp-composer"><fieldset disabled={busy||working}><legend>{es?'Crear anuncio':'Create advertisement'}</legend>
  {external&&<label>{es?'Marca':'Brand'}<input value={brand} onChange={e=>setBrand(e.target.value)} minLength={2} maxLength={80} required/></label>}
- <label>{es?'Foto o video':'Photo or video'}<input type="file" accept="image/jpeg,image/png,image/webp,video/mp4,video/quicktime,.mp4,.mov,.m4v" disabled={!!cropFile||files.length>=4} onChange={e=>{add(e.target.files?.[0]);e.target.value=''}}/></label><small>{es?'Hasta 4 archivos. Fotos de hasta 4 MB. Los videos MP4 o MOV de hasta 60 segundos se preparan y suben al seleccionarlos.':'Up to 4 files. Photos up to 4 MB. MP4 or MOV videos up to 60 seconds are prepared and uploaded when selected.'}</small>
+ <label>{es?'Foto o video':'Photo or video'}<input type="file" accept="image/jpeg,image/png,image/webp,video/*,.mp4,.mov,.m4v,.webm,.mkv,.3gp,.3g2,.ts,.mts,.m2ts,.ogv" disabled={!!cropFile||files.length>=4} onChange={e=>{add(e.target.files?.[0]);e.target.value=''}}/></label><small>{es?'Hasta 4 archivos. Fotos de hasta 4 MB. Los videos de hasta 60 segundos se preparan y suben al seleccionarlos.':'Up to 4 files. Photos up to 4 MB. Videos up to 60 seconds are prepared and uploaded when selected.'}</small>
  {cropFile&&<section><div className="mp-crop"><Cropper image={cropFile.url} crop={crop} zoom={zoom} aspect={4/5} onCropChange={setCrop} onZoomChange={setZoom} onCropComplete={(_,pixels)=>setArea(pixels)}/></div><label>Zoom<input type="range" min="1" max="3" step=".05" value={zoom} onChange={e=>setZoom(Number(e.target.value))}/></label><button type="button" disabled={!area} onClick={()=>void finishCrop()}>{es?'Aplicar encuadre':'Apply crop'}</button><button type="button" onClick={()=>{setFiles(list=>[...list,cropFile]);setCropFile(null)}}>{es?'Usar original':'Use original'}</button><button type="button" onClick={()=>{release(cropFile.url);setCropFile(null)}}>{es?'Cancelar':'Cancel'}</button></section>}
  {files.map((f,i)=><div key={f.slot}>{f.file.type==='video/mp4'&&<label>{es?'Escoge el fotograma inicial y pulsa Usar fotograma':'Choose the starting frame and press Use frame'}<video src={f.url} controls playsInline preload="metadata" style={{maxWidth:'100%',maxHeight:240}}/><button type="button" onClick={e=>{const video=e.currentTarget.parentElement?.querySelector('video');if(video){video.pause();setFiles(list=>list.map(d=>d.slot===f.slot?{...d,coverTime:video.currentTime}:d))}}}>{es?'Usar fotograma':'Use frame'} · {(f.coverTime||0).toFixed(1)} s</button></label>}<button type="button" onClick={()=>{release(f.url);setFiles(list=>list.filter(v=>v!==f))}}>{es?'Quitar archivo':'Remove file'} {i+1}</button></div>)}
  <label>{es?'Título':'Title'}<input value={title} onChange={e=>setTitle(e.target.value)} required minLength={5} maxLength={80}/></label><label>{es?'Descripción':'Description'}<textarea value={body} onChange={e=>setBody(e.target.value)} required minLength={10} maxLength={350}/></label>

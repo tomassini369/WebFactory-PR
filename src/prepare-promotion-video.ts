@@ -1,8 +1,8 @@
-import {Input,MP4,QTFF,BlobSource,Output,Mp4OutputFormat,BufferTarget,Conversion} from 'mediabunny'
+import {Input,MP4,QTFF,WEBM,MATROSKA,MPEG_TS,OGG,BlobSource,Output,Mp4OutputFormat,BufferTarget,Conversion} from 'mediabunny'
 
 const maxBytes=4*1024*1024
 export async function preparePromotionVideo(file:File,es:boolean,signal:AbortSignal,onProgress:(percent:number)=>void){
- const input=new Input({source:new BlobSource(file),formats:[MP4,QTFF]})
+ const input=new Input({source:new BlobSource(file),formats:[MP4,QTFF,WEBM,MATROSKA,MPEG_TS,OGG]})
  try{
   const track=await input.getPrimaryVideoTrack()
   if(!track)throw Error(es?'El archivo no contiene una pista de video.':'The file has no video track.')
@@ -11,7 +11,8 @@ export async function preparePromotionVideo(file:File,es:boolean,signal:AbortSig
   signal.throwIfAborted()
   const codec=await track.getCodec()
   const small=file.size<=maxBytes
-  if(small&&codec==='avc'&&await input.getFormat()===MP4)return new File([file],file.name,{type:'video/mp4'})
+  const audio=await input.getPrimaryAudioTrack()
+  if(small&&codec==='avc'&&(!audio||await audio.getCodec()==='aac')&&await input.getFormat()===MP4)return new File([file],file.name,{type:'video/mp4'})
   const output=new Output({format:new Mp4OutputFormat(),target:new BufferTarget()})
   const recode=!small||codec!=='avc'
   const width=await track.getDisplayWidth(),height=await track.getDisplayHeight()
