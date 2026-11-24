@@ -49,7 +49,7 @@ export function publicConsumer(profile,user){
  const restricted=profile?.status==='minor_review',deleted=profile?.status==='deleted';
  const needsAcceptance=profile?.consent?.version!==CONSUMER_POLICY_VERSION||deleted;
  if(restricted||needsAcceptance)return {name:'',municipality:'',favorites:[],following:[],revision:Number(profile?.revision||0),needsAcceptance,restricted};
- return {...(profile?.photo?{photo:profile.photo}:{}),needsAcceptance:false,restricted:false,name:text(profile?.name||user.name,100),municipality:municipalities.includes(profile?.municipality)?profile.municipality:'',following:Array.isArray(profile?.following)?profile.following.filter(v=>typeof v==='string'&&v.length<=64&&slugPattern.test(v)).slice(0,100):[],favorites:Array.isArray(profile?.favorites)?profile.favorites.filter(v=>typeof v==='string'&&v.length<=64&&slugPattern.test(v)).slice(0,100):[],revision:Number(profile?.revision||0)};
+ return {savedPromotions:Array.isArray(profile?.savedPromotions)?profile.savedPromotions.slice(0,100):[],...(profile?.photo?{photo:profile.photo}:{}),needsAcceptance:false,restricted:false,name:text(profile?.name||user.name,100),municipality:municipalities.includes(profile?.municipality)?profile.municipality:'',following:Array.isArray(profile?.following)?profile.following.filter(v=>typeof v==='string'&&v.length<=64&&slugPattern.test(v)).slice(0,100):[],favorites:Array.isArray(profile?.favorites)?profile.favorites.filter(v=>typeof v==='string'&&v.length<=64&&slugPattern.test(v)).slice(0,100):[],revision:Number(profile?.revision||0)};
 }
 export async function updateConsumer(store,user,payload,loadBySlug){
  const key=consumerKey(user.id),record=await store.getWithMetadata(key,{type:'json'});
@@ -79,6 +79,12 @@ export async function updateConsumer(store,user,payload,loadBySlug){
     }catch{throw Object.assign(new Error('Invalid profile photo.'),{status:400})}
    }
   }
+ }else if(payload.action==='save_promotion'){
+  const id=payload.post;
+  if(typeof id!=='string'||id.length>500||!/^p-[A-Za-z0-9_%!.~*'()-]+$/.test(id)||typeof payload.saved!=='boolean')throw Object.assign(Error('Invalid promotion.'),{status:400});
+  const savedPromotions=(current.savedPromotions||[]).filter(value=>value!==id);
+  if(payload.saved){if(savedPromotions.length>=100)throw Object.assign(Error('Saved limit reached.'),{status:400});savedPromotions.push(id)}
+  next={...current,savedPromotions};
  }else if(['favorite','follow'].includes(payload.action)){
   const slug=text(payload.slug,64);
   if(!slugPattern.test(slug)||typeof payload.saved!=='boolean')throw Object.assign(new Error('Invalid favorite.'),{status:400});

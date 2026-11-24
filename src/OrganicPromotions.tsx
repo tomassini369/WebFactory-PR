@@ -1,32 +1,12 @@
 import {useEffect,useState,type FormEvent} from 'react'
-import {catalogItemUrl,marketplaceRequest} from './marketplace-api'
-import {startVisiblePolling} from './visible-polling'
+import {marketplaceRequest} from './marketplace-api'
 import {PortalPanel} from './PortalPanel'
 
-type Offer={slug:string;business:string;itemId:string;name:string;price:number;title:string;terms:string;end:number}
 type Saved={title:string;terms:string;start:number;end:number;revision:number;withdrawn?:boolean}
 type Item={id:string;name:string;nameEs?:string;nameEn?:string;active?:boolean;price:number}
 const localDate=(value:number)=>new Date(value-new Date(value).getTimezoneOffset()*60000).toISOString().slice(0,16)
 
-export function PromotionFeed({es}:{es:boolean}){
- const [offers,setOffers]=useState<Offer[]|null>(null),[error,setError]=useState(false)
- useEffect(()=>{
-  const polling=startVisiblePolling(async signal=>{
-   try{const result=await marketplaceRequest('promotions',undefined,signal);if(!signal.aborted){setOffers(result.offers);setError(false)}}
-   catch{if(!signal.aborted)setError(true)}
-  },30000,{timeoutMs:15000,wakeIntervalMs:30000})
-  return ()=>polling.stop()
- },[])
- if(error)return <p role="status">{es?'No se pudieron actualizar las ofertas.':'Offers could not be refreshed.'}</p>
- if(!offers)return <p role="status">{es?'Cargando ofertas…':'Loading offers…'}</p>
- const current=offers.filter(offer=>offer.end>Date.now())
- if(!current.length)return <div className="mk-quiet-empty"><h3>{es?'Aún no hay promociones publicadas.':'No promotions published yet.'}</h3></div>
- return <ul>{current.map(offer=><li key={offer.slug+'/'+offer.itemId}><article>
-  <h3>{offer.title}</h3><p>{offer.business} · {offer.name} · {new Intl.NumberFormat(es?'es-PR':'en-US',{style:'currency',currency:'USD'}).format(offer.price)}</p>
-  <p>{offer.terms}</p><p>{es?'Vence':'Ends'} {new Date(offer.end).toLocaleString(es?'es-PR':'en-US',{timeZone:'America/Puerto_Rico'})} (PR)</p>
-  <a href={catalogItemUrl(offer.slug,offer.itemId)}>{es?'Ver artículo':'View item'}</a>
- </article></li>)}</ul>
-}
+export {default as PromotionFeed} from './PromotionStream'
 
 export function PromotionEditor({siteId,items,es}:{siteId:string;items:Item[];es:boolean}){
  const catalog=items.filter(item=>item.active!==false)

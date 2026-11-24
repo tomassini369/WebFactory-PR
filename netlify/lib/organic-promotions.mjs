@@ -8,7 +8,7 @@ export function publicPromotion(site, offer, now) {
   if (!item || business.features[item.type === 'product' ? 'products' : 'services'] === false || !Number.isFinite(item.price) || item.price !== offer.price) return null;
   const stored = site.catalog.find(row => row.id === offer.itemId);
   if (item.type === "product" && stored?.trackInventory && !stored.allowBackorder && item.inventory != null && item.inventory <= 0) return null;
-  return {slug:site.slug, business:business.business.name, itemId:item.id, name:item.name, price:item.price, title:offer.title, terms:offer.terms, end:offer.end};
+  return {image:item.imageUrl||business.business.logoUrl||null,buy:item.type==="product",book:Boolean(item.requiresAppointment),slug:site.slug, business:business.business.name, itemId:item.id, name:item.name, price:item.price, title:offer.title, terms:offer.terms, end:offer.end};
 }
 
 export function validatePromotion(site, input, now) {
