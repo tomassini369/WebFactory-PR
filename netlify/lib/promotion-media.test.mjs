@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import sharp from 'sharp';
+import {readFile} from 'node:fs/promises';
 import {createUploadHandler} from '../functions/marketplace-ad-upload.mjs';
 import {assetKey,attachDrafts} from './promotion-media.mjs';
 test('interrupted uploads resume at the stored offset and attach only to the uploading account',async()=>{
@@ -26,4 +27,18 @@ test('interrupted uploads resume at the stored offset and attach only to the upl
  await assert.rejects(attachDrafts(store,JSON.stringify(['other','shop']),row,files),{status:409});
  assert.deepEqual(await attachDrafts(store,JSON.stringify(['first','shop']),row,files),[{type:'image/webp'}]);
  assert.equal((await sharp(Buffer.from(values.get(assetKey(row.id,0)).data)).metadata()).format,'webp');
+ const clip=await readFile(new URL('../../assets/preview-review/reference-video.mp4',import.meta.url));
+ const video=await request('POST',url,{'Upload-Length':String(clip.length)});
+ assert.equal(video.status,201);
+ const videoUrl=new URL(video.headers.get('location'),origin);
+ const chunkSize=512*1024;
+ for(let start=0;start<clip.length;start+=chunkSize){
+  const part=clip.subarray(start,start+chunkSize);
+  const response=await request('PATCH',videoUrl,{'Upload-Offset':String(start),'Content-Type':'application/offset+octet-stream'},part);
+  assert.equal(response.status,204);
+  assert.equal(Number(response.headers.get('Upload-Offset')),start+part.length);
+ }
+ const attached=await attachDrafts(store,JSON.stringify(['first','shop']),{id:'video'},[{slot:0,id:videoUrl.searchParams.get('upload')}]);
+ assert.equal(attached[0].type,'video/mp4');
+ assert.deepEqual(Buffer.from(values.get(assetKey('video',0)).data),clip);
 });
