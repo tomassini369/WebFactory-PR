@@ -34,18 +34,35 @@ export default function PromotionComposer({es,external,siteId,slug,busy,terms,pr
   if(!video){setArea(null);setZoom(1);setCrop({x:0,y:0});setCropFile({file,url:objectUrl(file),slot});return}
   gate.current=true;setWorking(true);setProgress(0)
   const controller=new AbortController();upload.current=controller
-  let prepared=false
+  let processing=false
   try{
-   setStatus(es?'Preparando video…':'Preparing video…')
-   const {preparePromotionVideo}=await import('./prepare-promotion-video')
-   const clip=await preparePromotionVideo(file,es,controller.signal,setProgress)
-   controller.signal.throwIfAborted();prepared=true
-   setStatus(es?'Subiendo video…':'Uploading video…');setProgress(0)
-   const id=await uploadPromotionFile(clip,slot,external?'':siteId,setProgress,controller.signal)
+   if(file.size>32*1024*1024)throw Error('size')
+   setStatus(es?'Subiendo el video original…':'Uploading original video…')
+   const tenant=external?'':siteId
+   const id=await uploadPromotionFile(file,slot,tenant,setProgress,controller.signal,true)
+   processing=true
+   setStatus(es?'WebFactory está ajustando el video…':'WebFactory is processing the video…')
+   const params=new URLSearchParams({slot:String(slot),upload:id,...(tenant?{siteId:tenant}:{})})
+   const endpoint='/.netlify/functions/marketplace-ad-upload?'+params
+   const options={signal:controller.signal,cache:'no-store' as const}
+   const start=await fetch('/.netlify/functions/promotion-video-background?'+params,{...options,method:'POST'})
+   if(!start.ok)throw Error('worker')
+   const deadline=Date.now()+6*60000
+   while(true){
+    await new Promise(resolve=>setTimeout(resolve,2000))
+    const check=await fetch(endpoint,options)
+    if(!check.ok)throw Error('status')
+    const {state}=await check.json()
+    if(state==='ready')break
+    if(state==='failed'||Date.now()>deadline)throw Error('conversion')
+   }
+   const asset=await fetch(endpoint+'&asset=1',options)
+   if(!asset.ok)throw Error('asset')
+   const clip=new File([await asset.blob()],'promotion.mp4',{type:'video/mp4'})
    controller.signal.throwIfAborted()
    setFiles(list=>[...list,{file:clip,url:objectUrl(clip),slot,uploaded:{id,at:Date.now()}}])
-   setStatus(es?'Video cargado. Puedes completar el anuncio.':'Video uploaded. You can finish the advertisement.')
-  }catch(e){if(!controller.signal.aborted){setStatus('');setError(prepared?(es?'No se pudo subir el video. Comprueba la sesión y vuelve a seleccionarlo.':'Video upload failed. Check your session and select it again.'):e instanceof Error&&/^(Selecciona|El |Este |Choose |The |This )/.test(e.message)?e.message:(es?'Este archivo no se pudo convertir en el dispositivo. En la app de origen, exporta el video como MP4 H.264 y vuelve a seleccionarlo.':'This device could not convert the file. Export the video as H.264 MP4 from the original app and select it again.'))}}
+   setStatus(es?'Video ajustado. Listo para revisar.':'Video processed. Ready to review.')
+  }catch(e){if(!controller.signal.aborted){setStatus('');setError(e instanceof Error&&e.message==='size'?(es?'El original debe pesar hasta 32 MB.':'The original must be 32 MB or smaller.'):processing?(es?'No se pudo preparar el video. Comprueba que dura hasta 60 segundos e intenta de nuevo.':'Could not process the video. Check the 60-second limit and try again.'):(es?'No se pudo subir el original. Comprueba tu conexión y sesión.':'Original upload failed. Check your connection and session.'))}}
   finally{gate.current=false;upload.current=null;if(!controller.signal.aborted)setWorking(false)}
  }
  async function finishCrop(){
@@ -80,17 +97,17 @@ export default function PromotionComposer({es,external,siteId,slug,busy,terms,pr
   }catch(e){setError(e instanceof Error?e.message:'Error')}finally{upload.current=null;gate.current=false;setWorking(false)}
  }
  const media:PostMedia[]=files.map(f=>({type:f.file.type,url:f.url,coverTime:f.coverTime}))
- return <form onSubmit={submit} className="mp-composer"><fieldset disabled={busy||working}><legend>{es?'Crear anuncio':'Create advertisement'}</legend>
+ return <form onSubmit={submit} className="mp-composer"><fieldset disabled={busy||working&&!upload.current}><legend>{es?'Crear anuncio':'Create advertisement'}</legend>
  {external&&<label>{es?'Marca':'Brand'}<input value={brand} onChange={e=>setBrand(e.target.value)} minLength={2} maxLength={80} required/></label>}
- <label>{es?'Foto o video':'Photo or video'}<input type="file" accept="image/jpeg,image/png,image/webp,video/*,.mp4,.mov,.m4v,.webm,.mkv,.3gp,.3g2,.ts,.mts,.m2ts,.ogv" disabled={!!cropFile||files.length>=4} onChange={e=>{add(e.target.files?.[0]);e.target.value=''}}/></label><small>{es?'Hasta 4 archivos. Fotos de hasta 4 MB. Los videos de hasta 60 segundos se preparan y suben al seleccionarlos.':'Up to 4 files. Photos up to 4 MB. Videos up to 60 seconds are prepared and uploaded when selected.'}</small>
- {cropFile&&<section><div className="mp-crop"><Cropper image={cropFile.url} crop={crop} zoom={zoom} aspect={4/5} onCropChange={setCrop} onZoomChange={setZoom} onCropComplete={(_,pixels)=>setArea(pixels)}/></div><label>Zoom<input type="range" min="1" max="3" step=".05" value={zoom} onChange={e=>setZoom(Number(e.target.value))}/></label><button type="button" disabled={!area} onClick={()=>void finishCrop()}>{es?'Aplicar encuadre':'Apply crop'}</button><button type="button" onClick={()=>{setFiles(list=>[...list,cropFile]);setCropFile(null)}}>{es?'Usar original':'Use original'}</button><button type="button" onClick={()=>{release(cropFile.url);setCropFile(null)}}>{es?'Cancelar':'Cancel'}</button></section>}
- {files.map((f,i)=><div key={f.slot}>{f.file.type==='video/mp4'&&<label>{es?'Escoge el fotograma inicial y pulsa Usar fotograma':'Choose the starting frame and press Use frame'}<video src={f.url} controls playsInline preload="metadata" style={{maxWidth:'100%',maxHeight:240}}/><button type="button" onClick={e=>{const video=e.currentTarget.parentElement?.querySelector('video');if(video){video.pause();setFiles(list=>list.map(d=>d.slot===f.slot?{...d,coverTime:video.currentTime}:d))}}}>{es?'Usar fotograma':'Use frame'} · {(f.coverTime||0).toFixed(1)} s</button></label>}<button type="button" onClick={()=>{release(f.url);setFiles(list=>list.filter(v=>v!==f))}}>{es?'Quitar archivo':'Remove file'} {i+1}</button></div>)}
+ <label>{es?'Foto o video':'Photo or video'}<input type="file" accept="image/jpeg,image/png,image/webp,video/*,.mp4,.mov,.m4v,.webm,.mkv,.3gp,.3g2,.ts,.mts,.m2ts,.ogv" disabled={working||!!cropFile||files.length>=4} onChange={e=>{add(e.target.files?.[0]);e.target.value=''}}/></label><small>{es?'Hasta 4 archivos. Fotos de hasta 4 MB. Videos de hasta 32 MB y 60 segundos. WebFactory ajusta el original después de subirlo.':'Up to 4 files. Photos up to 4 MB. Videos up to 32 MB and 60 seconds. WebFactory processes the original after upload.'}</small>
+ {cropFile&&<section><div className="mp-crop"><Cropper image={cropFile.url} crop={crop} zoom={zoom} aspect={4/5} onCropChange={setCrop} onZoomChange={setZoom} onCropComplete={(_,pixels)=>setArea(pixels)}/></div><label>Zoom<input type="range" min="1" max="3" step=".05" value={zoom} onChange={e=>setZoom(Number(e.target.value))}/></label><button type="button" disabled={working||!area} onClick={()=>void finishCrop()}>{es?'Aplicar encuadre':'Apply crop'}</button><button type="button" onClick={()=>{setFiles(list=>[...list,cropFile]);setCropFile(null)}}>{es?'Usar original':'Use original'}</button><button type="button" onClick={()=>{release(cropFile.url);setCropFile(null)}}>{es?'Cancelar':'Cancel'}</button></section>}
+ {files.map((f,i)=><div key={f.slot}>{f.file.type==='video/mp4'&&<label>{es?'Escoge el fotograma inicial y pulsa Usar fotograma':'Choose the starting frame and press Use frame'}<video src={f.url} controls playsInline preload="metadata" style={{maxWidth:'100%',maxHeight:240}}/><button type="button" onClick={e=>{const video=e.currentTarget.parentElement?.querySelector('video');if(video){video.pause();setFiles(list=>list.map(d=>d.slot===f.slot?{...d,coverTime:video.currentTime}:d))}}}>{es?'Usar fotograma':'Use frame'} · {(f.coverTime||0).toFixed(1)} s</button></label>}<button type="button" disabled={working} onClick={()=>{release(f.url);setFiles(list=>list.filter(v=>v!==f))}}>{es?'Quitar archivo':'Remove file'} {i+1}</button></div>)}
  <label>{es?'Título':'Title'}<input value={title} onChange={e=>setTitle(e.target.value)} required minLength={5} maxLength={80}/></label><label>{es?'Descripción':'Description'}<textarea value={body} onChange={e=>setBody(e.target.value)} required minLength={10} maxLength={350}/></label>
  {offers.length>0&&<label>{es?'Impulsar una promoción activa':'Boost an active promotion'}<select value={promotion} onChange={e=>setPromotion(e.target.value)}><option value="">{es?'Anuncio independiente':'Standalone ad'}</option>{offers.map(o=><option value={o.itemId} key={o.itemId}>{o.title}</option>)}</select></label>}
  {!promotion&&directory&&<label>{es?'Destino en el catálogo':'Catalog destination'}<select value={item} onChange={e=>setItem(e.target.value)}><option value="">{es?'Página del negocio o enlace':'Business page or link'}</option>{directory.services.map(i=><option key={i.id} value={i.id}>{(es?i.nameEs:i.nameEn)||i.name}</option>)}</select></label>}
  {!promotion&&!item&&<label>{es?'Enlace de destino HTTPS':'HTTPS destination link'}<input type="url" pattern="https://.+" value={destination} onChange={e=>setDestination(e.target.value)} required={external}/></label>}
  <h3>{es?'Vista previa':'Preview'}</h3><PromotionPost es={es} preview post={{id:'preview',brand:brand||directory?.name||slug,title,body,media,sponsored:true,href:promotion||item?catalogItemUrl(slug,promotion||item):destination||(!external?'/negocios/'+slug:undefined),cta:es?'Ver oferta':'View offer'}}/>
  <p>{price}</p><p>{terms}</p><label><input type="checkbox" checked={accepted} onChange={e=>setAccepted(e.target.checked)} required/>{es?'Acepto el precio y las condiciones. Tengo derechos sobre el contenido.':'I accept the price and terms and hold the rights to this content.'}</label>
- <button disabled={!accepted||!files.length||!!cropFile}>{es?'Enviar para revisión':'Submit for review'}</button></fieldset>
+ <button disabled={working||!accepted||!files.length||!!cropFile}>{es?'Enviar para revisión':'Submit for review'}</button></fieldset>
  {status&&<p role="status">{status}</p>}{working&&<progress aria-label={es?'Progreso':'Progress'} value={progress} max={100}/>} {error&&<p role="alert">{error}</p>}</form>
 }

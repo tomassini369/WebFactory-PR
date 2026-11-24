@@ -1,8 +1,9 @@
 import Uppy from '@uppy/core'
 import Tus from '@uppy/tus'
 
-export async function uploadPromotionFile(file:File,slot:number,siteId:string,onProgress:(percent:number)=>void,signal:AbortSignal){
+export async function uploadPromotionFile(file:File,slot:number,siteId:string,onProgress:(percent:number)=>void,signal:AbortSignal,originalVideo=false){
  const params=new URLSearchParams({slot:String(slot)})
+ if(originalVideo)params.set('video','1')
  if(siteId)params.set('siteId',siteId)
  const endpoint=new URL('/.netlify/functions/marketplace-ad-upload',window.location.origin)
  endpoint.search=params.toString()
