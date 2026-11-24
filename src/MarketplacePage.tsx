@@ -20,7 +20,7 @@ export default function MarketplacePage({lang,setLang}:{lang:Language;setLang:(l
  useEffect(()=>{const restore=()=>{const value=readMarketplaceFilters(window.location.search);setFilters(value);setDraft(value)};window.addEventListener('popstate',restore);return()=>window.removeEventListener('popstate',restore)},[])
  function apply(value:MarketplaceFilters,scroll=true){
   const next=normalizeMarketplaceFilters(value);setFilters(next);setDraft(next)
-  window.history.replaceState(window.history.state,'','/'+marketplaceQuery(next)+(scroll?'#descubrir':''))
+  window.history.replaceState(window.history.state,'',window.location.pathname+marketplaceQuery(next)+(scroll?'#descubrir':''))
   if(scroll)requestAnimationFrame(()=>{results.current?.focus({preventScroll:true});results.current?.scrollIntoView({block:'start',behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'})})
  }
  const submit=(event:FormEvent)=>{event.preventDefault();apply(draft)}

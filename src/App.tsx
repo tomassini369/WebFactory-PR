@@ -12,6 +12,8 @@ import { Suspense, lazy, useEffect, type ReactNode } from 'react'
 import { AdaptiveLogo, ThemeToggle } from './theme'
 const HomePage = lazy(() => import('./HomePage'))
 const MarketplacePage = lazy(() => import('./MarketplacePage'))
+// Preview branch only: concept landing replaces '/', the Marketplace moves to '/marketplace'.
+const SaasPreviewLanding = lazy(() => import('./SaasPreviewLanding'))
 const ConsumerPage = lazy(() => import('./ConsumerPage'))
 const MarketplaceBusinessPage = lazy(() => import('./MarketplaceBusinessPage'))
 const MfaGate = lazy(() => import('./MfaAccess').then(module => ({default:module.MfaGate})))
@@ -118,8 +120,9 @@ function App(){
 
   if(/^\/crear\/?$/.test(pathname))return <RouteView><HomePage lang={lang} setLang={setLang}/></RouteView>
 
+  if(/^\/marketplace\/?$/.test(pathname))return <RouteView><MarketplacePage lang={lang} setLang={setLang}/></RouteView>
   if(pathname!=='/')return <main className="cs-state"><h1>404 · {lang==='es'?'Página no encontrada':'Page not found'}</h1><p>{lang==='es'?'El enlace no existe o cambió.':'This link does not exist or has changed.'}</p><a className="btn" href="/">{lang==='es'?'Volver a WebFactory PR':'Return to WebFactory PR'}</a></main>
-  return <RouteView><MarketplacePage lang={lang} setLang={setLang}/></RouteView>
+  return <RouteView><SaasPreviewLanding lang={lang} setLang={setLang}/></RouteView>
 }
 
 export default App
