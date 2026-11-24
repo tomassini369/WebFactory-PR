@@ -5,7 +5,7 @@ import './consumer-social.css'
 
 const views=['inicio','favoritos','siguiendo','perfil','publicidad'] as const
 function currentView(){
-  return views.find(view=>'#'+view===window.location.hash)||'inicio'
+  return views.find(view=>'#'+view===window.location.hash)||(new URLSearchParams(window.location.search).has('marketplaceAd')?'publicidad':'inicio')
 }
 export function useConsumerView(){
   const [view,setView]=useState(currentView)
